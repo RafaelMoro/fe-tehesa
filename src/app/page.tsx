@@ -2,10 +2,11 @@ import createApolloClient from "./apollo-client";
 import { gql } from "@apollo/client";
 
 import { TestComp } from "@/components/TestComp";
+import type { FetchProductsResponse } from "@/shared/types/global.types";
 
 export default async function Home() {
   const client = createApolloClient();
-  const { data } = await client.query({
+  const res = await client.query<FetchProductsResponse>({
     query: gql`
       query ExampleQuery {
         products {
@@ -19,7 +20,8 @@ export default async function Home() {
       }
     `,
   });
-  console.log('datta', data)
+  const products = res?.data?.products;
+  console.log('products', products);
   return (
     <div>
       <TestComp />
