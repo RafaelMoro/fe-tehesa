@@ -1,8 +1,8 @@
 import createApolloClient from "./apollo-client";
 import { gql } from "@apollo/client";
 
-import { TestComp } from "@/components/TestComp";
 import type { FetchProductsResponse } from "@/shared/types/global.types";
+import { ProductListing } from "@/features/ProductListing/ProductListing";
 
 export default async function Home() {
   const client = createApolloClient();
@@ -20,11 +20,11 @@ export default async function Home() {
       }
     `,
   });
-  const products = res?.data?.products;
-  console.log('products', products);
+  const products = res?.data?.products ?? [];
+
   return (
     <div>
-      <TestComp />
+      <ProductListing products={products} />
     </div>
   );
 }
