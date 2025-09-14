@@ -21,10 +21,11 @@ export default async function Home() {
     `,
   });
   const products = res?.data?.products ?? [];
+  const availableProducts = products.filter(product => product.available);
 
   return (
     <div>
-      <ProductListing products={products} />
+      <ProductListing products={availableProducts} />
     </div>
   );
 }
