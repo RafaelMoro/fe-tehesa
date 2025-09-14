@@ -1,3 +1,9 @@
+## v0.3.0 (2025-09-14)
+
+### Pull Requests
+[#3](https://github.com/RafaelMoro/fe-tehesa/pull/3) | Add apollo and fetch successfully
+
+
 ## v0.2.0 (2025-09-14)
 
 ### Pull Requests
