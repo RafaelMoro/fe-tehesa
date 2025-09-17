@@ -11,6 +11,7 @@
   "dependencies": {
     "@apollo/client": "^4.0.5",
     "@heroui/react": "^2.8.4",
+    "@remixicon/react": "^4.6.0",
     "framer-motion": "^12.23.12",
     "graphql": "^16.11.0",
     "next": "15.5.3",
