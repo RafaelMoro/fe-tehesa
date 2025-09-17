@@ -1,4 +1,16 @@
-export type Categories = 'twist-drill-bits' | 'shockwave-impact-adapter' | 'hex-keys'
+export const CATEGORIES_PRODUCTS = [
+  'twist-drill-bits',
+  'shockwave-impact-adapter',
+  'hex-keys'
+] as const
+
+export type Categories = typeof CATEGORIES_PRODUCTS[number]
+
+export const categoriesDict: Record<Categories, string> = {
+  'twist-drill-bits': 'Brocas',
+  'shockwave-impact-adapter': 'Broquero',
+  'hex-keys': 'Llaves hexagonales'
+}
 
 export interface Product {
   available: boolean;
