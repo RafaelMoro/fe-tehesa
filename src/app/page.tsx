@@ -2,9 +2,9 @@ import createApolloClient from "./apollo-client";
 import { gql } from "@apollo/client";
 
 import type { FetchProductsResponse } from "@/shared/types/global.types";
-import { ProductListing } from "@/features/ProductListing/ProductListing";
+import { Home } from "@/features/Home/Home";
 
-export default async function Home() {
+export default async function MainPage() {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
     query: gql`
@@ -21,12 +21,11 @@ export default async function Home() {
     `,
   });
   const products = res?.data?.products ?? [];
-  const availableProducts = products.filter(product => product.available);
 
   return (
     <main className="p-10">
       <h1 className="text-4xl font-bold text-center mb-5">Catalogo de productos</h1>
-      <ProductListing products={availableProducts} />
+      <Home products={products} />
     </main>
   );
 }
