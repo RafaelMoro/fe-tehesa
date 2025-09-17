@@ -8,7 +8,7 @@ export default async function Home() {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
     query: gql`
-      query ExampleQuery {
+      query GetProductsQuery {
         products {
           available
           category
@@ -24,8 +24,9 @@ export default async function Home() {
   const availableProducts = products.filter(product => product.available);
 
   return (
-    <div>
+    <main className="p-10">
+      <h1 className="text-4xl font-bold text-center mb-5">Catalogo de productos</h1>
       <ProductListing products={availableProducts} />
-    </div>
+    </main>
   );
 }
