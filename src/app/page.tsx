@@ -13,7 +13,7 @@ export default async function MainPage() {
     <ChangeThemeStoreProvider>
       <div>
         <Header themeFetched={themeFetched} />
-        <main className="p-10">
+        <main className="p-10 flex flex-col gap-10">
           <h1 className="text-4xl font-bold text-center mb-5">Catalogo de productos</h1>
           <Home products={products} />
         </main>
