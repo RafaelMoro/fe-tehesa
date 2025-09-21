@@ -1,3 +1,5 @@
+export type AppTheme = 'light' | 'dark'
+
 export type ErrorCatched = {
   message: string;
   cause?: {
