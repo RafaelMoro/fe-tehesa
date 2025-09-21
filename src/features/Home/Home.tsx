@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { Categories, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
+import { SearchInput } from "../ProductListing/SearchInput"
 
 interface HomeProps {
   products: Product[]
@@ -23,7 +24,7 @@ export const Home = ({ products }: HomeProps) => {
   return (
     <>
       <div>
-        <input type="text" placeholder="Buscar producto" />
+        <SearchInput />
         <div className="flex gap-3 items-center mb-5">
           <span>Todos los filtros:</span>
           <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
