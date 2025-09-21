@@ -1,27 +1,9 @@
-import createApolloClient from "./apollo-client";
-import { gql } from "@apollo/client";
-
-import type { FetchProductsResponse } from "@/shared/types/global.types";
 import { Home } from "@/features/Home/Home";
 import { Header } from "@/shared/ui/organisms/Header";
+import { fetchProducts } from "@/shared/lib/global.lib";
 
 export default async function MainPage() {
-  const client = createApolloClient();
-  const res = await client.query<FetchProductsResponse>({
-    query: gql`
-      query GetProductsQuery {
-        products {
-          available
-          category
-          name
-          image {
-            url
-          }
-        }
-      }
-    `,
-  });
-  const products = res?.data?.products ?? [];
+  const products = await fetchProducts();
 
   return (
     <div>
