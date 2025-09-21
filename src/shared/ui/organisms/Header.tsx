@@ -1,5 +1,6 @@
 "use client"
 import { Image } from "@heroui/react"
+import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 
 export const Header = () => {
   return (
@@ -11,7 +12,7 @@ export const Header = () => {
         radius="sm"
         src="/tehesa-logo-negativo.webp"
       />
-      <button>Toggle dark mode</button>
+      <ToggleDarkMode />
     </header>
   )
 }
