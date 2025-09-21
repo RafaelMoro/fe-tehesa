@@ -2,10 +2,15 @@
 import { useState } from "react"
 import { Input } from "@heroui/react"
 
-export const SearchInput = () => {
+interface SearchInputProps {
+  onSearch: (searchTerm: string) => void
+}
+
+export const SearchInput = ({ onSearch }: SearchInputProps) => {
   const [searchTerm, setSearchTerm] = useState("")
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
+    onSearch(e.target.value)
   }
 
   return (

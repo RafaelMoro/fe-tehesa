@@ -21,10 +21,35 @@ export const Home = ({ products }: HomeProps) => {
     setFilteredProducts(newFilteredProducts)
   }
 
+  const handleSearch = (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      // If search is empty, show all products or filtered by category
+      if (selectedCategory) {
+        const categoryFiltered = allProducts.current.filter((prod) => prod.category === selectedCategory)
+        setFilteredProducts(categoryFiltered)
+      } else {
+        setFilteredProducts(allProducts.current)
+      }
+      return
+    }
+
+    // Filter by search term in product name (case-insensitive)
+    let searchFiltered = allProducts.current.filter((prod) => 
+      prod.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // If there's also a selected category, apply both filters
+    if (selectedCategory) {
+      searchFiltered = searchFiltered.filter((prod) => prod.category === selectedCategory)
+    }
+
+    setFilteredProducts(searchFiltered)
+  }
+
   return (
     <>
       <div>
-        <SearchInput />
+        <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
           <span>Todos los filtros:</span>
           <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
