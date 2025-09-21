@@ -5,6 +5,7 @@ import { Categories, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
+import { Button } from "@heroui/react"
 
 interface HomeProps {
   products: Product[]
@@ -46,12 +47,18 @@ export const Home = ({ products }: HomeProps) => {
     setFilteredProducts(searchFiltered)
   }
 
+  const clearFilters = () => {
+    setSelectedCategory(null)
+    setFilteredProducts(allProducts.current)
+  }
+
   return (
     <>
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
           <span>Todos los filtros:</span>
+          <Button onClick={clearFilters}>Limpiar filtros</Button>
           <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
         </div>
       </div>
