@@ -2,15 +2,18 @@
 import { Image } from "@heroui/react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
+import { useTheme } from "next-themes"
 
 interface HeaderProps {
   themeFetched: string
 }
 
 export const Header = ({ themeFetched }: HeaderProps) => {
+  const { theme } = useTheme()
+
   return (
     <header className="flex justify-between p-4">
-      { themeFetched === 'light' ? (
+      { (theme === 'light' || themeFetched === 'light') ? (
         <Image
           alt="Tehesa Logo"
           height={61}
