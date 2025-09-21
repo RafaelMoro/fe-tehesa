@@ -1,12 +1,14 @@
 "use client"
 import { Image } from "@heroui/react"
-import { useTheme } from "next-themes";
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 
-export const Header = () => {
-  const { theme } = useTheme();
-  const logoSrc = theme === "light" ? "/tehesa-logo.webp" : "/tehesa-logo-negativo.webp";
+interface HeaderProps {
+  themeFetched: string
+}
+
+export const Header = ({ themeFetched }: HeaderProps) => {
+  const logoSrc = themeFetched === "light" ? "/tehesa-logo.webp" : "/tehesa-logo-negativo.webp";
 
   return (
     <header className="flex justify-between p-4">
