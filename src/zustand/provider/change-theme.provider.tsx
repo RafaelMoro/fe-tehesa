@@ -4,11 +4,11 @@ import { ReactNode, useRef, useContext  } from "react"
 import { createThemeStore, ChangeThemeStoreApi, ChangeThemeStoreContext, type ChangeThemeStore } from "../store/change-theme.store"
 import { useStore } from "zustand"
 
-interface DashboardStoreProviderProps {
+interface ChangeThemeStoreProviderProps {
   children: ReactNode
 }
 
-export const DashboardStoreProvider = ({ children }: DashboardStoreProviderProps) => {
+export const ChangeThemeStoreProvider = ({ children }: ChangeThemeStoreProviderProps) => {
   const storeRef = useRef<ChangeThemeStoreApi | null>(null)
   if (storeRef.current === null) {
     storeRef.current = createThemeStore()
