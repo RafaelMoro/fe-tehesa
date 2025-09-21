@@ -1,3 +1,10 @@
+export type ErrorCatched = {
+  message: string;
+  cause?: {
+    code: string
+  }
+}
+
 export const CATEGORIES_PRODUCTS = [
   'twist_drill_bits',
   'shockwave_impact_adapter',
