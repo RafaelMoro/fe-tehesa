@@ -11,12 +11,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
     query: gql`
       query GetProductsQuery {
         products {
-          available
-          category
-          name
-          image {
-            url
+          brand {
+            name
           }
+          category {
+            name
+          }
+          name
         }
       }
     `,
