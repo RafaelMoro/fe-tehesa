@@ -1,4 +1,4 @@
-import { Categories, CATEGORIES_PRODUCTS, categoriesDict } from "@/shared/types/global.types"
+import { Categories, CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
@@ -19,7 +19,7 @@ export const DropdownCategories = ({ updateSelectedCategory }: DropdownCategorie
       </DropdownTrigger>
       <DropdownMenu aria-label="Dropdown menu categories" onAction={(key) => updateSelectedCategory(key as Categories)}>
         { allCategories.map((category) => (
-          <DropdownItem key={category}>{categoriesDict[category]}</DropdownItem>
+          <DropdownItem key={category}>{category}</DropdownItem>
         )) }
       </DropdownMenu>
     </Dropdown>

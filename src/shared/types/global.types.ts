@@ -7,19 +7,18 @@ export type ErrorCatched = {
   }
 }
 
+// TODO: Check if this can be hardcoded
 export const CATEGORIES_PRODUCTS = [
-  'twist_drill_bits',
-  'shockwave_impact_adapter',
-  'hex_keys'
+  'Extracción y Reparación de fijaciones',
+  'Herramientas de corte y conformado',
+  'Herramientas de diagnóstico de electricidad y electrónica',
+  'Herramientas de impacto o forja',
+  'Perforación y accesorios para taladro',
+  'Roscado y herramientas para roscas',
+  'Tornillería'
 ] as const
 
 export type Categories = typeof CATEGORIES_PRODUCTS[number]
-
-export const categoriesDict: Record<Categories, string> = {
-  'twist_drill_bits': 'Brocas',
-  'shockwave_impact_adapter': 'Broquero',
-  'hex_keys': 'Llaves hexagonales'
-}
 
 export interface Product {
   available: boolean;
