@@ -12,8 +12,8 @@ interface HomeProps {
 }
 
 export const Home = ({ products }: HomeProps) => {
-  const allProducts = useRef<Product[]>(products.filter((prod) => prod.available))
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products.filter((prod) => prod.available))
+  const allProducts = useRef<Product[]>(products)
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
 
   const updateSelectedCategory = (newCategory: CategoriesList) => {

@@ -9,45 +9,44 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isMobile } = useMediaQuery()
-  const categoryLabels: Record<string, string> = {
-    'twist_drill_bits': 'Brocas',
-    'shockwave_impact_adapter': 'Broquero',
-    'hex_keys': 'Llave hexagonal',
-  }
 
   return (
     <Card>
       { isMobile && (
         <>
           <CardHeader className="flex justify-center">
-              <Image
+              {/* <Image
                 alt={product.name}
                 height={200}
                 width={200}
                 radius="sm"
                 src={`http://localhost:1337${product.image.url}`}
-              />
+              /> */}
           </CardHeader>
           <CardBody>
             <div className="flex flex-col">
               <h5 className="text-2xl font-bold">{product.name}</h5>
-              <p className="text-gray-400">{categoryLabels[product.category] ?? product.category}</p>
+              { product?.category?.name && (
+                <p className="text-gray-400">{product.category.name}</p>
+              )}
             </div>
           </CardBody>
         </>
       ) }
       { !isMobile && (
         <CardHeader className="flex gap-3">
-          <Image
+          {/* <Image
             alt={product.name}
             height={200}
             width={200}
             radius="sm"
             src={`http://localhost:1337${product.image.url}`}
-          />
+          /> */}
           <div className="flex flex-col">
             <h5 className="text-2xl font-bold">{product.name}</h5>
-            <p className="text-gray-400">{categoryLabels[product.category] ?? product.category}</p>
+            { product?.category?.name && (
+              <p className="text-gray-400">{product.category.name}</p>
+            )}
           </div>
         </CardHeader>
       )}

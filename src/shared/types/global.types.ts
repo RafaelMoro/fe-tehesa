@@ -30,10 +30,6 @@ export interface Product {
   name: string;
   category: Category;
   brand: Brand;
-  image: {
-    url: string;
-  }
-  available: boolean;
 }
 
 export interface FetchProductsResponse {
