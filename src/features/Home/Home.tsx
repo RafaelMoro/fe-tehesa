@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef } from "react"
 
-import { Categories, Product } from "@/shared/types/global.types"
+import { CategoriesList, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
@@ -14,9 +14,9 @@ interface HomeProps {
 export const Home = ({ products }: HomeProps) => {
   const allProducts = useRef<Product[]>(products.filter((prod) => prod.available))
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products.filter((prod) => prod.available))
-  const [selectedCategory, setSelectedCategory] = useState<Categories | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
 
-  const updateSelectedCategory = (newCategory: Categories) => {
+  const updateSelectedCategory = (newCategory: CategoriesList) => {
     setSelectedCategory(newCategory)
     const newFilteredProducts = allProducts.current.filter((prod) => prod.category === newCategory)
     setFilteredProducts(newFilteredProducts)

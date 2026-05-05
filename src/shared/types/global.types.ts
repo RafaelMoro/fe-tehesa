@@ -18,11 +18,10 @@ export const CATEGORIES_PRODUCTS = [
   'Tornillería'
 ] as const
 
-export type Categories = typeof CATEGORIES_PRODUCTS[number]
+export type CategoriesList = typeof CATEGORIES_PRODUCTS[number]
 
 export interface Product {
-  available: boolean;
-  category: Categories;
+  category: CategoriesList;
   name: string;
   image: {
     url: string;

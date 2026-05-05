@@ -1,9 +1,9 @@
-import { Categories, CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
+import { CategoriesList, CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
 interface DropdownCategoriesProps {
-  updateSelectedCategory: (newCategory: Categories) => void
+  updateSelectedCategory: (newCategory: CategoriesList) => void
 }
 
 export const DropdownCategories = ({ updateSelectedCategory }: DropdownCategoriesProps) => {
@@ -17,7 +17,7 @@ export const DropdownCategories = ({ updateSelectedCategory }: DropdownCategorie
           <RiArrowDownSLine />
         </Button>
       </DropdownTrigger>
-      <DropdownMenu aria-label="Dropdown menu categories" onAction={(key) => updateSelectedCategory(key as Categories)}>
+      <DropdownMenu aria-label="Dropdown menu categories" onAction={(key) => updateSelectedCategory(key as CategoriesList)}>
         { allCategories.map((category) => (
           <DropdownItem key={category}>{category}</DropdownItem>
         )) }
