@@ -18,16 +18,18 @@ export const Home = ({ products }: HomeProps) => {
 
   const updateSelectedCategory = (newCategory: CategoriesList) => {
     setSelectedCategory(newCategory)
-    const newFilteredProducts = allProducts.current.filter((prod) => prod.category === newCategory)
-    setFilteredProducts(newFilteredProducts)
+    // const newFilteredProducts = allProducts.current.filter((prod) => prod.category === newCategory)
+    // TODO: Change this
+    setFilteredProducts(allProducts.current)
   }
 
   const handleSearch = (searchTerm: string) => {
     if (!searchTerm.trim()) {
       // If search is empty, show all products or filtered by category
       if (selectedCategory) {
-        const categoryFiltered = allProducts.current.filter((prod) => prod.category === selectedCategory)
-        setFilteredProducts(categoryFiltered)
+        // const categoryFiltered = allProducts.current.filter((prod) => prod.category === selectedCategory)
+        // TODO: Change this
+        setFilteredProducts(allProducts.current)
       } else {
         setFilteredProducts(allProducts.current)
       }
@@ -41,7 +43,7 @@ export const Home = ({ products }: HomeProps) => {
 
     // If there's also a selected category, apply both filters
     if (selectedCategory) {
-      searchFiltered = searchFiltered.filter((prod) => prod.category === selectedCategory)
+      // searchFiltered = searchFiltered.filter((prod) => prod.category === selectedCategory)
     }
 
     setFilteredProducts(searchFiltered)

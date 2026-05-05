@@ -19,13 +19,21 @@ export const CATEGORIES_PRODUCTS = [
 ] as const
 
 export type CategoriesList = typeof CATEGORIES_PRODUCTS[number]
+export type Category = {
+  name: string
+}
+export type Brand = {
+  name: string
+}
 
 export interface Product {
-  category: CategoriesList;
   name: string;
+  category: Category;
+  brand: Brand;
   image: {
     url: string;
   }
+  available: boolean;
 }
 
 export interface FetchProductsResponse {
