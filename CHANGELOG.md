@@ -1,3 +1,9 @@
+## v0.4.0 (2026-05-05)
+
+### Pull Requests
+[#4](https://github.com/RafaelMoro/fe-tehesa/pull/4) | Show products
+
+
 ## v0.3.0 (2025-09-14)
 
 ### Pull Requests
