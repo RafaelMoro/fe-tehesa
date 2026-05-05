@@ -1,30 +1,23 @@
-import createApolloClient from "./apollo-client";
-import { gql } from "@apollo/client";
+import { Home } from "@/features/Home/Home";
+import { Header } from "@/shared/ui/organisms/Header";
+import { fetchProducts, getThemePreference } from "@/shared/lib/global.lib";
+import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider";
 
-import { TestComp } from "@/components/TestComp";
-import type { FetchProductsResponse } from "@/shared/types/global.types";
+export default async function MainPage() {
+  const [products, themeFetched] = await Promise.all([
+    fetchProducts(),
+    getThemePreference()
+  ])
 
-export default async function Home() {
-  const client = createApolloClient();
-  const res = await client.query<FetchProductsResponse>({
-    query: gql`
-      query ExampleQuery {
-        products {
-          available
-          category
-          name
-          image {
-            url
-          }
-        }
-      }
-    `,
-  });
-  const products = res?.data?.products;
-  console.log('products', products);
   return (
-    <div>
-      <TestComp />
-    </div>
+    <ChangeThemeStoreProvider>
+      <div>
+        <Header themeFetched={themeFetched} />
+        <main className="p-10 flex flex-col gap-10">
+          <h1 className="text-4xl font-bold text-center mb-5">Catalogo de productos</h1>
+          <Home products={products} />
+        </main>
+      </div>
+    </ChangeThemeStoreProvider>
   );
 }
