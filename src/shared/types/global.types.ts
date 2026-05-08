@@ -26,12 +26,33 @@ export type Brand = {
   name: string
 }
 
-export interface Product {
+export type Product = {
   name: string;
   category: Category;
   brand: Brand;
+  documentId: string;
+  minPrice?: number;
+  maxPrice?: number;
+  variantCount?: number;
+  product_variants?: ProductVariant[];
 }
 
 export interface FetchProductsResponse {
   products: Product[];
+}
+export interface FetchSingleProductResponse {
+  product: Product;
+}
+
+export type ProductVariant = {
+  diameter: string;
+  pricing: {
+    price: number;
+  }
+}
+
+export type ProductVariantUI = {
+  diameter: string;
+  price: number;
+  priceFormatted: string;
 }
