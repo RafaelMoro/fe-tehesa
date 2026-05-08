@@ -1,7 +1,10 @@
 "use client"
+import { useMemo } from "react"
+import { Card, CardBody, CardHeader, Image } from "@heroui/react"
+
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery"
 import { Product } from "@/shared/types/global.types"
-import { Card, CardBody, CardHeader, Image } from "@heroui/react"
+import { formatNumberToCurrency } from "@/shared/utils/global.utils"
 
 interface ProductCardProps {
   product: Product
@@ -9,6 +12,17 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { isMobile } = useMediaQuery()
+  
+  const minPriceString = useMemo(() => {
+    if (!product.minPrice) return null
+    return formatNumberToCurrency(product.minPrice)
+  }, [product.minPrice])
+
+  const maxPriceString = useMemo(() => {
+    if (!product.maxPrice) return null
+    return formatNumberToCurrency(product.maxPrice)
+  }, [product.maxPrice])
+
 
   return (
     <Card>
@@ -29,6 +43,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               { product?.category?.name && (
                 <p className="text-gray-400">{product.category.name}</p>
               )}
+              { (minPriceString && maxPriceString) && (
+                <p className="text-white text-sm">Desde {minPriceString} hasta {maxPriceString}</p>
+              )}
+              { product?.variantCount && (
+                <p className="text-white text-sm">{product.variantCount} variantes disponibles</p>
+              )}
             </div>
           </CardBody>
         </>
@@ -46,6 +66,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <h5 className="text-2xl font-bold">{product.name}</h5>
             { product?.category?.name && (
               <p className="text-gray-400">{product.category.name}</p>
+            )}
+            { (minPriceString && maxPriceString) && (
+              <p className="text-white text-sm">Desde {minPriceString} hasta {maxPriceString}</p>
+            )}
+            { product?.variantCount && (
+              <p className="text-white text-sm">{product.variantCount} variantes disponibles</p>
             )}
           </div>
         </CardHeader>
