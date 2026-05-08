@@ -18,6 +18,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
             name
           }
           name
+          maxPrice
+          minPrice
+          variantCount
         }
       }
     `,
