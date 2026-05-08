@@ -26,7 +26,7 @@ export type Brand = {
   name: string
 }
 
-export interface Product {
+export type Product = {
   name: string;
   category: Category;
   brand: Brand;
