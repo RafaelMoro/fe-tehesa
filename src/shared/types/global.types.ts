@@ -50,3 +50,9 @@ export type ProductVariant = {
     price: number;
   }
 }
+
+export type ProductVariantUI = {
+  diameter: string;
+  price: number;
+  priceFormatted: string;
+}
