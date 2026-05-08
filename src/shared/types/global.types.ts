@@ -34,6 +34,7 @@ export type Product = {
   minPrice?: number;
   maxPrice?: number;
   variantCount?: number;
+  product_variants?: ProductVariant[];
 }
 
 export interface FetchProductsResponse {
@@ -41,4 +42,11 @@ export interface FetchProductsResponse {
 }
 export interface FetchSingleProductResponse {
   product: Product;
+}
+
+export type ProductVariant = {
+  diameter: string;
+  pricing: {
+    price: number;
+  }
 }

@@ -2,9 +2,9 @@
 import { cookies } from 'next/headers'
 import createApolloClient from "@/app/apollo-client"
 
-import type { FetchProductsResponse, FetchSingleProductResponse, Product } from '../types/global.types'
+import type { FetchProductsResponse, FetchSingleProductResponse, Product, ProductVariant } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
-import { GET_PRODUCT, GET_PRODUCTS } from '../queries/global.queries'
+import { GET_PRODUCT_VARIANTS, GET_PRODUCTS } from '../queries/global.queries'
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const client = createApolloClient();
@@ -14,14 +14,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
   return res?.data?.products ?? [];
 }
 
-export const fetchProduct = async ({ documentId }: { documentId: string }): Promise<Product | null> => {
+export const fetchProductVariants = async ({ documentId }: { documentId: string }): Promise<ProductVariant[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchSingleProductResponse>({
-    query: GET_PRODUCT,
+    query: GET_PRODUCT_VARIANTS,
     variables: { documentId },
   });
-  console.log('res', res);
-  return res?.data?.product ?? null;
+  return res?.data?.product?.product_variants ?? [];
 }
 
 export const getThemePreference = async () => {

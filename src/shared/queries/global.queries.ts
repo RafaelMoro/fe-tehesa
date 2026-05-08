@@ -18,7 +18,7 @@ export const GET_PRODUCTS = gql`
   }
 `
 
-export const GET_PRODUCT = gql`
+export const GET_PRODUCT_VARIANTS = gql`
   query Product($documentId: ID!) {
     product(documentId: $documentId) {
       product_variants {

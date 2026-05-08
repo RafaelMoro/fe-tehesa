@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter, Button } from "@heroui/react"
+
 import { Product } from "@/shared/types/global.types";
-import { fetchProduct } from "@/shared/lib/global.lib";
+import { fetchProductVariants } from "@/shared/lib/global.lib";
 
 interface ProductVariantsDrawerProps {
   product: Product
@@ -12,7 +13,7 @@ interface ProductVariantsDrawerProps {
 export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: ProductVariantsDrawerProps) => {
   useEffect(() => {
     const loadProductData = async () => {
-      const data = await fetchProduct({ documentId: product.documentId });
+      const data = await fetchProductVariants({ documentId: product.documentId });
       console.log('data', data);
     };
     
