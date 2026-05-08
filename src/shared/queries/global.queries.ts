@@ -21,13 +21,6 @@ export const GET_PRODUCTS = gql`
 export const GET_PRODUCT = gql`
   query Product($documentId: ID!) {
     product(documentId: $documentId) {
-      name
-      category {
-        name
-      }
-      brand {
-        name
-      }
       product_variants {
         diameter
         pricing {
