@@ -60,7 +60,7 @@ export const Home = ({ products }: HomeProps) => {
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
           <span>Todos los filtros:</span>
-          <Button onClick={clearFilters}>Limpiar filtros</Button>
+          <Button onPress={clearFilters}>Limpiar filtros</Button>
           <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
         </div>
       </div>
