@@ -1,11 +1,11 @@
 "use client"
 import { useState, useRef } from "react"
+import { Button } from "@heroui/react"
 
 import { CategoriesList, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
-import { Button } from "@heroui/react"
 
 interface HomeProps {
   products: Product[]
@@ -15,6 +15,7 @@ export const Home = ({ products }: HomeProps) => {
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
+  const [checkProductDetails, setCheckProductDetails] = useState<Product | null>(null)
 
   const updateSelectedCategory = (newCategory: CategoriesList) => {
     setSelectedCategory(newCategory)
@@ -54,6 +55,10 @@ export const Home = ({ products }: HomeProps) => {
     setFilteredProducts(allProducts.current)
   }
 
+  const handleProductClick = (product: Product) => {
+    setCheckProductDetails(product)
+  }
+
   return (
     <>
       <div>
@@ -64,7 +69,7 @@ export const Home = ({ products }: HomeProps) => {
           <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
         </div>
       </div>
-      <ProductListing products={filteredProducts} />
+      <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
     </>
   )
 }
