@@ -30,6 +30,7 @@ export type Product = {
   name: string;
   category: Category;
   brand: Brand;
+  documentId: string;
   minPrice?: number;
   maxPrice?: number;
   variantCount?: number;
