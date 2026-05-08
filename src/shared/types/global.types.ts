@@ -26,10 +26,13 @@ export type Brand = {
   name: string
 }
 
-export interface Product {
+export type Product = {
   name: string;
   category: Category;
   brand: Brand;
+  minPrice?: number;
+  maxPrice?: number;
+  variantCount?: number;
 }
 
 export interface FetchProductsResponse {
