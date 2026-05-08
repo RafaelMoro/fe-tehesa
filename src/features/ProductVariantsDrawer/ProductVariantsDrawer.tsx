@@ -13,6 +13,7 @@ interface ProductVariantsDrawerProps {
 
 export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: ProductVariantsDrawerProps) => {
   const [variants, setVariants] = useState<ProductVariantUI[]>([]);
+  const resetVariants = () => setVariants([]);
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -29,6 +30,11 @@ export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: Product
       loadProductData();
     }
   }, [isOpen, product.documentId]);
+
+  const handleClose = (onClose: () => void) => {
+    resetVariants();
+    onClose();
+  }
 
   return (
     <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -48,10 +54,10 @@ export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: Product
               )}
             </DrawerBody>
             <DrawerFooter>
-              <Button color="danger" variant="light" onPress={onClose}>
+              <Button color="danger" variant="light" onPress={() => handleClose(onClose)}>
                 Cancelar
               </Button>
-              <Button color="primary" onPress={onClose}>
+              <Button color="primary" onPress={() => handleClose(onClose)}>
                 Finalizar
               </Button>
             </DrawerFooter>
