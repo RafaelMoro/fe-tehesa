@@ -30,6 +30,9 @@ export interface Product {
   name: string;
   category: Category;
   brand: Brand;
+  minPrice: number;
+  maxPrice: number;
+  variantCount: number;
 }
 
 export interface FetchProductsResponse {
