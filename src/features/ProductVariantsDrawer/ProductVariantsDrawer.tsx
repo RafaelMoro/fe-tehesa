@@ -21,7 +21,7 @@ export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: Product
         diameter: variant.diameter,
         price: variant.pricing.price,
         priceFormatted: formatNumberToCurrency(variant.pricing.price),
-      }));
+      })).sort((a, b) => a.price - b.price);
       setVariants(formattedData);
     };
     
