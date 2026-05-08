@@ -4,7 +4,7 @@ import createApolloClient from "@/app/apollo-client"
 
 import type { FetchProductsResponse, FetchSingleProductResponse, Product } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
-import { GET_PRODUCTS } from '../queries/global.queries'
+import { GET_PRODUCT, GET_PRODUCTS } from '../queries/global.queries'
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const client = createApolloClient();
@@ -17,9 +17,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
 export const fetchProduct = async ({ documentId }: { documentId: string }): Promise<Product | null> => {
   const client = createApolloClient();
   const res = await client.query<FetchSingleProductResponse>({
-    query: GET_PRODUCTS,
+    query: GET_PRODUCT,
     variables: { documentId },
   });
+  console.log('res', res);
   return res?.data?.product ?? null;
 }
 
