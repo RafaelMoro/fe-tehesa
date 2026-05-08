@@ -5,7 +5,7 @@ import { Card, CardBody, CardHeader, Image, Chip } from "@heroui/react"
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery"
 import { Product } from "@/shared/types/global.types"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
-import { RiBookmarkLine, RiPriceTag3Line } from "@remixicon/react"
+import { RiBookmarkLine, RiPriceTag3Line, RiStackLine } from "@remixicon/react"
 
 interface ProductCardProps {
   product: Product
@@ -78,7 +78,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <h5 className="text-2xl font-bold">{product.name}</h5>
             </div>
             { product?.variantCount && (
-               <Chip size="sm">{product.variantCount} variantes disponibles</Chip>
+               <Chip size="sm">
+                <div className="inline-flex gap-2">
+                  <RiStackLine size={18} />
+                  {product.variantCount} variantes disponibles
+                </div>
+              </Chip>
             )}
             { (minPriceString && maxPriceString) && (
               <div className="flex gap-1 text-gray-400">
