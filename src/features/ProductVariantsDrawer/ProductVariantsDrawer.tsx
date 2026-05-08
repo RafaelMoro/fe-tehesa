@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter, Button, CheckboxGroup, Checkbox } from "@heroui/react"
+import {
+  Button,
+  CheckboxGroup,
+  Checkbox,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell
+} from "@heroui/react"
 
 import { Product, ProductVariantUI } from "@/shared/types/global.types";
 import { fetchProductVariants } from "@/shared/lib/global.lib";
@@ -44,13 +59,20 @@ export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: Product
             <DrawerHeader className="flex flex-col gap-1">{product.name}</DrawerHeader>
             <DrawerBody>
               { variants.length > 0 && (
-                <CheckboxGroup label="Seleccione una o varias variantes">
-                  {variants.map((variant, index) => (
-                    <Checkbox key={index} value={variant.diameter}>
-                      {variant.diameter} - {variant.priceFormatted}
-                    </Checkbox>
-                  ))}
-                </CheckboxGroup>
+                <Table color="primary" aria-label={`Variantes del producto ${product.name}`} selectionMode="multiple">
+                  <TableHeader>
+                    <TableColumn>Variante</TableColumn>
+                    <TableColumn>Precio</TableColumn>
+                  </TableHeader>
+                  <TableBody>
+                    {variants.map((variant, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{variant.diameter}</TableCell>
+                        <TableCell>{variant.priceFormatted}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </DrawerBody>
             <DrawerFooter>
