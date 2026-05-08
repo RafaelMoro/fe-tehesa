@@ -1,30 +1,15 @@
 "use server"
 import { cookies } from 'next/headers'
-import { gql } from "@apollo/client"
 import createApolloClient from "@/app/apollo-client"
+
 import type { FetchProductsResponse, Product } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
+import { GET_PRODUCTS } from '../queries/global.queries'
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
-    query: gql`
-      query GetProductsQuery {
-        products {
-          brand {
-            name
-          }
-          category {
-            name
-          }
-          name
-          maxPrice
-          minPrice
-          variantCount
-          documentId
-        }
-      }
-    `,
+    query: GET_PRODUCTS,
   });
   return res?.data?.products ?? [];
 }
