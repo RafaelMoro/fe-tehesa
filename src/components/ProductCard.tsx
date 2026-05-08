@@ -67,24 +67,24 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             radius="sm"
             src={`http://localhost:1337${product.image.url}`}
           /> */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
               <div className="inline-flex gap-1 text-gray-400">
-                <RiBookmarkLine />
+                <RiBookmarkLine size={18} />
                 <span className="text-sm">
                   {product.category?.name} {brandName && `| ${brandName}`}
                 </span>
               </div>
               <h5 className="text-2xl font-bold">{product.name}</h5>
             </div>
+            { product?.variantCount && (
+               <Chip size="sm">{product.variantCount} variantes disponibles</Chip>
+            )}
             { (minPriceString && maxPriceString) && (
-              <div className="flex gap-1 text-gray-400 mb-5">
-                <RiPriceTag3Line />
+              <div className="flex gap-1 text-gray-400">
+                <RiPriceTag3Line size={22} />
                 <p>Desde <span className="font-bold text-xl text-gray-950 dark:text-gray-100">{minPriceString}</span> hasta {maxPriceString}</p>
               </div>
-            )}
-            { product?.variantCount && (
-               <Chip color="primary">{product.variantCount} variantes disponibles</Chip>
             )}
           </div>
         </CardHeader>
