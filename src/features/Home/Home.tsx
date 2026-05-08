@@ -1,11 +1,12 @@
 "use client"
 import { useState, useRef } from "react"
+import { Button, useDisclosure } from "@heroui/react"
 
 import { CategoriesList, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
-import { Button } from "@heroui/react"
+import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 
 interface HomeProps {
   products: Product[]
@@ -15,6 +16,10 @@ export const Home = ({ products }: HomeProps) => {
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
+  // State to open the drawer and get variants
+  const [productDetails, setProductDetails] = useState<Product | null>(null)
+
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
   const updateSelectedCategory = (newCategory: CategoriesList) => {
     setSelectedCategory(newCategory)
@@ -54,17 +59,25 @@ export const Home = ({ products }: HomeProps) => {
     setFilteredProducts(allProducts.current)
   }
 
+  const handleProductClick = (product: Product) => {
+    setProductDetails(product)
+    onOpen()
+  }
+
   return (
     <>
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
           <span>Todos los filtros:</span>
-          <Button onClick={clearFilters}>Limpiar filtros</Button>
+          <Button onPress={clearFilters}>Limpiar filtros</Button>
           <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
         </div>
       </div>
-      <ProductListing products={filteredProducts} />
+      <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
+      { productDetails && (
+        <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />
+      )}
     </>
   )
 }

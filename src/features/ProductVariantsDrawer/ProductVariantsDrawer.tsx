@@ -1,0 +1,89 @@
+import { useEffect, useState } from "react";
+import {
+  Button,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell
+} from "@heroui/react"
+
+import { Product, ProductVariantUI } from "@/shared/types/global.types";
+import { fetchProductVariants } from "@/shared/lib/global.lib";
+import { formatNumberToCurrency } from "@/shared/utils/global.utils";
+
+interface ProductVariantsDrawerProps {
+  product: Product
+  isOpen: boolean
+  onOpenChange: () => void
+}
+
+export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: ProductVariantsDrawerProps) => {
+  const [variants, setVariants] = useState<ProductVariantUI[]>([]);
+  const resetVariants = () => setVariants([]);
+
+  useEffect(() => {
+    const loadProductData = async () => {
+      const data = await fetchProductVariants({ documentId: product.documentId });
+      const formattedData = data.map(variant => ({
+        diameter: variant.diameter,
+        price: variant.pricing.price,
+        priceFormatted: formatNumberToCurrency(variant.pricing.price),
+      })).sort((a, b) => a.price - b.price);
+      setVariants(formattedData);
+    };
+    
+    if (isOpen) {
+      loadProductData();
+    }
+  }, [isOpen, product.documentId]);
+
+  const handleClose = (onClose: () => void) => {
+    resetVariants();
+    onClose();
+  }
+
+  return (
+    <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        {(onClose) => (
+          <>
+            <DrawerHeader className="flex flex-col gap-1">{product.name}</DrawerHeader>
+            <DrawerBody>
+              { variants.length > 0 && (
+                <Table color="primary" aria-label={`Variantes del producto ${product.name}`} selectionMode="multiple">
+                  <TableHeader>
+                    <TableColumn>Variante</TableColumn>
+                    <TableColumn>Precio</TableColumn>
+                  </TableHeader>
+                  <TableBody>
+                    {variants.map((variant, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{variant.diameter}</TableCell>
+                        <TableCell>{variant.priceFormatted}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </DrawerBody>
+            <DrawerFooter>
+              <Button color="danger" variant="light" onPress={() => handleClose(onClose)}>
+                Cancelar
+              </Button>
+              <Button color="primary" onPress={() => handleClose(onClose)}>
+                Finalizar
+              </Button>
+            </DrawerFooter>
+          </>
+        )}
+      </DrawerContent>
+    </Drawer>
+  )
+}

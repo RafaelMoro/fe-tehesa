@@ -1,18 +1,19 @@
 "use client"
 import { useMemo } from "react"
-import { Card, CardBody, CardHeader, Image, Chip } from "@heroui/react"
+import { Card, CardBody, CardFooter, CardHeader, Image, Chip, Button } from "@heroui/react"
+import { RiBookmarkLine, RiPriceTag3Line, RiStackLine } from "@remixicon/react"
 import clsx from "clsx"
 
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery"
 import { Product } from "@/shared/types/global.types"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
-import { RiBookmarkLine, RiPriceTag3Line, RiStackLine } from "@remixicon/react"
 
 interface ProductCardProps {
-  product: Product
+  product: Product;
+  handleProductClick: (product: Product) => void;
 }
 
-export const ProductCard = ({ product }: ProductCardProps) => {
+export const ProductCard = ({ product, handleProductClick }: ProductCardProps) => {
   const { isMobile } = useMediaQuery()
   
   const brandName = product?.brand?.name ?? null
@@ -82,6 +83,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
       </CardBody>
+      <CardFooter>
+        <Button color="primary" onPress={() => handleProductClick(product)}>
+          Ver detalles
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

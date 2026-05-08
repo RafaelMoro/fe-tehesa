@@ -1,31 +1,26 @@
 "use server"
 import { cookies } from 'next/headers'
-import { gql } from "@apollo/client"
 import createApolloClient from "@/app/apollo-client"
-import type { FetchProductsResponse, Product } from '../types/global.types'
+
+import type { FetchProductsResponse, FetchSingleProductResponse, Product, ProductVariant } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
+import { GET_PRODUCT_VARIANTS, GET_PRODUCTS } from '../queries/global.queries'
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
-    query: gql`
-      query GetProductsQuery {
-        products {
-          brand {
-            name
-          }
-          category {
-            name
-          }
-          name
-          maxPrice
-          minPrice
-          variantCount
-        }
-      }
-    `,
+    query: GET_PRODUCTS,
   });
   return res?.data?.products ?? [];
+}
+
+export const fetchProductVariants = async ({ documentId }: { documentId: string }): Promise<ProductVariant[]> => {
+  const client = createApolloClient();
+  const res = await client.query<FetchSingleProductResponse>({
+    query: GET_PRODUCT_VARIANTS,
+    variables: { documentId },
+  });
+  return res?.data?.product?.product_variants ?? [];
 }
 
 export const getThemePreference = async () => {
