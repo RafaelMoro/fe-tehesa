@@ -2,7 +2,7 @@
 import { cookies } from 'next/headers'
 import createApolloClient from "@/app/apollo-client"
 
-import type { FetchProductsResponse, Product } from '../types/global.types'
+import type { FetchProductsResponse, FetchSingleProductResponse, Product } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
 import { GET_PRODUCTS } from '../queries/global.queries'
 
@@ -12,6 +12,15 @@ export const fetchProducts = async (): Promise<Product[]> => {
     query: GET_PRODUCTS,
   });
   return res?.data?.products ?? [];
+}
+
+export const fetchProduct = async ({ documentId }: { documentId: string }): Promise<Product | null> => {
+  const client = createApolloClient();
+  const res = await client.query<FetchSingleProductResponse>({
+    query: GET_PRODUCTS,
+    variables: { documentId },
+  });
+  return res?.data?.product ?? null;
 }
 
 export const getThemePreference = async () => {

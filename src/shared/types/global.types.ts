@@ -39,3 +39,6 @@ export type Product = {
 export interface FetchProductsResponse {
   products: Product[];
 }
+export interface FetchSingleProductResponse {
+  product: Product;
+}

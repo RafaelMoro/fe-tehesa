@@ -1,4 +1,4 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter, Button, useDisclosure } from "@heroui/react"
+import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter, Button } from "@heroui/react"
 import { Product } from "@/shared/types/global.types";
 
 interface ProductVariantsDrawerProps {
@@ -8,6 +8,11 @@ interface ProductVariantsDrawerProps {
 }
 
 export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: ProductVariantsDrawerProps) => {
+  // const { data } = useSuspenseQuery(GET_PRODUCT, {
+  //   variables: { documentId: product.documentId },
+  // });
+  // console.log('data', data)
+
   return (
     <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent>
