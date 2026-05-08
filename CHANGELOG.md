@@ -1,3 +1,9 @@
+## v0.5.0 (2026-05-08)
+
+### Pull Requests
+[#6](https://github.com/RafaelMoro/fe-tehesa/pull/6) | Add Price and variant info to Product | Improve card design
+
+
 ## v0.4.0 (2026-05-05)
 
 ### Pull Requests
