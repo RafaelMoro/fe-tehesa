@@ -3,11 +3,11 @@ import { Product } from "@/shared/types/global.types";
 
 interface ProductVariantsDrawerProps {
   product: Product
+  isOpen: boolean
+  onOpenChange: () => void
 }
 
-export const ProductVariantsDrawer = ({ product }: ProductVariantsDrawerProps) => {
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
-
+export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: ProductVariantsDrawerProps) => {
   return (
     <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent>

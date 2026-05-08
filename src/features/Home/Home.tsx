@@ -1,11 +1,12 @@
 "use client"
 import { useState, useRef } from "react"
-import { Button } from "@heroui/react"
+import { Button, useDisclosure } from "@heroui/react"
 
 import { CategoriesList, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
+import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 
 interface HomeProps {
   products: Product[]
@@ -15,7 +16,10 @@ export const Home = ({ products }: HomeProps) => {
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
-  const [checkProductDetails, setCheckProductDetails] = useState<Product | null>(null)
+  // State to open the drawer and get variants
+  const [productDetails, setProductDetails] = useState<Product | null>(null)
+
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
   const updateSelectedCategory = (newCategory: CategoriesList) => {
     setSelectedCategory(newCategory)
@@ -56,7 +60,8 @@ export const Home = ({ products }: HomeProps) => {
   }
 
   const handleProductClick = (product: Product) => {
-    setCheckProductDetails(product)
+    setProductDetails(product)
+    onOpen()
   }
 
   return (
@@ -70,6 +75,9 @@ export const Home = ({ products }: HomeProps) => {
         </div>
       </div>
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
+      { productDetails && (
+        <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />
+      )}
     </>
   )
 }
