@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",
+    "@apollo/client-integration-nextjs": "^0.14.5",
     "@heroui/react": "^2.8.4",
     "@remixicon/react": "^4.6.0",
     "clsx": "^2.1.1",
