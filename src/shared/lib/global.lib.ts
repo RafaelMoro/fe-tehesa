@@ -10,6 +10,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS,
+    variables: {
+      pagination: {
+        page: 1,
+        pageSize: 100
+      }
+    }
   });
   return res?.data?.products ?? [];
 }
