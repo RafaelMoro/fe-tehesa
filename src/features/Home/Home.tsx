@@ -1,6 +1,6 @@
 "use client"
 import { useState, useRef } from "react"
-import { Button, useDisclosure } from "@heroui/react"
+import { Button, Pagination, useDisclosure } from "@heroui/react"
 
 import { CategoriesList, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
@@ -75,6 +75,9 @@ export const Home = ({ products }: HomeProps) => {
         </div>
       </div>
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
+      <div className="w-full flex justify-center">
+        <Pagination initialPage={1} total={5} size="md" />
+      </div>
       { productDetails && (
         <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />
       )}
