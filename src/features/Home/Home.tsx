@@ -1,5 +1,5 @@
 "use client"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button, Pagination, useDisclosure } from "@heroui/react"
 
@@ -30,6 +30,12 @@ export const Home = ({
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
+
+  // Update products when page changes (new products fetched from server)
+  useEffect(() => {
+    allProducts.current = products;
+    setFilteredProducts(products);
+  }, [products]);
 
   // Handle pagination - navigate to new page
   const handlePageChange = (page: number) => {
