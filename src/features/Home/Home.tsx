@@ -8,7 +8,8 @@ import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
-import { fetchProductsByCategory } from "@/shared/lib/global.lib"
+import { DropdownBrands } from "../ProductListing/DropdownBrands"
+import { fetchProductsByCategory, fetchProductsByBrand } from "@/shared/lib/global.lib"
 
 interface HomeProps {
   products: Product[];
@@ -26,6 +27,8 @@ export const Home = ({
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [isLoadingBrand, setIsLoadingBrand] = useState(false)
   // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
@@ -35,8 +38,9 @@ export const Home = ({
   useEffect(() => {
     allProducts.current = products;
     setFilteredProducts(products);
-    // Reset category filter when page changes
+    // Reset category and brand filters when page changes
     setSelectedCategory(null);
+    setSelectedBrand(null);
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -72,6 +76,8 @@ export const Home = ({
         allProducts.current = categoryProducts;
         setFilteredProducts(categoryProducts);
         setSelectedCategory(categoryCustomId);
+        // Reset brand filter when category is selected
+        setSelectedBrand(null);
       }
     } catch (error) {
       console.error('Error fetching products by category:', error);
@@ -80,10 +86,30 @@ export const Home = ({
     }
   }
 
+  const handleBrandSelect = async (brandCustomId: string) => {
+    try {
+      setIsLoadingBrand(true);
+      const brandProducts = await fetchProductsByBrand(brandCustomId);
+      
+      if (brandProducts) {
+        allProducts.current = brandProducts;
+        setFilteredProducts(brandProducts);
+        setSelectedBrand(brandCustomId);
+        // Reset category filter when brand is selected
+        setSelectedCategory(null);
+      }
+    } catch (error) {
+      console.error('Error fetching products by brand:', error);
+    } finally {
+      setIsLoadingBrand(false);
+    }
+  }
+
   const clearFilters = () => {
     setFilteredProducts(products);
     allProducts.current = products;
     setSelectedCategory(null);
+    setSelectedBrand(null);
     // Shows all 50 products from current page
   }
 
@@ -98,18 +124,21 @@ export const Home = ({
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
           <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
-          <Button onPress={clearFilters} isDisabled={isLoadingCategory}>Limpiar filtros</Button>
+          <DropdownBrands selectedBrand={selectedBrand} updateSelectedBrand={handleBrandSelect} />
+          <Button onPress={clearFilters} isDisabled={isLoadingCategory || isLoadingBrand}>Limpiar filtros</Button>
         </div>
       </div>
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
-      <div className="w-full flex justify-center">
-        <Pagination 
-          page={currentPage}
-          total={totalPages}
-          onChange={handlePageChange}
-          size="md" 
-        />
-      </div>
+      {selectedCategory === null && selectedBrand === null && (
+        <div className="w-full flex justify-center">
+          <Pagination 
+            page={currentPage}
+            total={totalPages}
+            onChange={handlePageChange}
+            size="md" 
+          />
+        </div>
+      )}
       { productDetails && (
         <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />
       )}
