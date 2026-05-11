@@ -7,6 +7,8 @@ import { Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
+import { DropdownCategories } from "../ProductListing/DropdownCategories"
+import { fetchProductsByCategory } from "@/shared/lib/global.lib"
 
 interface HomeProps {
   products: Product[];
@@ -22,6 +24,8 @@ export const Home = ({
   const router = useRouter();
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
@@ -31,6 +35,8 @@ export const Home = ({
   useEffect(() => {
     allProducts.current = products;
     setFilteredProducts(products);
+    // Reset category filter when page changes
+    setSelectedCategory(null);
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -57,8 +63,27 @@ export const Home = ({
     // Note: Does NOT reset to page 1
   }
 
+  const handleCategorySelect = async (categoryCustomId: string) => {
+    try {
+      setIsLoadingCategory(true);
+      const categoryProducts = await fetchProductsByCategory(categoryCustomId);
+      
+      if (categoryProducts) {
+        allProducts.current = categoryProducts;
+        setFilteredProducts(categoryProducts);
+        setSelectedCategory(categoryCustomId);
+      }
+    } catch (error) {
+      console.error('Error fetching products by category:', error);
+    } finally {
+      setIsLoadingCategory(false);
+    }
+  }
+
   const clearFilters = () => {
-    setFilteredProducts(allProducts.current);
+    setFilteredProducts(products);
+    allProducts.current = products;
+    setSelectedCategory(null);
     // Shows all 50 products from current page
   }
 
@@ -72,7 +97,8 @@ export const Home = ({
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
-          <Button onPress={clearFilters}>Limpiar filtros</Button>
+          <DropdownCategories updateSelectedCategory={handleCategorySelect} />
+          <Button onPress={clearFilters} isDisabled={isLoadingCategory}>Limpiar filtros</Button>
         </div>
       </div>
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
