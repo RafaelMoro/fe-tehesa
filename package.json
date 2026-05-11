@@ -1,6 +1,6 @@
 {
   "name": "fe-tehesa",
-  "version": "0.9.0",
+  "version": "0.10.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -15,7 +15,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
     "graphql": "^16.11.0",
-    "next": "15.5.3",
+    "next": "15.5.9",
     "next-themes": "^0.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",

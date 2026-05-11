@@ -1,3 +1,15 @@
+## v0.10.1 (2026-05-11)
+
+### Pull Requests
+[#13](https://github.com/RafaelMoro/fe-tehesa/pull/13) | Remove unused Image import
+
+
+## v0.10.0 (2026-05-11)
+
+### Pull Requests
+[#14](https://github.com/RafaelMoro/fe-tehesa/pull/14) | Fix React Server Components CVE vulnerabilities
+
+
 ## v0.9.0 (2026-05-11)
 
 ### Pull Requests

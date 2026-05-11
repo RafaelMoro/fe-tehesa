@@ -1,6 +1,6 @@
 "use client"
 import { useMemo } from "react"
-import { Card, CardBody, CardFooter, CardHeader, Image, Chip, Button } from "@heroui/react"
+import { Card, CardBody, CardFooter, CardHeader, Chip, Button } from "@heroui/react"
 import { RiBookmarkLine, RiPriceTag3Line, RiStackLine } from "@remixicon/react"
 import clsx from "clsx"
 
