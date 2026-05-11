@@ -1,3 +1,9 @@
+## v0.7.0 (2026-05-11)
+
+### Pull Requests
+[#9](https://github.com/RafaelMoro/fe-tehesa/pull/9) | See more products and variants
+
+
 ## v0.6.0 (2026-05-08)
 
 ### Pull Requests
