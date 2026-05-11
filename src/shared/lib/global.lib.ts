@@ -4,7 +4,7 @@ import createApolloClient from "@/app/apollo-client"
 
 import type { FetchProductsResponse, FetchSingleProductResponse, Product, ProductVariant } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
-import { GET_PRODUCT_VARIANTS, GET_PRODUCTS } from '../queries/global.queries'
+import { GET_PRODUCT_VARIANTS, GET_PRODUCTS, GET_PRODUCTS_BY_CATEGORY } from '../queries/global.queries'
 
 export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
   const client = createApolloClient();
@@ -19,6 +19,28 @@ export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
   });
   const products = res?.data?.products ?? [];
   return products;
+}
+
+export const fetchProductsByCategory = async (customId: string) => {
+  try {
+    const client = createApolloClient();
+    const res = await client.query<FetchProductsResponse>({
+      query: GET_PRODUCTS_BY_CATEGORY,
+      variables: {
+        filters: {
+          category: {
+            customId: {
+              contains: customId
+            }
+          }
+        }
+      }
+    });
+    const products = res?.data?.products ?? [];
+    return products;
+  } catch (error) {
+    console.log('error fetching products by category', error)
+  }
 }
 
 export const fetchProductVariants = async ({ documentId }: { documentId: string }): Promise<ProductVariant[]> => {
