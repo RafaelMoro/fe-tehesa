@@ -25,7 +25,13 @@ export const fetchProductVariants = async ({ documentId }: { documentId: string 
   const client = createApolloClient();
   const res = await client.query<FetchSingleProductResponse>({
     query: GET_PRODUCT_VARIANTS,
-    variables: { documentId },
+    variables: { 
+      documentId,
+      pagination: {
+        page: 1,
+        pageSize: 100
+      }
+    },
   });
   return res?.data?.product?.product_variants ?? [];
 }
