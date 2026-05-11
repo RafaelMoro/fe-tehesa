@@ -10,12 +10,15 @@ interface DropdownCategoriesProps {
 
 export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }: DropdownCategoriesProps) => {
   const allCategories = [...CATEGORIES_PRODUCTS]
+  
+  // Find the selected category object to display its name
+  const selectedCategoryObj = allCategories.find((cat) => cat.customId === selectedCategory)
 
   return (
     <Dropdown>
       <DropdownTrigger>
         <Button variant="bordered">
-          {selectedCategory ?? 'Categorias'}
+          {selectedCategoryObj?.name ?? 'Categorias'}
           <RiArrowDownSLine />
         </Button>
       </DropdownTrigger>
