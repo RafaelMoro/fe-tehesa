@@ -60,53 +60,69 @@ The only way to know if there are more pages is to check the response length:
 
 - **Total pages: 5 maximum** (Home.tsx:79)
 - **Estimated total products: ~250 items** (5 pages × 50 items/page)
-- Currently fetching only page 1 (50 items) on initial load
+- **Page size: 50 products** (fixed in API)
+- **Chosen approach: Server-side pagination** with progressive loading
 
 **Impact on Implementation:**
 
-With only 5 pages maximum, the dataset is relatively small:
+With 5 pages maximum, the dataset is small but well-suited for server-side pagination:
 
-- ✅ **Client-side pagination is ideal** - 250 items is easily manageable in browser memory
-- ✅ Can fetch all 5 pages upfront without significant performance impact
-- ✅ Enables instant filtering and pagination without loading states
-- ✅ Better UX - no delays between page changes
-- ⚠️ If dataset grows beyond 10 pages (~500 items), reconsider approach
+- ✅ **Server-side pagination chosen** - Progressive loading, better SEO
+- ✅ Each page load is fast (50 products only)
+- ✅ Scales well if dataset grows beyond 250 items
+- ✅ URL-based navigation improves shareability
+- ✅ Fresh data on each page load
+- ⚠️ Page transitions require network request (loading states needed)
 
-**Recommended Strategy for Current Size:**
+**Implementation Strategy:**
 
-- Fetch all 5 pages (250 products) on initial load
-- Store all products in client state
-- Apply client-side pagination with 10 items per page (25 UI pages total)
-- Apply filters client-side for instant results
+- Fetch 50 products at a time based on URL page parameter
+- Use `products.length` to determine if more pages exist
+- Known total pages: 5 (can show numbered pagination)
+- Progressive loading: users only fetch what they view
+- Filters will be client-side on current page (or reset to page 1)
 
 ## Implementation Approaches
 
-### Option A: Server-Side Pagination
+### Option A: Server-Side Pagination ✅ **CHOSEN**
 
 **Pros:**
 
 - Better SEO - each page is a unique URL
-- Smaller initial bundle
-- Better for large datasets
-- Aligns with Next.js 13+ patterns
+- Smaller initial bundle (50 products vs 250)
+- Better for large datasets (scales if catalog grows)
+- Aligns with Next.js 13+ App Router patterns
+- **Can show numbered pagination** - we know total is 5 pages
+- Fresh data on each page load
+- Progressive loading - users only download what they view
 
 **Cons:**
 
-- Full page refresh on page change
-- Loses filter state unless passed in URL
-- More complex URL state management
-- **API limitation: Cannot show numbered pages or total count**
-- Must use "Next/Previous" navigation only
+- Page transitions require server fetch (~200-500ms)
+- Loading states needed for transitions
+- Filter state lost on pagination unless stored in URL
+- More complex filter + pagination interaction
+- Cannot filter across all 250 products without fetching all
 
 **Changes Required:**
 
-1. Convert page.tsx to accept searchParams for page number
-2. Pass page number to fetchProducts
-3. Detect last page by checking response length < 50
-4. Update Home to use URL-based "Next/Previous" navigation
-5. Cannot show "Page X of Y" format
+1. Update fetchProducts to accept page parameter
+2. Update page.tsx to accept searchParams for page number
+3. Calculate hasNextPage from `products.length === 50 && page < 5`
+4. Pass pagination props to Home component
+5. Implement router.push() for page changes in Home
+6. Add loading states with useTransition
 
-### Option B: Client-Side Pagination (Recommended)
+**Why Chosen:**
+
+- Better scalability if product catalog grows
+- SEO benefits for product discovery
+- Lower memory footprint
+- Known total pages allows numbered pagination UI
+
+---
+
+### Option B: Client-Side Pagination (Not Chosen)
 
 **Pros:**
 
@@ -115,21 +131,26 @@ With only 5 pages maximum, the dataset is relatively small:
 - Current Home component is already client-side
 - **Can show accurate numbered pagination for loaded data**
 - Works well with current 50-item response
+- Instant filtering and pagination
 
 **Cons:**
 
-- Limited to data fetched from server (initially 50 items)
-- Not ideal for datasets > 200 items
-- Requires full page refresh to load more data
-- Not ideal for very large datasets
-- SEO implications if not properly handled
+- Would need to fetch all 250 products upfront (5 API calls)
+- Higher initial load time
+- More memory usage (250 products in browser)
+- Not ideal if dataset grows significantly
+- Stale data until page refresh
 
-**Changes Required:**
+**Why Not Chosen:**
 
-1. Add page state to Home component
-2. Implement pagination handler
-3. Calculate pages from filteredProducts.length
-4. Display smaller chunks (e.g., 10 items per page) from the 50 fetched items
+- User requirements specify progressive loading
+- Focus on server-side approach
+- Better long-term scalability
+
+---
+
+### Option C: Hybrid Approach (Future Consideration)
+
 5. Reset to page 1 when filters change
 
 ### Option C: Hybrid Approach
@@ -182,23 +203,34 @@ This means:
 
    ```typescript
    // From:
-   fetchProducts(): Promise<Product[]>
-   // To:
-   fetchProducts(page?: number): Promise<Product[]>
+   export const fetchProducts = async (): Promise<Product[]>
 
-   // page defaults to 1, pageSize is fixed at 50
-   // Returns fewer than 50 items if it's the last page
+   // To:
+   export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
+     const client = createApolloClient();
+     const res = await client.query<FetchProductsResponse>({
+       query: GET_PRODUCTS,
+       variables: {
+         pagination: {
+           page,
+           pageSize: 50
+         }
+       }
+     });
+     return res?.data?.products ?? [];
+   };
    ```
 
-2. **global.types.ts** - No changes needed
+2. **global.types.ts** - Add pagination props for Home component
 
    ```typescript
-   // FetchProductsResponse already correct - only returns products array
-   export interface FetchProductsResponse {
-     products: Product[];
+   // Add new type for pagination props
+   export interface PaginationProps {
+     currentPage: number;
+     hasNextPage: boolean;
+     hasPrevPage: boolean;
+     totalPages: number; // We know it's 5 max
    }
-
-   // No PaginationMeta needed since API doesn't return it
    ```
 
 3. **global.queries.ts** - No changes needed
@@ -212,18 +244,84 @@ This means:
    }
    ```
 
-4. **Home.tsx** - Add pagination logic
-   - useState for current page
-   - useState to track if more pages exist (hasNextPage)
-   - onChange handler for Pagination component
-   - Logic to reset page on filter changes
-   - Disable "next" if last page returned < 50 items
-   - Cannot show total pages (unknown until all fetched)
+4. **page.tsx** - Accept searchParams and fetch based on page
 
-5. **page.tsx** - Consider fetching strategy
-   - Option A: Fetch only page 1, let Home handle subsequent pages client-side
-   - Option B: Fetch multiple pages server-side, pass indicator of more pages
-   - Need to decide on server vs client pagination approach
+   ```typescript
+   export default async function MainPage({
+     searchParams,
+   }: {
+     searchParams: { page?: string }
+   }) {
+     const page = parseInt(searchParams.page || '1', 10);
+     const [products, themeFetched] = await Promise.all([
+       fetchProducts(page),
+       getThemePreference()
+     ]);
+
+     // Determine pagination state from products.length
+     const hasNextPage = products.length === 50;
+     const hasPrevPage = page > 1;
+     const totalPages = 5; // We know max is 5
+
+     return (
+       <ChangeThemeStoreProvider>
+         <div>
+           <Header themeFetched={themeFetched} />
+           <main className="p-10 flex flex-col gap-10">
+             <h1 className="text-4xl font-bold text-center mb-5">Catalogo de productos</h1>
+             <Home
+               products={products}
+               currentPage={page}
+               hasNextPage={hasNextPage}
+               hasPrevPage={hasPrevPage}
+               totalPages={totalPages}
+             />
+           </main>
+         </div>
+       </ChangeThemeStoreProvider>
+     );
+   }
+   ```
+
+5. **Home.tsx** - Receive pagination props and implement navigation
+
+   ```typescript
+   import { useRouter } from 'next/navigation';
+
+   interface HomeProps {
+     products: Product[];
+     currentPage: number;
+     hasNextPage: boolean;
+     hasPrevPage: boolean;
+     totalPages: number;
+   }
+
+   export const Home = ({
+     products,
+     currentPage,
+     hasNextPage,
+     hasPrevPage,
+     totalPages
+   }: HomeProps) => {
+     const router = useRouter();
+
+     const handlePageChange = (page: number) => {
+       router.push(`/?page=${page}`);
+     };
+
+     // ... rest of component
+
+     return (
+       // ...
+       <Pagination
+         page={currentPage}
+         total={totalPages}
+         onChange={handlePageChange}
+         size="md"
+       />
+     )
+   }
+   ```
 
 ### Optional
 
@@ -234,82 +332,97 @@ This means:
 
 ## Edge Cases & Considerations
 
-1. **Empty Results**: What happens when filter returns 0 results?
-2. **Page Out of Bounds**: Not applicable for client-side pagination (calculated from filtered results)
-3. **Filter During Pagination**: User is on page 3, applies filter - should reset to page 1
-4. **Concurrent Filters**: Search + Category filter + Pagination interaction
-5. **Performance**: With 5 pages max (~250 items), displaying 10 per page is optimal for UX
-6. **Mobile Experience**: Pagination controls on small screens
-7. **Data Freshness**: Server fetches data on initial load, changes require refresh
-8. **Initial Load Time**: Fetching all 5 pages upfront vs. lazy loading
-9. **Dataset Growth**: Monitor if products exceed 5 pages - will need to adjust strategy
+1. **Empty Results**: Handle when API returns 0 products (show appropriate message)
+2. **Page Out of Bounds**: User navigates to page 6+ (should redirect to last valid page or show error)
+3. **Invalid Page Parameter**: Handle non-numeric or negative page values in URL
+4. **Filter During Pagination**: User is on page 3, applies filter - should reset to page 1
+5. **Concurrent Filters**: Search + Category filter + Pagination interaction - pass in URL
+6. **Performance**: Each page change triggers server fetch (add loading states)
+7. **Mobile Experience**: Pagination controls on small screens
+8. **Data Freshness**: Each page fetch gets latest data from server
+9. **Dataset Growth**: Monitor if products exceed 5 pages - implementation already handles it
+10. **Back/Forward Navigation**: Browser history should work correctly with URL-based pagination
+11. **Direct URL Access**: User can directly access `/?page=3` (must validate page exists)
+12. **Loading States**: Show skeleton/spinner during page transitions
+13. **Filter State Loss**: Filters may be lost on pagination unless stored in URL
 
 ## Recommended Approach
 
-**Client-Side Pagination (Best for current requirements)**
+**Server-Side Pagination (Progressive Loading)**
 
 Given the known dataset size of **5 pages maximum (~250 products)**:
 
-1. **Fetch all products upfront** - Make 5 API calls on initial load to get all pages
-2. Store all ~250 products in client state
-3. Paginate client-side with smaller page size (10 items per page = 25 UI pages)
-4. Apply filters client-side on the complete dataset
-5. Use HeroUI Pagination component with calculated total pages
+**Strategy:**
 
-**Alternative (Simpler Initial Implementation):**
+1. Fetch 50 products at a time from the server based on page parameter
+2. Use `products.length` to determine pagination state
+3. Server component (page.tsx) fetches products for requested page
+4. Pass products and page info to Home.tsx as props
+5. Use URL-based pagination (searchParams)
+6. Fetch additional pages as user navigates
 
-1. Fetch only page 1 initially (50 items - current implementation)
-2. Paginate client-side with 10 items per page (5 UI pages from 50 items)
-3. Add "Load All Products" button or auto-fetch remaining pages on scroll
-4. Gradually build up to full 250-item dataset
+**Key Implementation Points:**
+
+- ✅ **Initial load**: Fetch page 1 (50 products)
+- ✅ **Determine more pages**: If `products.length === 50`, more pages likely exist
+- ✅ **Last page detection**: If `products.length < 50`, it's the last page
+- ✅ **Total pages calculation**: Pass `hasNextPage` or calculate from products.length
+- ✅ **Navigation**: Use searchParams for page number in URL
 
 **Rationale:**
 
-- **Dataset size is small**: 250 items (~250KB-500KB) is negligible for modern browsers
-- Current Home component is already client-side
-- Simpler implementation - no API changes needed
-- **Best UX**: Instant pagination/filtering with no loading states
-- API limitation (no total count) makes numbered pagination difficult server-side
-- Can show accurate page numbers from loaded data
-- **Perfect fit for client-side approach** - not too large, not too small
+- **Better SEO**: Each page has unique URL for indexing
+- **Reduced initial bundle**: Only fetch 50 products at a time
+- **Scalable**: Works well if dataset grows beyond 250 items
+- **Server-side filtering**: Can add API filters later without refactoring
+- **Progressive loading**: Users only download what they need
+- **Aligns with Next.js 13+ patterns**: Server Components with searchParams
 
-**Performance:**
+**Trade-offs:**
 
-- 250 products with images: ~500KB total
-- Load time: <1 second on average connection
-- Memory usage: negligible on modern devices
-- Filtering/pagination: instant (no network calls)
+- ⚠️ Page transitions require server fetch (loading states needed)
+- ⚠️ Filters will require URL params or separate approach
+- ⚠️ Cannot show exact "Page X of Y" without fetching all pages
+- ⚠️ Users lose filter state on pagination unless passed in URL
 
-**Future Consideration:**
-If the product catalog grows beyond 500 items (10 pages), reconsider server-side approach with "Next/Previous" navigation since API doesn't provide total count.
+**Determining Pagination from products.length:**
+
+```typescript
+// In page.tsx after fetching
+const products = await fetchProducts(page);
+const hasNextPage = products.length === 50; // Full page = more data exists
+const hasPrevPage = page > 1;
+
+// Pass to Home component
+<Home
+  products={products}
+  currentPage={page}
+  hasNextPage={hasNextPage}
+  hasPrevPage={hasPrevPage}
+  totalPagesKnown={5} // Since we know max is 5
+/>
+```
 
 ## Implementation Sequence
 
-### Option A: Fetch All Pages Upfront (Optimal for 5-page dataset):
+### Server-Side Pagination (Chosen Approach):
 
-1. Update fetchProducts or create fetchAllProducts to loop through all 5 pages
-2. Call on initial server render in page.tsx
-3. Pass all ~250 products to Home component
-4. Add pagination state to Home component (currentPage, itemsPerPage = 10)
-5. Calculate pagination from filteredProducts array (10 items per page = 25 UI pages)
-6. Connect Pagination component onChange handler
-7. Implement page change logic (slice filteredProducts array)
-8. Add logic to reset page on filter/search changes
-9. Test edge cases
+**Phase 1: Setup Server-Side Pagination**
 
-### Option B: Lazy Load (Start with page 1, load more as needed):
+1. Update `fetchProducts` in global.lib.ts to accept `page` parameter
+2. Update page.tsx to accept and parse `searchParams.page`
+3. Fetch products for the requested page
+4. Calculate `hasNextPage` from `products.length`
+5. Update HomeProps interface to include pagination props
+6. Pass products, currentPage, hasNextPage to Home component
 
-1. Keep current implementation (fetch page 1, 50 items)
-2. Add pagination state to Home component (currentPage, itemsPerPage = 10)
-3. Calculate pagination from filteredProducts array (10 items per page = 5 UI pages)
-4. Add "Show All Products" button to fetch remaining 4 pages
-5. Implement fetchAllProducts client-side function
-6. Update state when all products loaded
-7. Recalculate pagination to show all 25 UI pages
-8. Add logic to reset page on filter/search changes
-9. Test edge cases
+**Phase 2: Update Home Component** 7. Receive pagination props in Home component 8. Update Pagination component with calculated total pages 9. Implement page change handler using Next.js navigation 10. Add loading states during page transitions 11. Handle edge cases (page out of bounds, no products)
 
-### For Server-Side Pagination (Not recommended for this dataset size):
+**Phase 3: Handle Filters** 12. Decide on filter strategy: - Option A: Reset to page 1 when filters applied - Option B: Pass filters in URL params for server-side filtering 13. Implement filter + pagination interaction 14. Test all combinations of filters and pagination
+
+**Phase 4: Polish & Testing** 15. Add loading skeletons 16. Test all 5 pages 17. Verify last page detection (products.length < 50) 18. Mobile responsiveness 19. Browser back/forward navigation
+
+### Alternative: Client-Side Pagination (Not chosen):
 
 1. Update fetchProducts to accept page parameter
 2. Update page.tsx to accept searchParams for page number
@@ -330,252 +443,488 @@ If the product catalog grows beyond 500 items (10 pages), reconsider server-side
 
 ## Implementation Details
 
-### Client-Side Pagination Implementation
+### Server-Side Pagination Implementation (Chosen Approach)
 
-**For the current 5-page dataset (~250 products):**
+**For the 5-page dataset with progressive loading:**
 
-This approach is ideal because:
+This approach provides:
 
-- All 250 products can be fetched upfront (5 API calls)
-- Stored in memory with negligible performance impact
-- Enables instant filtering and pagination
-- Shows 25 UI pages (250 products ÷ 10 items per page)
+- SEO-friendly URLs for each page
+- Reduced initial load (only 50 products)
+- Scalability if dataset grows
+- Fresh data on each page load
+- Known total pages (5) for numbered pagination
 
-For client-side pagination, the Home component needs:
+**Key Principle:** Use `products.length` to determine pagination state
 
-1. **State Management:**
+---
 
-   ```typescript
-   const [currentPage, setCurrentPage] = useState(1);
-   const itemsPerPage = 10; // Showing 10 products per page = 25 total UI pages
-   // With all 250 products loaded, filteredProducts.length ≤ 250
-   ```
+### 1. Update fetchProducts in global.lib.ts
 
-2. **Calculate Pagination:**
+```typescript
+// Add page parameter, keep pageSize fixed at 50
+export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
+  const client = createApolloClient();
+  const res = await client.query<FetchProductsResponse>({
+    query: GET_PRODUCTS,
+    variables: {
+      pagination: {
+        page,
+        pageSize: 50, // Fixed
+      },
+    },
+  });
+  return res?.data?.products ?? [];
+};
+```
 
-   ```typescript
-   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-   // Example: 250 products ÷ 10 per page = 25 total pages
-   const startIndex = (currentPage - 1) * itemsPerPage;
-   const endIndex = startIndex + itemsPerPage;
-   const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-   ```
+---
 
-3. **Page Change Handler:**
+### 2. Update page.tsx to Handle searchParams
 
-   ```typescript
-   const handlePageChange = (page: number) => {
-     setCurrentPage(page);
-     // Optional: scroll to top
-     window.scrollTo({ top: 0, behavior: "smooth" });
-   };
-   ```
+```typescript
+export default async function MainPage({
+  searchParams,
+}: {
+  searchParams: { page?: string }
+}) {
+  // Parse and validate page number
+  const pageParam = searchParams.page;
+  const page = pageParam ? Math.max(1, Math.min(5, parseInt(pageParam, 10))) : 1;
 
-4. **Reset Page on Filter:**
+  // Fetch products for the requested page
+  const [products, themeFetched] = await Promise.all([
+    fetchProducts(page),
+    getThemePreference()
+  ]);
 
-   ```typescript
-   // In updateSelectedCategory, handleSearch, clearFilters:
-   setCurrentPage(1);
-   ```
+  // Determine pagination state from products.length
+  const hasNextPage = products.length === 50 && page < 5;
+  const hasPrevPage = page > 1;
+  const totalPages = 5; // We know max is 5
 
-5. **Update Pagination Component:**
+  return (
+    <ChangeThemeStoreProvider>
+      <div>
+        <Header themeFetched={themeFetched} />
+        <main className="p-10 flex flex-col gap-10">
+          <h1 className="text-4xl font-bold text-center mb-5">
+            Catalogo de productos
+          </h1>
+          <Home
+            products={products}
+            currentPage={page}
+            hasNextPage={hasNextPage}
+            hasPrevPage={hasPrevPage}
+            totalPages={totalPages}
+          />
+        </main>
+      </div>
+    </ChangeThemeStoreProvider>
+  );
+}
+```
 
-   ```tsx
-   <Pagination
-     initialPage={1}
-     page={currentPage}
-     total={totalPages}
-     onChange={handlePageChange}
-     size="md"
-   />
-   ```
+**Key Points:**
 
-6. **Render Paginated Products:**
-   ```tsx
-   <ProductListing
-     products={paginatedProducts}
-     handleProductClick={handleProductClick}
-   />
-   ```
+- Validate page is between 1 and 5
+- `hasNextPage` is true if we got 50 products AND not on page 5
+- Pass all pagination props to Home component
 
-### Fetching All Products (5 Pages) Upfront
+---
 
-**Recommended for the current dataset size:**
+### 3. Update global.types.ts
 
-1. **Create fetchAllProducts function in global.lib.ts:**
+```typescript
+// Add pagination props interface
+export interface PaginationProps {
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  totalPages: number;
+}
 
-   ```typescript
-   export const fetchAllProducts = async (): Promise<Product[]> => {
-     const client = createApolloClient();
-     const allProducts: Product[] = [];
+// Optional: Can merge into HomeProps directly
+```
 
-     // Fetch all 5 pages
-     for (let page = 1; page <= 5; page++) {
-       const res = await client.query<FetchProductsResponse>({
-         query: GET_PRODUCTS,
-         variables: {
-           pagination: {
-             page,
-             pageSize: 50,
-           },
-         },
-       });
-       const products = res?.data?.products ?? [];
-       allProducts.push(...products);
+---
 
-       // Early exit if we get less than 50 items (last page)
-       if (products.length < 50) break;
-     }
+### 4. Update Home.tsx Component
 
-     return allProducts;
-   };
-   ```
+```typescript
+"use client"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { Button, Pagination, useDisclosure } from "@heroui/react"
 
-2. **Update page.tsx to use fetchAllProducts:**
+import { CategoriesList, Product } from "@/shared/types/global.types"
+import { ProductListing } from "../ProductListing/ProductListing"
+import { DropdownCategories } from "../ProductListing/DropdownCategories"
+import { SearchInput } from "../ProductListing/SearchInput"
+import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 
-   ```typescript
-   export default async function MainPage() {
-     const [products, themeFetched] = await Promise.all([
-       fetchAllProducts(), // Fetches all ~250 products
-       getThemePreference()
-     ])
+interface HomeProps {
+  products: Product[];
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  totalPages: number;
+}
 
-     return (
-       // ... pass all products to Home component
-     )
-   }
-   ```
+export const Home = ({
+  products,
+  currentPage,
+  hasNextPage,
+  hasPrevPage,
+  totalPages
+}: HomeProps) => {
+  const router = useRouter();
+  const allProducts = useRef<Product[]>(products)
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
+  const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
+  const [productDetails, setProductDetails] = useState<Product | null>(null)
 
-3. **Benefits:**
-   - All 250 products available immediately in Home component
-   - Instant filtering and pagination with no loading states
-   - Better UX - users can filter/search through entire catalog
-   - Total pages accurately calculated: `Math.ceil(250 / 10) = 25 pages`
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
-### Server-Side Pagination Implementation
+  // Handle pagination - navigate to new page
+  const handlePageChange = (page: number) => {
+    router.push(`/?page=${page}`);
+    // Optional: scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-For server-side pagination (if chosen later):
+  const updateSelectedCategory = (newCategory: CategoriesList) => {
+    setSelectedCategory(newCategory)
+    // Filter logic here
+    setFilteredProducts(allProducts.current)
+    // TODO: Reset to page 1 when filter changes
+    // router.push('/?page=1')
+  }
 
-**Important:** Without total count from API, use "Next/Previous" navigation instead of numbered pages.
+  const handleSearch = (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      if (selectedCategory) {
+        setFilteredProducts(allProducts.current)
+      } else {
+        setFilteredProducts(allProducts.current)
+      }
+      return
+    }
 
-1. **Update page.tsx to accept searchParams:**
+    let searchFiltered = allProducts.current.filter((prod) =>
+      prod.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
-   ```typescript
-   export default async function MainPage({
-     searchParams,
-   }: {
-     searchParams: { page?: string };
-   }) {
-     const page = parseInt(searchParams.page || "1", 10);
-     const products = await fetchProducts(page);
-     const hasNextPage = products.length === 50; // Full page = more pages exist
-     // Pass hasNextPage to Home
-   }
-   ```
+    setFilteredProducts(searchFiltered)
+    // TODO: Reset to page 1 when search changes
+    // router.push('/?page=1')
+  }
 
-2. **Update fetchProducts:**
+  const clearFilters = () => {
+    setSelectedCategory(null)
+    setFilteredProducts(allProducts.current)
+    // TODO: Reset to page 1
+    // router.push('/?page=1')
+  }
 
-   ```typescript
-   export const fetchProducts = async (
-     page: number = 1,
-   ): Promise<Product[]> => {
-     const client = createApolloClient();
-     const res = await client.query<FetchProductsResponse>({
-       query: GET_PRODUCTS,
-       variables: {
-         pagination: {
-           page,
-           pageSize: 50, // Fixed
-         },
-       },
-     });
-     return res?.data?.products ?? [];
-   };
-   ```
+  const handleProductClick = (product: Product) => {
+    setProductDetails(product)
+    onOpen()
+  }
 
-3. **Use next/navigation for page changes:**
+  return (
+    <>
+      <div>
+        <SearchInput onSearch={handleSearch} />
+        <div className="flex gap-3 items-center mb-5">
+          <span>Todos los filtros:</span>
+          <Button onPress={clearFilters}>Limpiar filtros</Button>
+          <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
+        </div>
+      </div>
 
-   ```typescript
-   import { useRouter } from "next/navigation";
+      {/* Display the 50 products for current page */}
+      <ProductListing
+        products={filteredProducts}
+        handleProductClick={handleProductClick}
+      />
 
-   const router = useRouter();
-   const handleNextPage = () => {
-     router.push(`/?page=${currentPage + 1}`);
-   };
-   const handlePrevPage = () => {
-     router.push(`/?page=${currentPage - 1}`);
-   };
-   ```
+      {/* Pagination with known total pages */}
+      <div className="w-full flex justify-center">
+        <Pagination
+          page={currentPage}
+          total={totalPages}
+          onChange={handlePageChange}
+          size="md"
+        />
+      </div>
 
-4. **Simplified Pagination UI:**
-   ```tsx
-   <div className="flex gap-2">
-     <Button isDisabled={currentPage === 1} onPress={handlePrevPage}>
-       Previous
-     </Button>
-     <span>Page {currentPage}</span>
-     <Button isDisabled={!hasNextPage} onPress={handleNextPage}>
-       Next
-     </Button>
-   </div>
-   ```
+      { productDetails && (
+        <ProductVariantsDrawer
+          product={productDetails}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+        />
+      )}
+    </>
+  )
+}
+```
+
+**Key Changes:**
+
+- Added `useRouter` for navigation
+- Receive pagination props from server
+- `handlePageChange` navigates to new URL with page parameter
+- Pagination component uses `page` and `total` props
+- Filters should reset to page 1 (commented TODOs)
+
+---
+
+### 5. Filter Handling Strategy
+
+**Challenge:** Filters are client-side, but pagination is server-side.
+
+**Options:**
+
+**Option A: Reset to Page 1 on Filter (Recommended for MVP)**
+
+```typescript
+const handleSearch = (searchTerm: string) => {
+  // ... filter logic
+  setFilteredProducts(filtered);
+
+  // Reset to page 1 when filter changes
+  if (currentPage !== 1) {
+    router.push("/?page=1");
+  }
+};
+```
+
+**Option B: Pass Filters in URL (Better for complex filtering)**
+
+```typescript
+const handleSearch = (searchTerm: string) => {
+  const params = new URLSearchParams();
+  params.set("page", "1"); // Reset to page 1
+  if (searchTerm) params.set("search", searchTerm);
+  if (selectedCategory) params.set("category", selectedCategory);
+
+  router.push(`/?${params.toString()}`);
+};
+
+// In page.tsx, pass search params to API
+const searchTerm = searchParams.search;
+const category = searchParams.category;
+// Apply server-side filtering
+```
+
+**Option C: Client-Side Pagination for Filtered Results**
+
+- When filters are active, paginate the filtered results client-side
+- Only use server-side pagination when no filters are applied
+- More complex but better UX
+
+---
+
+### 6. Loading States
+
+**Add loading UI during page transitions:**
+
+```typescript
+"use client"
+import { useRouter } from "next/navigation"
+import { useTransition } from "react"
+
+export const Home = ({ ... }: HomeProps) => {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const handlePageChange = (page: number) => {
+    startTransition(() => {
+      router.push(`/?page=${page}`);
+    });
+  };
+
+  return (
+    <>
+      {/* Show loading overlay when isPending */}
+      {isPending && (
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
+          <div className="animate-spin ...">Loading...</div>
+        </div>
+      )}
+
+      {/* Rest of component */}
+    </>
+  )
+}
+```
+
+---
+
+### 7. Key Formulas
+
+**Determining hasNextPage:**
+
+```typescript
+const hasNextPage = products.length === 50 && page < totalPages;
+```
+
+**Why both conditions:**
+
+- `products.length === 50`: Full page means more data might exist
+- `page < totalPages`: Prevents going beyond known max (5 pages)
+
+**Validating Page Number:**
+
+```typescript
+const page = Math.max(1, Math.min(totalPages, parseInt(pageParam, 10) || 1));
+```
+
+**Pagination Component Props:**
+
+```typescript
+<Pagination
+  page={currentPage}        // Current page from server
+  total={totalPages}        // Known max: 5
+  onChange={handlePageChange} // Navigate to new page
+  size="md"
+/>
+```
 
 ## Testing Checklist
 
-### Client-Side Pagination (with all 250 products):
+### Server-Side Pagination (Chosen Approach):
 
-- [ ] All products fetched successfully (verify ~250 items loaded)
-- [ ] Pagination displays correct number of pages: 25 pages (250 items ÷ 10 per page)
-- [ ] Page changes show correct 10 products per page
-- [ ] Last page (page 25) shows remaining items (likely < 10)
-- [ ] Filter resets pagination to page 1
-- [ ] Search resets pagination to page 1
-- [ ] Clear filters resets pagination to page 1
-- [ ] Empty filter results show 0 pages or appropriate message
-- [ ] Pagination controls disabled when only 1 page after filtering
-- [ ] Mobile view pagination is usable across all 25 pages
-- [ ] Performance is smooth with all 250 items in memory
-- [ ] Initial page load time acceptable (fetching 5 API pages)
+**Core Pagination Functionality:**
 
-### If Using Lazy Load (50 products initially):
-
-- [ ] Initial load shows 5 UI pages (50 items ÷ 10 per page)
-- [ ] "Load All Products" button works correctly
-- [ ] After loading all, pagination updates to 25 pages
-- [ ] Loading state displays during fetch
-- [ ] Error handling for failed additional page fetches
-
-### Server-Side Pagination (if implemented):
-
-- [ ] "Previous" button disabled on page 1
-- [ ] "Next" button disabled when response has < 50 items
-- [ ] All 5 pages accessible (pages 1-5)
-- [ ] Page parameter correctly passed to API
-- [ ] Loading states show during page transitions
-- [ ] URL updates correctly with page parameter
+- [ ] Page 1 loads correctly by default (no page param in URL)
+- [ ] All 5 pages accessible (/?page=1 through /?page=5)
+- [ ] Each page shows 50 products (or less on last page)
+- [ ] Pagination component shows correct current page highlight
+- [ ] Page parameter correctly passed to API on each navigation
+- [ ] URL updates correctly with page parameter (/?page=X)
 - [ ] Browser back/forward buttons work correctly
+- [ ] Direct URL access works (e.g., directly visiting /?page=3)
+
+**Edge Cases:**
+
+- [ ] Invalid page numbers handled (page=0, page=6, page=abc)
+- [ ] Negative page numbers redirect to page 1
+- [ ] Pages beyond 5 redirect to page 5 or show error
+- [ ] Page 1 has "Previous" button disabled or hidden
+- [ ] Last page (page 5) detection: hasNextPage = false when products.length < 50
+- [ ] Empty results (0 products) handled gracefully
+
+**Loading States:**
+
+- [ ] Loading indicator shows during page transitions
+- [ ] useTransition properly indicates pending navigation
+- [ ] No flash of wrong content during page change
+- [ ] Skeleton or spinner displayed while fetching
+
+**Filter + Pagination Interaction:**
+
+- [ ] Filters work on current page's 50 products
+- [ ] Applying filter resets to page 1 (if implemented)
+- [ ] Search resets pagination to page 1 (if implemented)
+- [ ] Clear filters returns to page 1 with all products
+- [ ] Filter state preserved when navigating pages (if in URL)
+- [ ] Empty filter results show appropriate message
+
+**Mobile & Accessibility:**
+
+- [ ] Pagination controls usable on mobile screens
+- [ ] Touch targets adequate size for mobile
+- [ ] Pagination component responsive
+- [ ] Loading states clear on slow connections
+
+**Performance:**
+
+- [ ] Each page load < 1 second on average connection
+- [ ] No unnecessary re-renders on page change
+- [ ] Images lazy loaded
+- [ ] Server-side rendering working correctly
+
+**products.length Detection:**
+
+- [ ] Verify page 1-4 return exactly 50 products each
+- [ ] Verify last page returns < 50 products (or exactly 50 if 250 total)
+- [ ] hasNextPage calculated correctly: `products.length === 50 && page < 5`
+- [ ] hasPrevPage calculated correctly: `page > 1`
 
 ## Performance Considerations
 
-### For 250-Item Dataset (5 pages):
+### For Server-Side Pagination (5 pages, 50 products each):
 
-**Optimal Approach:**
+**Approach:**
 
-- Fetch all 5 pages upfront: ~5 sequential API calls
-- Expected load time: 500ms - 2s depending on network
-- Memory usage: ~500KB-1MB (250 products with metadata)
-- Rendering: Instant pagination/filtering after initial load
+- Fetch only requested page (50 products) per request
+- Progressive loading as user navigates
+- Total data transferred over 5 page visits: ~250 products
+
+**Performance Metrics:**
+
+| Metric                       | Value                |
+| ---------------------------- | -------------------- |
+| Initial page load (page 1)   | 200-800ms            |
+| Subsequent page loads        | 200-500ms            |
+| Products per request         | 50 items             |
+| Estimated payload per page   | ~50-100KB            |
+| Memory usage                 | Low (~50KB active)   |
+| Network requests per session | 1-5 (based on usage) |
 
 **Optimizations:**
 
-- Consider parallel fetching of all 5 pages with Promise.all() instead of sequential
-- Lazy load product images to reduce initial payload
-- Add loading skeleton during initial fetch
-- Cache products in localStorage/sessionStorage for return visits
-- Monitor if dataset grows beyond 500 items - reassess approach
+**Essential:**
+
+- ✅ Add loading states (useTransition) for page transitions
+- ✅ Implement error boundaries for failed fetches
+- ✅ Validate page parameter server-side (prevent invalid requests)
+- ✅ Lazy load product images
+- ✅ Add loading skeletons for better perceived performance
+
+**Recommended:**
+
+- Consider caching pages in sessionStorage/localStorage
+- Prefetch next page on hover/focus of pagination button
+- Add stale-while-revalidate caching strategy
+- Optimize images (Next.js Image component)
+- Monitor Core Web Vitals (LCP, FID, CLS)
 
 **Not Needed:**
 
-- ❌ Virtualization - 250 items is small enough to render all
-- ❌ Complex caching strategies - simple client-side state is sufficient
-- ❌ Server-side pagination - adds complexity without benefits for this size
+- ❌ Virtual scrolling - only 50 items per page
+- ❌ Complex state management - server props sufficient
+- ❌ Client-side caching library - sessionStorage adequate
+- ❌ Debouncing pagination - server handles load
+
+**Scaling Considerations:**
+
+If dataset grows beyond 10 pages (500 products):
+
+- Current approach still works well
+- Consider adding search/filter to API (server-side filtering)
+- May need to implement page size selection (25/50/100 items)
+- products.length detection remains reliable for hasNextPage
+
+**Trade-offs vs Client-Side:**
+
+| Aspect             | Server-Side      | Client-Side (250 upfront) |
+| ------------------ | ---------------- | ------------------------- |
+| Initial load       | Fast (50 items)  | Slower (250 items)        |
+| Page transitions   | Slower (network) | Instant                   |
+| Memory usage       | Low (50 items)   | Higher (250 items)        |
+| SEO                | Excellent        | Good                      |
+| Data freshness     | Always fresh     | Stale until refresh       |
+| Scalability        | Excellent        | Limited                   |
+| Filter performance | Depends          | Instant                   |
+
+**Monitoring:**
+
+- Track API response times for each page
+- Monitor page transition perceived performance
+- Watch for failed page fetches (retry logic needed)
+- Ensure pages 1-5 all load successfully
+- Verify products.length detection accuracy
