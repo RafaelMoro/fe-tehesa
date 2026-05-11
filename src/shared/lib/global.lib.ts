@@ -17,7 +17,8 @@ export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
       }
     }
   });
-  return res?.data?.products ?? [];
+  const products = res?.data?.products ?? [];
+  return products;
 }
 
 export const fetchProductVariants = async ({ documentId }: { documentId: string }): Promise<ProductVariant[]> => {
