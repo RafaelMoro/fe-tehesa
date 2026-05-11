@@ -6,10 +6,13 @@ import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provid
 export default async function MainPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
+  // Await searchParams (Next.js 15+ requirement)
+  const params = await searchParams;
+  
   // Parse and validate page parameter
-  const pageParam = searchParams.page || '1';
+  const pageParam = params.page || '1';
   const currentPage = Math.max(1, Math.min(5, parseInt(pageParam, 10) || 1));
 
   const [products, themeFetched] = await Promise.all([
