@@ -19,7 +19,7 @@ export const DropdownCategories = ({ updateSelectedCategory }: DropdownCategorie
       </DropdownTrigger>
       <DropdownMenu aria-label="Dropdown menu categories" onAction={(key) => updateSelectedCategory(key as CategoriesList)}>
         { allCategories.map((category) => (
-          <DropdownItem key={category}>{category}</DropdownItem>
+          <DropdownItem key={category.customId}>{category.name}</DropdownItem>
         )) }
       </DropdownMenu>
     </Dropdown>
