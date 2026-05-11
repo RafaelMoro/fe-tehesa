@@ -1,62 +1,116 @@
 "use client"
-import { useState, useRef } from "react"
-import { Button, useDisclosure } from "@heroui/react"
+import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Button, Pagination, useDisclosure } from "@heroui/react"
 
-import { CategoriesList, Product } from "@/shared/types/global.types"
+import { Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
-import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
+import { DropdownCategories } from "../ProductListing/DropdownCategories"
+import { DropdownBrands } from "../ProductListing/DropdownBrands"
+import { fetchProductsByCategory, fetchProductsByBrand } from "@/shared/lib/global.lib"
 
 interface HomeProps {
-  products: Product[]
+  products: Product[];
+  currentPage: number;
+  totalPages: number;
 }
 
-export const Home = ({ products }: HomeProps) => {
+export const Home = ({ 
+  products,
+  currentPage,
+  totalPages 
+}: HomeProps) => {
+  const router = useRouter();
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
-  const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [isLoadingCategory, setIsLoadingCategory] = useState(false)
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
+  const [isLoadingBrand, setIsLoadingBrand] = useState(false)
   // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
-  const updateSelectedCategory = (newCategory: CategoriesList) => {
-    setSelectedCategory(newCategory)
-    // const newFilteredProducts = allProducts.current.filter((prod) => prod.category === newCategory)
-    // TODO: Change this
-    setFilteredProducts(allProducts.current)
-  }
+  // Update products when page changes (new products fetched from server)
+  useEffect(() => {
+    allProducts.current = products;
+    setFilteredProducts(products);
+    // Reset category and brand filters when page changes
+    setSelectedCategory(null);
+    setSelectedBrand(null);
+  }, [products]);
+
+  // Handle pagination - navigate to new page
+  const handlePageChange = (page: number) => {
+    router.push(`/?page=${page}`);
+    // Scroll to top for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSearch = (searchTerm: string) => {
     if (!searchTerm.trim()) {
-      // If search is empty, show all products or filtered by category
-      if (selectedCategory) {
-        // const categoryFiltered = allProducts.current.filter((prod) => prod.category === selectedCategory)
-        // TODO: Change this
-        setFilteredProducts(allProducts.current)
-      } else {
-        setFilteredProducts(allProducts.current)
-      }
-      return
+      // If search is empty, show all products from current page
+      setFilteredProducts(allProducts.current);
+      return;
     }
 
     // Filter by search term in product name (case-insensitive)
-    let searchFiltered = allProducts.current.filter((prod) => 
+    // Only filters the 50 products on the current page
+    const searchFiltered = allProducts.current.filter((prod) => 
       prod.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    );
 
-    // If there's also a selected category, apply both filters
-    if (selectedCategory) {
-      // searchFiltered = searchFiltered.filter((prod) => prod.category === selectedCategory)
+    setFilteredProducts(searchFiltered);
+    // Note: Does NOT reset to page 1
+  }
+
+  const handleCategorySelect = async (categoryCustomId: string) => {
+    try {
+      setIsLoadingCategory(true);
+      const categoryProducts = await fetchProductsByCategory(categoryCustomId);
+      
+      if (categoryProducts) {
+        allProducts.current = categoryProducts;
+        setFilteredProducts(categoryProducts);
+        setSelectedCategory(categoryCustomId);
+        // Reset brand filter when category is selected
+        setSelectedBrand(null);
+      }
+    } catch (error) {
+      console.error('Error fetching products by category:', error);
+    } finally {
+      setIsLoadingCategory(false);
     }
+  }
 
-    setFilteredProducts(searchFiltered)
+  const handleBrandSelect = async (brandCustomId: string) => {
+    try {
+      setIsLoadingBrand(true);
+      const brandProducts = await fetchProductsByBrand(brandCustomId);
+      
+      if (brandProducts) {
+        allProducts.current = brandProducts;
+        setFilteredProducts(brandProducts);
+        setSelectedBrand(brandCustomId);
+        // Reset category filter when brand is selected
+        setSelectedCategory(null);
+      }
+    } catch (error) {
+      console.error('Error fetching products by brand:', error);
+    } finally {
+      setIsLoadingBrand(false);
+    }
   }
 
   const clearFilters = () => {
-    setSelectedCategory(null)
-    setFilteredProducts(allProducts.current)
+    setFilteredProducts(products);
+    allProducts.current = products;
+    setSelectedCategory(null);
+    setSelectedBrand(null);
+    // Shows all 50 products from current page
   }
 
   const handleProductClick = (product: Product) => {
@@ -69,12 +123,22 @@ export const Home = ({ products }: HomeProps) => {
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
-          <span>Todos los filtros:</span>
-          <Button onPress={clearFilters}>Limpiar filtros</Button>
-          <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
+          <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
+          <DropdownBrands selectedBrand={selectedBrand} updateSelectedBrand={handleBrandSelect} />
+          <Button onPress={clearFilters} isDisabled={isLoadingCategory || isLoadingBrand}>Limpiar filtros</Button>
         </div>
       </div>
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
+      {selectedCategory === null && selectedBrand === null && (
+        <div className="w-full flex justify-center">
+          <Pagination 
+            page={currentPage}
+            total={totalPages}
+            onChange={handlePageChange}
+            size="md" 
+          />
+        </div>
+      )}
       { productDetails && (
         <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />
       )}

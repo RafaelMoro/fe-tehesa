@@ -1,3 +1,21 @@
+## v0.9.0 (2026-05-11)
+
+### Pull Requests
+[#11](https://github.com/RafaelMoro/fe-tehesa/pull/11) | Show products by brand
+
+
+## v0.8.0 (2026-05-11)
+
+### Pull Requests
+[#10](https://github.com/RafaelMoro/fe-tehesa/pull/10) | Show products by category
+
+
+## v0.7.0 (2026-05-11)
+
+### Pull Requests
+[#9](https://github.com/RafaelMoro/fe-tehesa/pull/9) | See more products and variants
+
+
 ## v0.6.0 (2026-05-08)
 
 ### Pull Requests

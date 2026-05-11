@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client"
 
 export const GET_PRODUCTS = gql`
-  query GetProductsQuery {
-    products {
+  query GetProductsQuery($pagination: PaginationArg) {
+    products(pagination: $pagination) {
       brand {
         name
       }
@@ -19,14 +19,50 @@ export const GET_PRODUCTS = gql`
 `
 
 export const GET_PRODUCT_VARIANTS = gql`
-  query Product($documentId: ID!) {
+  query Product($documentId: ID!, $pagination: PaginationArg) {
     product(documentId: $documentId) {
-      product_variants {
+      product_variants(pagination: $pagination) {
         diameter
         pricing {
           price
         }
       }
+    }
+  }
+`
+
+export const GET_PRODUCTS_BY_CATEGORY = gql`
+  query GetProductsByCategory($filters: ProductFiltersInput, $pagination: PaginationArg) {
+  products(filters: $filters, pagination: $pagination) {
+    maxPrice
+    minPrice
+    name
+    documentId
+    variantCount
+    brand {
+      name
+    }
+    category {
+      name
+    }
+  }
+}
+`
+
+export const GET_PRODUCTS_BY_BRAND = gql`
+  query GetProductsByBrand($filters: ProductFiltersInput, $pagination: PaginationArg) {
+    products(filters: $filters, pagination: $pagination) {
+      name
+      minPrice
+      maxPrice
+      documentId
+      category {
+        name
+      }
+      brand {
+        name
+      }
+      variantCount
     }
   }
 `
