@@ -32,8 +32,8 @@ export const GET_PRODUCT_VARIANTS = gql`
 `
 
 export const GET_PRODUCTS_BY_CATEGORY = gql`
-  query GetProductsByCategory($filters: ProductFiltersInput) {
-  products(filters: $filters) {
+  query GetProductsByCategory($filters: ProductFiltersInput, $pagination: PaginationArg) {
+  products(filters: $filters, pagination: $pagination) {
     maxPrice
     minPrice
     name

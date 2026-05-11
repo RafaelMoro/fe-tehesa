@@ -33,6 +33,10 @@ export const fetchProductsByCategory = async (customId: string) => {
               contains: customId
             }
           }
+        },
+        pagination: {
+          page: 1,
+          pageSize: 50
         }
       }
     });
