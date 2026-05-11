@@ -37,9 +37,9 @@ Integrate the existing `DropdownCategories` component into the Home page to enab
    - Add loading indicator if `isLoadingCategory` is true (optional enhancement)
 
 6. **Update useEffect to handle category state on page change** (_depends on step 2_)
-   - When `products` prop changes (page navigation), check if `selectedCategory` is active
-   - If category is selected, maintain category filter by re-fetching with `fetchProductsByCategory`
-   - If no category is selected, reset to new page's products as currently implemented
+   - When `products` prop changes (page navigation), reset category filter
+   - Reset `selectedCategory` to null
+   - This ensures category filter doesn't persist across pagination (matches search behavior)
 
 ## Relevant Files
 
@@ -62,10 +62,7 @@ Integrate the existing `DropdownCategories` component into the Home page to enab
 
 **Pagination + Category interaction:**
 
-- **Option A (Recommended)**: When user changes page, reset category filter and show all products from new page. Simpler, matches current search behavior (search doesn't persist across pages).
-- **Option B**: Maintain category filter across pagination by re-fetching category products for new page. More complex, requires pagination support in `fetchProductsByCategory`.
-
-**Recommendation**: Start with Option A for consistency. Step 6 can be simplified to just reset category state when products prop changes.
+- **Selected Approach**: When user changes page, reset category filter and show all products from new page. This keeps behavior consistent with search (which also doesn't persist across pages) and simplifies the implementation.
 
 **Search + Category interaction:**
 
