@@ -13,7 +13,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     variables: {
       pagination: {
         page: 1,
-        pageSize: 100
+        pageSize: 50
       }
     }
   });
