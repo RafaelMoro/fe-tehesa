@@ -11,16 +11,12 @@ import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsD
 interface HomeProps {
   products: Product[];
   currentPage: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
   totalPages: number;
 }
 
 export const Home = ({ 
   products,
   currentPage,
-  hasNextPage,
-  hasPrevPage,
   totalPages 
 }: HomeProps) => {
   const router = useRouter();
