@@ -43,7 +43,35 @@ export const CATEGORIES_PRODUCTS = [
   }
 ] as const
 
+export const BRANDS_PRODUCTS = [
+  {
+    "customId": "bohrcraft",
+    "name": "Bohrcraft"
+  },
+  {
+    "customId": "king-tony",
+    "name": "King Tony"
+  },
+  {
+    "customId": "lugo",
+    "name": "Lugo"
+  },
+  {
+    "customId": "precision",
+    "name": "Precision"
+  },
+  {
+    "customId": "saravia",
+    "name": "Saravia"
+  },
+  {
+    "customId": "weston",
+    "name": "Weston"
+  }
+] as const
+
 export type CategoriesList = typeof CATEGORIES_PRODUCTS[number]
+export type BrandsList = typeof BRANDS_PRODUCTS[number]
 export type Category = {
   name: string
 }
