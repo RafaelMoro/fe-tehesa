@@ -80,7 +80,7 @@ With 5 pages maximum, the dataset is small but well-suited for server-side pagin
 - Use `products.length` to determine if more pages exist
 - Known total pages: 5 (can show numbered pagination)
 - Progressive loading: users only fetch what they view
-- Filters will be client-side on current page (or reset to page 1)
+- Filters are client-side on current page's 50 products (by name only)
 
 ## Implementation Approaches
 
@@ -100,9 +100,9 @@ With 5 pages maximum, the dataset is small but well-suited for server-side pagin
 
 - Page transitions require server fetch (~200-500ms)
 - Loading states needed for transitions
-- Filter state lost on pagination unless stored in URL
-- More complex filter + pagination interaction
-- Cannot filter across all 250 products without fetching all
+- Filter state cleared on pagination (by design - simple UX)
+- Simple filter + pagination interaction (independent)
+- Filters only work on current page's 50 products
 
 **Changes Required:**
 
@@ -181,12 +181,15 @@ This means:
 - "Next page" button can only be enabled if current page returned 50 items
 - Total page count unknown until last page is reached
 
-### 2. Filter + Pagination Interaction
+### 2. Filter + Pagination Interaction ✅ **DECIDED**
 
-- When user searches/filters, should reset to page 1
-- Need to decide how to apply filters:
-  - Client-side: filter from all fetched data
-  - Server-side: pass filters to API
+**Chosen Strategy:**
+
+- Filters are **client-side only** on current page's 50 products
+- Filter by **product name only** (case-insensitive)
+- Filters do **NOT** reset to page 1
+- Each page has independent filtering of its own 50 products
+- Navigating to new page clears current filter
 
 ### 3. State Management
 
@@ -335,8 +338,8 @@ This means:
 1. **Empty Results**: Handle when API returns 0 products (show appropriate message)
 2. **Page Out of Bounds**: User navigates to page 6+ (should redirect to last valid page or show error)
 3. **Invalid Page Parameter**: Handle non-numeric or negative page values in URL
-4. **Filter During Pagination**: User is on page 3, applies filter - should reset to page 1
-5. **Concurrent Filters**: Search + Category filter + Pagination interaction - pass in URL
+4. **Filter During Pagination**: User on page 3 applies filter - filters only page 3's 50 products
+5. **Search Behavior**: Search only filters current page by product name, no category filter
 6. **Performance**: Each page change triggers server fetch (add loading states)
 7. **Mobile Experience**: Pagination controls on small screens
 8. **Data Freshness**: Each page fetch gets latest data from server
@@ -344,7 +347,7 @@ This means:
 10. **Back/Forward Navigation**: Browser history should work correctly with URL-based pagination
 11. **Direct URL Access**: User can directly access `/?page=3` (must validate page exists)
 12. **Loading States**: Show skeleton/spinner during page transitions
-13. **Filter State Loss**: Filters may be lost on pagination unless stored in URL
+13. **Filter State on Navigation**: Filters intentionally cleared when user navigates to new page
 
 ## Recommended Approach
 
@@ -418,9 +421,9 @@ const hasPrevPage = page > 1;
 
 **Phase 2: Update Home Component** 7. Receive pagination props in Home component 8. Update Pagination component with calculated total pages 9. Implement page change handler using Next.js navigation 10. Add loading states during page transitions 11. Handle edge cases (page out of bounds, no products)
 
-**Phase 3: Handle Filters** 12. Decide on filter strategy: - Option A: Reset to page 1 when filters applied - Option B: Pass filters in URL params for server-side filtering 13. Implement filter + pagination interaction 14. Test all combinations of filters and pagination
+**Phase 3: Handle Filters** ✅ **SIMPLE APPROACH** 12. Keep existing handleSearch function (filters by product name) 13. Ensure filters work on current page's 50 products only 14. Remove category filtering logic (not needed) 15. Clear filters when navigating to new page 16. Test search on different pages
 
-**Phase 4: Polish & Testing** 15. Add loading skeletons 16. Test all 5 pages 17. Verify last page detection (products.length < 50) 18. Mobile responsiveness 19. Browser back/forward navigation
+**Phase 4: Polish & Testing** 17. Add loading skeletons 18. Test all 5 pages 17. Verify last page detection (products.length < 50) 18. Mobile responsiveness 19. Browser back/forward navigation
 
 ### Alternative: Client-Side Pagination (Not chosen):
 
@@ -557,9 +560,8 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button, Pagination, useDisclosure } from "@heroui/react"
 
-import { CategoriesList, Product } from "@/shared/types/global.types"
+import { Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
-import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 
@@ -581,7 +583,6 @@ export const Home = ({
   const router = useRouter();
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
-  const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -593,39 +594,28 @@ export const Home = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const updateSelectedCategory = (newCategory: CategoriesList) => {
-    setSelectedCategory(newCategory)
-    // Filter logic here
-    setFilteredProducts(allProducts.current)
-    // TODO: Reset to page 1 when filter changes
-    // router.push('/?page=1')
-  }
-
+  // Search/filter only on current page's 50 products by name
   const handleSearch = (searchTerm: string) => {
     if (!searchTerm.trim()) {
-      if (selectedCategory) {
-        setFilteredProducts(allProducts.current)
-      } else {
-        setFilteredProducts(allProducts.current)
-      }
-      return
+      // If search is empty, show all products from current page
+      setFilteredProducts(allProducts.current);
+      return;
     }
 
-    let searchFiltered = allProducts.current.filter((prod) =>
+    // Filter by search term in product name (case-insensitive)
+    // Only filters the 50 products on the current page
+    const searchFiltered = allProducts.current.filter((prod) =>
       prod.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    );
 
-    setFilteredProducts(searchFiltered)
-    // TODO: Reset to page 1 when search changes
-    // router.push('/?page=1')
-  }
+    setFilteredProducts(searchFiltered);
+    // Note: Does NOT reset to page 1
+  };
 
   const clearFilters = () => {
-    setSelectedCategory(null)
-    setFilteredProducts(allProducts.current)
-    // TODO: Reset to page 1
-    // router.push('/?page=1')
-  }
+    setFilteredProducts(allProducts.current);
+    // Shows all 50 products from current page
+  };
 
   const handleProductClick = (product: Product) => {
     setProductDetails(product)
@@ -637,9 +627,7 @@ export const Home = ({
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
-          <span>Todos los filtros:</span>
           <Button onPress={clearFilters}>Limpiar filtros</Button>
-          <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
         </div>
       </div>
 
@@ -677,53 +665,68 @@ export const Home = ({
 - Receive pagination props from server
 - `handlePageChange` navigates to new URL with page parameter
 - Pagination component uses `page` and `total` props
+- Simplified filter UI (removed category dropdown)
+- Search filters only by product name on current page's 50 products
 - Filters should reset to page 1 (commented TODOs)
 
 ---
 
-### 5. Filter Handling Strategy
+### 5. Filter Handling Strategy ✅ **DECIDED**
 
-**Challenge:** Filters are client-side, but pagination is server-side.
+**Chosen Approach: Client-Side Filtering on Current Page**
 
-**Options:**
+**Rules:**
 
-**Option A: Reset to Page 1 on Filter (Recommended for MVP)**
+- ✅ Filter only applies to current page's 50 products
+- ✅ Filter by product name only (case-insensitive)
+- ✅ No category filtering
+- ✅ Search is client-side using existing `handleSearch` function
+- ✅ Pagination and filtering are independent
+- ❌ Do NOT reset to page 1 on filter
+- ❌ Do NOT pass filters in URL
+- ❌ Do NOT implement server-side filtering
+
+**Implementation:**
 
 ```typescript
 const handleSearch = (searchTerm: string) => {
-  // ... filter logic
-  setFilteredProducts(filtered);
-
-  // Reset to page 1 when filter changes
-  if (currentPage !== 1) {
-    router.push("/?page=1");
+  if (!searchTerm.trim()) {
+    // If search is empty, show all products from current page
+    setFilteredProducts(allProducts.current);
+    return;
   }
+
+  // Filter by search term in product name (case-insensitive)
+  // Only filters the 50 products on the current page
+  const searchFiltered = allProducts.current.filter((prod) =>
+    prod.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  setFilteredProducts(searchFiltered);
+  // Note: Does NOT reset to page 1
+};
+
+const clearFilters = () => {
+  setFilteredProducts(allProducts.current);
+  // Shows all 50 products from current page
 };
 ```
 
-**Option B: Pass Filters in URL (Better for complex filtering)**
+**Behavior:**
 
-```typescript
-const handleSearch = (searchTerm: string) => {
-  const params = new URLSearchParams();
-  params.set("page", "1"); // Reset to page 1
-  if (searchTerm) params.set("search", searchTerm);
-  if (selectedCategory) params.set("category", selectedCategory);
+- User on page 2, searches "hammer" → sees matching products from page 2's 50 items
+- User navigates to page 3 → search is cleared, shows all 50 products from page 3
+- Each page operates independently with its own 50 products
+- Simple and predictable UX
 
-  router.push(`/?${params.toString()}`);
-};
+**Why This Approach:**
 
-// In page.tsx, pass search params to API
-const searchTerm = searchParams.search;
-const category = searchParams.category;
-// Apply server-side filtering
-```
-
-**Option C: Client-Side Pagination for Filtered Results**
-
-- When filters are active, paginate the filtered results client-side
-- Only use server-side pagination when no filters are applied
-- More complex but better UX
+- Simplest implementation
+- No state synchronization needed
+- Each page is self-contained
+- Matches current component structure
+- No URL complexity
+- Clear user expectations
 
 ---
 
@@ -826,12 +829,13 @@ const page = Math.max(1, Math.min(totalPages, parseInt(pageParam, 10) || 1));
 
 **Filter + Pagination Interaction:**
 
-- [ ] Filters work on current page's 50 products
-- [ ] Applying filter resets to page 1 (if implemented)
-- [ ] Search resets pagination to page 1 (if implemented)
-- [ ] Clear filters returns to page 1 with all products
-- [ ] Filter state preserved when navigating pages (if in URL)
+- [ ] Search filters current page's 50 products by product name only
+- [ ] Search is case-insensitive
+- [ ] Filters do NOT reset to page 1 (each page independent)
+- [ ] Clear filters shows all 50 products from current page
+- [ ] Navigating to new page clears filter (by design)
 - [ ] Empty filter results show appropriate message
+- [ ] No category filter implemented (removed from UI if exists)
 
 **Mobile & Accessibility:**
 
