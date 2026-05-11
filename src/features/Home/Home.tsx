@@ -1,62 +1,63 @@
 "use client"
 import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Button, Pagination, useDisclosure } from "@heroui/react"
 
-import { CategoriesList, Product } from "@/shared/types/global.types"
+import { Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
-import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 
 interface HomeProps {
-  products: Product[]
+  products: Product[];
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  totalPages: number;
 }
 
-export const Home = ({ products }: HomeProps) => {
+export const Home = ({ 
+  products,
+  currentPage,
+  hasNextPage,
+  hasPrevPage,
+  totalPages 
+}: HomeProps) => {
+  const router = useRouter();
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
-  const [selectedCategory, setSelectedCategory] = useState<CategoriesList | null>(null)
   // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
-  const updateSelectedCategory = (newCategory: CategoriesList) => {
-    setSelectedCategory(newCategory)
-    // const newFilteredProducts = allProducts.current.filter((prod) => prod.category === newCategory)
-    // TODO: Change this
-    setFilteredProducts(allProducts.current)
-  }
+  // Handle pagination - navigate to new page
+  const handlePageChange = (page: number) => {
+    router.push(`/?page=${page}`);
+    // Scroll to top for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSearch = (searchTerm: string) => {
     if (!searchTerm.trim()) {
-      // If search is empty, show all products or filtered by category
-      if (selectedCategory) {
-        // const categoryFiltered = allProducts.current.filter((prod) => prod.category === selectedCategory)
-        // TODO: Change this
-        setFilteredProducts(allProducts.current)
-      } else {
-        setFilteredProducts(allProducts.current)
-      }
-      return
+      // If search is empty, show all products from current page
+      setFilteredProducts(allProducts.current);
+      return;
     }
 
     // Filter by search term in product name (case-insensitive)
-    let searchFiltered = allProducts.current.filter((prod) => 
+    // Only filters the 50 products on the current page
+    const searchFiltered = allProducts.current.filter((prod) => 
       prod.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    );
 
-    // If there's also a selected category, apply both filters
-    if (selectedCategory) {
-      // searchFiltered = searchFiltered.filter((prod) => prod.category === selectedCategory)
-    }
-
-    setFilteredProducts(searchFiltered)
+    setFilteredProducts(searchFiltered);
+    // Note: Does NOT reset to page 1
   }
 
   const clearFilters = () => {
-    setSelectedCategory(null)
-    setFilteredProducts(allProducts.current)
+    setFilteredProducts(allProducts.current);
+    // Shows all 50 products from current page
   }
 
   const handleProductClick = (product: Product) => {
@@ -69,14 +70,17 @@ export const Home = ({ products }: HomeProps) => {
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
-          <span>Todos los filtros:</span>
           <Button onPress={clearFilters}>Limpiar filtros</Button>
-          <DropdownCategories updateSelectedCategory={updateSelectedCategory} />
         </div>
       </div>
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
       <div className="w-full flex justify-center">
-        <Pagination initialPage={1} total={5} size="md" />
+        <Pagination 
+          page={currentPage}
+          total={totalPages}
+          onChange={handlePageChange}
+          size="md" 
+        />
       </div>
       { productDetails && (
         <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />

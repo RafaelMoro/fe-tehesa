@@ -6,13 +6,13 @@ import type { FetchProductsResponse, FetchSingleProductResponse, Product, Produc
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
 import { GET_PRODUCT_VARIANTS, GET_PRODUCTS } from '../queries/global.queries'
 
-export const fetchProducts = async (): Promise<Product[]> => {
+export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS,
     variables: {
       pagination: {
-        page: 1,
+        page,
         pageSize: 50
       }
     }

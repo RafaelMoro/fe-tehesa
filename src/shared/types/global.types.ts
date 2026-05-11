@@ -44,6 +44,13 @@ export interface FetchSingleProductResponse {
   product: Product;
 }
 
+export interface PaginationProps {
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  totalPages: number;
+}
+
 export type ProductVariant = {
   diameter: string;
   pricing: {
