@@ -6,19 +6,32 @@ import type { FetchProductsResponse, FetchSingleProductResponse, Product, Produc
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
 import { GET_PRODUCT_VARIANTS, GET_PRODUCTS } from '../queries/global.queries'
 
-export const fetchProducts = async (): Promise<Product[]> => {
+export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS,
+    variables: {
+      pagination: {
+        page,
+        pageSize: 50
+      }
+    }
   });
-  return res?.data?.products ?? [];
+  const products = res?.data?.products ?? [];
+  return products;
 }
 
 export const fetchProductVariants = async ({ documentId }: { documentId: string }): Promise<ProductVariant[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchSingleProductResponse>({
     query: GET_PRODUCT_VARIANTS,
-    variables: { documentId },
+    variables: { 
+      documentId,
+      pagination: {
+        page: 1,
+        pageSize: 100
+      }
+    },
   });
   return res?.data?.product?.product_variants ?? [];
 }
