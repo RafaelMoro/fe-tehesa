@@ -97,7 +97,7 @@ export const Home = ({
       <div>
         <SearchInput onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
-          <DropdownCategories updateSelectedCategory={handleCategorySelect} />
+          <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
           <Button onPress={clearFilters} isDisabled={isLoadingCategory}>Limpiar filtros</Button>
         </div>
       </div>
