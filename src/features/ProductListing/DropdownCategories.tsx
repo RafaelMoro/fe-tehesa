@@ -1,25 +1,34 @@
-import { CategoriesList, CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
+import { CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
+
 interface DropdownCategoriesProps {
-  updateSelectedCategory: (newCategory: CategoriesList) => void
+  selectedCategory: string | null
+  updateSelectedCategory: (categoryCustomId: string) => void
 }
 
-export const DropdownCategories = ({ updateSelectedCategory }: DropdownCategoriesProps) => {
+export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }: DropdownCategoriesProps) => {
   const allCategories = [...CATEGORIES_PRODUCTS]
+  
+  // Find the selected category object to display its name
+  const selectedCategoryObj = allCategories.find((cat) => cat.customId === selectedCategory)
 
   return (
     <Dropdown>
       <DropdownTrigger>
         <Button variant="bordered">
-          Categorias
+          {selectedCategoryObj?.name ?? 'Categorias'}
           <RiArrowDownSLine />
         </Button>
       </DropdownTrigger>
-      <DropdownMenu aria-label="Dropdown menu categories" onAction={(key) => updateSelectedCategory(key as CategoriesList)}>
+      <DropdownMenu
+        disallowEmptySelection
+        aria-label="Dropdown menu categories"
+        onAction={(key) => updateSelectedCategory(key as string)}
+      >
         { allCategories.map((category) => (
-          <DropdownItem key={category}>{category}</DropdownItem>
+          <DropdownItem key={category.customId}>{category.name}</DropdownItem>
         )) }
       </DropdownMenu>
     </Dropdown>

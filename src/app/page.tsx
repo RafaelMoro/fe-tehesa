@@ -21,8 +21,6 @@ export default async function MainPage({
   ])
 
   // Calculate pagination props
-  const hasNextPage = products.length === 50 && currentPage < 5;
-  const hasPrevPage = currentPage > 1;
   const totalPages = 5; // Known constraint: 5 pages maximum
 
   return (
@@ -34,8 +32,6 @@ export default async function MainPage({
           <Home 
             products={products}
             currentPage={currentPage}
-            hasNextPage={hasNextPage}
-            hasPrevPage={hasPrevPage}
             totalPages={totalPages}
           />
         </main>
