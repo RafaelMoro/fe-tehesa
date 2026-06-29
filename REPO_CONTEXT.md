@@ -1,6 +1,6 @@
-# Repository Context - kraft-envios-fe
+# Repository Context - fe-tehesa
 
-**Last Updated:** 2026-06-27
+**Last Updated:** 2026-06-28
 
 A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
 
@@ -8,186 +8,217 @@ A living reference for AI agents and developers working in this repository. It d
 
 ## Overview
 
-`kraft-envios-fe` is a Next.js 14 App Router frontend for shipping workflows: login/register, quotes, addresses, guide creation for multiple couriers, guide viewing, and profit-margin configuration. It proxies a backend through Next route handlers under `src/app/api/**`.
+`fe-tehesa` is a Next.js 15 App Router MVP for the Tehesa product catalog. It renders a paginated catalog, supports client-side search over the current result set, fetches filtered product lists by category or brand from Strapi, and opens a drawer with product variant pricing.
 
 **Tech stack:**
 
-- Next.js 14 App Router + React 18 + TypeScript strict mode.
-- pnpm lockfile; `pnpm-workspace.yaml` only contains `allowBuilds`, not packages.
-- Tailwind v4 through `@tailwindcss/postcss`; no `tailwind.config.*` file.
-- Flowbite React with `next.config.mjs` wrapped by `flowbite-react/plugin/nextjs`.
-- TanStack Query v5 via `src/features/QueryProviderWrapper.tsx`.
-- `react-hook-form` + `yup` for forms.
-- `axios` for HTTP calls; `jose` for signed session cookies.
-- Jest 30 + Testing Library in jsdom.
+- Next.js 15 App Router + React 19 + TypeScript strict mode.
+- pnpm lockfile with `.npmrc` hoisting for `@heroui/*` packages.
+- Tailwind v4 through `@tailwindcss/postcss` plus `tailwind.config.js` for HeroUI theme scanning and `darkMode: "class"`.
+- HeroUI (`@heroui/react`) for UI primitives.
+- Apollo Client v4 + GraphQL for Strapi reads.
+- next-themes for class-based light/dark theme mode.
+- Zustand vanilla store + provider pattern for theme state.
+- Remix Icon React, Framer Motion, and `clsx` for icons, motion support, and class composition.
+- No test framework or test script is configured.
 
 ## High-Level Architecture
 
 ```text
 Browser
-  │  session + user-info httpOnly cookies set by POST /api
+  │  page query string (?page=...) + theme preference cookie
   ▼
 Next.js App Router
-  ├── src/app/          pages, root layout, route handlers
-  ├── src/features/     domain UI (Login, Dashboard, Quotes, Addresses, Guides, ProfitMargin)
-  ├── src/shared/       reusable UI, hooks, utils, types, constants, server libs
-  └── src/app/api/      BFF routes and cookie utilities
-        ├── backend proxies via process.env.BACKEND_URI
-        ├── auth via jose-signed session cookie and getAccessToken()
-        └── SAT product lookup via NEXT_PUBLIC_GET_SAT_PRODUCT_URI
+  ├── src/app/               root layout, providers, home page, API route handlers
+  ├── src/features/          catalog UI: Home, ProductListing, filters, variants drawer
+  ├── src/components/        shared ProductCard component
+  ├── src/shared/            constants, hooks, lib/server actions, GraphQL queries, types, utils, UI
+  └── src/zustand/           SSR-safe theme store provider + vanilla store
+         │
+         ▼
+Strapi GraphQL API via ApolloClient
+  ├── process.env.STRAPI_HOST
+  └── process.env.STRAPI_API_TOKEN as Bearer token
 ```
 
 Key invariants:
 
-- `src/app/layout.tsx` is an async server layout; it reads the theme cookie and wraps the app in `QueryProviderWrapper`.
-- `QueryProviderWrapper` intentionally creates the `QueryClient` inside `useRef`; do not move it to module scope or caches can be shared across requests/users.
-- `src/app/page.tsx` is the login entrypoint. It redirects authenticated users to `/dashboard`, otherwise renders `features/Login/Login`.
-- `src/app/dashboard/page.tsx` reads session/user cookies server-side, wraps Flowbite `ThemeProvider`, and dynamically imports `features/Dashboard/Dashboard` with `ssr: false`.
-- The Dashboard component owns the selected screen in local React state and saves screen preference through a server action in `src/shared/lib/preferences.lib.ts`.
+- `src/app/layout.tsx` is the root server layout. It sets `lang="es"`, loads Google Geist fonts, wraps children in `Providers`, then wraps them in `NextThemesProvider` with `attribute="class"` and `defaultTheme="dark"`.
+- `src/app/providers.tsx` is a client wrapper around `HeroUIProvider`.
+- `src/app/page.tsx` is the only page route currently present. It awaits `searchParams` per Next 15, clamps `page` to `1..5`, fetches products and the theme cookie in parallel, and wraps the catalog in `ChangeThemeStoreProvider`.
+- `src/app/page.tsx` has a hardcoded pagination ceiling of 5 pages. This is a known product/API constraint, not a bug.
+- Server data access lives in `src/shared/lib/global.lib.ts` with the `"use server"` directive. It creates a new Apollo Client for each call through `src/app/apollo-client.ts`.
+- Client components currently import server actions from `global.lib.ts` for category, brand, and variant fetches. Preserve or change this deliberately; do not add a second data access pattern casually.
+- Theme persistence is cookie-backed through `POST /api/preferences` -> `saveThemeCookie()`. The cookie key is `tehesa-theme` in `src/shared/constants/global.constants.ts`.
+- The Zustand theme store follows the provider-wraps-store pattern under `src/zustand/provider` and `src/zustand/store`. Keep stores request-safe by creating them inside provider refs, not module-level singletons.
 
 ## Directory Layout
 
 ### `src/app/`
 
-| Path                             | Purpose                                                                             |
-| -------------------------------- | ----------------------------------------------------------------------------------- |
-| `layout.tsx`                     | Root layout; local Geist fonts, global styles, theme cookie, QueryProvider wrapper. |
-| `page.tsx`                       | Login route `/`; redirects to `/dashboard` when `getAccessToken()` returns a token. |
-| `dashboard/page.tsx`             | Authenticated dashboard shell; server cookie read + client-only dashboard import.   |
-| `register/page.tsx`              | Registration page.                                                                  |
-| `forgot-password/page.tsx`       | Forgot-password page.                                                               |
-| `reset-password/[slug]/page.tsx` | Reset-password page.                                                                |
-| `api/**/route.ts`                | Next route handlers; mostly backend proxies.                                        |
-| `fonts/`                         | Local Geist font files used by `next/font/local`.                                   |
+| Path                    | Purpose                                                                 |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `layout.tsx`            | Root layout; Google Geist fonts, global styles, HeroUI and theme setup. |
+| `page.tsx`              | Catalog route `/`; server fetches products + theme and renders `Home`.  |
+| `providers.tsx`         | Client provider for HeroUI.                                             |
+| `apollo-client.ts`      | Apollo Client factory for Strapi GraphQL.                               |
+| `api/preferences/route.ts` | Saves theme preference cookie via `POST /api/preferences`.           |
+| `hero.ts`               | HeroUI-related setup file.                                              |
+| `globals.css`           | Tailwind/global CSS.                                                    |
 
 ### `src/features/`
 
-| Domain                             | Purpose                                                                                                     |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `Login/`                           | Login, registration, forgot-password, and reset-password UI.                                                |
-| `Dashboard/`                       | Dashboard shell and subscreens (`QuotesSubscreen`, `Order`, `MarginProfitSubscreen`, `AddressesSubscreen`). |
-| `Quotes/`                          | Quote form/cards/copy flows.                                                                                |
-| `Addresses/`                       | Address management forms, previews, dropdowns, pending GE address UI.                                       |
-| `AutocompleteZipcode/`             | Zipcode autocomplete inputs and region dropdowns.                                                           |
-| `Guides/`                          | Guide creation/viewing for MN, GE, PKK, and Tone flows.                                                     |
-| `Guides-DB/`                       | DB-backed create flow (pre-select, multi-step modal, result semantics for `created`/`failed`).              |
-| `ProfitMargin/`                    | Courier profit-margin forms/cards.                                                                          |
-| `QueryProviderWrapper.tsx`         | App-wide TanStack Query provider.                                                                           |
-| `AppRouterContextProviderMock.tsx` | Test helper for router context.                                                                             |
+| Domain                   | Purpose                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| `Home/`                  | Main client catalog controller: search, category/brand filters, pagination, drawer state. |
+| `ProductListing/`        | Product grid plus `SearchInput`, `DropdownCategories`, and `DropdownBrands`.             |
+| `ProductVariantsDrawer/` | HeroUI drawer that fetches, sorts, and displays product variants/prices.                 |
 
 ### `src/shared/`
 
-| Subdir                                 | Purpose                                                                                            |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `ui/atoms`, `ui/organisms`, `ui/icons` | Reusable UI primitives and compositions. There is no `molecules` folder in this repo.              |
-| `hooks`                                | Reusable client hooks such as media query, notifications, address lookup, autocomplete, and steps. |
-| `lib`                                  | Server-oriented helpers: auth/session cookies and preferences.                                     |
-| `utils`                                | Pure helpers for quotes, guides, addresses, login, local storage, and globals.                     |
-| `constants`                            | Route paths, API endpoints, messages, local-storage keys, and domain constants.                    |
-| `types`                                | Shared TypeScript DTOs and UI types.                                                               |
+| Subdir       | Purpose                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------- |
+| `constants`  | Cross-cutting constants such as the theme cookie key.                                   |
+| `hooks`      | Reusable client hooks; currently `useMediaQuery`.                                       |
+| `lib`        | Server actions for Strapi reads and theme cookie persistence.                           |
+| `queries`    | GraphQL operations for products, filtered products, and variants.                       |
+| `types`      | Product, variant, app theme, error, pagination, category, and brand types/constants.    |
+| `ui/atoms`   | Reusable atomic UI such as `ToggleDarkMode`.                                            |
+| `ui/organisms` | Reusable composed UI such as `Header`.                                               |
+| `utils`      | Pure helpers such as currency formatting.                                               |
+
+### `src/zustand/`
+
+| Path                                    | Purpose                                                              |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| `store/change-theme.store.ts`           | Vanilla Zustand theme store and React context.                       |
+| `provider/change-theme.provider.tsx`    | Client provider that creates a per-provider store with `useRef`.     |
+
+## Data Flow
+
+Product reads are GraphQL queries against Strapi:
+
+- `fetchProducts(page)` calls `GET_PRODUCTS` with `pagination: { page, pageSize: 50 }`.
+- `fetchProductsByCategory(customId)` calls `GET_PRODUCTS_BY_CATEGORY` with a category `customId contains` filter and `pageSize: 50`.
+- `fetchProductsByBrand(brandId)` calls `GET_PRODUCTS_BY_BRAND` with a brand `customId contains` filter and `pageSize: 50`.
+- `fetchProductVariants({ documentId })` calls `GET_PRODUCT_VARIANTS` with `pageSize: 100` and returns `product.product_variants`.
+
+Catalog behavior:
+
+- The server page fetches one page of 50 products and passes it to `Home`.
+- `Home` stores the current working set in `allProducts.current` and visible rows in `filteredProducts`.
+- Search filters only the current working set in memory by product name. It does not query Strapi and does not reset the page to 1.
+- Category and brand filters fetch from Strapi and replace the working set. Only one of category or brand is active at a time.
+- Pagination uses `router.push('/?page=N')`, scrolls to top, and hides while a category or brand filter is active.
+- `ProductVariantsDrawer` fetches variants when opened, formats prices with `formatNumberToCurrency`, and sorts by numeric price ascending.
 
 ## API Route Inventory
 
-Most proxy routes read `getAccessToken()` from `src/shared/lib/auth.lib.ts`, return `400` when it is missing, attach `Authorization: Bearer <token>`, and unwrap backend errors from `error.response.data.error.message`.
+| Route              | Methods | Purpose                                                                 |
+| ------------------ | ------- | ----------------------------------------------------------------------- |
+| `/api/preferences` | `POST`  | Requires JSON `{ "theme": "light" | "dark" }`; saves `tehesa-theme` cookie and returns `{ success, themeChangedTo }`. |
 
-| Route                       | Methods                        | Upstream / purpose                                                                                                                              |
-| --------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api`                      | `POST`                         | Login; posts to `${BACKEND_URI}/auth/`, signs the returned cookie value with `jose`, and sets `session` + `user-info` cookies.                  |
-| `/api/auth/sign-out`        | `GET`                          | Deletes session/user cookies and revalidates `/` and `/dashboard`.                                                                              |
-| `/api/auth/create-user`     | `POST`                         | Proxies user creation to `${BACKEND_URI}/users`.                                                                                                |
-| `/api/auth/forgot-password` | `POST`                         | Proxies to `${BACKEND_URI}/users/forgot-password`.                                                                                              |
-| `/api/auth/reset-password`  | `POST`                         | Proxies to `${BACKEND_URI}/users/reset-password/{slug}`.                                                                                        |
-| `/api/quotes`               | `POST`                         | Proxies quote requests to `${BACKEND_URI}/quotes`.                                                                                              |
-| `/api/address-info`         | `GET`                          | Requires `zipcode`; proxies to `${BACKEND_URI}/quotes/address-info/{zipcode}` and returns neighborhoods.                                        |
-| `/api/address`              | `GET`, `POST`, `PUT`, `DELETE` | CRUD proxy for `${BACKEND_URI}/addresses`; delete encodes the address alias in the URL.                                                         |
-| `/api/ge-address`           | `GET`, `POST`, `PUT`, `DELETE` | GE address proxy for `${BACKEND_URI}/ge/addresses` and `${BACKEND_URI}/ge/address/{id}`; PUT blocks alias edits.                                |
-| `/api/guides/get-guides`    | `GET`                          | Proxies to `${BACKEND_URI}/guides`.                                                                                                             |
-| `/api/guides-db`            | `POST`                         | Proxies to `${BACKEND_URI}/guides/db/create`; returns 201 even when upstream `data.status === 'failed'` (saved DB record, not transport error). |
-| `/api/guides/mn`            | `POST`                         | Creates MN guide via `${BACKEND_URI}/mn/create-guide`; treats null-guide or embedded 400 message as failure.                                    |
-| `/api/guides/tone`          | `POST`                         | Creates Tone guide via `${BACKEND_URI}/tone/create-guide`; same null-guide/embedded-400 failure rule as MN.                                     |
-| `/api/guides/ge`            | `POST`                         | Creates GE guide via `${BACKEND_URI}/ge/create-guide`.                                                                                          |
-| `/api/guides/pkk`           | `POST`, `GET`                  | Creates PKK guide via `${BACKEND_URI}/pkk/create-guide`; `GET` fetches a single guide by `guide` query param.                                   |
-| `/api/margin-profit`        | `GET`, `POST`                  | Reads `${BACKEND_URI}/global-configs/profit-margin`; POST sends a PUT to `/global-configs/profit-margin-providers`.                             |
-| `/api/product-sat`          | `POST`                         | Calls `NEXT_PUBLIC_GET_SAT_PRODUCT_URI?search=...` directly, slices results to 100, and formats code/description pairs.                         |
-| `/api/preferences/theme`    | `POST`                         | Cookie setter; saves Flowbite theme mode through `saveThemeCookie()`.                                                                           |
+There are no auth, checkout, order, or backend proxy route handlers in this repo at the time of writing.
 
-## Auth And Cookies
+## Theme And Cookies
 
-- Cookie keys live in `src/shared/constants/global.constants.ts`: `session`, `user-info`, `theme`, and `dashboard-screen`.
-- `encodeAccessToken()` signs `{ accessToken }` with `SESSION_SECRET_KEY` using HS256 and a 7-day JWT expiry.
-- `saveSessionCookie()` and `saveUserInfo()` set httpOnly, secure, sameSite strict cookies. The login route also sets response cookies with `secure: process.env.NODE_ENV === 'production'` and 5-day `maxAge`.
-- Client components should not read auth cookies directly. Use route handlers or server helpers.
-- Preferences in `src/shared/lib/preferences.lib.ts` are server actions (`"use server"`): theme and dashboard screen are cookie-backed.
+- Cookie key: `THEME_COOKIE_KEY = 'tehesa-theme'`.
+- `getThemePreference()` reads the cookie server-side and returns `'light'` when absent.
+- `saveThemeCookie(theme)` sets an httpOnly, secure, sameSite strict cookie.
+- `NextThemesProvider` defaults to dark, while `getThemePreference()` defaults to light when no cookie exists. Be explicit when changing theme initialization behavior because these defaults currently differ.
+- Client theme UI should use the existing `ChangeThemeStoreProvider`, `useChangeThemeStore`, `ToggleDarkMode`, and `/api/preferences` flow rather than writing cookies directly.
 
 ## Environment Variables
 
-Required values are documented in `.env.example`:
+Required for Strapi-backed catalog data:
 
-- `BACKEND_URI` - backend API base URL.
-- `SESSION_SECRET_KEY` - key used by `jose` for the signed session cookie.
-- `NEXT_PUBLIC_LOCAL_STORAGE` - local-storage namespace.
-- `FRONTEND_URI` - frontend origin.
-- `NEXT_PUBLIC_GET_SAT_PRODUCT_URI` - external SAT product search endpoint.
-- `NEXT_PUBLIC_DEFAULT_EMAIL` - default email used for external API data.
+- `STRAPI_HOST` - Strapi GraphQL endpoint.
+- `STRAPI_API_TOKEN` - bearer token sent by Apollo Client.
+
+Values are expected in `.env.local` for local development. Without them, Apollo queries from server components/actions can fail or return empty data.
 
 ## Commands
 
-| Command                                        | Purpose                                                            |
-| ---------------------------------------------- | ------------------------------------------------------------------ |
-| `pnpm dev`                                     | Start Next dev server on port 3000.                                |
-| `pnpm build`                                   | Production build; use for full verification.                       |
-| `pnpm start`                                   | Start a built Next app.                                            |
-| `pnpm lint`                                    | Run `next lint` with `next/core-web-vitals` and `next/typescript`. |
-| `pnpm exec tsc --noEmit`                       | TypeScript-only check; there is no package script for this.        |
-| `pnpm test`                                    | Jest run in jsdom; coverage is always collected into `coverage/`.  |
-| `pnpm test -- __tests__/path/to/file.test.tsx` | Focus one test file. Add `-t "test name"` to focus by name.        |
+| Command                  | Purpose                                                                     |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `pnpm dev`               | Start Next dev server with Turbopack.                                       |
+| `pnpm build`             | Production build with Turbopack; also runs type checking.                   |
+| `pnpm start`             | Start a built Next app.                                                     |
+| `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
+| `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.           |
+| `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.  |
 
-## Testing Conventions
+There is no `pnpm test` script and no test framework configured. Do not invent test commands.
 
-- Jest uses `next/jest`, `testEnvironment: "jsdom"`, and `jest.setup.ts`.
-- `jest.setup.ts` imports `@testing-library/jest-dom`, installs `TextEncoder`/`TextDecoder`, and adds a JSON-based `structuredClone` fallback.
-- `__tests__/mocks/` and `__tests__/utils-test/` are ignored as test suites. Use them for fixtures/helpers imported by real tests.
-- Real tests currently live under `__tests__/feature/*`, `__tests__/components/*`, and `__tests__/home.test.tsx`.
-- Keep new tests near the matching feature/shared UI boundary.
-- `.github/copilot-instructions.md` contains project-specific unit test rules: router/query wrappers, `userEvent` over `fireEvent`, avoid mocking internal components, avoid styling assertions, preserve skipped tests, and match mock data to real return shapes.
+## Prompt Sync
+
+`scripts/sync-opencode-commands.mjs` keeps GitHub prompt files aligned with opencode commands:
+
+- `.opencode/command/research.md` -> `.github/prompts/research.prompt.md`
+- `.opencode/command/plan.md` -> `.github/prompts/plan.prompt.md`
+- `.opencode/command/implement.md` -> `.github/prompts/implement.md`
+
+When editing an opencode command that has a GitHub prompt counterpart, edit the opencode command first and run `pnpm sync:prompts`. The sync script skips command files that do not exist in the checkout.
+
+## CI And Release Workflow
+
+- PRs target `develop`.
+- `check-label.yml` requires at least one of `major`, `minor`, or `patch` on pull requests. CI fails when none are present.
+- `develop-pipeline.yml` runs on closed PRs to `develop`; when merged, it checks labels, bumps `package.json` with `npm version --no-git-tag-version`, tags `vX.Y.Z`, pushes tags, and prepends a generated entry to `CHANGELOG.md`.
+- Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work unless explicitly requested.
 
 ## Styling And UI
 
-- Tailwind v4 is configured only through `postcss.config.mjs` with `@tailwindcss/postcss`.
-- Flowbite React is in use; preserve the `withFlowbiteReact(nextConfig)` wrapper in `next.config.mjs`.
-- Dashboard customizes Flowbite `drawer` theme locally in `src/app/dashboard/page.tsx`.
-- Root layout sets `<html lang="en" data-theme={theme}>`; update deliberately if changing locale/theme behavior.
+- Preserve HeroUI as the component system unless a task explicitly changes UI libraries.
+- `tailwind.config.js` includes only HeroUI theme dist in `content`; Tailwind v4 auto-detects app content. Do not broaden or remove this casually.
+- `darkMode: "class"` is required for next-themes/HeroUI dark mode behavior.
+- Existing UI copy is Spanish (`Catalogo de productos`, `Limpiar filtros`, `Ver detalles`, etc.). Preserve language consistency unless the task is localization-related.
+- `ProductCard` uses `useMediaQuery()` for mobile-aware card header/title layout.
 
 ## Conventions And Gotchas
 
 - Path alias: `@/*` maps to `./src/*`.
-- Add `'use client'` to files that use hooks, browser APIs, router hooks, or client-only libraries.
-- Keep backend proxy behavior consistent with existing route handlers unless intentionally fixing a bug: access-token check, `Authorization` header, `NextResponse.json`, and 400 error shape.
-- Do not assume all backend responses have the same envelope. Existing routes return a mix of raw upstream data, `{ data }`, `{ message }`, and feature-specific objects.
-- `src/app/api/product-sat/route.ts` does not use `BACKEND_URI`; it calls `NEXT_PUBLIC_GET_SAT_PRODUCT_URI` directly.
-- `src/features/Dashboard/Dashboard.tsx` is client-only and has separate mobile/tablet vs desktop rendering via `useMediaQuery()`.
-- Avoid adding new state libraries. This repo uses local React state, cookies/server actions, TanStack Query, and local-storage helpers; there is no Zustand store.
+- Add `"use client"` to files that use hooks, browser APIs, router hooks, Zustand hooks, HeroUI hooks, or client-only libraries.
+- Keep domain UI under `src/features/<Feature>/`; keep cross-cutting UI/helpers under `src/shared/`; `src/components` currently only contains `ProductCard`.
+- New state stores should follow the SSR-safe provider/store pattern already used under `src/zustand`.
+- Do not add TanStack Query, Redux, form libraries, auth flows, or test tooling unless the story explicitly requires them.
+- GraphQL schema knowledge is inferred from `src/shared/queries/global.queries.ts` and TypeScript types. Confirm backend/Strapi contract before normalizing fields or changing query shapes.
+- Product category and brand lists are hardcoded in `src/shared/types/global.types.ts`; there is a TODO questioning whether this should remain hardcoded.
+- `fetchProductsByCategory()` and `fetchProductsByBrand()` catch errors and return `undefined`; callers need to handle absent results.
+- `fetchProducts()` and `fetchProductVariants()` do not catch Apollo errors; errors can surface to the route/render path.
+- Product image rendering in `ProductCard` is commented out and currently references localhost Strapi URLs. Treat image support as unfinished.
 
 ## Key Files
 
-| File                                    | Purpose                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------ |
-| `AGENTS.md`                             | Compact agent instructions: commands, architecture, env, tests, styling. |
-| `package.json`                          | Scripts and dependencies.                                                |
-| `next.config.mjs`                       | Next config; transpiles `jose` and wraps Flowbite React plugin.          |
-| `tsconfig.json`                         | Strict TypeScript, `@/*` path alias.                                     |
-| `jest.config.ts`                        | Jest + coverage + ignored helper directories.                            |
-| `jest.setup.ts`                         | Global test setup.                                                       |
-| `.github/copilot-instructions.md`       | Unit test conventions and mocking rules.                                 |
-| `src/app/layout.tsx`                    | Root layout, theme cookie, QueryProvider.                                |
-| `src/app/page.tsx`                      | Login entrypoint and authenticated redirect.                             |
-| `src/app/dashboard/page.tsx`            | Dashboard server wrapper + Flowbite theme.                               |
-| `src/features/QueryProviderWrapper.tsx` | TanStack Query client provider with per-request-safe `useRef`.           |
-| `src/shared/lib/auth.lib.ts`            | Session encode/decode, user-info cookie, sign-out helpers.               |
-| `src/shared/lib/preferences.lib.ts`     | Theme and dashboard-screen cookie actions.                               |
+| File                                      | Purpose                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `AGENTS.md`                               | Compact agent instructions: commands, architecture, env, CI, styling.    |
+| `package.json`                            | Scripts and dependencies.                                                |
+| `next.config.ts`                          | Minimal Next config.                                                     |
+| `tsconfig.json`                           | Strict TypeScript, bundler module resolution, `@/*` path alias.          |
+| `eslint.config.mjs`                       | ESLint flat config with Next presets.                                    |
+| `postcss.config.mjs`                      | Tailwind v4 PostCSS plugin.                                              |
+| `tailwind.config.js`                      | HeroUI theme plugin/content and class dark mode.                         |
+| `scripts/sync-opencode-commands.mjs`      | Syncs opencode command prompts into `.github/prompts`.                   |
+| `.github/workflows/check-label.yml`       | PR label validation for `major`, `minor`, or `patch`.                    |
+| `.github/workflows/develop-pipeline.yml`  | Develop merge release/changelog automation.                              |
+| `src/app/layout.tsx`                      | Root layout, HeroUI provider, next-themes provider.                      |
+| `src/app/page.tsx`                        | Catalog page, pagination param handling, server data fetch.              |
+| `src/app/apollo-client.ts`                | Apollo Client factory using Strapi env vars.                             |
+| `src/app/api/preferences/route.ts`        | Theme cookie API route.                                                  |
+| `src/features/Home/Home.tsx`              | Client catalog controller.                                               |
+| `src/features/ProductListing/*.tsx`       | Listing grid, search input, category and brand dropdowns.                |
+| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` | Variant drawer and price display.                      |
+| `src/components/ProductCard.tsx`          | Product card UI.                                                         |
+| `src/shared/lib/global.lib.ts`            | Server actions for Strapi reads and theme cookies.                       |
+| `src/shared/queries/global.queries.ts`    | GraphQL operations.                                                      |
+| `src/shared/types/global.types.ts`        | Product/domain types plus hardcoded category and brand options.          |
+| `src/zustand/provider/change-theme.provider.tsx` | Theme store provider and hook.                                  |
+| `src/zustand/store/change-theme.store.ts` | Vanilla Zustand theme store.                                             |
 
 ## Open Questions
 
-- There are no CI workflow files in this checkout; branch, PR label, release, and deployment rules are not documented in-repo.
-- Several route handlers collapse upstream failures into `400` and sometimes return different error shapes. Confirm desired API contract before normalizing.
-- The backend contract is inferred only from this frontend's route handlers and TypeScript types; no OpenAPI or backend repo reference is present here.
+- The Strapi schema and pagination metadata are inferred only from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo.
+- The production deployment target is not documented in source beyond generic Next README content and GitHub workflows.
+- Theme defaults differ between `NextThemesProvider` (`dark`) and `getThemePreference()` (`light` when no cookie exists); confirm desired default before changing related UX.
+- Category/brand options are hardcoded; confirm whether they should eventually come from Strapi before replacing them with dynamic fetches.

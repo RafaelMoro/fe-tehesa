@@ -1,10 +1,10 @@
 ---
-description: Research a Kraft Envios feature or bug and write an ai-research note without changing source code.
+description: Research a Tehesa catalog feature or bug and write an ai-research note without changing source code.
 ---
 
 # /research - Research Workflow
 
-You are running the **research phase** for `kraft-envios-fe` (Next.js 14 App Router + React 18 + TypeScript, pnpm, TanStack Query, Tailwind v4 + Flowbite React, Jest). Your goal is to gather information, ask clarifying questions, and write a research document under `ai-research/`.
+You are running the **research phase** for `fe-tehesa` (Next.js 15 App Router + React 19 + TypeScript, pnpm, Apollo/Strapi, HeroUI, Tailwind v4, next-themes, Zustand). Your goal is to gather information, ask clarifying questions, and write a research document under `ai-research/`.
 
 ## Inputs the user may provide
 
@@ -17,13 +17,13 @@ Parse whatever the user supplied from `$ARGUMENTS` and the conversation.
 
 Before any codebase exploration, read these files and do not re-discover what is already documented:
 
-1. `REPO_CONTEXT.md` - architecture map, route handler inventory, auth/cookie flow, conventions, open questions
-2. `AGENTS.md` - compact toolchain, commands, env, tests, and structure guidance
-3. `.github/copilot-instructions.md` - project-specific unit test conventions, wrappers, and mocking rules
-4. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | test`)
-5. Relevant executable config: `next.config.mjs`, `jest.config.ts`, `tsconfig.json`, `postcss.config.mjs`
+1. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions
+2. `AGENTS.md` - compact toolchain, commands, env, tests, structure, and PR/release guidance
+3. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | sync:prompts`)
+4. Relevant executable config: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.js`
+5. CI files when release/PR behavior matters: `.github/workflows/check-label.yml` and `.github/workflows/develop-pipeline.yml`
 
-There is no CI workflow directory in this checkout. Do not assume branch, label, release, or deployment rules unless the user provides them.
+There is no test framework configured and no `pnpm test` script. Do not invent test commands.
 
 ## Step 2 - Story quality check
 
@@ -41,9 +41,9 @@ If any flag fires, ask the user before continuing. Do not invent answers.
 
 Before deep exploration, assess whether this is:
 
-- **Single story** - 1-3 phases, clear ACs, e.g. fix a quote form bug or add one validation
-- **Multiple stories** - separate deliverables across different screens or flows
-- **Epic** - complex initiative spanning several features, API routes, UI flows, and tests
+- **Single story** - 1-3 phases, clear ACs, e.g. fix catalog filtering, adjust variant drawer behavior, or update theme persistence
+- **Multiple stories** - separate deliverables across different screens, data flows, UI components, or API behavior
+- **Epic** - complex initiative spanning catalog queries, Strapi contract changes, UI flows, state management, and verification
 
 If the requirement is too broad or complex:
 
@@ -60,8 +60,9 @@ Apply these constraints **before** exploration:
 - Do not explore tangential refactors or "while we're here" cleanups.
 - Do not invent features the story does not mention.
 - If scope seems unclear, ask before exploring.
-- Respect the current layout: domain UI belongs in `src/features/<Domain>/`; cross-cutting code belongs in `src/shared/`.
-- Backend knowledge must come from this repo's route handlers, types, constants, and env docs unless the user provides backend details. Do not clone or shell into an external backend repo.
+- Respect the current layout: domain UI belongs in `src/features/<Feature>/`; cross-cutting code belongs in `src/shared/`; `src/components` currently only contains `ProductCard`.
+- Backend/Strapi knowledge must come from this repo's GraphQL queries, server actions, types, constants, env docs, and user-provided details. Do not clone or shell into an external backend repo.
+- Preserve the existing Apollo/Strapi data access pattern unless the story explicitly asks to replace it.
 
 ## Step 5 - Ask about scope and complexity
 
@@ -86,7 +87,7 @@ Resolve at minimum:
 
    > "Are there specific code areas or questions you want prioritized during research?"
 
-4. **Other story-specific clarifications** - e.g. courier behavior, backend contract uncertainty, Flowbite vs local shared UI, accessibility expectations, mobile/desktop behavior, cookie/local-storage expectations.
+4. **Other story-specific clarifications** - e.g. Strapi/GraphQL contract uncertainty, catalog pagination limits, category/brand filter behavior, variant pricing semantics, HeroUI/accessibility expectations, mobile/desktop behavior, theme/cookie expectations, release label requirements.
 
 Batch all of these into a single question UI call when the environment supports it. Do not invent answers.
 
@@ -109,18 +110,20 @@ The research doc must include:
 
 - **Affected areas**, referencing this repo's layout:
   - Routes/pages: `src/app/**`
-  - API route handlers: `src/app/api/**/route.ts`
-  - Feature UI: `src/features/{Login,Dashboard,Quotes,Addresses,AutocompleteZipcode,Guides,ProfitMargin}`
-  - Shared code: `src/shared/{ui,hooks,lib,utils,constants,types}`
-  - Tests: `__tests__/feature/*`, `__tests__/components/*`, `__tests__/home.test.tsx`; helper dirs `__tests__/mocks/` and `__tests__/utils-test/` are ignored by Jest
-- **Existing patterns to follow** - App Router server/client split, TanStack Query via `features/QueryProviderWrapper`, Flowbite React, Tailwind v4, `react-hook-form` + `yup`, route-handler proxy style
-- **Testing rules to follow** - use `.github/copilot-instructions.md` for router/query wrappers, `userEvent`, mocking limits, import conventions, skipped-test preservation, and mock data shape checks
-- **Dependencies / integration points** - new deps require `package.json` and pnpm lockfile changes; env vars are listed in `.env.example` and `AGENTS.md`
-- **Edge cases and constraints** - httpOnly session cookies, mixed API response shapes, mobile/tablet dashboard branch, coverage always collected on tests, `product-sat` external SAT URI instead of `BACKEND_URI`
+  - API route handlers: `src/app/api/**/route.ts` (currently only `/api/preferences`)
+  - Feature UI: `src/features/{Home,ProductListing,ProductVariantsDrawer}`
+  - Shared product card: `src/components/ProductCard.tsx`
+  - Shared code: `src/shared/{constants,hooks,lib,queries,types,ui,utils}`
+  - Zustand theme state: `src/zustand/{provider,store}`
+  - Tests: none configured; use lint/build/TypeScript checks for verification unless the task adds tests intentionally
+- **Existing patterns to follow** - App Router server/client split, server actions in `src/shared/lib/global.lib.ts`, per-call Apollo client factory in `src/app/apollo-client.ts`, HeroUI components, Tailwind v4 class styling, next-themes class dark mode, Zustand provider-wraps-store pattern
+- **Verification rules to follow** - use `pnpm lint`, `pnpm build`, and `pnpm exec tsc --noEmit` when relevant; do not run nonexistent tests; do not run `pnpm install` during research
+- **Dependencies / integration points** - new deps require `package.json` and `pnpm-lock.yaml` changes; Strapi env vars are `STRAPI_HOST` and `STRAPI_API_TOKEN`; prompt sync uses `pnpm sync:prompts`
+- **Edge cases and constraints** - hardcoded 5-page catalog ceiling, page size 50 for products, page size 100 for variants, no GraphQL pagination metadata documented, category/brand lists are hardcoded, theme defaults differ between next-themes and cookie fallback, filtered lists hide pagination, search filters only the current working set
 
 ### Open Questions
 
-- Separate questions into categories such as `Backend contract`, `Create payload`, `UI/product decisions`, and `Authorization`.
+- Separate questions into categories such as `Strapi contract`, `Catalog behavior`, `UI/product decisions`, `Theme/persistence`, and `Verification`.
 - List questions within each category using Roman numerals (`I`, `II`, `III`, `IV`, ...).
 - Use this format for every question:
   - `I: Question: ...`
@@ -129,13 +132,15 @@ The research doc must include:
   - `Context: ...` when extra context helps
   - `Explanation: ...` when the question needs clarification
 - Keep answered questions in the section; do not delete them after the user answers.
-- Flag ambiguous requirements and missing backend/API contract information as `Status: pending`.
+- Flag ambiguous requirements and missing Strapi/GraphQL contract information as `Status: pending`.
 
 Focus on **high-level actions** needed to accomplish the task. Do not include implementation code beyond illustrative file references.
 
 ## Step 7 - Capture non-obvious findings
 
 If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
+
+If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so `.github/prompts/research.prompt.md` stays in sync.
 
 ## Step 8 - Present for review
 
@@ -152,5 +157,6 @@ Do **not** start planning or writing code. Wait for human sign-off.
 
 - Do not propose implementation; that is the planning phase.
 - Do not write or modify source files other than the research doc, except for a verified broadly useful `REPO_CONTEXT.md` note.
-- Do not run tests, builds, or `pnpm install` during research.
-- Do not assume Zustand, finance domains, CI labels, branch flow, changelog automation, or external backend repository access; those are not present in this repo.
+- Do not run tests, builds, `pnpm install`, or package manager changes during research.
+- Do not assume TanStack Query, Flowbite, Jest, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo.
+- Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work; the develop merge workflow handles release automation.
