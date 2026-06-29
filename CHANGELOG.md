@@ -1,3 +1,9 @@
+## v0.11.0 (2026-06-29)
+
+### Pull Requests
+[#16](https://github.com/RafaelMoro/fe-tehesa/pull/16) | Add AI workflows
+
+
 ## v0.10.1 (2026-05-11)
 
 ### Pull Requests
