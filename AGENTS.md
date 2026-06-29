@@ -1,0 +1,33 @@
+# AGENTS.md
+
+Compact guidance for OpenCode sessions working in this repo.
+
+## Commands
+
+- Package manager is **pnpm** (lockfile + `.npmrc` hoist rule for `@heroui/*`). Do not use npm/yarn.
+- `pnpm dev` — dev server (Next.js + **Turbopack**).
+- `pnpm build` — production build (Turbopack); also runs type checking.
+- `pnpm lint` — ESLint flat config (`eslint.config.mjs`), extends `next/core-web-vitals` + `next/typescript`.
+- No test script, no test framework configured. Do not invent test commands.
+- No dedicated typecheck script; run `pnpm exec tsc --noEmit` if you need a standalone check.
+
+## Environment
+
+- `STRAPI_HOST` and `STRAPI_API_TOKEN` must be set (see `.env.local`, gitignored). Without them, Apollo queries in server components silently fail / return empty.
+- Node 22 in CI.
+
+## Architecture
+
+- Next.js 15 App Router, React 19. Router root is `src/app`; path alias `@/*` → `./src/*`.
+- Data flow: server components call server actions in `src/shared/lib/global.lib.ts` (`"use server"`), which create a **per-request ApolloClient** from `src/app/apollo-client.ts` against Strapi. GraphQL operations live in `src/shared/queries/global.queries.ts`.
+- Theme persistence: next-themes (`attribute="class"`, dark default) + cookie via `POST /api/preferences` → `saveThemeCookie`. Cookie key in `src/shared/constants`.
+- State: Zustand stores under `src/zustand/store`, SSR-safe providers under `src/zustand/provider`. Follow the provider-wraps-store pattern there when adding stores.
+- UI stack: **HeroUI** (`@heroui/react`, formerly NextUI) + Tailwind v4 via `@tailwindcss/postcss`. `darkMode: "class"`. Note: `tailwind.config.js` `content` only lists HeroUI's theme dist — Tailwind v4 auto-detects app content; do not break this.
+- Directory layout: `src/features/<Feature>/` (scoped UI), `src/shared/{constants,data,hooks,lib,queries,types,ui,utils}` (cross-cutting). `src/shared/ui` is split into `atoms` and `organisms`. `src/components` only holds the shared `ProductCard`.
+- Hardcoded pagination ceiling of 5 pages in `src/app/page.tsx` (known constraint, not a bug).
+
+## Release / PR workflow (CI-enforced)
+
+- Target branch for PRs is **`develop`**, not `main`.
+- Every PR **must** carry exactly one of the labels `major`, `minor`, or `patch` — CI fails otherwise (`check-label.yml`).
+- On merge, CI auto-bumps `package.json` version, tags `vX.Y.Z`, pushes tags, and regenerates `CHANGELOG.md` from the PR. **Do not manually bump the version or edit `CHANGELOG.md`.**
