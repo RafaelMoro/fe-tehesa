@@ -5,7 +5,7 @@ const root = process.cwd();
 const files = [
   ['research.md', 'research.prompt.md'],
   ['plan.md', 'plan.prompt.md'],
-  ['implement.md', 'implement.md'],
+  ['implement.md', 'implement.prompt.md'],
 ];
 
 for (const [sourceName, targetName] of files) {
