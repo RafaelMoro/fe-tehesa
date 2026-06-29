@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:prompts": "node scripts/sync-opencode-commands.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",
