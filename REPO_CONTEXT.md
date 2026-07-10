@@ -147,6 +147,8 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 | `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
 | `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.           |
 | `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.  |
+| `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).     |
+| `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.     |
 
 There is no `pnpm test` script and no test framework configured. Do not invent test commands.
 
@@ -193,6 +195,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | File                                      | Purpose                                                                  |
 | ----------------------------------------- | ------------------------------------------------------------------------ |
 | `AGENTS.md`                               | Compact agent instructions: commands, architecture, env, CI, styling.    |
+| `DESIGN.md`                               | Visual design system tokens + rationale; lint with `pnpm design:lint`.    |
 | `package.json`                            | Scripts and dependencies.                                                |
 | `next.config.ts`                          | Minimal Next config.                                                     |
 | `tsconfig.json`                           | Strict TypeScript, bundler module resolution, `@/*` path alias.          |
@@ -236,3 +239,4 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - The production deployment target is not documented in source beyond generic Next README content and GitHub workflows.
 - Theme defaults differ between `NextThemesProvider` (`dark`) and `getThemePreference()` (`light` when no cookie exists); confirm desired default before changing related UX.
 - Category/brand options are hardcoded; confirm whether they should eventually come from Strapi before replacing them with dynamic fetches.
+- `DESIGN.md` documents a green accent scale targeting HeroUI's `--primary-*` tokens, but HeroUI's default blue is still live in `src/app/globals.css`; remapping is a pending deliberate change, not a bug.
