@@ -20,3 +20,9 @@ Suggested BE contract shape:
 - Investigate graphql on the server using api from next js
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
 - Analytics, other than GA4, we can do our own analytics or search analytics tools
+
+## Catalog API follow-up
+
+- Story 1a (`ai-research/plp-catalog-api.story.md`) ships the initial catalog API routes with fixed page sizes (50 for products, 100 for variants) to keep the spike thin and match current server-action behavior.
+- Caller-controlled page size with sane bounds is a deliberate follow-up, not part of Story 1a.
+- This should be addressed by a later story once the API is in use and we know the realistic upper bounds callers need.

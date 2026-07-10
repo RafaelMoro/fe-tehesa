@@ -74,13 +74,13 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 - Current variant page size is 100.
 - Current route page ceiling is 5 in `src/app/page.tsx`, documented as a known constraint.
 
-### Route Shape Options
+### Route Shape (Decided)
 
-- Option A: one route, `GET /api/catalog`, with query params such as `type=products|category|brand|variants`.
-- Option B: multiple routes, for example `/api/catalog/products`, `/api/catalog/category`, `/api/catalog/brand`, `/api/catalog/variants`.
-- Option C: one route, `GET /api/catalog/search`, limited only to the original AC7 search spike.
-- Recommended research assumption: use one minimal catalog route or one small set under `src/app/api/catalog/`; final path should be picked during planning.
+- Multiple resource-specific routes under `src/app/api/catalog/`.
+- Product reads: `/api/catalog/products`, `/api/catalog/category`, `/api/catalog/brand`.
+- Product variants are exposed as a separate route group: `/api/catalog/variants`.
 - Avoid a broad query-builder API.
+- Future catalog-wide search should be a new route group, not bolted onto the product list routes.
 
 ### Validation Notes
 
@@ -123,19 +123,22 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 ### API Contract
 
 I: Question: Should the catalog API be one route with a `type` query param, or multiple resource-specific routes?
-Status: pending
-Context: Story 1a only needs to cover current GraphQL calls; simpler route shape is preferred.
-Explanation: Multiple routes are clearer, one route is less file surface. Pick during planning.
+Status: answered
+Answer: Multiple resource-specific routes.
+Context: User selected Option B: multiple routes.
+Explanation: Product reads live under `/api/catalog/products`, `/api/catalog/category`, and `/api/catalog/brand`. Variants live separately at `/api/catalog/variants`.
 
 II: Question: Should the API expose product variants in the same catalog route group?
-Status: pending
-Context: Variants are a current GraphQL call used by the product drawer.
-Explanation: User asked to handle GraphQL calls currently present, which includes variants, but the story is catalog API focused.
+Status: answered
+Answer: No, keep them separate.
+Context: User confirmed variants should be a separate route.
+Explanation: Variants will live at `/api/catalog/variants` rather than being a query param on the product list routes.
 
 III: Question: Should page size be caller-controlled with bounds, or fixed to the existing constants?
-Status: pending
-Context: Current products use 50 and variants use 100.
-Explanation: Fixed values are simpler and match current behavior.
+Status: answered
+Answer: Defer. Capture the follow-up in `docs/improvement.md` and address in a later story.
+Context: User asked to record the follow-up rather than decide now.
+Explanation: This story should not change caller-controlled page size behavior; track it as a future improvement.
 
 ### Validation
 
@@ -180,11 +183,13 @@ Context: There is no test framework; manual API checks may be useful.
 - Existing server actions stay in place.
 - Existing UI does not call the new API yet.
 - No new dependency is needed.
-- Fixed current page sizes are acceptable unless planning decides otherwise.
+- Page size stays at current fixed values (50 products, 100 variants) for this story; a later story will revisit caller-controlled page size.
 
 ## Research Outcome
 
 - There is no catalog API route today.
 - The repo already has all GraphQL operations needed for the current product, category, brand, and variant reads.
 - The smallest useful API story is a thin Route Handler layer over those existing queries with validation and a stable JSON envelope.
+- Final route shape: multiple resource-specific routes under `/api/catalog/` with product reads in `/products`, `/category`, `/brand` and variants in a separate `/variants` group.
 - Keep it boring: no query builder, no UI migration, no new data-fetching library.
+- Page size control is a deferred follow-up tracked in `docs/improvement.md`.
