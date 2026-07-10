@@ -1,3 +1,9 @@
+## v0.12.0 (2026-07-10)
+
+### Pull Requests
+[#17](https://github.com/RafaelMoro/fe-tehesa/pull/17) | Migrate hero ui v3
+
+
 ## v0.11.0 (2026-06-29)
 
 ### Pull Requests
