@@ -1,3 +1,9 @@
+## v0.14.0 (2026-07-10)
+
+### Pull Requests
+[#19](https://github.com/RafaelMoro/fe-tehesa/pull/19) | Epic: PLP Functionality And SEO | Story 1a | Create catalog API route for current GQL calls
+
+
 ## v0.13.0 (2026-07-10)
 
 ### Pull Requests
