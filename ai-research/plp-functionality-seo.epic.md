@@ -476,26 +476,36 @@ Explanation: Implementation will depend on what backend fields are eventually av
 ### Analytics And Conversion
 
 I: Question: Which PLP interactions are business-critical to measure?
-Status: pending
+Status: answered
+Answer: At minimum, track what the user searches in the search drawer feature. Capture the search term, search type (`name`, `category`, `brand`), result count when reliable, and returned product identifiers when available.
 Context: Candidate events are search, category select, brand select, clear filters, pagination, product detail open, and drawer action clicks.
+Explanation: The search drawer is the new catalog discovery surface, so its search input is the primary business-critical event for this epic. Other PLP events (category/brand select, clear filters, pagination, product detail open, drawer action clicks) can be added later in a follow-up story once the search-drawer instrumentation proves the event contract.
 
 II: Question: Is there an approved analytics provider or should the epic only define an event contract?
-Status: pending
+Status: answered
+Answer: Google Analytics 4 is the primary provider. A second analytics provider is also planned and should be designed for in the event contract.
 Context: No analytics dependency exists in `package.json`.
+Explanation: The implementation should keep an adapter/shim so both GA4 and the second provider can receive the same events. Avoid coupling UI components to a single vendor; the contract stays in shared code and both providers plug in behind it.
 
 III: Question: What is the intended conversion action after users view variants?
-Status: pending
+Status: answered
+Answer: `Agregar al carrito` from the variants drawer. The cart feature is a separate story.
 Context: The repo has no cart, quote, checkout, contact, or order route.
+Explanation: Track the `Agregar al carrito` drawer action click as the conversion event for this epic. Full cart, checkout, and order flows are out of scope and belong to the separate cart story.
 
 ### Verification
 
 I: Question: Should implementation verification require real Strapi env vars in local/CI for PLP flows?
-Status: pending
+Status: answered
+Answer: Manual validation can rely on the existing Strapi config. Automated tests should use mocks for Strapi responses so they do not require real env vars in CI.
 Context: Without `STRAPI_HOST` and `STRAPI_API_TOKEN`, Apollo queries can fail or return empty data.
+Explanation: Tests must mock Apollo/Strapi at the server-action or Apollo-client boundary so they run without secrets. Manual QA continues to use the real Strapi config in `.env.local`. No backend fixture contract is required for tests; mocks per test or per scenario are enough.
 
 II: Question: Should manual QA define a canonical product/category/brand fixture list for checking filters and variants?
-Status: pending
+Status: answered
+Answer: No formal fixture list is required. Use real Strapi data for manual QA and rely on mocks for automated tests.
 Context: No test framework or backend fixture contract is present.
+Explanation: Manual QA uses the live Strapi instance behind the existing config. Automated tests mock Strapi. A canonical fixture list can be added later only if a specific QA need appears.
 
 ## Assumptions Made
 
@@ -505,6 +515,8 @@ Context: No test framework or backend fixture contract is present.
 - Visual design remains out of scope; only light interaction, loading, empty, error, and accessibility expectations are included.
 - Backend/Strapi changes are not assumed; missing backend capabilities are tracked as open questions.
 - Cart feature is out of scope for this epic and should be tracked as a separate story; the drawer action `Agregar al carrito` cannot be implemented until that story lands.
+- Analytics uses Google Analytics 4 plus a second provider; the event contract must support both via an adapter, with no UI coupling to a vendor.
+- Automated tests for this epic mock Apollo/Strapi; manual QA uses the live Strapi config.
 
 ## Non-Obvious Findings
 
@@ -513,3 +525,4 @@ Context: No test framework or backend fixture contract is present.
 - Product variant loading has no visible loading, empty, or error state; an empty drawer body can appear while data is loading or absent.
 - Current SEO work can improve root metadata and paginated behavior, but crawlable category/brand/product SEO needs routes or URL strategy not present today.
 - Analytics should start as an event contract, not a dependency, because no provider is selected.
+- The primary conversion event in this epic is the `Agregar al carrito` drawer action; the full cart/checkout flow lives in a separate story.

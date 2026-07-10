@@ -18,3 +18,4 @@ Suggested BE contract shape:
 # FE
 
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
+- Analytics, other than GA4, we can do our own analytics or search analytics tools
