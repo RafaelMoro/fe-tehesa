@@ -28,7 +28,7 @@ export const ToggleDarkMode = () => {
   }
 
   return (
-    <Button isIconOnly onClick={toggleDarkMode}>
+    <Button isIconOnly onPress={toggleDarkMode}>
       <RiMoonLine />
     </Button>
   )

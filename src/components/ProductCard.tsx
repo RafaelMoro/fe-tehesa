@@ -1,6 +1,6 @@
 "use client"
 import { useMemo } from "react"
-import { Card, CardBody, CardFooter, CardHeader, Chip, Button } from "@heroui/react"
+import { Card, Chip, Button } from "@heroui/react"
 import { RiBookmarkLine, RiPriceTag3Line, RiStackLine } from "@remixicon/react"
 import clsx from "clsx"
 
@@ -40,7 +40,7 @@ export const ProductCard = ({ product, handleProductClick }: ProductCardProps) =
 
   return (
     <Card>
-      <CardHeader className={cardHeaderCss}>
+      <Card.Header className={cardHeaderCss}>
         {/* <Image // IMAGE COMP MOBILE
             alt={product.name}
             height={200}
@@ -64,8 +64,8 @@ export const ProductCard = ({ product, handleProductClick }: ProductCardProps) =
           </div>
           <h5 className={titleCSS}>{product.name}</h5>
         </div>
-      </CardHeader>
-      <CardBody>
+      </Card.Header>
+      <Card.Content>
         <div className="flex flex-col gap-6">
           { product?.variantCount && (
             <Chip size="sm">
@@ -82,12 +82,12 @@ export const ProductCard = ({ product, handleProductClick }: ProductCardProps) =
             </div>
           )}
         </div>
-      </CardBody>
-      <CardFooter>
-        <Button color="primary" onPress={() => handleProductClick(product)}>
+      </Card.Content>
+      <Card.Footer>
+        <Button variant="primary" onPress={() => handleProductClick(product)}>
           Ver detalles
         </Button>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   )
 }

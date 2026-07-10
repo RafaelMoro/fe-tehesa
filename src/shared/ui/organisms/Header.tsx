@@ -1,5 +1,5 @@
 "use client"
-import { Image } from "@heroui/react"
+import Image from "next/image"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { useTheme } from "next-themes"
@@ -18,7 +18,7 @@ export const Header = ({ themeFetched }: HeaderProps) => {
           alt="Tehesa Logo"
           height={61}
           width={115}
-          radius="sm"
+          className="rounded-sm"
           src="/tehesa-logo.webp"
         />
       ): (
@@ -26,7 +26,7 @@ export const Header = ({ themeFetched }: HeaderProps) => {
           alt="Tehesa Logo"
           height={61}
           width={115}
-          radius="sm"
+          className="rounded-sm"
           src="/tehesa-logo-negativo.webp"
         />
       )}

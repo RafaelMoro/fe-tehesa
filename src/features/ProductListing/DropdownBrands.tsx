@@ -1,4 +1,4 @@
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react"
+import { Button, Dropdown, Label } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
 import { BRANDS_PRODUCTS } from "@/shared/types/global.types"
@@ -16,21 +16,25 @@ export const DropdownBrands = ({ selectedBrand, updateSelectedBrand }: DropdownB
 
   return (
     <Dropdown>
-      <DropdownTrigger>
-        <Button variant="bordered">
+      <Dropdown.Trigger>
+        <Button variant="secondary">
           {selectedBrandObj?.name ?? 'Marcas'}
           <RiArrowDownSLine />
         </Button>
-      </DropdownTrigger>
-      <DropdownMenu
-        disallowEmptySelection
-        aria-label="Dropdown menu brands"
-        onAction={(key) => updateSelectedBrand(key as string)}
-      >
-        { allBrands.map((brand) => (
-          <DropdownItem key={brand.customId}>{brand.name}</DropdownItem>
-        )) }
-      </DropdownMenu>
+      </Dropdown.Trigger>
+      <Dropdown.Popover>
+        <Dropdown.Menu
+          disallowEmptySelection
+          aria-label="Dropdown menu brands"
+          onAction={(key) => updateSelectedBrand(key as string)}
+        >
+          { allBrands.map((brand) => (
+            <Dropdown.Item key={brand.customId} id={brand.customId} textValue={brand.name}>
+              <Label>{brand.name}</Label>
+            </Dropdown.Item>
+          )) }
+        </Dropdown.Menu>
+      </Dropdown.Popover>
     </Dropdown>
   )
 }
