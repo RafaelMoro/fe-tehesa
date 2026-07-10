@@ -30,7 +30,7 @@ It spans multiple deliverables across the catalog route, client PLP state, serve
 
 ### Story 1: Improve PLP Search And Filtering Behavior
 
-Description: Make catalog discovery behavior predictable for search, category filters, brand filters, empty states, and filter reset flows.
+Description: Make catalog discovery behavior predictable by separating local visible-result filtering from catalog-wide product search, category filters, brand filters, empty states, and filter reset flows.
 
 Acceptance criteria:
 
@@ -38,17 +38,20 @@ Acceptance criteria:
 2. Empty search/filter results show Spanish user-facing copy instead of generic fallback text.
 3. Category and brand filter behavior is explicit: either mutually exclusive as today or combined only if product requirements confirm it.
 4. Filter loading and failure states are represented in the UI instead of silently leaving stale results.
-5. The search scope is documented in-product or changed only after confirming whether it should search the current working set or the full catalog.
+5. The UI clearly separates `Filtrar resultados visibles` from `Buscar en todo el catalogo` so users understand when they are narrowing shown results versus querying Strapi by product name.
 
 Must-have notes:
 
 - Preserve current source of category and brand options unless the backend contract is confirmed.
 - Keep one clear filter model; do not add complex query-builder behavior without product need.
+- Present the catalog search as a recovery path after local filtering: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
+- Keep the visible-results filter close to the product grid controls and label it as narrowing already loaded results.
 
 Nice-to-have notes:
 
 - Sync active filters into URL parameters for shareability and back/forward behavior.
 - Add count or summary text for the active result set if the data contract can support it.
+- Add a small helper line under each input: `Filtra los productos que ya estas viendo` and `Busca coincidencias por nombre en el catalogo`.
 
 ### Story 2: Improve Pagination, Loading, And Navigation Feedback
 
@@ -204,6 +207,41 @@ Product list query returns:
 
 Filtered product queries return the same effective product card fields.
 
+Proposed catalog-wide name search query:
+
+```graphql
+query SearchProductsByName($filters: ProductFiltersInput) {
+  products(filters: $filters) {
+    maxPrice
+    minPrice
+    name
+    documentId
+    brand {
+      name
+    }
+    category {
+      name
+    }
+  }
+}
+```
+
+Provided variables:
+
+```json
+{
+  "filters": {
+    "name": {
+      "contains": "Juego de llave"
+    }
+  }
+}
+```
+
+Recommended implementation note:
+
+- Add `variantCount` to the proposed query if the returned products will render through the existing `ProductCard`, because the card already displays variant count when present.
+
 Variant query returns:
 
 - `product.product_variants.diameter`
@@ -223,6 +261,9 @@ Pagination behavior:
 - Page number is read from `?page=` and clamped between 1 and 5.
 - Search filters the current working set in memory by `product.name` only.
 - Search does not query Strapi and does not reset page to 1.
+- Proposed visible-results filter should keep this behavior and be named as a filter, not as catalog search.
+- Proposed catalog search should call Strapi with `name contains`, replace the working set with matching products, and mark server search as active.
+- Catalog search should likely clear category and brand filters unless combined filtering is explicitly approved.
 - Category and brand filters query Strapi and replace the current working set.
 - Category and brand filters are mutually exclusive in current state logic.
 - Filtered category/brand result sets hide pagination.
@@ -253,6 +294,8 @@ Pagination behavior:
 - No GraphQL pagination metadata is documented in current queries.
 - Category and brand options are hardcoded in `src/shared/types/global.types.ts`.
 - Search filters only the current working set, not the full catalog.
+- Two search-like controls need distinct labels, helper text, and state names to avoid ambiguity: local filter for loaded/visible products, server search for catalog-wide name matches.
+- Catalog-wide search results should hide or deliberately redefine pagination because the provided name search query has no pagination metadata.
 - Filtered lists hide pagination.
 - Category/brand server actions catch errors and return `undefined`; UI currently leaves previous results in place if no data is returned.
 - `fetchProducts()` and `fetchProductVariants()` can surface Apollo errors.
