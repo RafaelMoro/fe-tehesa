@@ -22,16 +22,18 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 
 1. A Next.js Route Handler exists under `src/app/api/catalog/` or an equivalent catalog API path.
 2. The API supports the GraphQL-backed product reads currently present in the repo: products by page, products by category, products by brand, and product variants by product document id.
-3. The API reuses `src/app/apollo-client.ts` so `STRAPI_HOST` and `STRAPI_API_TOKEN` remain the single Strapi connection contract.
-4. Request parameters are validated before GraphQL variables are built, including page, page size, category id, brand id, and product document id.
-5. Responses are shaped as JSON with predictable success and error envelopes so future UI work does not parse Apollo/Strapi internals.
-6. Existing server actions in `src/shared/lib/global.lib.ts` remain in place and continue to be the production path until a later story intentionally migrates callers.
+3. The API also exposes the dynamic category and brand list reads backed by the new `GET_CATEGORIES` and `GET_BRANDS` GraphQL operations so validation is not tied to hardcoded allowlists.
+4. The API reuses `src/app/apollo-client.ts` so `STRAPI_HOST` and `STRAPI_API_TOKEN` remain the single Strapi connection contract.
+5. Request parameters are validated before GraphQL variables are built, including page, page size, category id, brand id, and product document id.
+6. Responses are shaped as JSON with predictable success and error envelopes so future UI work does not parse Apollo/Strapi internals.
+7. Invalid request parameters return a `400` response with the error envelope; success responses use the success envelope.
+8. Existing server actions in `src/shared/lib/global.lib.ts` remain in place and continue to be the production path until a later story intentionally migrates callers.
 
 ### Scope Assessment
 
 - Classification: single API story.
-- In scope: Next Route Handler creation, current catalog GraphQL calls, request validation, JSON response shape.
-- Out of scope: PLP UI changes, visible-results search labels, empty states, loading states, filter reset UX, URL-synced filters, backend schema changes, new dependencies, and replacing server actions.
+- In scope: Next Route Handler creation, current catalog GraphQL calls, the new dynamic category and brand list reads, request validation, JSON response shape, and the `400` failure response behavior.
+- Out of scope: PLP UI changes, visible-results search labels, empty states, loading states, filter reset UX, URL-synced filters, replacing or de-duplicating the hardcoded `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS` arrays in `src/shared/types/global.types.ts`, backend schema changes, new dependencies, and replacing server actions.
 
 ## Technical Research
 
@@ -65,11 +67,14 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 - Variant query fields include `diameter` and `pricing.price`.
 - Existing queries do not return pagination metadata.
 - Existing queries use variables instead of GraphQL string interpolation.
+- Story 1a adds `GET_CATEGORIES` and `GET_BRANDS` for dynamic category and brand lists:
+  - `GET_CATEGORIES` selects `categories { name customId }`.
+  - `GET_BRANDS` selects `brands { customId name }`.
 
 ### Current Types And Static Data
 
 - `src/shared/types/global.types.ts` defines `Product`, `ProductVariant`, `FetchProductsResponse`, and `FetchSingleProductResponse`.
-- `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS` are hardcoded allowlists available for validating category and brand ids.
+- `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS` are hardcoded arrays still used by current UI dropdowns; they are not the source of truth for API validation after this story.
 - Current product page size is 50.
 - Current variant page size is 100.
 - Current route page ceiling is 5 in `src/app/page.tsx`, documented as a known constraint.
@@ -78,6 +83,7 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 
 - Multiple resource-specific routes under `src/app/api/catalog/`.
 - Product reads: `/api/catalog/products`, `/api/catalog/category`, `/api/catalog/brand`.
+- Dynamic taxonomy lists: `/api/catalog/categories` and `/api/catalog/brands`.
 - Product variants are exposed as a separate route group: `/api/catalog/variants`.
 - Avoid a broad query-builder API.
 - Future catalog-wide search should be a new route group, not bolted onto the product list routes.
@@ -87,10 +93,11 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 - Validate `page` as an integer within the known current bounds, likely `1..5` for products.
 - Validate product `pageSize` as fixed or bounded, with current default `50`.
 - Validate variants `pageSize` as fixed or bounded, with current default `100`.
-- Validate `categoryId` against `CATEGORIES_PRODUCTS` when handling category reads.
-- Validate `brandId` against `BRANDS_PRODUCTS` when handling brand reads.
-- Validate `documentId` as a non-empty bounded string before passing it to `GET_PRODUCT_VARIANTS`.
+- For category and brand reads, validate `categoryId` and `brandId` against the dynamic list returned by the new `GET_CATEGORIES` and `GET_BRANDS` operations, not the hardcoded arrays.
+- Fetch the taxonomy lists per request or cache them with a short TTL; do not assume the lists never change.
+- Validate `documentId` as a non-empty string capped at 30 characters, containing only `[A-Za-z0-9_-]`, before passing it to `GET_PRODUCT_VARIANTS`. 30 characters is a comfortable upper bound for Strapi v5 document ids, which are typically much shorter, while still rejecting pathological values.
 - Prefer allowlists and simple bounds over blacklist-heavy sanitization.
+- Reject requests with a `400` response using the error envelope when any validation rule fails.
 
 ### Response Envelope Notes
 
@@ -143,17 +150,22 @@ Explanation: This story should not change caller-controlled page size behavior; 
 ### Validation
 
 I: Question: Should category and brand ids be validated strictly against hardcoded allowlists?
-Status: pending
-Context: The allowlists exist today and are the current source of UI filter options.
+Status: answered
+Answer: No. Fetch dynamic category and brand lists from Strapi.
+Context: User provided `GET_CATEGORIES` and `GET_BRANDS` GraphQL operations.
+Explanation: The API adds `/api/catalog/categories` and `/api/catalog/brands` routes backed by those operations. Validation for `categoryId` and `brandId` must use the live lists, not the hardcoded arrays in `src/shared/types/global.types.ts`.
 
 II: Question: What exact character/length constraints should apply to product `documentId`?
-Status: pending
-Context: The repo only types it as `string`.
+Status: answered
+Answer: Non-empty, max 30 characters, allowed characters `[A-Za-z0-9_-]`.
+Context: User asked for a recommendation around 30 characters.
+Explanation: Strapi v5 document ids are typically much shorter than 30 characters, so 30 is a safe upper bound that will not reject any real id while still blocking pathological inputs.
 
 III: Question: Should invalid params return `400` with an error envelope, or `200` with empty data?
 Status: answered
-Answer: Use fail-fast validation with an error response.
-Context: The parent Story 1 requirements call for failing fast on invalid input.
+Answer: Return `400` with the error envelope.
+Context: User confirmed `400`.
+Explanation: The parent Story 1 requirements call for failing fast on invalid input, and `400` makes the failure mode obvious to callers without leaking Strapi/Apollo internals.
 
 ### Integration
 
@@ -189,7 +201,9 @@ Context: There is no test framework; manual API checks may be useful.
 
 - There is no catalog API route today.
 - The repo already has all GraphQL operations needed for the current product, category, brand, and variant reads.
+- Story 1a adds the new `GET_CATEGORIES` and `GET_BRANDS` operations so validation uses live Strapi data instead of the hardcoded allowlists.
 - The smallest useful API story is a thin Route Handler layer over those existing queries with validation and a stable JSON envelope.
-- Final route shape: multiple resource-specific routes under `/api/catalog/` with product reads in `/products`, `/category`, `/brand` and variants in a separate `/variants` group.
+- Final route shape: multiple resource-specific routes under `/api/catalog/` with product reads in `/products`, `/category`, `/brand`, dynamic taxonomy lists in `/categories` and `/brands`, and variants in a separate `/variants` group.
+- `documentId` validation uses a 30-character cap on `[A-Za-z0-9_-]`; invalid params return `400` with the error envelope.
 - Keep it boring: no query builder, no UI migration, no new data-fetching library.
 - Page size control is a deferred follow-up tracked in `docs/improvement.md`.
