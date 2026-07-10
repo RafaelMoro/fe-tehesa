@@ -211,6 +211,14 @@ Product list query returns:
 - `variantCount`
 - `documentId`
 
+Recently provided product example also includes:
+
+- `description`
+- `subcategory`
+- `hasOneProductVariant`
+
+Example product data can have `category: null`, `subcategory: null`, and `description: ""`, so product cards and SEO work must tolerate missing taxonomy and empty descriptive content.
+
 Filtered product queries return the same effective product card fields.
 
 Proposed catalog-wide name search query:
@@ -354,9 +362,10 @@ Suggested BE contract shape:
 - Category/brand server actions catch errors and return `undefined`; UI currently leaves previous results in place if no data is returned.
 - `fetchProducts()` and `fetchProductVariants()` can surface Apollo errors.
 - `ProductListing` empty copy is English: `No products available`.
-- Price formatter uses `en-US` and `USD`; confirm whether that matches Tehesa business expectations.
+- Price formatter currently uses `en-US` and `USD`; target behavior should use MXN while preserving `en-US`-style separators if product wants `$1,235.90` formatting.
 - Product card image support is not ready; existing commented code references localhost Strapi image URLs.
 - Story 3 now expects image-aware card behavior, but implementation is blocked until the image field and public media host are confirmed.
+- Current product data is enough for basic PLP cards, but weak for SEO and product decision-making when category, subcategory, description, image, slug, SKU, availability, and stock are missing or incomplete.
 - Root metadata is placeholder and not catalog-specific.
 - There are no category, brand, or product detail routes for crawlable taxonomy or product pages.
 
@@ -422,16 +431,22 @@ Context: Current empty result copy is English and filter errors are only logged.
 Explanation: Recommended empty copy options: `No encontramos productos para esta busqueda.`, `No hay productos que coincidan con estos filtros.`, or `Sin resultados por ahora. Prueba con otra busqueda o limpia los filtros.` Recommended loading copy, if skeletons need labels: `Cargando productos...` or `Buscando productos...`. Recommended error copy: `Algo salio mal. No pudimos cargar los productos. Intentalo de nuevo.`
 
 II: Question: What should drawer footer actions mean in the PLP flow?
-Status: pending
+Status: answered
+Answer: Drawer actions should be `Cancelar` and `Cotizar`.
 Context: Current buttons are `Cancelar` and `Finalizar`, but there is no checkout or quote flow in the repo.
+Explanation: `Cotizar` matches the likely next conversion step better than `Finalizar` because the repo has no checkout, cart, order, or payment flow.
 
 III: Question: Should prices display in USD with `en-US` formatting, or another locale/currency format?
-Status: pending
+Status: answered
+Answer: Use MXN as the currency. Keeping `en-US` locale formatting is acceptable if the desired display is the thousands/decimal style like `$1,235.90`.
 Context: `formatNumberToCurrency()` uses `Intl.NumberFormat('en-US', { currency: 'USD' })`.
+Explanation: The business currency should be MXN, not USD. Recommended formatter direction is `Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN', currencyDisplay: 'narrowSymbol' })` if the UI must keep `$1,235.90` instead of `MX$1,235.90`. If product later wants Mexico-localized formatting, switch locale to `es-MX`, but that may alter separators/display conventions.
 
 IV: Question: Which product card fields are must-have above the fold for decision-making?
-Status: pending
+Status: answered
+Answer: Current product data should show brand, name, min/max price, variant count, and available category/subcategory when present. Product information should be enhanced for stronger product decisions and SEO.
 Context: Current data supports name, category, brand, variant count, and min/max price.
+Explanation: With the provided product shape, `category`, `subcategory`, and `description` may be empty or null, and images are not available yet. Recommended enhancements are product image, non-empty short description, category/subcategory, product slug, variant SKU/internal ID, clearer variant display label, availability/published state, and stock status when inventory is modeled. Avoid fabricating unavailable fields in the frontend.
 
 ### SEO
 
@@ -447,7 +462,7 @@ III: Question: Should category and brand filters become crawlable routes in the 
 Status: pending
 Context: Current filters are client interactions on `/`, not route segments.
 
-IV: Question: Should structured data be part of this epic if current product data lacks image, URL, availability, and currency confirmation?
+IV: Question: Should structured data be part of this epic if current product data lacks image, URL, and availability confirmation?
 Status: pending
 Context: Structured data should not fabricate missing product facts.
 
