@@ -16,12 +16,10 @@ export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }:
 
   return (
     <Dropdown>
-      <Dropdown.Trigger>
-        <Button variant="secondary">
-          {selectedCategoryObj?.name ?? 'Categorias'}
-          <RiArrowDownSLine />
-        </Button>
-      </Dropdown.Trigger>
+      <Button variant="secondary">
+        {selectedCategoryObj?.name ?? 'Categorias'}
+        <RiArrowDownSLine />
+      </Button>
       <Dropdown.Popover>
         <Dropdown.Menu
           disallowEmptySelection
