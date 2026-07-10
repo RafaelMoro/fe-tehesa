@@ -17,7 +17,7 @@ Improve PLP Search And Filtering Behavior
 
 Make product listing discovery more predictable by separating local visible-result filtering from catalog-wide product search, category filters, brand filters, empty states, and filter reset flows.
 
-The story also requires input validation before values reach Strapi GraphQL and a thin Next.js Route Handler spike for catalog search under `src/app/api/`, while preserving the current server-action production path.
+The story also requires input validation before values reach Strapi GraphQL while preserving the current server-action production path.
 
 ### Acceptance Criteria
 
@@ -26,32 +26,30 @@ The story also requires input validation before values reach Strapi GraphQL and 
 3. Category and brand filter behavior remains one clear model; current mutually exclusive behavior is acceptable unless product requirements later confirm combined filtering.
 4. Filter loading and failure states are represented in the UI instead of silently leaving stale results.
 5. The UI clearly separates local visible-results filtering from catalog-wide product search.
-6. User-controlled inputs that can reach the GraphQL layer are validated before use: name search term, category id, brand id, page number, and page size.
-7. A thin `GET` Route Handler spike exists at `src/app/api/catalog/search/route.ts` or an equivalent path, accepts query parameters, reuses the Apollo client factory, validates inputs, queries Strapi, and returns shaped JSON without replacing the current server-action flow.
+6. User-controlled inputs that can reach the existing server-action GraphQL layer are validated before use: name search term, category id, brand id, page number, and page size.
 
 ### Task Breakdown
 
 1. Clarify and represent filter state in `src/features/Home/Home.tsx` and related ProductListing controls.
 2. Keep local visible-result filtering separate from catalog-wide Strapi search in UI labels/copy.
 3. Add Spanish empty, loading, and failure copy to the listing/filter flow.
-4. Add validation/sanitization at the server boundary before Strapi GraphQL variables are built.
+4. Add validation/sanitization at the existing server-action boundary before Strapi GraphQL variables are built.
 5. Add a catalog search GraphQL operation and server-side access path if confirmed by the current Strapi contract assumption.
-6. Add the Route Handler spike as a proof of pattern only; do not migrate all production data fetching to API routes in this story.
 
 ### Scope Assessment
 
 - Classification: single medium-to-large story.
 - Areas touched: multiple areas, but still one user-facing PLP behavior story.
-- In scope: Home/ProductListing UI, shared GraphQL/server actions, validation helpers if needed, and one new API route spike.
-- Out of scope: dynamic category/brand options, replacing server actions, URL-synced filters, pagination metadata work, test framework setup, new dependencies, and backend repository changes.
+- In scope: Home/ProductListing UI, shared GraphQL/server actions, and validation helpers if needed.
+- Out of scope: API route creation, dynamic category/brand options, replacing server actions, URL-synced filters, pagination metadata work, test framework setup, new dependencies, and backend repository changes.
 
 ### Confirmed Research Choices
 
 - Full research template requested.
 - Keep as one story, not split into child stories.
-- Cover all relevant UI, data, and API route areas.
+- Cover UI, current data flow, and server-action validation areas.
 - Assume Strapi GraphQL can support product name filtering for catalog-wide search.
-- Assume the Route Handler spike uses `GET` with URL query parameters.
+- API route creation was split into Story 1a: `ai-research/plp-catalog-api.story.md`.
 
 ## Technical Research
 
@@ -118,17 +116,7 @@ The story also requires input validation before values reach Strapi GraphQL and 
 - `src/app/apollo-client.ts` reads `STRAPI_HOST` and `STRAPI_API_TOKEN` from `process.env`.
 - It builds an Apollo `HttpLink` with `Authorization: Bearer ${STRAPI_API_TOKEN}`.
 - It uses `InMemoryCache`.
-- The Route Handler spike should reuse this factory so host/token behavior stays in one place.
 - No external backend repository should be accessed for schema confirmation.
-
-### Current API Routes
-
-- Existing API route inventory contains only `src/app/api/preferences/route.ts`.
-- `/api/preferences` supports `POST` and saves the theme cookie.
-- There is no current catalog/search API route.
-- The new Route Handler spike should live under `src/app/api/catalog/search/route.ts` or equivalent.
-- The route should be a thin proof of validation, Apollo call, and response shaping.
-- It should not replace the current server-action flow during this story.
 
 ### Current Types And Static Data
 
@@ -142,10 +130,10 @@ The story also requires input validation before values reach Strapi GraphQL and 
 ### Existing Patterns To Follow
 
 - Keep App Router server/client split.
-- Keep server-side Strapi reads in `src/shared/lib/global.lib.ts` unless intentionally proving a route-handler spike.
+- Keep server-side Strapi reads in `src/shared/lib/global.lib.ts` for this story.
 - Reuse `src/app/apollo-client.ts` for Strapi Apollo calls.
 - Keep feature UI under `src/features/<Feature>/`.
-- Keep cross-cutting validation/types/helpers under `src/shared/` if reused by server actions and API route.
+- Keep cross-cutting validation/types/helpers under `src/shared/` if reused by server actions.
 - Keep `src/components` limited to shared `ProductCard` unless there is a concrete reason to change that boundary.
 - Use HeroUI v3 primitives and current compound component style.
 - Use Tailwind v4 classes and existing Spanish copy style.
@@ -157,7 +145,7 @@ The story also requires input validation before values reach Strapi GraphQL and 
 - Do not run or invent `pnpm test`.
 - Use `pnpm lint` after implementation changes.
 - Use `pnpm exec tsc --noEmit` when type-only validation is useful.
-- Use `pnpm build` when route/server component behavior or App Router integration changes need production verification.
+- Use `pnpm build` when server component behavior or App Router integration changes need production verification.
 - Do not run `pnpm install` during research.
 - New dependencies are not needed for this story; if a later plan adds one, it must change both `package.json` and `pnpm-lock.yaml`.
 
@@ -183,18 +171,16 @@ The story also requires input validation before values reach Strapi GraphQL and 
 - `clearFilters()` resets to the current page's original server products, not the first catalog page and not a full catalog search result.
 - No pagination metadata is currently available for filtered results, so filtered list pagination should not be invented in this story.
 - Existing GraphQL uses variables, but validation is still needed for length, allowed characters, control characters, ids, and pagination bounds.
-- Route Handler response shape is not defined by existing code.
-- Route Handler failures should be shaped so the client can show Spanish copy without parsing Strapi/Apollo internals, but the exact envelope remains an open decision.
 - Current UI copy omits accents in some places (`Catalogo`, `Categorias`); preserve consistency unless the implementation story explicitly normalizes Spanish copy.
 - Product image support is commented out and out of scope.
 
 ### Minimal Implementation Boundaries For Planning
 
-- Prefer one small shared validation helper only if both server actions and the Route Handler need the same rules.
+- Prefer one small shared validation helper only if multiple server actions need the same rules.
 - Do not add a query-builder abstraction.
 - Do not add a global catalog state store.
 - Do not add TanStack Query or another client data-fetching dependency.
-- Do not replace existing server actions with the Route Handler spike.
+- Do not replace existing server actions.
 - Do not add a test framework for this story.
 
 ## Open Questions
@@ -220,7 +206,7 @@ Explanation: The repo documents no GraphQL pagination metadata contract.
 IV: Question: Should category and brand ids be validated only against the hardcoded allowlists, or against a broader slug-like format?
 Status: pending
 Context: Current options are hardcoded in `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS`.
-Explanation: Allowlist validation is stricter and simpler for current UI, but route-handler query params may be called directly.
+Explanation: Allowlist validation is stricter and simpler for current UI, but a broader slug validator may be needed if future API callers are allowed.
 
 ### Catalog Behavior
 
@@ -268,28 +254,6 @@ IV: Question: Should the UI copy keep existing accent-less style (`Catalogo`, `C
 Status: pending
 Context: Current app copy is Spanish but inconsistently accented.
 
-### Route Handler Spike
-
-I: Question: Should the spike endpoint be exactly `src/app/api/catalog/search/route.ts`?
-Status: answered
-Answer: Use `GET` query parameters and `src/app/api/catalog/search/route.ts` or an equivalent path.
-Context: User selected GET query params for research.
-
-II: Question: What query parameters should the spike accept initially?
-Status: pending
-Context: Likely candidates are `q`, `category`, `brand`, `page`, and `pageSize`, but the story only explicitly names validated inputs.
-Explanation: Keeping the spike thin argues for only the minimum needed to prove catalog-wide name search.
-
-III: Question: What JSON response envelope should the route return on success and failure?
-Status: pending
-Context: Nice-to-have notes mention a generic error envelope.
-Explanation: The client should not parse raw Strapi/Apollo errors, but no envelope exists today.
-
-IV: Question: Should the Route Handler call a shared server function in `global.lib.ts`, or perform the Apollo query directly while reusing `createApolloClient()`?
-Status: pending
-Context: Story says preserve server actions as production path and reuse Apollo client factory.
-Explanation: A direct Apollo call may better prove the route-handler pattern without changing existing server actions; a shared helper may avoid duplicate query logic if validation is shared.
-
 ### Validation And Security
 
 I: Question: What maximum length should apply to catalog-wide product name search?
@@ -313,7 +277,7 @@ Context: Current product queries use `pageSize: 50`; story mentions page size va
 
 ### Verification
 
-I: Question: Should `pnpm build` be required for this story implementation because it adds a Route Handler and GraphQL query shape?
+I: Question: Should `pnpm build` be required for this story implementation because it may add a GraphQL query shape and server-action validation?
 Status: pending
 Context: Build is the closest configured production verification; there is no test framework.
 
@@ -330,7 +294,6 @@ Context: ProductCard and listing layout have mobile-aware behavior.
 - Story 1 remains one independently deliverable story.
 - Full research depth is desired.
 - Catalog-wide search by product name is supported by Strapi GraphQL, though exact query shape still needs implementation-time confirmation.
-- The Route Handler spike uses `GET` query parameters.
 - Category and brand filters remain mutually exclusive unless product explicitly changes that model.
 - URL-synced filters remain nice-to-have and out of scope for the must-have implementation.
 - No new dependencies are needed.
@@ -340,5 +303,5 @@ Context: ProductCard and listing layout have mobile-aware behavior.
 
 - The current code already has the core split between server page fetches and client-side local filtering, but the UI does not explain the split.
 - The current category/brand model is mutually exclusive and simple; preserving it is the shortest safe path.
-- The main missing pieces are explicit UI state, Spanish copy, input validation at server boundaries, a name-search GraphQL operation, and the thin Route Handler spike.
+- The main missing pieces are explicit UI state, Spanish copy, input validation at server-action boundaries, and a name-search GraphQL operation.
 - The largest unresolved risk is the exact Strapi GraphQL name-search and pagination contract.

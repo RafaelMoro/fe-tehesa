@@ -30,7 +30,7 @@ It spans multiple deliverables across the catalog route, client PLP state, serve
 
 ### Story 1: Improve PLP Search And Filtering Behavior
 
-Description: Make catalog discovery behavior predictable by separating local visible-result filtering from catalog-wide product search, category filters, brand filters, empty states, and filter reset flows. Add proper input cleansing to prevent SQL injection and other injection-style attacks reaching the Strapi backend, and spike a Next.js Route Handler under `src/app/api/` that brokers the GraphQL calls to Strapi.
+Description: Make catalog discovery behavior predictable by separating local visible-result filtering from catalog-wide product search, category filters, brand filters, empty states, and filter reset flows. Add proper input cleansing to prevent SQL injection and other injection-style attacks reaching the Strapi backend through the existing server-action flow.
 
 Acceptance criteria:
 
@@ -40,7 +40,6 @@ Acceptance criteria:
 4. Filter loading and failure states are represented in the UI instead of silently leaving stale results.
 5. The UI clearly separates `Filtrar resultados visibles` from `Buscar en todo el catalogo` so users understand when they are narrowing shown results versus querying Strapi by product name.
 6. All user-supplied inputs (name search term, category id, brand id, page number, page size) are validated and sanitized before reaching the Strapi GraphQL layer. Reject or escape values that could carry GraphQL injection payloads, control characters, or excessively long strings; fail fast on invalid input instead of forwarding it.
-7. A Next.js Route Handler spike exists at `src/app/api/catalog/search/route.ts` (or equivalent path) that accepts validated query parameters, runs the GraphQL call to Strapi through the per-request Apollo client, and returns sanitized JSON. The spike must prove the pattern without breaking the current server-action flow.
 
 Must-have notes:
 
@@ -49,15 +48,32 @@ Must-have notes:
 - Present the catalog search as a recovery path after local filtering: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
 - Keep the visible-results filter close to the product grid controls and label it as narrowing already loaded results.
 - Input cleansing rules: trim whitespace, cap length (e.g. 100 chars for name, sane numeric bounds for ids and page numbers), strip control characters, and reject values containing GraphQL-significant characters such as `{`, `}`, unescaped quotes, or newlines when used as a `contains` filter value. Use a small allowlist validator rather than building a regex blacklist.
-- The Route Handler spike is an investigation, not the final architecture: it must be a thin pass-through that proves input validation, the Apollo call, and response shaping, while the current server-action flow in `src/shared/lib/global.lib.ts` remains the production path. Decide later whether to migrate fully to Route Handlers; do not remove the server-action path during this story.
-- Keep the existing `STRAPI_HOST` and `STRAPI_API_TOKEN` env contract for the Route Handler; the Apollo client factory in `src/app/apollo-client.ts` should be reused so the bearer token and host stay in one place.
 
 Nice-to-have notes:
 
 - Sync active filters into URL parameters for shareability and back/forward behavior.
 - Add count or summary text for the active result set if the data contract can support it.
 - Add a small helper line under each input: `Filtra los productos que ya estas viendo` and `Busca coincidencias por nombre en el catalogo`.
-- Add a generic error envelope on the Route Handler spike so the client can render Spanish error copy without parsing Strapi payloads.
+
+### Story 1a: Create Catalog API Route For Current GraphQL Calls
+
+Description: Create a thin Next.js API route layer that handles the product GraphQL calls currently made through server actions. This story is API-only and does not change PLP UI, search controls, filter UX, or client behavior.
+
+Acceptance criteria:
+
+1. A Next.js Route Handler exists under `src/app/api/catalog/` or an equivalent catalog API path.
+2. The API supports the GraphQL-backed product reads currently present in the repo: products by page, products by category, products by brand, and product variants by product document id.
+3. The API reuses `src/app/apollo-client.ts` so `STRAPI_HOST` and `STRAPI_API_TOKEN` remain the single Strapi connection contract.
+4. Request parameters are validated before GraphQL variables are built, including page, page size, category id, brand id, and product document id.
+5. Responses are shaped as JSON with predictable success and error envelopes so future UI work does not parse Apollo/Strapi internals.
+6. Existing server actions in `src/shared/lib/global.lib.ts` remain in place and continue to be the production path until a later story intentionally migrates callers.
+
+Must-have notes:
+
+- Keep this API layer thin; do not add query-builder behavior.
+- Do not update Home/ProductListing UI in this story.
+- Reuse existing GraphQL queries where possible.
+- Preserve existing server actions until a later migration story.
 
 ### Story 2: Improve Pagination, Loading, And Navigation Feedback
 
