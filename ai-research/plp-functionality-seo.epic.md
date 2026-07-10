@@ -457,9 +457,10 @@ Context: `src/app/layout.tsx` currently has placeholder metadata.
 Explanation: Copy is Spanish, references real product categories and brands, and points to a WhatsApp quote path. This is the production-ready root metadata for the catalog.
 
 II: Question: Should paginated catalog pages be indexable individually, canonicalized to page 1, or handled another way?
-Status: needs more research
+Status: answered
+Answer: Make valid paginated catalog pages indexable with self-canonical URLs. `/` canonical to `/`, `/?page=2` canonical to `/?page=2`, `/?page=3` canonical to `/?page=3`, and so on. Use a unique title like `Herramienta Industrial y Tornilleria en Puebla | Pagina 2 | Tehesa`. Do not claim `Pagina 2 de 7` unless the backend provides reliable totals.
 Context: Current pagination uses `/?page=N` URLs but no explicit SEO policy.
-Explanation: The user wants to dive deeper on this question. The research should evaluate options: index each `?page=N` with unique titles and canonical self-reference, canonicalize all paginated pages to page 1, noindex pages >= 2, or use a separate `/page/N` route strategy. Recommendation will depend on duplicate content risk, crawl budget, and whether Strapi exposes total count for honest `pagina N de M` copy.
+Explanation: Page 2+ contains different products, not duplicates. Canonicalizing every page to page 1 tells crawlers those pages are duplicates and can hide products reachable only on later pages. `noindex` on page 2+ is unnecessary for a small catalog of about 333 products / 7 pages. Query-param pagination is crawlable as long as server-rendered pagination links are present. A separate `/page/N` route is cleaner but not required for pagination; the bigger SEO win is crawlable category/brand/product routes. Avoid claiming total page counts when Strapi does not return them.
 
 III: Question: Should category and brand filters become crawlable routes in the future?
 Status: answered
