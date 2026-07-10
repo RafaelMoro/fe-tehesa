@@ -55,7 +55,7 @@ Nice-to-have notes:
 
 ### Story 2: Improve Pagination, Loading, And Navigation Feedback
 
-Description: Make page navigation reliable, understandable, and resilient within the known 5-page catalog ceiling.
+Description: Make page navigation reliable, understandable, and resilient while replacing the current 5-page ceiling with response-length-based next-page detection.
 
 Acceptance criteria:
 
@@ -67,8 +67,9 @@ Acceptance criteria:
 
 Must-have notes:
 
-- Keep the hardcoded 5-page ceiling unless product/API requirements change.
+- Replace the hardcoded 5-page ceiling because Strapi CMS inspection shows 333 products, which requires 7 pages at 50 products per page.
 - Keep page size 50 for product list queries unless the API contract changes.
+- Infer next page from response length: 50 products means another page may exist; fewer than 50 means last page.
 
 Nice-to-have notes:
 
@@ -257,6 +258,8 @@ Pagination behavior:
 - Brand filter uses page 1 and page size 50.
 - Variant list uses page 1 and page size 100.
 - No pagination metadata is queried or documented in the repo.
+- Strapi CMS inspection reports 333 products to list, so 50 products per page implies 7 catalog pages if all products must be reachable.
+- Without pagination metadata, next-page availability should be inferred from result count: exactly 50 results means a next page may exist; fewer than 50 means the current page is the last page.
 
 ### Current Behavior Summary
 
@@ -292,10 +295,11 @@ Pagination behavior:
 ### Edge Cases And Constraints
 
 - Hardcoded catalog ceiling is 5 pages and is documented as a known constraint.
+- The known 333-product catalog exceeds the current 5-page ceiling; 5 pages expose at most 250 products, leaving 83 products unreachable through current numbered pagination.
 - Product page size is 50.
 - Variant page size is 100.
-- No GraphQL pagination metadata is documented in current queries.
-- Category and brand options are hardcoded in `src/shared/types/global.types.ts`.
+- No GraphQL pagination metadata is available; infer next page from page size and response length.
+- Category and brand options are currently hardcoded in `src/shared/types/global.types.ts`, but the target behavior is to fetch them from Strapi once queries are provided.
 - Search filters only the current working set, not the full catalog.
 - Two search-like controls need distinct labels, helper text, and state names to avoid ambiguity: local filter for loaded/visible products, server search for catalog-wide name matches.
 - Catalog-wide search results should hide or deliberately redefine pagination because the provided name search query has no pagination metadata.
@@ -314,20 +318,27 @@ Pagination behavior:
 ### Strapi Contract
 
 I: Question: Can Strapi expose pagination metadata such as total count, page count, or has-next-page for products?
-Status: pending
+Status: answered
+Answer: No. Strapi cannot expose pagination metadata for this frontend contract. Infer next-page availability from response length: exactly 50 products means another page may exist; fewer than 50 means the current page is the last page. Strapi CMS inspection shows 333 products to list.
 Context: Current queries return only product arrays, and existing repo notes say no pagination metadata is documented.
+Explanation: At 50 products per page, 333 products require 7 pages. The current hardcoded 5-page ceiling is not enough for full catalog coverage.
 
 II: Question: Should category and brand lists remain hardcoded, or should the frontend fetch available taxonomy values from Strapi?
-Status: pending
+Status: answered
+Answer: Fetch category and brand lists from Strapi. Queries will be provided separately.
 Context: `global.types.ts` contains hardcoded lists and a TODO questioning this.
 
 III: Question: Are product image URLs available through the current frontend contract, and what host should Next image loading allow?
-Status: pending
+Status: answered
+Answer: Product images have not been included in Strapi products yet. Add a readiness flag or explicit implementation blocker for BE image support.
 Context: Product image rendering is commented out and references localhost Strapi URLs.
+Explanation: Story 3 can define image/no-image card states now, but image rendering remains blocked until BE adds image data and the frontend confirms the media host.
 
 IV: Question: Are SKU, availability, stock, currency, product URL slug, or richer variant attributes available from Strapi?
-Status: pending
-Context: Current queries only expose the fields listed above.
+Status: answered
+Answer: Not all fields are available. SKU exists on product variants as `productVariant.internalId`. Availability can be inferred from product published/draft state. Product URL slug has not been added. Stock is not handled yet but is desired later.
+Context: Current queries only expose the fields listed above; variant query currently returns only `diameter` and `pricing.price`.
+Explanation: Recommended future variant attributes are `internalId` for SKU/display reference, `displayName` or `label` if diameter is not enough, dimensions/diameter unit if applicable, package quantity or unit of sale, material/finish when relevant to tools, availability/published state, and stock quantity or stock status once inventory is modeled.
 
 ### Catalog Behavior
 
