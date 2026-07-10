@@ -77,12 +77,12 @@ Nice-to-have notes:
 
 ### Story 3: Improve Product Detail Signals On Cards And Drawer
 
-Description: Help users decide which product to inspect by improving functional product metadata and variant detail behavior.
+Description: Help users decide which product to inspect by improving functional product metadata, image-aware card variants, and variant detail behavior.
 
 Acceptance criteria:
 
-1. Product cards consistently show available backend-provided signals: name, category, brand, variant count, min price, and max price.
-2. Missing optional product fields are handled without hiding unrelated valid fields.
+1. Product cards consistently show available backend-provided signals: name, category, brand, variant count, min price, max price, and product image when available.
+2. The PLP supports two card versions or states: one for products with images and one for products without images.
 3. The variants drawer communicates loading, empty, and error states for variant fetches.
 4. Variant prices remain sorted numerically and formatted consistently.
 5. Drawer actions use clear Spanish labels aligned with the intended PLP flow.
@@ -91,10 +91,12 @@ Must-have notes:
 
 - Treat images as unfinished because product image rendering is commented out and currently references localhost Strapi URLs.
 - Do not invent product availability, stock, SKU, or shipping data; those fields are not present in current queries.
+- The no-image card must not look broken or reserve misleading image space unless visual design explicitly requires it.
+- The image card depends on confirming Strapi image fields and Next image host configuration.
 
 Nice-to-have notes:
 
-- Add a product image story later if Strapi image URLs and Next image host configuration are confirmed.
+- Add product image rendering when Strapi image URLs and Next image host configuration are confirmed.
 - Add variant attributes beyond diameter only if the current GraphQL contract exposes them.
 
 ### Story 4: Improve PLP SEO Readiness
@@ -165,6 +167,7 @@ Feature UI:
 Shared product card:
 
 - `src/components/ProductCard.tsx` renders category, brand, name, variant count, and min/max price. Product image code is commented out.
+- `src/components/ProductCard.tsx` should become image-aware once the Strapi image contract is confirmed: render an image card when image data exists and a no-image card when it does not.
 
 Shared code:
 
@@ -302,6 +305,7 @@ Pagination behavior:
 - `ProductListing` empty copy is English: `No products available`.
 - Price formatter uses `en-US` and `USD`; confirm whether that matches Tehesa business expectations.
 - Product card image support is not ready; existing commented code references localhost Strapi image URLs.
+- Story 3 now expects image-aware card behavior, but implementation is blocked until the image field and public media host are confirmed.
 - Root metadata is placeholder and not catalog-specific.
 - There are no category, brand, or product detail routes for crawlable taxonomy or product pages.
 
