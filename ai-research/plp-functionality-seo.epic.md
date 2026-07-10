@@ -432,9 +432,9 @@ Explanation: Recommended empty copy options: `No encontramos productos para esta
 
 II: Question: What should drawer footer actions mean in the PLP flow?
 Status: answered
-Answer: Drawer actions should be `Cancelar` and `Cotizar`.
-Context: Current buttons are `Cancelar` and `Finalizar`, but there is no checkout or quote flow in the repo.
-Explanation: `Cotizar` matches the likely next conversion step better than `Finalizar` because the repo has no checkout, cart, order, or payment flow.
+Answer: Drawer actions should be `Cancelar` and `Agregar al carrito`. A new cart feature is required to support this action.
+Context: Current buttons are `Cancelar` and `Finalizar`, but there is no checkout, quote, or cart flow in the repo.
+Explanation: `Agregar al carrito` requires a cart store, cart UI, and persistence (likely Zustand + cookie/localStorage) that does not exist yet. The cart feature is a new story, not part of PLP or SEO scope, and must be added before this drawer action can be functional.
 
 III: Question: Should prices display in USD with `en-US` formatting, or another locale/currency format?
 Status: answered
@@ -451,20 +451,27 @@ Explanation: With the provided product shape, `category`, `subcategory`, and `de
 ### SEO
 
 I: Question: What production title and description should replace the MVP metadata?
-Status: pending
+Status: answered
+Answer: Title `Herramienta Industrial y Tornilleria en Puebla | Tehesa`. Meta description `Distribuidores directos de Bohrcraft, King Tony y Cleveland en Puebla. Tornilleria, brocas y herramienta de corte. Cotiza por WhatsApp.`
 Context: `src/app/layout.tsx` currently has placeholder metadata.
+Explanation: Copy is Spanish, references real product categories and brands, and points to a WhatsApp quote path. This is the production-ready root metadata for the catalog.
 
 II: Question: Should paginated catalog pages be indexable individually, canonicalized to page 1, or handled another way?
-Status: pending
+Status: needs more research
 Context: Current pagination uses `/?page=N` URLs but no explicit SEO policy.
+Explanation: The user wants to dive deeper on this question. The research should evaluate options: index each `?page=N` with unique titles and canonical self-reference, canonicalize all paginated pages to page 1, noindex pages >= 2, or use a separate `/page/N` route strategy. Recommendation will depend on duplicate content risk, crawl budget, and whether Strapi exposes total count for honest `pagina N de M` copy.
 
 III: Question: Should category and brand filters become crawlable routes in the future?
-Status: pending
+Status: answered
+Answer: Yes. Vision is that the catalog search drawer can run searches by category or brand, and those searches should change the URL to query params. This URL strategy can become crawlable routes when product wants taxonomy SEO.
 Context: Current filters are client interactions on `/`, not route segments.
+Explanation: Crawlable routes require the search input to navigate the router and update URL params (e.g. `/?q=...&type=category` or future `/categoria/[slug]`). The same URL update can be promoted to a real route segment when SEO work is prioritized. URL state for filter/search was already recommended for catalog API searches, so this aligns with prior answers.
 
 IV: Question: Should structured data be part of this epic if current product data lacks image, URL, and availability confirmation?
-Status: pending
+Status: answered
+Answer: Yes, structured data is in scope as part of the SEO investigation to make the catalog excellent for SEO.
 Context: Structured data should not fabricate missing product facts.
+Explanation: Implementation will depend on what backend fields are eventually available. At minimum, use `Product` or `ItemList` schema populated only with verified fields. Once image URL, product URL/slug, and availability are confirmed by Strapi, full `Product` schema with `offers.priceCurrency: "MXN"` can be added.
 
 ### Analytics And Conversion
 
@@ -497,6 +504,7 @@ Context: No test framework or backend fixture contract is present.
 - Priority areas are search/filtering, pagination/loading, product detail signals, SEO, and analytics/conversion.
 - Visual design remains out of scope; only light interaction, loading, empty, error, and accessibility expectations are included.
 - Backend/Strapi changes are not assumed; missing backend capabilities are tracked as open questions.
+- Cart feature is out of scope for this epic and should be tracked as a separate story; the drawer action `Agregar al carrito` cannot be implemented until that story lands.
 
 ## Non-Obvious Findings
 
