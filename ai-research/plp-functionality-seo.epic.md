@@ -59,7 +59,7 @@ Description: Make page navigation reliable, understandable, and resilient while 
 
 Acceptance criteria:
 
-1. Page URLs continue to support direct navigation with `?page=N` and clamp invalid values to the known safe range.
+1. Page URLs continue to support direct navigation with `?page=N` and prevent invalid page navigation without relying on a hardcoded 5-page ceiling.
 2. Users receive loading feedback during page transitions and filter fetches.
 3. Pagination behavior remains hidden or intentionally adapted when category or brand filters are active.
 4. Browser back/forward behavior remains predictable for paginated catalog pages.
@@ -128,7 +128,7 @@ Description: Prepare PLP interactions for measurement without adding analytics t
 
 Acceptance criteria:
 
-1. Product defines which PLP interactions matter: search, filter select, clear filters, pagination, product detail open, and drawer action clicks.
+1. Product defines which PLP interactions matter: local filter changes, catalog searches, searched terms, returned products, filter select, clear filters, pagination, product detail open, and drawer action clicks.
 2. Event names and payload fields are documented before any analytics dependency is introduced.
 3. Implementation can be added later through a small adapter or native browser event pattern without coupling UI components to a vendor.
 4. No new analytics package is added until a provider is selected.
@@ -137,11 +137,13 @@ Must-have notes:
 
 - There is no analytics dependency or existing event tracking in `package.json`.
 - Avoid speculative tracking abstractions until the provider and event contract exist.
+- Catalog search analytics should register the searched term, search type (`name`, `category`, `brand`), result count when reliable, and returned product identifiers when available.
 
 Nice-to-have notes:
 
 - Add lightweight console/dev instrumentation during implementation only if useful for manual verification.
 - Add conversion-oriented CTA behavior after product defines the next step beyond viewing variants.
+- Track which returned products users open after catalog search to connect search terms with product-detail intent.
 
 ## Technical Research
 
@@ -276,6 +278,31 @@ Pagination behavior:
 - Clear filters resets to the products originally passed to `Home` for the current page.
 - Product detail drawer fetches variants when opened and clears variants when closed.
 
+### Target Search And Filter Model
+
+Local visible-results filtering:
+
+- Filters only products already fetched into the current working set.
+- Should support combining name, category, and brand locally.
+- Should not require pagination for local-only filtering because it cannot reach products outside the loaded working set.
+- Best label: `Filtrar resultados visibles`.
+- Helper text: `Filtra por nombre, categoria o marca los productos que ya estas viendo`.
+
+Catalog API search:
+
+- Fetches products from Strapi by name coincidence, category, or brand.
+- Should be presented as a separate recovery/deeper search section, not as the same input as local filtering.
+- Recommended copy: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
+- Should support pagination when the API search is by category or brand and response length is 50.
+- Name coincidence search should also use response-length pagination if the query accepts `pagination`; otherwise it should avoid claiming complete results.
+- Best labels: `Buscar producto en catalogo`, `Buscar por categoria en catalogo`, and `Buscar por marca en catalogo`.
+
+URL state recommendation:
+
+- Recommended for catalog API searches because repeated searches and shared links should reopen the same result set without requiring the user to return to PLP and reapply controls.
+- Optional for local visible-results filters; keep them in client state unless product explicitly wants shareable local filtering.
+- Minimum useful URL state is catalog search type and value, for example name/category/brand query params. Avoid encoding purely visual state.
+
 ### Verification Rules To Follow
 
 - Use `pnpm lint` for ESLint validation when implementation changes TS/TSX.
@@ -292,9 +319,26 @@ Pagination behavior:
 - Prompt sync uses `pnpm sync:prompts`; this research did not edit command prompts, so no sync is needed.
 - PRs target `develop` and need exactly one release label among `major`, `minor`, or `patch`.
 
+### Backend Improvement Notes
+
+Reliable product counts:
+
+- Current frontend cannot know a reliable total product count from GraphQL responses.
+- Current workaround is response-length inference: 50 results means another page may exist; fewer than 50 means last page.
+- This is enough for next/previous navigation but not enough for accurate `333 productos`, `pagina 2 de 7`, filtered result totals, analytics result counts, or SEO summaries.
+- Recommended BE improvement is a count-capable product query or metadata field that returns total count for the same filters used by the product list.
+- Count behavior should work for unfiltered catalog, name search, category search, brand search, and combined filters if BE supports them.
+- A reliable count should come from the backend/source of truth, not from the frontend fetching all pages and counting locally.
+
+Suggested BE contract shape:
+
+- Product list response includes `items` and `pageInfo`/`meta` with `total`, `page`, `pageSize`, `pageCount`, `hasNextPage`, and `hasPreviousPage`.
+- If changing the product list response is too large, expose a lightweight count query that accepts the same `ProductFiltersInput`.
+- Keep count semantics clear around published/draft state so frontend counts match visible products.
+
 ### Edge Cases And Constraints
 
-- Hardcoded catalog ceiling is 5 pages and is documented as a known constraint.
+- Current code has a hardcoded 5-page ceiling, but target behavior should remove it because the catalog has 333 products.
 - The known 333-product catalog exceeds the current 5-page ceiling; 5 pages expose at most 250 products, leaving 83 products unreachable through current numbered pagination.
 - Product page size is 50.
 - Variant page size is 100.
@@ -302,7 +346,7 @@ Pagination behavior:
 - Category and brand options are currently hardcoded in `src/shared/types/global.types.ts`, but the target behavior is to fetch them from Strapi once queries are provided.
 - Search filters only the current working set, not the full catalog.
 - Two search-like controls need distinct labels, helper text, and state names to avoid ambiguity: local filter for loaded/visible products, server search for catalog-wide name matches.
-- Catalog-wide search results should hide or deliberately redefine pagination because the provided name search query has no pagination metadata.
+- Catalog-wide API search results should use response-length pagination when the query supports `pagination`; without reliable count metadata, avoid claiming exact totals.
 - Filtered lists hide pagination.
 - Category/brand server actions catch errors and return `undefined`; UI currently leaves previous results in place if no data is returned.
 - `fetchProducts()` and `fetchProductVariants()` can surface Apollo errors.
@@ -343,20 +387,28 @@ Explanation: Recommended future variant attributes are `internalId` for SKU/disp
 ### Catalog Behavior
 
 I: Question: Should search apply only to the current working set, the current page, filtered results, or the full catalog through Strapi?
-Status: pending
+Status: answered
+Answer: Use two separate controls. Local visible-results filtering applies to fetched products. Catalog search queries Strapi for product name coincidence.
 Context: Current search filters only whatever products are in `allProducts.current`.
+Explanation: This separates quick narrowing from broader discovery and avoids making one input behave differently depending on state.
 
 II: Question: Should category and brand filters remain mutually exclusive, or should users be able to combine them?
-Status: pending
+Status: answered
+Answer: Separate local filtering from catalog API search. Local filtering should combine name, category, and brand over fetched results. Catalog API search should separately fetch products by brand, by category, or by name coincidence.
 Context: Current state clears brand when category is selected and clears category when brand is selected.
+Explanation: Combined local filtering is useful for narrowing visible results. API searches are separate entry points for broader catalog discovery.
 
 III: Question: Should filtered category/brand results support pagination if more than 50 products exist?
-Status: pending
+Status: answered
+Answer: Yes for API searches by category or brand. No for local filtering, because local filtering only filters already fetched products.
 Context: Current filtered fetches request only page 1 with page size 50 and hide pagination.
+Explanation: API searches can fetch additional pages using response-length inference. Local filtering cannot know or fetch products outside the current working set.
 
 IV: Question: Should filter/search state be reflected in the URL for shareability and back/forward navigation?
-Status: pending
+Status: answered
+Answer: Recommended for catalog API searches, especially repeated searches, so users can reopen/share a searched result set without returning to PLP and reapplying controls. Optional for local visible-results filters.
 Context: Current URL only tracks `page`.
+Explanation: URL state is most valuable for server-backed searches by name/category/brand. Local filters can stay client-only unless shareability becomes a clear requirement.
 
 ### UI And Product Decisions
 
