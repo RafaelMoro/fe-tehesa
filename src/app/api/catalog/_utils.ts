@@ -1,0 +1,124 @@
+import { NextResponse } from "next/server"
+
+import {
+  CAT_ENV_001,
+  CAT_VAL_001,
+  CAT_VAL_002,
+  CAT_VAL_003,
+  CAT_VAL_004,
+  CAT_VAL_005,
+  DOCUMENT_ID_MAX_LENGTH,
+  DOCUMENT_ID_PATTERN,
+  MSG_CAT_ENV_001,
+  MSG_CAT_VAL_001,
+  MSG_CAT_VAL_002,
+  MSG_CAT_VAL_003,
+  MSG_CAT_VAL_004,
+  MSG_CAT_VAL_005,
+  PRODUCT_PAGE_MAX,
+  PRODUCT_PAGE_MIN,
+  PRODUCT_PAGE_SIZE,
+  VARIANT_PAGE_SIZE,
+} from "@/shared/constants/catalog.constants"
+import type { TaxonomyItem } from "@/shared/types/global.types"
+
+export type CatalogErrorCode =
+  | typeof CAT_ENV_001
+  | typeof CAT_VAL_001
+  | typeof CAT_VAL_002
+  | typeof CAT_VAL_003
+  | typeof CAT_VAL_004
+  | typeof CAT_VAL_005
+  | 'CAT_NF_001'
+  | 'CAT_NF_002'
+  | 'CAT_NF_003'
+  | 'CAT_ERR_001'
+
+export type CatalogEnvelope<T> =
+  | { success: true; data: T }
+  | { success: false; code: CatalogErrorCode; message: string }
+
+export type CatalogError = { code: CatalogErrorCode; message: string }
+
+export const success = <T>(data: T) =>
+  NextResponse.json<CatalogEnvelope<T>>({ success: true, data })
+
+export const failure = (code: CatalogErrorCode, message: string) =>
+  NextResponse.json<CatalogEnvelope<never>>(
+    { success: false, code, message },
+    { status: 400 },
+  )
+
+export const validateCatalogEnv = (): CatalogError | null => {
+  if (!process.env.STRAPI_HOST || !process.env.STRAPI_API_TOKEN) {
+    return { code: CAT_ENV_001, message: MSG_CAT_ENV_001 }
+  }
+  return null
+}
+
+const parsePage = (raw: string | null): { ok: true; value: number } | { ok: false; error: CatalogError } => {
+  if (raw === null) return { ok: true, value: PRODUCT_PAGE_MIN }
+  const value = Number.parseInt(raw, 10)
+  if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN || value > PRODUCT_PAGE_MAX) {
+    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+  }
+  return { ok: true, value }
+}
+
+const parsePageSize = (
+  raw: string | null,
+  fixedSize: number,
+): { ok: true; value: number } | { ok: false; error: CatalogError } => {
+  if (raw === null) return { ok: true, value: fixedSize }
+  const value = Number.parseInt(raw, 10)
+  if (!Number.isInteger(value) || value !== fixedSize) {
+    return { ok: false, error: { code: CAT_VAL_002, message: MSG_CAT_VAL_002 } }
+  }
+  return { ok: true, value }
+}
+
+const parseTaxonomyId = (
+  raw: string | null,
+  errorCode: typeof CAT_VAL_003 | typeof CAT_VAL_004,
+  errorMessage: string,
+): { ok: true; value: string } | { ok: false; error: CatalogError } => {
+  if (!raw) {
+    return { ok: false, error: { code: errorCode, message: errorMessage } }
+  }
+  if (!DOCUMENT_ID_PATTERN.test(raw) || raw.length > DOCUMENT_ID_MAX_LENGTH) {
+    return { ok: false, error: { code: errorCode, message: errorMessage } }
+  }
+  return { ok: true, value: raw }
+}
+
+const parseDocumentId = (
+  raw: string | null,
+): { ok: true; value: string } | { ok: false; error: CatalogError } => {
+  if (!raw) {
+    return { ok: false, error: { code: CAT_VAL_005, message: MSG_CAT_VAL_005 } }
+  }
+  if (!DOCUMENT_ID_PATTERN.test(raw) || raw.length > DOCUMENT_ID_MAX_LENGTH) {
+    return { ok: false, error: { code: CAT_VAL_005, message: MSG_CAT_VAL_005 } }
+  }
+  return { ok: true, value: raw }
+}
+
+export const readValidatedParams = (request: Request) => {
+  const url = new URL(request.url)
+  const params = url.searchParams
+
+  const page = parsePage(params.get('page'))
+  const productPageSize = parsePageSize(params.get('pageSize'), PRODUCT_PAGE_SIZE)
+  const variantPageSize = parsePageSize(params.get('pageSize'), VARIANT_PAGE_SIZE)
+  const categoryId = parseTaxonomyId(params.get('categoryId'), CAT_VAL_003, MSG_CAT_VAL_003)
+  const brandId = parseTaxonomyId(params.get('brandId'), CAT_VAL_004, MSG_CAT_VAL_004)
+  const documentId = parseDocumentId(params.get('documentId'))
+
+  return { page, productPageSize, variantPageSize, categoryId, brandId, documentId }
+}
+
+export const findTaxonomyItem = (
+  items: TaxonomyItem[],
+  customId: string,
+): TaxonomyItem | undefined =>
+  items.find((item) => item.customId === customId)
