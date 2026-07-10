@@ -51,7 +51,7 @@ export const ProductVariantsDrawer = ({ product, state }: ProductVariantsDrawerP
                 <Table>
                   <Table.Content aria-label={`Variantes del producto ${product.name}`}>
                     <Table.Header>
-                      <Table.Column>Variante</Table.Column>
+                      <Table.Column isRowHeader>Variante</Table.Column>
                       <Table.Column>Precio</Table.Column>
                     </Table.Header>
                     <Table.Body>
