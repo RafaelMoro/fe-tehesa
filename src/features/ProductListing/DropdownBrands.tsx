@@ -16,12 +16,10 @@ export const DropdownBrands = ({ selectedBrand, updateSelectedBrand }: DropdownB
 
   return (
     <Dropdown>
-      <Dropdown.Trigger>
-        <Button variant="secondary">
-          {selectedBrandObj?.name ?? 'Marcas'}
-          <RiArrowDownSLine />
-        </Button>
-      </Dropdown.Trigger>
+      <Button variant="secondary">
+        {selectedBrandObj?.name ?? 'Marcas'}
+        <RiArrowDownSLine />
+      </Button>
       <Dropdown.Popover>
         <Dropdown.Menu
           disallowEmptySelection
