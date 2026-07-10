@@ -6,8 +6,8 @@ import {
   type UseOverlayStateReturn
 } from "@heroui/react"
 
-import { Product, ProductVariantUI } from "@/shared/types/global.types";
-import { fetchProductVariants } from "@/shared/lib/global.lib";
+import { Product, ProductVariant, ProductVariantUI } from "@/shared/types/global.types";
+import { catalogErrorToSpanish, fetchCatalog } from "@/shared/utils/catalog-api.utils";
 import { formatNumberToCurrency } from "@/shared/utils/global.utils";
 
 interface ProductVariantsDrawerProps {
@@ -21,7 +21,9 @@ export const ProductVariantsDrawer = ({ product, state }: ProductVariantsDrawerP
 
   useEffect(() => {
     const loadProductData = async () => {
-      const data = await fetchProductVariants({ documentId: product.documentId });
+      const data = await fetchCatalog<ProductVariant[]>(
+        `/api/catalog/variants?documentId=${encodeURIComponent(product.documentId)}`,
+      );
       const formattedData = data.map(variant => ({
         diameter: variant.diameter,
         price: variant.pricing.price,
@@ -29,9 +31,12 @@ export const ProductVariantsDrawer = ({ product, state }: ProductVariantsDrawerP
       })).sort((a, b) => a.price - b.price);
       setVariants(formattedData);
     };
-    
+
     if (state.isOpen) {
-      loadProductData();
+      loadProductData().catch((error) => {
+        const code = (error as { code?: string })?.code
+        console.error('Error fetching product variants:', code ? catalogErrorToSpanish(code) : error);
+      });
     }
   }, [state.isOpen, product.documentId]);
 

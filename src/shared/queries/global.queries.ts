@@ -66,3 +66,21 @@ export const GET_PRODUCTS_BY_BRAND = gql`
     }
   }
 `
+
+export const GET_CATEGORIES = gql`
+  query GetCategories {
+    categories {
+      name
+      customId
+    }
+  }
+`
+
+export const GET_BRANDS = gql`
+  query GetBrands {
+    brands {
+      customId
+      name
+    }
+  }
+`

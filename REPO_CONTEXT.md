@@ -48,7 +48,7 @@ Key invariants:
 - `src/app/page.tsx` is the only page route currently present. It awaits `searchParams` per Next 15, clamps `page` to `1..5`, fetches products and the theme cookie in parallel, and wraps the catalog in `ChangeThemeStoreProvider`.
 - `src/app/page.tsx` has a hardcoded pagination ceiling of 5 pages. This is a known product/API constraint, not a bug.
 - Server data access lives in `src/shared/lib/global.lib.ts` with the `"use server"` directive. It creates a new Apollo Client for each call through `src/app/apollo-client.ts`.
-- Client components currently import server actions from `global.lib.ts` for category, brand, and variant fetches. Preserve or change this deliberately; do not add a second data access pattern casually.
+- Client components no longer import server actions from `global.lib.ts` for catalog reads. They call the catalog API routes via `fetch`; route handlers wrap the server actions. Only `src/app/page.tsx` (server component) still calls a catalog server action directly for the initial server-rendered products fetch.
 - Theme persistence is cookie-backed through `POST /api/preferences` -> `saveThemeCookie()`. The cookie key is `tehesa-theme` in `src/shared/constants/global.constants.ts`.
 - The Zustand theme store follows the provider-wraps-store pattern under `src/zustand/provider` and `src/zustand/store`. Keep stores request-safe by creating them inside provider refs, not module-level singletons.
 
@@ -63,6 +63,13 @@ Key invariants:
 | `providers.tsx`         | Client provider for HeroUI.                                             |
 | `apollo-client.ts`      | Apollo Client factory for Strapi GraphQL.                               |
 | `api/preferences/route.ts` | Saves theme preference cookie via `POST /api/preferences`.           |
+| `api/catalog/_utils.ts`  | Shared catalog route helpers: `validateCatalogEnv`, envelope `success`/`failure`, and `readValidatedParams` for `page`/`pageSize`/`categoryId`/`brandId`/`documentId`. |
+| `api/catalog/products/route.ts` | `GET /api/catalog/products?page=&pageSize=` -> paged products. |
+| `api/catalog/category/route.ts` | `GET /api/catalog/category?categoryId=&pageSize=` -> products filtered by a live Strapi category. |
+| `api/catalog/brand/route.ts`    | `GET /api/catalog/brand?brandId=&pageSize=` -> products filtered by a live Strapi brand. |
+| `api/catalog/categories/route.ts` | `GET /api/catalog/categories` -> dynamic category taxonomy from Strapi. |
+| `api/catalog/brands/route.ts`  | `GET /api/catalog/brands` -> dynamic brand taxonomy from Strapi. |
+| `api/catalog/variants/route.ts` | `GET /api/catalog/variants?documentId=&pageSize=` -> product variants. |
 | `hero.ts`               | HeroUI-related setup file.                                              |
 | `globals.css`           | Tailwind/global CSS.                                                    |
 
@@ -78,14 +85,14 @@ Key invariants:
 
 | Subdir       | Purpose                                                                                 |
 | ------------ | --------------------------------------------------------------------------------------- |
-| `constants`  | Cross-cutting constants such as the theme cookie key.                                   |
+| `constants`  | Cross-cutting constants such as the theme cookie key and `CAT_*`/`MSG_CAT_*` catalog error codes. |
 | `hooks`      | Reusable client hooks; currently `useMediaQuery`.                                       |
 | `lib`        | Server actions for Strapi reads and theme cookie persistence.                           |
-| `queries`    | GraphQL operations for products, filtered products, and variants.                       |
-| `types`      | Product, variant, app theme, error, pagination, category, and brand types/constants.    |
+| `queries`    | GraphQL operations for products, filtered products, variants, categories, and brands.   |
+| `types`      | Product, variant, app theme, error, pagination, category, brand, and dynamic `TaxonomyItem` types. |
 | `ui/atoms`   | Reusable atomic UI such as `ToggleDarkMode`.                                            |
 | `ui/organisms` | Reusable composed UI such as `Header`.                                               |
-| `utils`      | Pure helpers such as currency formatting.                                               |
+| `utils`      | Pure helpers such as currency formatting and the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`). |
 
 ### `src/zustand/`
 
@@ -102,6 +109,25 @@ Product reads are GraphQL queries against Strapi:
 - `fetchProductsByCategory(customId)` calls `GET_PRODUCTS_BY_CATEGORY` with a category `customId contains` filter and `pageSize: 50`.
 - `fetchProductsByBrand(brandId)` calls `GET_PRODUCTS_BY_BRAND` with a brand `customId contains` filter and `pageSize: 50`.
 - `fetchProductVariants({ documentId })` calls `GET_PRODUCT_VARIANTS` with `pageSize: 100` and returns `product.product_variants`.
+- `fetchCategories()` calls `GET_CATEGORIES` returning `TaxonomyItem[]` (`{ name, customId }`).
+- `fetchBrands()` calls `GET_BRANDS` returning `TaxonomyItem[]` (`{ name, customId }`).
+
+Catalog data flow from the browser:
+
+```text
+Home.tsx (client) / ProductVariantsDrawer.tsx (client)
+  │  fetch /api/catalog/{products|category|brand|categories|brands|variants}
+  ▼
+src/app/api/catalog/**/route.ts (Route Handler)
+  │  validate env + params, wrap result in { success, data } | { success: false, code, message }
+  ▼
+src/shared/lib/global.lib.ts ("use server")
+  │  createApolloClient() per call
+  ▼
+Strapi GraphQL (STRAPI_HOST + STRAPI_API_TOKEN)
+```
+
+The initial server-rendered products fetch in `src/app/page.tsx` still calls the `fetchProducts` server action directly because it is a server component.
 
 Catalog behavior:
 
@@ -114,9 +140,17 @@ Catalog behavior:
 
 ## API Route Inventory
 
-| Route              | Methods | Purpose                                                                 |
-| ------------------ | ------- | ----------------------------------------------------------------------- |
-| `/api/preferences` | `POST`  | Requires JSON `{ "theme": "light" | "dark" }`; saves `tehesa-theme` cookie and returns `{ success, themeChangedTo }`. |
+| Route                       | Methods | Purpose                                                                 |
+| --------------------------- | ------- | ----------------------------------------------------------------------- |
+| `/api/preferences`          | `POST`  | Requires JSON `{ "theme": "light" | "dark" }`; saves `tehesa-theme` cookie and returns `{ success, themeChangedTo }`. |
+| `/api/catalog/products`     | `GET`   | `?page=1..5&pageSize=50` (fixed). Returns paged products.               |
+| `/api/catalog/category`     | `GET`   | `?categoryId=...&pageSize=50` (fixed). Validates `categoryId` against the live Strapi taxonomy; returns matching products. |
+| `/api/catalog/brand`        | `GET`   | `?brandId=...&pageSize=50` (fixed). Validates `brandId` against the live Strapi taxonomy; returns matching products. |
+| `/api/catalog/categories`   | `GET`   | Dynamic category taxonomy list from Strapi.                             |
+| `/api/catalog/brands`       | `GET`   | Dynamic brand taxonomy list from Strapi.                                 |
+| `/api/catalog/variants`     | `GET`   | `?documentId=...&pageSize=100` (fixed). Returns product variants.       |
+
+Catalog routes share an envelope: `{ success: true, data }` for success, `{ success: false, code, message }` for failure. `code` is one of the `CAT_*` constants in `src/shared/constants/catalog.constants.ts` (`CAT_ENV_001`, `CAT_VAL_001..005`, `CAT_NF_001..003`, `CAT_ERR_001`). All catalog routes return `400` on any failure and require `STRAPI_HOST` + `STRAPI_API_TOKEN` at runtime; missing config is `CAT_ENV_001`. Route handlers wrap server actions in `src/shared/lib/global.lib.ts` and never call Apollo directly; the client never imports `global.lib.ts`. Clients parse envelopes through `fetchCatalog` + `catalogErrorToSpanish` in `src/shared/utils/catalog-api.utils.ts`.
 
 There are no auth, checkout, order, or backend proxy route handlers in this repo at the time of writing.
 
@@ -185,7 +219,8 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - New state stores should follow the SSR-safe provider/store pattern already used under `src/zustand`.
 - Do not add TanStack Query, Redux, form libraries, auth flows, or test tooling unless the story explicitly requires them.
 - GraphQL schema knowledge is inferred from `src/shared/queries/global.queries.ts` and TypeScript types. Confirm backend/Strapi contract before normalizing fields or changing query shapes.
-- Product category and brand lists are hardcoded in `src/shared/types/global.types.ts`; there is a TODO questioning whether this should remain hardcoded.
+- Product category and brand lists are hardcoded in `src/shared/types/global.types.ts`; there is a TODO questioning whether this should remain hardcoded. The catalog API uses the live Strapi taxonomy (`GET_CATEGORIES` / `GET_BRANDS`) for validation, not the hardcoded arrays.
+- Catalog API route handlers validate `STRAPI_HOST` + `STRAPI_API_TOKEN` before calling the Apollo client; a missing env var is `CAT_ENV_001`, never a leaked configuration error. Validation constants and `CAT_*` codes live in `src/shared/constants/catalog.constants.ts`; shared helpers (envelopes, param parsing) live in `src/app/api/catalog/_utils.ts`.
 - `fetchProductsByCategory()` and `fetchProductsByBrand()` catch errors and return `undefined`; callers need to handle absent results.
 - `fetchProducts()` and `fetchProductVariants()` do not catch Apollo errors; errors can surface to the route/render path.
 - Product image rendering in `ProductCard` is commented out and currently references localhost Strapi URLs. Treat image support as unfinished.
@@ -209,6 +244,10 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | `src/app/page.tsx`                        | Catalog page, pagination param handling, server data fetch.              |
 | `src/app/apollo-client.ts`                | Apollo Client factory using Strapi env vars.                             |
 | `src/app/api/preferences/route.ts`        | Theme cookie API route.                                                  |
+| `src/app/api/catalog/_utils.ts`           | Shared catalog route helpers: env validation, success/error envelopes, param parsing. |
+| `src/app/api/catalog/{products,category,brand,categories,brands,variants}/route.ts` | Catalog API route handlers (thin wrappers over server actions). |
+| `src/shared/constants/catalog.constants.ts` | `CAT_*` error codes, `MSG_CAT_*` internal messages, and validation constants (page bounds, page sizes, documentId pattern/length). |
+| `src/shared/utils/catalog-api.utils.ts`   | Client-side `fetchCatalog<T>()` envelope wrapper, `CatalogApiError` with `code`, and `catalogErrorToSpanish` code-to-Spanish-copy map. |
 | `src/features/Home/Home.tsx`              | Client catalog controller.                                               |
 | `src/features/ProductListing/*.tsx`       | Listing grid, search input, category and brand dropdowns.                |
 | `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` | Variant drawer and price display.                      |

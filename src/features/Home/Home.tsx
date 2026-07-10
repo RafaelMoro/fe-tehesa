@@ -9,7 +9,7 @@ import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
-import { fetchProductsByCategory, fetchProductsByBrand } from "@/shared/lib/global.lib"
+import { catalogErrorToSpanish, fetchCatalog } from "@/shared/utils/catalog-api.utils"
 
 interface HomeProps {
   products: Product[];
@@ -70,17 +70,17 @@ export const Home = ({
   const handleCategorySelect = async (categoryCustomId: string) => {
     try {
       setIsLoadingCategory(true);
-      const categoryProducts = await fetchProductsByCategory(categoryCustomId);
-      
-      if (categoryProducts) {
-        allProducts.current = categoryProducts;
-        setFilteredProducts(categoryProducts);
-        setSelectedCategory(categoryCustomId);
-        // Reset brand filter when category is selected
-        setSelectedBrand(null);
-      }
+      const categoryProducts = await fetchCatalog<Product[]>(
+        `/api/catalog/category?categoryId=${encodeURIComponent(categoryCustomId)}`,
+      );
+      allProducts.current = categoryProducts;
+      setFilteredProducts(categoryProducts);
+      setSelectedCategory(categoryCustomId);
+      // Reset brand filter when category is selected
+      setSelectedBrand(null);
     } catch (error) {
-      console.error('Error fetching products by category:', error);
+      const code = (error as { code?: string })?.code
+      console.error('Error fetching products by category:', code ? catalogErrorToSpanish(code) : error);
     } finally {
       setIsLoadingCategory(false);
     }
@@ -89,17 +89,17 @@ export const Home = ({
   const handleBrandSelect = async (brandCustomId: string) => {
     try {
       setIsLoadingBrand(true);
-      const brandProducts = await fetchProductsByBrand(brandCustomId);
-      
-      if (brandProducts) {
-        allProducts.current = brandProducts;
-        setFilteredProducts(brandProducts);
-        setSelectedBrand(brandCustomId);
-        // Reset category filter when brand is selected
-        setSelectedCategory(null);
-      }
+      const brandProducts = await fetchCatalog<Product[]>(
+        `/api/catalog/brand?brandId=${encodeURIComponent(brandCustomId)}`,
+      );
+      allProducts.current = brandProducts;
+      setFilteredProducts(brandProducts);
+      setSelectedBrand(brandCustomId);
+      // Reset category filter when brand is selected
+      setSelectedCategory(null);
     } catch (error) {
-      console.error('Error fetching products by brand:', error);
+      const code = (error as { code?: string })?.code
+      console.error('Error fetching products by brand:', code ? catalogErrorToSpanish(code) : error);
     } finally {
       setIsLoadingBrand(false);
     }

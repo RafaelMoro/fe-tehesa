@@ -2,9 +2,9 @@
 import { cookies } from 'next/headers'
 import createApolloClient from "@/app/apollo-client"
 
-import type { FetchProductsResponse, FetchSingleProductResponse, Product, ProductVariant } from '../types/global.types'
+import type { FetchBrandsResponse, FetchCategoriesResponse, FetchProductsResponse, FetchSingleProductResponse, Product, ProductVariant, TaxonomyItem } from '../types/global.types'
 import { THEME_COOKIE_KEY } from '../constants/global.constants'
-import { GET_PRODUCT_VARIANTS, GET_PRODUCTS, GET_PRODUCTS_BY_BRAND, GET_PRODUCTS_BY_CATEGORY } from '../queries/global.queries'
+import { GET_BRANDS, GET_CATEGORIES, GET_PRODUCT_VARIANTS, GET_PRODUCTS, GET_PRODUCTS_BY_BRAND, GET_PRODUCTS_BY_CATEGORY } from '../queries/global.queries'
 
 export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
   const client = createApolloClient();
@@ -77,7 +77,7 @@ export const fetchProductVariants = async ({ documentId }: { documentId: string 
   const client = createApolloClient();
   const res = await client.query<FetchSingleProductResponse>({
     query: GET_PRODUCT_VARIANTS,
-    variables: { 
+    variables: {
       documentId,
       pagination: {
         page: 1,
@@ -86,6 +86,22 @@ export const fetchProductVariants = async ({ documentId }: { documentId: string 
     },
   });
   return res?.data?.product?.product_variants ?? [];
+}
+
+export const fetchCategories = async (): Promise<TaxonomyItem[]> => {
+  const client = createApolloClient();
+  const res = await client.query<FetchCategoriesResponse>({
+    query: GET_CATEGORIES,
+  });
+  return res?.data?.categories ?? [];
+}
+
+export const fetchBrands = async (): Promise<TaxonomyItem[]> => {
+  const client = createApolloClient();
+  const res = await client.query<FetchBrandsResponse>({
+    query: GET_BRANDS,
+  });
+  return res?.data?.brands ?? [];
 }
 
 export const getThemePreference = async () => {
