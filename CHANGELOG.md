@@ -1,3 +1,9 @@
+## v0.13.0 (2026-07-10)
+
+### Pull Requests
+[#18](https://github.com/RafaelMoro/fe-tehesa/pull/18) | Add Design config and hero ui context
+
+
 ## v0.12.0 (2026-07-10)
 
 ### Pull Requests
