@@ -97,6 +97,19 @@ export interface FetchSingleProductResponse {
   product: Product;
 }
 
+export type TaxonomyItem = {
+  name: string;
+  customId: string;
+};
+
+export interface FetchCategoriesResponse {
+  categories: TaxonomyItem[];
+}
+
+export interface FetchBrandsResponse {
+  brands: TaxonomyItem[];
+}
+
 export interface PaginationProps {
   currentPage: number;
   hasNextPage: boolean;
