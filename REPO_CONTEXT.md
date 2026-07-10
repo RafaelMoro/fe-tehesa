@@ -216,6 +216,20 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | `src/zustand/provider/change-theme.provider.tsx` | Theme store provider and hook.                                  |
 | `src/zustand/store/change-theme.store.ts` | Vanilla Zustand theme store.                                             |
 
+## External References
+
+### HeroUI v3 Documentation
+
+- **MCP server (primary):** `heroui-react` is configured in `opencode.json` via `@heroui/react-mcp`. Prefer it for component API, props, and pattern questions — it returns live v3 docs without a web fetch.
+- **LLM docs (fallback):** when the MCP is not loaded or for bulk context:
+
+| URL | Scope |
+| --- | --- |
+| https://heroui.com/react/llms.txt | Index/summary — start here |
+| https://heroui.com/react/llms-full.txt | Full React docs |
+| https://heroui.com/react/llms-components.txt | Component docs only |
+| https://heroui.com/react/llms-patterns.txt | Patterns/composition docs |
+
 ## Open Questions
 
 - The Strapi schema and pagination metadata are inferred only from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo.
