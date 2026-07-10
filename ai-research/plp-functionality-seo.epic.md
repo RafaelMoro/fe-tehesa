@@ -291,11 +291,14 @@ Local visible-results filtering:
 Catalog API search:
 
 - Fetches products from Strapi by name coincidence, category, or brand.
-- Should be presented as a separate recovery/deeper search section, not as the same input as local filtering.
-- Recommended copy: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
+- Should be presented in a separate drawer opened by a button, not as the same input as local filtering.
+- Button/drawer copy option 1: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
+- Button/drawer copy option 2: `No encontraste lo que buscabas? Explora mas productos.`
+- Button/drawer copy option 3: `Amplia tu busqueda: busca por producto, categoria o marca.`
 - Should support pagination when the API search is by category or brand and response length is 50.
 - Name coincidence search should also use response-length pagination if the query accepts `pagination`; otherwise it should avoid claiming complete results.
 - Best labels: `Buscar producto en catalogo`, `Buscar por categoria en catalogo`, and `Buscar por marca en catalogo`.
+- Avoid wording like `Filtra tu resultado` for the drawer trigger because this action searches the catalog through the API, while filtering is reserved for already visible results.
 
 URL state recommendation:
 
@@ -413,8 +416,10 @@ Explanation: URL state is most valuable for server-backed searches by name/categ
 ### UI And Product Decisions
 
 I: Question: What Spanish copy should appear for empty results, loading states, and errors?
-Status: pending
+Status: answered
+Answer: Empty results should use clear Spanish copy. Loading states should use skeletons. Errors should show an image plus a message that something went wrong.
 Context: Current empty result copy is English and filter errors are only logged.
+Explanation: Recommended empty copy options: `No encontramos productos para esta busqueda.`, `No hay productos que coincidan con estos filtros.`, or `Sin resultados por ahora. Prueba con otra busqueda o limpia los filtros.` Recommended loading copy, if skeletons need labels: `Cargando productos...` or `Buscando productos...`. Recommended error copy: `Algo salio mal. No pudimos cargar los productos. Intentalo de nuevo.`
 
 II: Question: What should drawer footer actions mean in the PLP flow?
 Status: pending
