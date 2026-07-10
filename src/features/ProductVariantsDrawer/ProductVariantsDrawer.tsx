@@ -2,16 +2,8 @@ import { useEffect, useState } from "react";
 import {
   Button,
   Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerBody,
-  DrawerFooter,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell
+  type UseOverlayStateReturn
 } from "@heroui/react"
 
 import { Product, ProductVariantUI } from "@/shared/types/global.types";
@@ -20,11 +12,10 @@ import { formatNumberToCurrency } from "@/shared/utils/global.utils";
 
 interface ProductVariantsDrawerProps {
   product: Product
-  isOpen: boolean
-  onOpenChange: () => void
+  state: UseOverlayStateReturn
 }
 
-export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: ProductVariantsDrawerProps) => {
+export const ProductVariantsDrawer = ({ product, state }: ProductVariantsDrawerProps) => {
   const [variants, setVariants] = useState<ProductVariantUI[]>([]);
   const resetVariants = () => setVariants([]);
 
@@ -39,51 +30,53 @@ export const ProductVariantsDrawer = ({ product, isOpen, onOpenChange }: Product
       setVariants(formattedData);
     };
     
-    if (isOpen) {
+    if (state.isOpen) {
       loadProductData();
     }
-  }, [isOpen, product.documentId]);
+  }, [state.isOpen, product.documentId]);
 
-  const handleClose = (onClose: () => void) => {
+  const handleClose = () => {
     resetVariants();
-    onClose();
+    state.close();
   }
 
   return (
-    <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        {(onClose) => (
-          <>
-            <DrawerHeader className="flex flex-col gap-1">{product.name}</DrawerHeader>
-            <DrawerBody>
+    <Drawer state={state}>
+      <Drawer.Backdrop>
+        <Drawer.Content>
+          <Drawer.Dialog>
+            <Drawer.Header className="flex flex-col gap-1">{product.name}</Drawer.Header>
+            <Drawer.Body>
               { variants.length > 0 && (
-                <Table color="primary" aria-label={`Variantes del producto ${product.name}`} selectionMode="multiple">
-                  <TableHeader>
-                    <TableColumn>Variante</TableColumn>
-                    <TableColumn>Precio</TableColumn>
-                  </TableHeader>
-                  <TableBody>
-                    {variants.map((variant, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{variant.diameter}</TableCell>
-                        <TableCell>{variant.priceFormatted}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
+                <Table>
+                  <Table.Content aria-label={`Variantes del producto ${product.name}`}>
+                    <Table.Header>
+                      <Table.Column isRowHeader>Variante</Table.Column>
+                      <Table.Column>Precio</Table.Column>
+                    </Table.Header>
+                    <Table.Body>
+                      {variants.map((variant, index) => (
+                        <Table.Row key={index}>
+                          <Table.Cell>{variant.diameter}</Table.Cell>
+                          <Table.Cell>{variant.priceFormatted}</Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table.Content>
                 </Table>
               )}
-            </DrawerBody>
-            <DrawerFooter>
-              <Button color="danger" variant="light" onPress={() => handleClose(onClose)}>
+            </Drawer.Body>
+            <Drawer.Footer>
+              <Button variant="danger-soft" onPress={handleClose}>
                 Cancelar
               </Button>
-              <Button color="primary" onPress={() => handleClose(onClose)}>
+              <Button variant="primary" onPress={handleClose}>
                 Finalizar
               </Button>
-            </DrawerFooter>
-          </>
-        )}
-      </DrawerContent>
+            </Drawer.Footer>
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
     </Drawer>
   )
 }

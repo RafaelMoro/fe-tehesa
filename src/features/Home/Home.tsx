@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Button, Pagination, useDisclosure } from "@heroui/react"
+import { Button, Pagination, useOverlayState } from "@heroui/react"
 
 import { Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
@@ -32,7 +32,7 @@ export const Home = ({
   // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const drawerState = useOverlayState();
 
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
@@ -115,7 +115,7 @@ export const Home = ({
 
   const handleProductClick = (product: Product) => {
     setProductDetails(product)
-    onOpen()
+    drawerState.open()
   }
 
   return (
@@ -131,16 +131,25 @@ export const Home = ({
       <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
       {selectedCategory === null && selectedBrand === null && (
         <div className="w-full flex justify-center">
-          <Pagination 
-            page={currentPage}
-            total={totalPages}
-            onChange={handlePageChange}
-            size="md" 
-          />
+          <Pagination size="md">
+            <Pagination.Content>
+              {Array.from({ length: totalPages }, (_, index) => {
+                const page = index + 1
+
+                return (
+                  <Pagination.Item key={page}>
+                    <Pagination.Link isActive={page === currentPage} onPress={() => handlePageChange(page)}>
+                      {page}
+                    </Pagination.Link>
+                  </Pagination.Item>
+                )
+              })}
+            </Pagination.Content>
+          </Pagination>
         </div>
       )}
       { productDetails && (
-        <ProductVariantsDrawer product={productDetails} isOpen={isOpen} onOpenChange={onOpenChange} />
+        <ProductVariantsDrawer product={productDetails} state={drawerState} />
       )}
     </>
   )
