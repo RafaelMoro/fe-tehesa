@@ -27,13 +27,16 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 5. Request parameters are validated before GraphQL variables are built, including page, page size, category id, brand id, and product document id.
 6. Responses are shaped as JSON with predictable success and error envelopes so future UI work does not parse Apollo/Strapi internals.
 7. Invalid request parameters return a `400` response with the error envelope; success responses use the success envelope.
-8. Existing server actions in `src/shared/lib/global.lib.ts` remain in place and continue to be the production path until a later story intentionally migrates callers.
+8. The API route delegates to server action functions in `src/shared/lib/global.lib.ts`; server actions remain the single point of Apollo/Strapi access. New server actions are added where the current set does not cover the operation (for example, `fetchCategories` and `fetchBrands`).
+9. Client components (`src/features/Home/Home.tsx` dropdown handlers, `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`) call the new API routes via `fetch`, not the server actions directly.
+10. The API route validates `STRAPI_HOST` and `STRAPI_API_TOKEN` are present before calling the Apollo client. If either is missing, the route returns `400` with the `CAT_ENV_001` error code; no raw configuration error is exposed to the client.
+11. Error responses use a custom error code system (`CAT_*`) with internal message constants. The code is returned to the client; the client maps the code to a Spanish user-facing message. No raw Apollo/Strapi error strings are returned.
 
 ### Scope Assessment
 
 - Classification: single API story.
-- In scope: Next Route Handler creation, current catalog GraphQL calls, the new dynamic category and brand list reads, request validation, JSON response shape, and the `400` failure response behavior.
-- Out of scope: PLP UI changes, visible-results search labels, empty states, loading states, filter reset UX, URL-synced filters, replacing or de-duplicating the hardcoded `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS` arrays in `src/shared/types/global.types.ts`, backend schema changes, new dependencies, and replacing server actions.
+- In scope: Next Route Handler creation, the new dynamic category and brand list reads, request validation, JSON response shape, the `400` failure response behavior, the `CAT_*` custom error code system with internal message constants, env-var validation on the route, adding new server actions where needed, and migrating client component data access (`Home.tsx` dropdown handlers, `ProductVariantsDrawer.tsx`) from direct server-action calls to the new API routes via `fetch`.
+- Out of scope: PLP UI changes, visible-results search labels, empty states, loading states, filter reset UX, URL-synced filters, replacing or de-duplicating the hardcoded `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS` arrays in `src/shared/types/global.types.ts`, backend schema changes, new dependencies, removing the existing server actions, and refactoring the server-rendered initial products fetch in `src/app/page.tsx` (server components may keep calling server actions directly).
 
 ## Technical Research
 
@@ -52,6 +55,16 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 - `fetchProductVariants({ documentId })` calls `GET_PRODUCT_VARIANTS` with `pageSize: 100`.
 - Category and brand calls currently catch errors, log them, and may return `undefined`.
 - Product list and variant calls currently allow Apollo errors to surface.
+- Story 1a adds server actions for the new operations:
+  - `fetchCategories()` calling `GET_CATEGORIES`.
+  - `fetchBrands()` calling `GET_BRANDS`.
+- The API route layer calls these server actions; it does not call Apollo directly.
+
+### Current Client Code Calling Server Actions
+
+- `src/features/Home/Home.tsx` calls `fetchProductsByCategory` and `fetchProductsByBrand` from `src/shared/lib/global.lib.ts` on dropdown change.
+- `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` calls `fetchProductVariants` from `src/shared/lib/global.lib.ts` when the drawer opens.
+- `src/app/page.tsx` is a server component that calls `fetchProducts` directly to seed the initial server-rendered product list. It can keep calling the server action; it does not need to go through the API.
 
 ### Current Apollo Integration
 
@@ -103,18 +116,43 @@ The route should prove that the app can broker Strapi GraphQL calls through `src
 
 - Current server actions return raw arrays or `undefined` on some failures.
 - The API should return predictable JSON for future clients.
-- A minimal success envelope could be `{ success: true, data: ... }`.
-- A minimal error envelope could be `{ success: false, message: string }`.
-- Do not leak Apollo stack traces or raw Strapi internals in client-facing JSON.
+- A minimal success envelope: `{ success: true, data: ... }`.
+- A minimal error envelope: `{ success: false, code: 'CAT_...', message: '...' }` where `code` is a `CAT_*` constant and `message` is a generic, non-internal string.
+- The `code` is the only field the client is expected to map. The `message` is a generic English fallback; the client renders Spanish copy from its own code-to-copy map.
+- Never leak Apollo stack traces, raw Strapi errors, env var values, or internal log output in client-facing JSON.
+
+### Custom Error Code System
+
+- A small set of `CAT_*` error code constants and matching `MSG_CAT_*` internal message constants live under `src/shared/constants/`, alongside the existing `global.constants.ts`.
+- The code is the public contract; the message is internal and must not be shown to end users as-is.
+- Suggested initial catalog error codes:
+  - `CAT_ENV_001` / `MSG_CAT_ENV_001` - `Missing Strapi configuration` - `STRAPI_HOST` or `STRAPI_API_TOKEN` is not set when the route runs.
+  - `CAT_VAL_001` / `MSG_CAT_VAL_001` - `Invalid page parameter` - `page` is not an integer within the allowed bounds.
+  - `CAT_VAL_002` / `MSG_CAT_VAL_002` - `Invalid pageSize parameter` - `pageSize` is not within the allowed bounds.
+  - `CAT_VAL_003` / `MSG_CAT_VAL_003` - `Invalid categoryId` - `categoryId` fails the allowlist/format check.
+  - `CAT_VAL_004` / `MSG_CAT_VAL_004` - `Invalid brandId` - `brandId` fails the allowlist/format check.
+  - `CAT_VAL_005` / `MSG_CAT_VAL_005` - `Invalid documentId` - `documentId` is empty, too long, or contains characters outside `[A-Za-z0-9_-]`.
+  - `CAT_VAL_006` / `MSG_CAT_VAL_006` - `Invalid search term` - `q` is too long or contains disallowed characters.
+  - `CAT_NF_001` / `MSG_CAT_NF_001` - `Category not found` - `categoryId` is well-formed but not present in Strapi.
+  - `CAT_NF_002` / `MSG_CAT_NF_002` - `Brand not found` - `brandId` is well-formed but not present in Strapi.
+  - `CAT_NF_003` / `MSG_CAT_NF_003` - `Product not found` - `documentId` did not resolve to a Strapi product.
+  - `CAT_ERR_001` / `MSG_CAT_ERR_001` - `Upstream catalog error` - catch-all for Apollo/Strapi failures after logging the real cause server-side.
+- Naming pattern follows the user's example: `{PREFIX}_{CATEGORY}_{NUMBER}` for codes and `MSG_{PREFIX}_{CATEGORY}_{NUMBER}` for internal messages.
+- The client owns the code-to-Spanish-copy map. Do not duplicate Spanish copy in the API response.
 
 ### Existing Patterns To Follow
 
 - Keep server-only Strapi access using the existing Apollo client factory.
 - Keep GraphQL operations in `src/shared/queries/global.queries.ts`.
 - Keep cross-cutting types or validation helpers under `src/shared/` only if reused.
-- Preserve current server actions in `src/shared/lib/global.lib.ts`.
+- Place `CAT_*` error code constants and `MSG_CAT_*` internal message constants under `src/shared/constants/`, following the existing `global.constants.ts` pattern.
+- Preserve current server actions in `src/shared/lib/global.lib.ts` as the internal Apollo/Strapi boundary; add new server actions for new operations.
+- The API route layer is a thin HTTP wrapper that calls server actions and shapes responses; do not call Apollo from the route.
+- Validate `STRAPI_HOST` and `STRAPI_API_TOKEN` at the start of each route handler; return the `CAT_ENV_001` error if either is missing.
+- Wrap upstream failures in `CAT_ERR_001` after logging the real cause server-side; never forward Apollo/Strapi error text to the client.
+- Client components use `fetch` against the API routes; do not import server actions from client components after the migration.
 - Do not add a new data-fetching dependency.
-- Do not touch UI components for this story.
+- UI changes in this story are limited to replacing direct server-action imports with `fetch` calls and adding a client-side code-to-Spanish-copy map; visible filter/search behavior changes are out of scope and belong to Story 1.
 
 ### Verification Rules To Follow Later
 
@@ -170,40 +208,54 @@ Explanation: The parent Story 1 requirements call for failing fast on invalid in
 ### Integration
 
 I: Question: Should the new API route call existing server action functions or call Apollo directly with shared queries?
-Status: pending
-Context: Server actions are currently production path; calling Apollo directly may keep the route independent and thin.
+Status: answered
+Answer: The API route calls existing or newly created server action functions. It does not call Apollo directly.
+Context: User selected this approach to keep a single Apollo/Strapi boundary.
+Explanation: The route layer is a thin HTTP wrapper over `src/shared/lib/global.lib.ts`. New server actions (for example `fetchCategories` and `fetchBrands`) are added for operations that the current set does not cover.
 
 II: Question: Should any client code start using the new API in this story?
 Status: answered
-Answer: No.
-Context: User explicitly scoped this story to API creation, not UI.
+Answer: Yes, all client code should start using the new API contract.
+Context: User confirmed the full client migration in this story.
+Explanation: Client components (`Home.tsx` dropdown handlers, `ProductVariantsDrawer.tsx`) call the new API routes via `fetch` instead of importing server actions directly. The server-rendered initial products fetch in `src/app/page.tsx` can keep calling the server action.
 
 ### Verification
 
 I: Question: Are `STRAPI_HOST` and `STRAPI_API_TOKEN` available locally for manual route verification?
-Status: pending
-Context: Without env vars, Apollo calls can fail or return empty data.
+Status: answered
+Answer: The route validates both env vars on entry. If either is missing, return `400` with the `CAT_ENV_001` error code; never expose the raw configuration error to the client.
+Context: User wants env-var validation on the route with a custom error code, no raw errors leaked.
+Explanation: This removes a class of confusing failure modes where the Apollo client fails with a low-level message. The `CAT_ENV_001` code is stable and the client maps it to a Spanish user-facing message.
 
 II: Question: Should implementation include a short manual curl checklist in the PR notes?
-Status: pending
-Context: There is no test framework; manual API checks may be useful.
+Status: answered
+Answer: Yes.
+Context: User confirmed a curl checklist in the PR notes.
+Explanation: Include the success path, the `400` validation paths (e.g., invalid `page`, `documentId`), and the `CAT_ENV_001` path for each new route. This gives reviewers a quick way to smoke-test the route without a test framework.
 
 ## Assumptions Made
 
-- Story 1a is API-only.
-- The API covers current GraphQL reads, not new UI search behavior.
-- Existing server actions stay in place.
-- Existing UI does not call the new API yet.
+- Story 1a covers API creation, new server actions where needed, client migration to the API contract, and the `CAT_*` custom error code system.
+- The API route layer is a thin HTTP wrapper over server actions; server actions remain the single Apollo/Strapi boundary.
+- The route validates `STRAPI_HOST` and `STRAPI_API_TOKEN` on entry; missing config is a `CAT_ENV_001` failure, never a leaked raw error.
+- Client components (`Home.tsx`, `ProductVariantsDrawer.tsx`) stop importing server actions and call the new API routes via `fetch`.
+- The server-rendered initial products fetch in `src/app/page.tsx` can keep calling the server action directly; it is not a client component.
+- The client owns the code-to-Spanish-copy map; the API only returns the `CAT_*` code and a generic English fallback.
+- The hardcoded `CATEGORIES_PRODUCTS` and `BRANDS_PRODUCTS` arrays in `src/shared/types/global.types.ts` remain in place for the current UI dropdowns; replacing them is a separate UI concern.
 - No new dependency is needed.
 - Page size stays at current fixed values (50 products, 100 variants) for this story; a later story will revisit caller-controlled page size.
+- A short manual curl checklist is included in the PR notes for each new route.
 
 ## Research Outcome
 
 - There is no catalog API route today.
 - The repo already has all GraphQL operations needed for the current product, category, brand, and variant reads.
-- Story 1a adds the new `GET_CATEGORIES` and `GET_BRANDS` operations so validation uses live Strapi data instead of the hardcoded allowlists.
-- The smallest useful API story is a thin Route Handler layer over those existing queries with validation and a stable JSON envelope.
+- Story 1a adds the new `GET_CATEGORIES` and `GET_BRANDS` operations plus matching server actions so validation uses live Strapi data instead of the hardcoded allowlists.
+- Final architecture: client calls API route via `fetch`; API route calls server action; server action is the only place that calls Apollo.
 - Final route shape: multiple resource-specific routes under `/api/catalog/` with product reads in `/products`, `/category`, `/brand`, dynamic taxonomy lists in `/categories` and `/brands`, and variants in a separate `/variants` group.
 - `documentId` validation uses a 30-character cap on `[A-Za-z0-9_-]`; invalid params return `400` with the error envelope.
-- Keep it boring: no query builder, no UI migration, no new data-fetching library.
+- The route returns a `CAT_*` error code; the client maps it to Spanish copy. No raw Apollo/Strapi error strings are forwarded.
+- `STRAPI_HOST` and `STRAPI_API_TOKEN` are validated on the route and surface as `CAT_ENV_001` when missing.
+- Client migration is part of this story: `Home.tsx` dropdown handlers and `ProductVariantsDrawer.tsx` call the new API routes; the initial server-rendered products fetch in `src/app/page.tsx` is unchanged.
+- Keep it boring: no query builder, no new data-fetching library.
 - Page size control is a deferred follow-up tracked in `docs/improvement.md`.
