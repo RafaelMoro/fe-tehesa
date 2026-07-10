@@ -117,7 +117,7 @@ Dark mode is `attribute="class"` (`<html class="dark">`) via `NextThemesProvider
 
 ## Typography
 
-The app loads **Geist Sans** and **Geist Mono** via `next/font/google` in `src/app/layout.tsx` and exposes them as the CSS variables `--font-geist-sans` and `--font-geist-mono` on `<body>`.
+The app loads **Geist Sans** and **Geist Mono** via `next/font/local` in `src/app/layout.tsx` from `src/app/fonts/GeistVF.woff` and `src/app/fonts/GeistMonoVF.woff` (full weight axis `100 900`), and exposes them as the CSS variables `--font-geist-sans` and `--font-geist-mono` on `<body>`.
 
 - Use **Geist Sans** for interface text, labels, catalog content, and forms.
 - Use **Geist Mono** only when the user explicitly asks for monospace, or when a true code/diagnostic block requires fixed-width alignment; do not use it for prices, IDs, SKUs, or metadata by default.
