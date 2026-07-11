@@ -22,6 +22,7 @@ Read in order:
 3. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 4. `package.json` - dependencies and scripts.
 5. The research doc the plan references, usually `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md`, for ACs and assumptions.
+6. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
 
 There is no test framework configured and no `pnpm test` script. Do not invent test commands.
 
@@ -64,6 +65,7 @@ These are non-negotiable. If the plan violates one, stop and ask because the pla
 - **Config**: preserve `tailwind.config.js` HeroUI theme content, `darkMode: "class"`, and the minimal `next.config.ts` unless the plan explicitly changes config.
 - **Do not remove pre-existing `console.log` / `console.warn` / `console.error` statements** unless the plan explicitly says to remove them.
 - **Do not edit `CHANGELOG.md` or manually bump `package.json` version** unless the user explicitly asks; the develop merge workflow handles release automation.
+- **React/Next.js performance**: while writing React or Next.js code, apply the loaded `vercel-react-best-practices` guidance pragmatically. Prefer the smallest useful change; do not add dependencies or broad rewrites just to satisfy a performance guideline.
 
 ## Step 5 - Verification
 
@@ -86,6 +88,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm lint`
   - `pnpm build`
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
+- If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
 - If you update `.opencode/command/implement.md`, sync it to `.github/prompts/implement.prompt.md` afterward with the existing sync script.
 
 ## Step 7 - Capture follow-ups
