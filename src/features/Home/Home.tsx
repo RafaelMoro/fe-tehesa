@@ -25,6 +25,8 @@ export const Home = ({
   const router = useRouter();
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
+  const [localSearchTerm, setLocalSearchTerm] = useState("")
+  const isLocalFilterActive = localSearchTerm.trim().length > 0
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -38,9 +40,10 @@ export const Home = ({
   useEffect(() => {
     allProducts.current = products;
     setFilteredProducts(products);
-    // Reset category and brand filters when page changes
+    // Reset category, brand, and local filter when page changes
     setSelectedCategory(null);
     setSelectedBrand(null);
+    setLocalSearchTerm("");
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -51,15 +54,16 @@ export const Home = ({
   };
 
   const handleSearch = (searchTerm: string) => {
+    setLocalSearchTerm(searchTerm);
     if (!searchTerm.trim()) {
-      // If search is empty, show all products from current page
+      // If search is empty, show the current working set
       setFilteredProducts(allProducts.current);
       return;
     }
 
     // Filter by search term in product name (case-insensitive)
-    // Only filters the 50 products on the current page
-    const searchFiltered = allProducts.current.filter((prod) => 
+    // Only filters the current working set (page, category-wide, or brand-wide)
+    const searchFiltered = allProducts.current.filter((prod) =>
       prod.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -76,8 +80,9 @@ export const Home = ({
       allProducts.current = categoryProducts;
       setFilteredProducts(categoryProducts);
       setSelectedCategory(categoryCustomId);
-      // Reset brand filter when category is selected
+      // Reset brand filter and local filter when category is selected
       setSelectedBrand(null);
+      setLocalSearchTerm("");
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by category:', code ? catalogErrorToSpanish(code) : error);
@@ -95,8 +100,9 @@ export const Home = ({
       allProducts.current = brandProducts;
       setFilteredProducts(brandProducts);
       setSelectedBrand(brandCustomId);
-      // Reset category filter when brand is selected
+      // Reset category filter and local filter when brand is selected
       setSelectedCategory(null);
+      setLocalSearchTerm("");
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by brand:', code ? catalogErrorToSpanish(code) : error);
@@ -105,11 +111,17 @@ export const Home = ({
     }
   }
 
+  const clearLocalFilter = () => {
+    setLocalSearchTerm("");
+    setFilteredProducts(allProducts.current);
+  }
+
   const clearFilters = () => {
     setFilteredProducts(products);
     allProducts.current = products;
     setSelectedCategory(null);
     setSelectedBrand(null);
+    setLocalSearchTerm("");
     // Shows all 50 products from current page
   }
 
@@ -121,7 +133,7 @@ export const Home = ({
   return (
     <>
       <div>
-        <SearchInput onSearch={handleSearch} />
+        <SearchInput value={localSearchTerm} onSearch={handleSearch} />
         <div className="flex gap-3 items-center mb-5">
           <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
           <DropdownBrands selectedBrand={selectedBrand} updateSelectedBrand={handleBrandSelect} />

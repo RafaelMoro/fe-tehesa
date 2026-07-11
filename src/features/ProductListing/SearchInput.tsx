@@ -1,15 +1,13 @@
 "use client"
-import { useState } from "react"
 import { FieldError, Input, Label, TextField } from "@heroui/react"
 
 interface SearchInputProps {
+  value: string
   onSearch: (searchTerm: string) => void
 }
 
-export const SearchInput = ({ onSearch }: SearchInputProps) => {
-  const [searchTerm, setSearchTerm] = useState("")
+export const SearchInput = ({ value, onSearch }: SearchInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
     onSearch(e.target.value)
   }
 
@@ -19,7 +17,7 @@ export const SearchInput = ({ onSearch }: SearchInputProps) => {
         <Label>Buscar producto</Label>
         <Input
           placeholder="Buscar producto"
-          value={searchTerm}
+          value={value}
           onChange={handleChange}
         />
         <FieldError>Busque un producto</FieldError>
