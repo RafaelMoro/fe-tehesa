@@ -1,3 +1,9 @@
+## v0.15.0 (2026-07-11)
+
+### Pull Requests
+[#20](https://github.com/RafaelMoro/fe-tehesa/pull/20) | Story 1b: Add local filtering
+
+
 ## v0.14.0 (2026-07-10)
 
 ### Pull Requests
