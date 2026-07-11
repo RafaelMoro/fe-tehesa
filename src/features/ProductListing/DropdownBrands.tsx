@@ -6,9 +6,10 @@ import { BRANDS_PRODUCTS } from "@/shared/types/global.types"
 interface DropdownBrandsProps {
   selectedBrand: string | null
   updateSelectedBrand: (brandCustomId: string) => void
+  defaultLabel?: string
 }
 
-export const DropdownBrands = ({ selectedBrand, updateSelectedBrand }: DropdownBrandsProps) => {
+export const DropdownBrands = ({ selectedBrand, updateSelectedBrand, defaultLabel }: DropdownBrandsProps) => {
   const allBrands = [...BRANDS_PRODUCTS]
   
   // Find the selected brand object to display its name
@@ -17,7 +18,7 @@ export const DropdownBrands = ({ selectedBrand, updateSelectedBrand }: DropdownB
   return (
     <Dropdown>
       <Button variant="secondary">
-        {selectedBrandObj?.name ?? 'Marcas'}
+        {selectedBrandObj?.name ?? defaultLabel ?? 'Buscar marca en todo el catálogo'}
         <RiArrowDownSLine />
       </Button>
       <Dropdown.Popover>
