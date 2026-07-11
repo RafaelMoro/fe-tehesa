@@ -174,7 +174,7 @@ export const Home = ({
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
             <span>
               Filtrando productos visibles
-              {localSearchTerm.trim() && `: &quot;${localSearchTerm}&quot;`}
+              {localSearchTerm.trim() && `: "${localSearchTerm}"`}
               {localCategory && ` · ${CATEGORIES_PRODUCTS.find((c) => c.customId === localCategory)?.name ?? ''}`}
               {localBrand && ` · ${BRANDS_PRODUCTS.find((b) => b.customId === localBrand)?.name ?? ''}`}
             </span>
