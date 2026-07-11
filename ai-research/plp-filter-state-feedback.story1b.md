@@ -118,10 +118,10 @@ Story 1b should build on that instead of changing the data-access architecture a
 
 Existing Spanish copy is accent-light (`Catalogo`, `Categorias`). Preserve app style unless product explicitly requests a broader copy pass.
 
-Suggested Story 1b copy can be finalized during planning:
+Story 1b copy decisions:
 
 - Empty default list: `No hay productos disponibles.`
-- Empty local filter: `No encontramos productos en los resultados visibles.`
+- Empty local filter: `No hay coincidencias en los productos que estás viendo.`
 - Category dropdown default: `Buscar categoría en todo el catálogo`
 - Brand dropdown default: `Buscar marca en todo el catálogo`
 - Clear action remains `Limpiar filtros`.
@@ -185,14 +185,16 @@ Explanation: Keep URL-synced filters for a later story.
 ### UI And Product Decisions
 
 I: Question: What exact Spanish copy should be used for local empty states?
-Status: pending
-Context: Suggested options are included in this research doc.
-Explanation: Recommended option is `No encontramos productos en los resultados visibles.` because it clearly says the filter only applies to visible/current results.
+Status: answered
+Answer: `No hay coincidencias en los productos que estás viendo.`
+Context: User selected option 2 from the recommended local empty-state copy options.
+Explanation: This copy keeps the scope clear: the local filter applies only to the products currently visible/loaded.
 
 II: Question: Should Spanish accents be normalized in new copy?
-Status: pending
+Status: answered
+Answer: Yes, use correct Spanish accents in new Story 1b copy.
 Context: Existing app copy is Spanish but inconsistently accented.
-Explanation: This means whether new copy should use correct Spanish accents like `catálogo`, `categoría`, `búsqueda`, and `estás`, even though some existing app copy omits accents. Recommendation: use correct accents for new Story 1b copy, but do not do a broad cleanup of existing copy unless product asks for it.
+Explanation: Use correct accents for new copy such as `catálogo`, `categoría`, `búsqueda`, and `estás`. Do not do a broad cleanup of existing copy unless product asks for it.
 
 ### Verification
 
@@ -216,6 +218,7 @@ Context: Story 1b touches client components that call App Router API routes.
 - Story 1b does not modify the variants drawer.
 - Category and brand wide-search dropdowns remain mutually exclusive while they stay inline.
 - Clearing only the local filter returns to the current working set.
+- New Story 1b copy uses correct Spanish accents.
 - No new dependencies are needed.
 
 ## Research Outcome

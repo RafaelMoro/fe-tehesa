@@ -89,6 +89,7 @@ Feature UI:
 - `src/features/Home/Home.tsx` owns working set, visible products, category/brand selection, clear behavior, and should own catalog-search drawer state.
 - `src/features/ProductListing/SearchInput.tsx` currently represents local filtering but is labeled generically as `Buscar producto`.
 - `DropdownCategories` and `DropdownBrands` currently render inline in `Home`; Story 1c moves these wide-search controls into the catalog-wide search drawer.
+- Story 1b keeps those dropdowns inline and updates their default labels to `Buscar categoría en todo el catálogo` and `Buscar marca en todo el catálogo`; Story 1c should remove those inline controls once the drawer versions exist.
 - ProductListing controls need clear labels/helpers so users know whether they are filtering visible products or opening/searching the whole catalog.
 - `src/features/ProductListing/ProductListing.tsx` owns the grid empty fallback.
 
@@ -278,7 +279,7 @@ III: Question: Should catalog-wide search live inline or in a drawer?
 Status: answered
 Answer: Use a drawer.
 Context: User specified Story 1c should bring the wide UI, including category and brand dropdowns, into a drawer with product-name search.
-Explanation: Main PLP keeps local visible-results filtering inline; catalog-wide search lives in the drawer.
+Explanation: Main PLP keeps local visible-results filtering inline. Story 1b temporarily leaves category/brand wide-search dropdowns inline with clearer labels, and Story 1c moves those controls into the drawer and removes the inline versions.
 
 ### Validation And Security
 
@@ -319,6 +320,7 @@ Context: Story 1c adds an API route and client/API integration.
 - Catalog-wide search uses a new `/api/catalog/search` route.
 - Search returns first page only with fixed `pageSize: 50`.
 - Catalog-wide drawer controls are mutually exclusive: product name, category, and brand each replace the working set.
+- Story 1c removes the inline category/brand wide-search dropdowns after recreating them in the drawer.
 - Search does not sync to the URL.
 - Search does not show totals or page counts.
 - No new dependencies are needed.
