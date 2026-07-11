@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
 import { RiInformationLine } from "@remixicon/react"
 
-import { Product } from "@/shared/types/global.types"
+import { BRANDS_PRODUCTS, CATEGORIES_PRODUCTS, Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
@@ -27,7 +27,12 @@ export const Home = ({
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
   const [localSearchTerm, setLocalSearchTerm] = useState("")
-  const isLocalFilterActive = localSearchTerm.trim().length > 0
+  const [localCategory, setLocalCategory] = useState<string | null>(null)
+  const [localBrand, setLocalBrand] = useState<string | null>(null)
+  const isLocalFilterActive =
+    localSearchTerm.trim().length > 0 ||
+    localCategory !== null ||
+    localBrand !== null
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -41,10 +46,12 @@ export const Home = ({
   useEffect(() => {
     allProducts.current = products;
     setFilteredProducts(products);
-    // Reset category, brand, and local filter when page changes
+    // Reset catalog-wide and local filters when page changes
     setSelectedCategory(null);
     setSelectedBrand(null);
     setLocalSearchTerm("");
+    setLocalCategory(null);
+    setLocalBrand(null);
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -54,22 +61,37 @@ export const Home = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // ponytail: stacked local filter; single source of truth = next.{searchTerm,category,brand}.
+  const applyLocalFilters = (next: { searchTerm: string; category: string | null; brand: string | null }) => {
+    const term = next.searchTerm.trim().toLowerCase();
+    const categoryName = next.category
+      ? CATEGORIES_PRODUCTS.find((c) => c.customId === next.category)?.name ?? null
+      : null;
+    const brandName = next.brand
+      ? BRANDS_PRODUCTS.find((b) => b.customId === next.brand)?.name ?? null
+      : null;
+    const filtered = allProducts.current.filter((prod) => {
+      if (term && !prod.name.toLowerCase().includes(term)) return false;
+      if (categoryName && prod.category?.name !== categoryName) return false;
+      if (brandName && prod.brand?.name !== brandName) return false;
+      return true;
+    });
+    setFilteredProducts(filtered);
+  }
+
   const handleSearch = (searchTerm: string) => {
     setLocalSearchTerm(searchTerm);
-    if (!searchTerm.trim()) {
-      // If search is empty, show the current working set
-      setFilteredProducts(allProducts.current);
-      return;
-    }
+    applyLocalFilters({ searchTerm, category: localCategory, brand: localBrand });
+  }
 
-    // Filter by search term in product name (case-insensitive)
-    // Only filters the current working set (page, category-wide, or brand-wide)
-    const searchFiltered = allProducts.current.filter((prod) =>
-      prod.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const handleLocalCategorySelect = (categoryCustomId: string) => {
+    setLocalCategory(categoryCustomId);
+    applyLocalFilters({ searchTerm: localSearchTerm, category: categoryCustomId, brand: localBrand });
+  }
 
-    setFilteredProducts(searchFiltered);
-    // Note: Does NOT reset to page 1
+  const handleLocalBrandSelect = (brandCustomId: string) => {
+    setLocalBrand(brandCustomId);
+    applyLocalFilters({ searchTerm: localSearchTerm, category: localCategory, brand: brandCustomId });
   }
 
   const handleCategorySelect = async (categoryCustomId: string) => {
@@ -81,9 +103,11 @@ export const Home = ({
       allProducts.current = categoryProducts;
       setFilteredProducts(categoryProducts);
       setSelectedCategory(categoryCustomId);
-      // Reset brand filter and local filter when category is selected
+      // Reset brand and all local filters when a catalog-wide category is selected
       setSelectedBrand(null);
       setLocalSearchTerm("");
+      setLocalCategory(null);
+      setLocalBrand(null);
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by category:', code ? catalogErrorToSpanish(code) : error);
@@ -101,9 +125,11 @@ export const Home = ({
       allProducts.current = brandProducts;
       setFilteredProducts(brandProducts);
       setSelectedBrand(brandCustomId);
-      // Reset category filter and local filter when brand is selected
+      // Reset category and all local filters when a catalog-wide brand is selected
       setSelectedCategory(null);
       setLocalSearchTerm("");
+      setLocalCategory(null);
+      setLocalBrand(null);
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by brand:', code ? catalogErrorToSpanish(code) : error);
@@ -112,18 +138,12 @@ export const Home = ({
     }
   }
 
-  const clearLocalFilter = () => {
-    setLocalSearchTerm("");
-    setFilteredProducts(allProducts.current);
-  }
-
   const clearFilters = () => {
-    setFilteredProducts(products);
-    allProducts.current = products;
-    setSelectedCategory(null);
-    setSelectedBrand(null);
+    // Local-only clear per Story 1b; does not touch catalog-wide selectedCategory/selectedBrand.
     setLocalSearchTerm("");
-    // Shows all 50 products from current page
+    setLocalCategory(null);
+    setLocalBrand(null);
+    setFilteredProducts(allProducts.current);
   }
 
   const handleProductClick = (product: Product) => {
@@ -135,9 +155,29 @@ export const Home = ({
     <>
       <div>
         <SearchInput value={localSearchTerm} onSearch={handleSearch} />
+        <div className="flex flex-wrap gap-3 items-center mb-3">
+          <DropdownCategories
+            selectedCategory={localCategory}
+            updateSelectedCategory={handleLocalCategorySelect}
+            defaultLabel="Filtrar por categoría visible"
+          />
+          <DropdownBrands
+            selectedBrand={localBrand}
+            updateSelectedBrand={handleLocalBrandSelect}
+            defaultLabel="Filtrar por marca visible"
+          />
+          <Button onPress={clearFilters} isDisabled={isLoadingCategory || isLoadingBrand}>
+            Limpiar filtros
+          </Button>
+        </div>
         {isLocalFilterActive && (
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
-            <span>Filtrando productos visibles por: &quot;{localSearchTerm}&quot;</span>
+            <span>
+              Filtrando productos visibles
+              {localSearchTerm.trim() && `: &quot;${localSearchTerm}&quot;`}
+              {localCategory && ` · ${CATEGORIES_PRODUCTS.find((c) => c.customId === localCategory)?.name ?? ''}`}
+              {localBrand && ` · ${BRANDS_PRODUCTS.find((b) => b.customId === localBrand)?.name ?? ''}`}
+            </span>
             <Popover>
               <Button
                 isIconOnly
@@ -153,22 +193,18 @@ export const Home = ({
                 </Popover.Dialog>
               </Popover.Content>
             </Popover>
-            <Button size="sm" variant="tertiary" onPress={clearLocalFilter}>
-              Limpiar filtro local
-            </Button>
           </div>
         )}
-        <div className="flex gap-3 items-center mb-5">
+        <div className="flex flex-wrap gap-3 items-center mb-5">
           <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
           <DropdownBrands selectedBrand={selectedBrand} updateSelectedBrand={handleBrandSelect} />
-          <Button onPress={clearFilters} isDisabled={isLoadingCategory || isLoadingBrand}>Limpiar filtros</Button>
         </div>
       </div>
       <ProductListing
         products={filteredProducts}
         handleProductClick={handleProductClick}
         isLocalFilterActive={isLocalFilterActive}
-        onClearLocalFilter={clearLocalFilter}
+        onClearLocalFilter={clearFilters}
       />
       {selectedCategory === null && selectedBrand === null && (
         <div className="w-full flex justify-center">

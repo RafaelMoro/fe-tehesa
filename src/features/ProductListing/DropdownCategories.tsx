@@ -6,9 +6,10 @@ import { CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
 interface DropdownCategoriesProps {
   selectedCategory: string | null
   updateSelectedCategory: (categoryCustomId: string) => void
+  defaultLabel?: string
 }
 
-export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }: DropdownCategoriesProps) => {
+export const DropdownCategories = ({ selectedCategory, updateSelectedCategory, defaultLabel }: DropdownCategoriesProps) => {
   const allCategories = [...CATEGORIES_PRODUCTS]
   
   // Find the selected category object to display its name
@@ -17,7 +18,7 @@ export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }:
   return (
     <Dropdown>
       <Button variant="secondary">
-        {selectedCategoryObj?.name ?? 'Buscar categoría en todo el catálogo'}
+        {selectedCategoryObj?.name ?? defaultLabel ?? 'Buscar categoría en todo el catálogo'}
         <RiArrowDownSLine />
       </Button>
       <Dropdown.Popover>

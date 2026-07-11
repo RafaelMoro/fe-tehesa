@@ -19,7 +19,7 @@ export const ProductListing = ({ products, handleProductClick, isLocalFilterActi
         {onClearLocalFilter && (
           <div>
             <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
-              Limpiar filtro local
+              Limpiar filtros
             </Button>
           </div>
         )}
