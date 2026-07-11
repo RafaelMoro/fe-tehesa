@@ -11,25 +11,24 @@ interface ProductListingProps {
 }
 
 export const ProductListing = ({ products, handleProductClick, isLocalFilterActive, onClearLocalFilter }: ProductListingProps) => {
-  if (products.length === 0) {
-    if (isLocalFilterActive) {
-      return (
-        <div className="flex flex-col gap-2">
-          <p>No hay coincidencias en los productos que estás viendo.</p>
-          <p>¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.</p>
-          {onClearLocalFilter && (
-            <div>
-              <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
-                Limpiar filtro local
-              </Button>
-            </div>
-          )}
-        </div>
-      )
-    }
+  if (products.length === 0 && isLocalFilterActive) {
     return (
-      <div>No hay productos disponibles.</div>
+      <div className="flex flex-col gap-2">
+        <p>No hay coincidencias en los productos que estás viendo.</p>
+        <p>¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.</p>
+        {onClearLocalFilter && (
+          <div>
+            <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
+              Limpiar filtro local
+            </Button>
+          </div>
+        )}
+      </div>
     )
+  }
+
+  if (products.length === 0) {
+    return <div>No hay productos disponibles.</div>
   }
 
   return (
