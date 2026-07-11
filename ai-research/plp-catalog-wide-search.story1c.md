@@ -67,11 +67,12 @@ Story 1a is treated as implemented for Story 1c planning:
 
 ### Relationship To Story 1b
 
-Story 1b owns local visible-results filter state and feedback:
+Story 1b is implemented and owns local visible-results filter state and feedback:
 
 - Active local visible-results filter state.
 - Local filter clear behavior.
 - Spanish empty state for local filtering.
+- Stacked local text/category/brand filters over the current working set.
 - Wider-search advice/button affordance in the local empty state.
 - Existing category/brand dropdowns remain in place as wide-search controls until Story 1c moves them.
 
@@ -120,7 +121,7 @@ Tests:
 - Local search fires on every input change.
 - Local search does not query Strapi and does not reset page to 1.
 - Category/brand dropdowns replace the working set via API after Story 1a and are catalog-wide search controls that Story 1c moves into the drawer.
-- Empty grid copy is handled by Story 1b if implemented first.
+- Empty grid copy is handled by the implemented Story 1b baseline.
 - There is no product-name search API route.
 
 ### Target Search Model
@@ -336,7 +337,7 @@ Context: Story 1c adds an API route and client/API integration.
 ## Assumptions Made
 
 - Story 1a is implemented.
-- Story 1b local filter feedback either is implemented first or Story 1c planning accounts for any missing local UI states without expanding scope.
+- Story 1b local filter feedback is implemented and should be treated as baseline.
 - Story 1b may add a wider-search advice/button affordance; Story 1c wires it to the drawer.
 - Primary drawer trigger placement is the local empty-state advice block; optional persistent placement must be visually separated from local filtering controls.
 - Catalog-wide search uses a new `/api/catalog/search` route.
