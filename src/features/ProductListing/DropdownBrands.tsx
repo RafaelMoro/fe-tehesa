@@ -17,7 +17,7 @@ export const DropdownBrands = ({ selectedBrand, updateSelectedBrand }: DropdownB
   return (
     <Dropdown>
       <Button variant="secondary">
-        {selectedBrandObj?.name ?? 'Marcas'}
+        {selectedBrandObj?.name ?? 'Buscar marca en todo el catálogo'}
         <RiArrowDownSLine />
       </Button>
       <Dropdown.Popover>

@@ -17,7 +17,7 @@ export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }:
   return (
     <Dropdown>
       <Button variant="secondary">
-        {selectedCategoryObj?.name ?? 'Categorias'}
+        {selectedCategoryObj?.name ?? 'Buscar categoría en todo el catálogo'}
         <RiArrowDownSLine />
       </Button>
       <Dropdown.Popover>
