@@ -132,6 +132,7 @@ Manual:
 - Location: JSX around `SearchInput`, filter controls, and `ProductListing` render.
 - Render a small active local-filter indicator only when `localSearchTerm.trim()` is non-empty.
 - Indicator copy should make scope clear, e.g. `Filtrando productos visibles por: "{term}"`.
+- Add a small popover next to the indicator copy explaining the scope of the local filter. Recommended copy: `Este filtro solo busca en los productos que estás viendo.`
 - Render a local-only clear action near that indicator, e.g. a small HeroUI `Button` calling `clearLocalFilter`.
 - Keep existing `Limpiar filtros` button for the broader reset; do not repurpose it as local-only because current behavior intentionally resets category/brand/page working set.
 - Pass empty-state props into `ProductListing`, including whether the local filter is active and a callback or affordance for clearing the local filter if needed.
