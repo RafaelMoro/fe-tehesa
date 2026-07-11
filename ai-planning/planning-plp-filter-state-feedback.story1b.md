@@ -10,17 +10,18 @@ Assumptions:
 
 - Story 1a catalog API routes and envelope helpers are already available.
 - Category and brand dropdowns remain inline and catalog-wide until Story 1c.
-- Clearing only the local visible-results filter returns to the current working set, not necessarily the original page products.
+- Clearing local text/category/brand filters returns to the current working set, not necessarily the original page products.
 - New Story 1b copy uses correct Spanish accents; no broad copy cleanup.
 - No new dependencies, test framework, API routes, URL-synced filters, drawer work, or backend changes.
 
 ## Acceptance Criteria
 
 1. Users can see when the local visible-results filter is active.
-2. Users can clear the local visible-results filter without resetting catalog-wide category/brand results unexpectedly.
-3. Empty local filter results render Spanish user-facing copy instead of `No products available`, including guidance to try catalog-wide search if the desired product is not visible.
-4. Local visible-result filtering remains client-side and filters the current working set only.
-5. Existing category and brand dropdowns remain in place, keep their current catalog-wide search behavior, and use Spanish button copy that indicates catalog-wide category/brand search until Story 1c moves them into the wide-search drawer.
+2. Users can filter the current working set locally by product text, category, and brand.
+3. Local text, category, and brand filters can be stacked together and apply only to the current working set.
+4. `Limpiar filtros` clears local text/category/brand filters without resetting catalog-wide category/brand results unexpectedly.
+5. Empty local filter results render Spanish user-facing copy instead of `No products available`, including guidance to try catalog-wide search if the desired product is not visible.
+6. Existing catalog-wide category and brand dropdowns remain in place, keep their current catalog-wide search behavior, and use Spanish button copy that indicates catalog-wide category/brand search until Story 1c moves them into the wide-search drawer.
 
 ## Affected Files
 
@@ -69,21 +70,20 @@ Assumptions:
 
 - Action: Modify.
 - Location: near existing `filteredProducts`, `handleSearch`, category/brand handlers, `clearFilters`, and `SearchInput` render.
-- Add parent state for the local visible-results search term, e.g. `const [localSearchTerm, setLocalSearchTerm] = useState("")`.
-- Derive active local filter state from `localSearchTerm.trim().length > 0`; do not create a separate boolean that can drift.
-- Update `handleSearch(searchTerm: string)` so it stores the term in parent state before filtering `allProducts.current`.
-- Keep filtering purely client-side against `allProducts.current` by product name, case-insensitive, as it does today.
-- When `searchTerm.trim()` is empty, set visible products back to `allProducts.current` only.
-- When category or brand catalog-wide fetch succeeds, reset `localSearchTerm` to `""` and show the fetched working set.
+- Add parent state for local filters, e.g. `localSearchTerm`, `localCategory`, and `localBrand`.
+- Derive active local filter state from any non-empty local text/category/brand value; do not create a separate boolean that can drift.
+- Add a small `applyLocalFilters(nextFilters)` function inside `Home` that filters `allProducts.current` by text, category, and brand together.
+- Update `handleSearch(searchTerm: string)` so it stores the term and calls the shared local filter application.
+- Keep filtering purely client-side against `allProducts.current`: text by product name, category by `product.category.name`, and brand by `product.brand.name`.
+- When category or brand catalog-wide fetch succeeds, reset all local filters and show the fetched working set.
 - Keep category/brand mutual exclusivity exactly as today.
-- Add a local-filter clear handler, e.g. `clearLocalFilter()`, that only resets `localSearchTerm` and `filteredProducts` to `allProducts.current`.
-- Keep the existing `clearFilters()` behavior for the global reset button: reset to `products`, clear category/brand, and clear `localSearchTerm` too.
+- Make `clearFilters()` local-only for Story 1b: reset `localSearchTerm`, `localCategory`, `localBrand`, and `filteredProducts` to `allProducts.current`; do not clear `selectedCategory` or `selectedBrand`.
 - Pass `value={localSearchTerm}` to `SearchInput` so parent resets update the input field.
 
 Edge cases:
 
-- Clearing the local filter while a category or brand result is active must keep `selectedCategory` or `selectedBrand` intact.
-- Changing server page products through pagination should reset `allProducts.current`, `filteredProducts`, selected category/brand, and `localSearchTerm`.
+- Clearing local filters while a catalog-wide category or brand result is active must keep `selectedCategory` or `selectedBrand` intact.
+- Changing server page products through pagination should reset `allProducts.current`, `filteredProducts`, selected catalog-wide category/brand, and all local filters.
 - Pagination remains hidden while category or brand is active and remains based on the existing `totalPages` prop.
 
 Rationale: `SearchInput` currently owns the input text, so `Home` cannot clear only local filtering without remount tricks or resetting wider catalog state.
@@ -111,18 +111,76 @@ Automated:
 Manual:
 
 - Desktop: type a product-name term and confirm the list narrows without a network request for product search.
-- Desktop: select a category, type a local term, clear only the local filter, and confirm category results return without clearing category selection.
-- Desktop: select a brand, type a local term, clear only the local filter, and confirm brand results return without clearing brand selection.
+- Desktop: select a catalog-wide category, apply local text/category/brand filters, click `Limpiar filtros`, and confirm catalog-wide category results return without clearing category selection.
+- Desktop: select a catalog-wide brand, apply local text/category/brand filters, click `Limpiar filtros`, and confirm catalog-wide brand results return without clearing brand selection.
 - Mobile: repeat the local filter clear flow and confirm controls remain usable.
 
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 | --- | --- | --- |
-| `src/features/Home/Home.tsx` | parent-owned local term, active local filter derivation, local clear preserving working set, category/brand reset of local term | manual browser checks + `pnpm lint` + `pnpm build` |
+| `src/features/Home/Home.tsx` | parent-owned local filters, stacked filter derivation, local clear preserving working set, catalog-wide category/brand reset of local filters | manual browser checks + `pnpm lint` + `pnpm build` |
 | `src/features/ProductListing/SearchInput.tsx` | controlled input value, change callback, parent reset reflected in field | manual browser checks + `pnpm lint` |
 
-## Phase 2: Visible Filter Feedback And Empty States
+## Phase 2: Local Category And Brand Filters
+
+### Changes Required
+
+`src/features/Home/Home.tsx`
+
+- Action: Modify.
+- Location: JSX around existing filter controls and handlers near `handleSearch`, `handleCategorySelect`, and `handleBrandSelect`.
+- Add handlers such as `handleLocalCategorySelect(categoryNameOrId: string)` and `handleLocalBrandSelect(brandNameOrId: string)` that update local filter state and call the shared stacked-filter function.
+- Render local category and brand dropdown controls near the text search, visually grouped as local filters and separate from catalog-wide search controls.
+- Use copy from research for local filter controls: `Filtrar por categoría visible` and `Filtrar por marca visible`.
+- Keep the existing catalog-wide dropdowns in place and still wired to `/api/catalog/category` and `/api/catalog/brand` through the current handlers.
+- `Limpiar filtros` should sit with the local controls because it clears local filters only.
+
+Edge cases:
+
+- Local category and brand filters must be stackable with each other and with the text filter.
+- Local filter values should compare against the product data already in `allProducts.current`; do not fetch Strapi taxonomy for local filtering.
+- If hardcoded dropdown `customId` values do not match `product.category.name` / `product.brand.name`, map selected dropdown items back to their display `name` before filtering.
+
+`src/features/ProductListing/DropdownCategories.tsx`
+
+- Action: Modify.
+- Location: props interface and default button text.
+- Add an optional `defaultLabel?: string` prop so the same dropdown can be reused for both local and catalog-wide category controls.
+- Keep existing default behavior for catalog-wide use when `defaultLabel` is not passed.
+- Do not change option source or API behavior.
+
+`src/features/ProductListing/DropdownBrands.tsx`
+
+- Action: Modify.
+- Location: props interface and default button text.
+- Add an optional `defaultLabel?: string` prop so the same dropdown can be reused for both local and catalog-wide brand controls.
+- Keep existing default behavior for catalog-wide use when `defaultLabel` is not passed.
+- Do not change option source or API behavior.
+
+### Success Criteria
+
+Automated:
+
+- `pnpm lint`
+- `pnpm build`
+
+Manual:
+
+- Desktop: filter the current page by text, then local category, then local brand; confirm results only shrink from the current working set.
+- Desktop: select a catalog-wide category, then stack local text/category/brand filters over those fetched results.
+- Desktop: click `Limpiar filtros` and confirm only local text/category/brand filters clear; catalog-wide category/brand selection remains.
+- Mobile: confirm local and catalog-wide dropdown groups are visually distinct and usable.
+
+### Verification Coverage
+
+| Area/File | Coverage/check areas | Verification reference |
+| --- | --- | --- |
+| `src/features/Home/Home.tsx` | stacked local text/category/brand filtering, local-only clear, catalog-wide context preservation | manual browser checks + `pnpm lint` + `pnpm build` |
+| `src/features/ProductListing/DropdownCategories.tsx` | reusable default label, selected category display unchanged, no API behavior change | manual browser checks + `pnpm lint` |
+| `src/features/ProductListing/DropdownBrands.tsx` | reusable default label, selected brand display unchanged, no API behavior change | manual browser checks + `pnpm lint` |
+
+## Phase 3: Visible Filter Feedback And Empty States
 
 ### Changes Required
 
@@ -130,16 +188,16 @@ Manual:
 
 - Action: Modify.
 - Location: JSX around `SearchInput`, filter controls, and `ProductListing` render.
-- Render a small active local-filter indicator only when `localSearchTerm.trim()` is non-empty.
-- Indicator copy should make scope clear, e.g. `Filtrando productos visibles por: "{term}"`.
+- Render a small active local-filter indicator only when any local text/category/brand filter is active.
+- Indicator copy should make scope clear, e.g. `Filtrando productos visibles` plus concise chips/labels for active text, category, and brand filters.
 - Add a small popover next to the indicator copy explaining the scope of the local filter. Recommended copy: `Este filtro solo busca en los productos que estás viendo.`
-- Render a local-only clear action near that indicator, e.g. a small HeroUI `Button` calling `clearLocalFilter`.
-- Keep existing `Limpiar filtros` button for the broader reset; do not repurpose it as local-only because current behavior intentionally resets category/brand/page working set.
+- Render the local-only clear action near that indicator or local controls, using the existing `Limpiar filtros` copy.
+- Do not add a separate broad reset button in Story 1b.
 - Pass empty-state props into `ProductListing`, including whether the local filter is active and a callback or affordance for clearing the local filter if needed.
 
 Edge cases:
 
-- If the local term is whitespace only, do not show the active indicator or local empty state.
+- If the local text term is whitespace only and no local category/brand is selected, do not show the active indicator or local empty state.
 - The wider-search button affordance may be present but must not open a drawer in Story 1b.
 
 `src/features/ProductListing/ProductListing.tsx`
@@ -153,7 +211,7 @@ Edge cases:
   - `No hay coincidencias en los productos que estás viendo.`
   - `¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.`
   - A non-wired affordance button labeled `Buscar en todo el catálogo`, or omit the button if implementer judges non-functional controls too misleading; the advice copy is required either way.
-  - A local clear button only if it helps meet AC2 from the empty state.
+  - A local clear button only if it helps meet AC4 from the empty state.
 - Preserve the existing product grid and `ProductCard` behavior when products exist.
 
 Edge cases:
@@ -184,7 +242,7 @@ Manual:
 | `src/features/Home/Home.tsx` | active filter feedback visibility, local clear action, props passed to listing | manual browser checks + `pnpm lint` + `pnpm build` |
 | `src/features/ProductListing/ProductListing.tsx` | Spanish default empty copy, local empty copy, wider-search guidance, no grid regression | manual browser checks + `pnpm lint` |
 
-## Phase 3: Catalog-Wide Dropdown Copy
+## Phase 4: Catalog-Wide Dropdown Copy
 
 ### Changes Required
 
@@ -237,6 +295,7 @@ Manual:
 - Pagination: preserve the hardcoded 5-page ceiling and hide pagination while category or brand is active.
 - Responsive UI: verify controls on mobile because the longer catalog-wide labels can affect wrapping.
 - Spanish copy: use the exact signed-off copy from research for empty states and dropdown defaults.
+- Local filter controls: keep local category/brand controls visually distinct from catalog-wide category/brand search controls.
 
 ## Open Questions / Out-of-Scope Items
 
@@ -251,6 +310,7 @@ Out of scope:
 - Wiring `Buscar en todo el catálogo` to a drawer or API call.
 - URL-synced filters.
 - Replacing hardcoded category/brand option lists.
+- Adding a broad reset that clears catalog-wide category/brand selections.
 - Product-card or variants-drawer redesign.
 - Backend schema, GraphQL query, API route, or envelope changes.
 - New dependencies or test framework setup.
@@ -258,5 +318,6 @@ Out of scope:
 ## Decisions Beyond The Research Doc
 
 - Plan makes `SearchInput` controlled by `Home` so clearing local filtering can update the visible field without resetting catalog-wide state.
-- Plan keeps `Limpiar filtros` as the existing broader reset and adds a separate local clear action. This avoids silently changing current wide-filter reset semantics.
+- Plan changes `Limpiar filtros` to local-only per updated research; no broad reset is planned.
 - Plan allows the wider-search button affordance to be omitted if non-functional UI would mislead users; the signed-off guidance copy remains required.
+- Plan reuses existing category/brand dropdown components with an optional label prop instead of adding new local dropdown files.
