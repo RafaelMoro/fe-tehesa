@@ -122,7 +122,7 @@ Story 1b copy decisions:
 
 - Empty default list: `No hay productos disponibles.`
 - Empty local filter: `No hay coincidencias en los productos que estás viendo.`
-- Wider-search advice: `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.`
+- Wider-search advice: `¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.`
 - Wider-search button label: `Buscar en todo el catálogo`
 - Category dropdown default: `Buscar categoría en todo el catálogo`
 - Brand dropdown default: `Buscar marca en todo el catálogo`
@@ -199,9 +199,10 @@ Context: User selected option 2 from the recommended local empty-state copy opti
 Explanation: This copy keeps the scope clear: the local filter applies only to the products currently visible/loaded. Story 1b also advises users to try catalog-wide search when local filtering does not find the desired product.
 
 II: Question: What Spanish copy should advise users to try wider search?
-Status: pending
+Status: answered
+Answer: `¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.`
 Context: Story 1b can show the advice and button affordance, but Story 1c makes the button open the drawer.
-Explanation: Recommended option is `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.` because it is direct and avoids implying the product definitely exists.
+Explanation: User selected option 2 from the recommended wider-search advice copy options.
 
 III: Question: Should Spanish accents be normalized in new copy?
 Status: answered

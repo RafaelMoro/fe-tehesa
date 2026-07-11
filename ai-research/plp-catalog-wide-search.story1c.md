@@ -41,9 +41,10 @@ This story assumes Story 1a is already implemented: client code uses `/api/catal
 3. Add validation for the search term and map invalid input to `CAT_VAL_006`.
 4. Add a catalog-wide search drawer that contains product-name search, category search, and brand search controls.
 5. Remove the wide-search category/brand dropdowns from the main inline PLP controls once they are available in the drawer.
-6. Wire the Story 1b wider-search button/prompt so it opens the catalog-wide search drawer.
-7. Add Spanish loading, empty, invalid, and error copy for catalog-wide search.
-8. Preserve Story 1b local filter behavior and avoid URL-sync/pagination metadata work.
+6. Add a `Buscar en todo el catálogo` drawer trigger button, with primary placement in the Story 1b local empty-state advice block.
+7. Wire the Story 1b wider-search button/prompt so it opens the catalog-wide search drawer.
+8. Add Spanish loading, empty, invalid, and error copy for catalog-wide search.
+9. Preserve Story 1b local filter behavior and avoid URL-sync/pagination metadata work.
 
 ### Scope Assessment
 
@@ -95,6 +96,8 @@ Feature UI:
 - Story 1b keeps those dropdowns inline and updates their default labels to `Buscar categoría en todo el catálogo` and `Buscar marca en todo el catálogo`; Story 1c should remove those inline controls once the drawer versions exist.
 - ProductListing controls need clear labels/helpers so users know whether they are filtering visible products or opening/searching the whole catalog.
 - If Story 1b added a wider-search button in the local empty state, Story 1c wires that button to open the catalog-wide search drawer.
+- Recommended placement: primary drawer trigger inside the local empty-state block, directly below `¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.` This makes the wide search a recovery path after local filtering fails.
+- Optional persistent placement: one secondary `Buscar en todo el catálogo` button in the PLP controls area, visually separated from the local filter input and not grouped as part of that input. Do not place the drawer trigger inside the local `SearchInput` control.
 - `src/features/ProductListing/ProductListing.tsx` owns the grid empty fallback.
 
 Shared code:
@@ -187,7 +190,7 @@ Suggested copy for planning:
 - Category helper: `Busca productos por categoria en todo el catalogo`
 - Brand helper: `Busca productos por marca en todo el catalogo`
 - Recovery prompt after local empty state: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
-- Story 1b selected/recommended prompt: `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.`
+- Story 1b selected prompt: `¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.`
 - Catalog loading: `Buscando productos en el catalogo...`
 - Catalog empty: `No encontramos productos en el catalogo.`
 - Invalid search: `Revisa el texto de busqueda e intentalo de nuevo.`
@@ -292,6 +295,12 @@ Answer: Yes.
 Context: Story 1b can show the advice/button affordance, but Story 1c owns the drawer behavior.
 Explanation: Story 1c makes that button open the catalog-wide search drawer.
 
+V: Question: Where should the catalog-wide drawer trigger button be placed to avoid confusion with local filtering?
+Status: answered
+Answer: Primary placement is inside the local empty-state advice block. Optional persistent placement is a separate secondary button in the PLP controls area, visually separated from the local filter input.
+Context: User asked where to place the button to avoid confusing local filtering with catalog-wide search.
+Explanation: The empty-state placement frames wide search as the next step when local filtering fails. If always-visible access is needed, the persistent button must not be grouped inside the local input because that would make one control look like it has two search scopes.
+
 ### Validation And Security
 
 I: Question: Should validation strip control characters before validating, or reject inputs containing them?
@@ -329,6 +338,7 @@ Context: Story 1c adds an API route and client/API integration.
 - Story 1a is implemented.
 - Story 1b local filter feedback either is implemented first or Story 1c planning accounts for any missing local UI states without expanding scope.
 - Story 1b may add a wider-search advice/button affordance; Story 1c wires it to the drawer.
+- Primary drawer trigger placement is the local empty-state advice block; optional persistent placement must be visually separated from local filtering controls.
 - Catalog-wide search uses a new `/api/catalog/search` route.
 - Search returns first page only with fixed `pageSize: 50`.
 - Catalog-wide drawer controls are mutually exclusive: product name, category, and brand each replace the working set.
