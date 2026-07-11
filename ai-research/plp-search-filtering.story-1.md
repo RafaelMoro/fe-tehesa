@@ -10,46 +10,53 @@ Improve PLP Search And Filtering Behavior
 
 - Parent epic: `ai-research/plp-functionality-seo.epic.md`
 - Referenced range: lines 31-61
-- Scope decision: research Story 1 as one independently deliverable story.
+- Scope decision: superseded. Story 1 has been split into Story 1a, Story 1b, and Story 1c.
 - Research depth: full template.
 
 ### Story Description
 
 Make product listing discovery more predictable by separating local visible-result filtering from catalog-wide product search, category filters, brand filters, empty states, and filter reset flows.
 
-The story also requires input validation before values reach Strapi GraphQL while preserving the current server-action production path.
+This original Story 1 research is now an umbrella reference, not the implementation unit. Story 1a has been implemented and provides the catalog API contract. Story 1b owns current filter state/feedback. Story 1c owns catalog-wide product search.
+
+### Split Status
+
+- Story 1a: `ai-research/plp-catalog-api.story1a.md` and `ai-planning/planning-plp-catalog-api.story1a.md` - implemented baseline for catalog API routes, API envelopes, `CAT_*` errors, and client API usage.
+- Story 1b: `ai-research/plp-filter-state-feedback.story1b.md` - current filter state, empty/loading/error feedback, and clear behavior.
+- Story 1c: `ai-research/plp-catalog-wide-search.story1c.md` - catalog-wide product-name search and UI distinction from local visible-results filtering.
 
 ### Acceptance Criteria
 
-1. Users can see which search/filter inputs are active and clear them without unexpectedly losing the current catalog context.
-2. Empty search/filter results render Spanish user-facing copy instead of the current generic fallback text.
-3. Category and brand filter behavior remains one clear model; current mutually exclusive behavior is acceptable unless product requirements later confirm combined filtering.
-4. Filter loading and failure states are represented in the UI instead of silently leaving stale results.
-5. The UI clearly separates local visible-results filtering from catalog-wide product search.
-6. User-controlled inputs that can reach the existing server-action GraphQL layer are validated before use: name search term, category id, brand id, page number, and page size.
+1. Story 1b: Users can see which local/category/brand filters are active and clear them without unexpectedly losing the current catalog context.
+2. Story 1b: Empty category/brand/local filter results render Spanish user-facing copy instead of the current generic fallback text.
+3. Story 1b: Category and brand filter behavior remains mutually exclusive.
+4. Story 1b: Filter loading and failure states are represented in the UI instead of silently leaving stale results.
+5. Story 1c: The UI clearly separates local visible-results filtering from catalog-wide product search.
+6. Story 1c: Product-name search input is validated before reaching the Story 1a API/server-action GraphQL layer.
 
 ### Task Breakdown
 
-1. Clarify and represent filter state in `src/features/Home/Home.tsx` and related ProductListing controls.
-2. Keep local visible-result filtering separate from catalog-wide Strapi search in UI labels/copy.
-3. Add Spanish empty, loading, and failure copy to the listing/filter flow.
-4. Add validation/sanitization at the existing server-action boundary before Strapi GraphQL variables are built.
-5. Add a catalog search GraphQL operation and server-side access path if confirmed by the current Strapi contract assumption.
+1. Story 1b: Clarify and represent current filter state in `src/features/Home/Home.tsx` and related ProductListing controls.
+2. Story 1b: Add Spanish empty, loading, and failure copy to the current category/brand/local filter flow.
+3. Story 1c: Keep local visible-result filtering separate from catalog-wide Strapi search in UI labels/copy.
+4. Story 1c: Add a catalog search GraphQL operation, server action, and `/api/catalog/search` route following Story 1a patterns.
 
 ### Scope Assessment
 
-- Classification: single medium-to-large story.
-- Areas touched: multiple areas, but still one user-facing PLP behavior story.
-- In scope: Home/ProductListing UI, shared GraphQL/server actions, and validation helpers if needed.
-- Out of scope: API route creation, dynamic category/brand options, replacing server actions, URL-synced filters, pagination metadata work, test framework setup, new dependencies, and backend repository changes.
+- Classification: umbrella story split into independently deliverable child stories.
+- Areas touched: Home/ProductListing UI, Story 1a catalog API contract, and search-specific GraphQL/API work.
+- In scope for this umbrella: preserving the relationship and boundaries between Story 1a, Story 1b, and Story 1c.
+- Out of scope for this umbrella: direct implementation planning. Plan Story 1b and Story 1c separately.
 
 ### Confirmed Research Choices
 
 - Full research template requested.
-- Keep as one story, not split into child stories.
-- Cover UI, current data flow, and server-action validation areas.
+- Story has since been split for implementation.
+- Story 1a is implemented and is the baseline for client API calls and error envelopes.
+- Story 1b covers UI filter state/feedback.
+- Story 1c covers catalog-wide search.
 - Assume Strapi GraphQL can support product name filtering for catalog-wide search.
-- API route creation was split into Story 1a: `ai-research/plp-catalog-api.story.md`.
+- Story 1c adds search-specific API/data work using the Story 1a route/action/error-code pattern.
 
 ## Technical Research
 
@@ -291,17 +298,18 @@ Context: ProductCard and listing layout have mobile-aware behavior.
 
 ## Assumptions Made
 
-- Story 1 remains one independently deliverable story.
-- Full research depth is desired.
-- Catalog-wide search by product name is supported by Strapi GraphQL, though exact query shape still needs implementation-time confirmation.
+- Story 1 is no longer one independently deliverable story; it is an umbrella split into 1a, 1b, and 1c.
+- Story 1a is implemented and provides the API/error-envelope baseline.
+- Story 1b owns current filter state and feedback.
+- Story 1c owns catalog-wide product search.
+- Catalog-wide search by product name is assumed to be supported by Strapi GraphQL, though exact query shape still needs implementation-time confirmation in Story 1c.
 - Category and brand filters remain mutually exclusive unless product explicitly changes that model.
-- URL-synced filters remain nice-to-have and out of scope for the must-have implementation.
+- URL-synced filters remain nice-to-have and out of scope for Story 1b and Story 1c.
 - No new dependencies are needed.
-- No source files should be modified during research.
 
 ## Research Outcome
 
-- The current code already has the core split between server page fetches and client-side local filtering, but the UI does not explain the split.
-- The current category/brand model is mutually exclusive and simple; preserving it is the shortest safe path.
-- The main missing pieces are explicit UI state, Spanish copy, input validation at server-action boundaries, and a name-search GraphQL operation.
-- The largest unresolved risk is the exact Strapi GraphQL name-search and pagination contract.
+- Story 1 is now an umbrella record, not the implementation unit.
+- Story 1a handled the catalog API foundation.
+- Story 1b should handle explicit UI filter state and Spanish feedback copy.
+- Story 1c should handle catalog-wide name search through the Story 1a API/server-action pattern.

@@ -10,7 +10,7 @@ Improve PLP Filter State And Feedback
 
 - Parent epic: `ai-research/plp-functionality-seo.epic.md`
 - Split from: `ai-research/plp-search-filtering.story-1.md`
-- Follows Story 1a research/planning:
+- Follows implemented Story 1a research/planning:
   - `ai-research/plp-catalog-api.story1a.md`
   - `ai-planning/planning-plp-catalog-api.story1a.md`
 - Scope decision: Story 1b, UI filter-state and feedback only.
@@ -19,7 +19,7 @@ Improve PLP Filter State And Feedback
 
 Make the current PLP filter flow understandable and resilient without adding catalog-wide search. Users should see which local/category/brand filters are active, understand empty states, see loading/failure feedback, and clear filters without losing the current catalog context unexpectedly.
 
-This story uses the Story 1a API contract for client-side product reads. It does not create new API routes, does not add catalog-wide product-name search, and does not change pagination metadata behavior.
+This story uses the implemented Story 1a API contract for client-side product reads. It does not create new API routes, does not add catalog-wide product-name search, and does not change pagination metadata behavior.
 
 ### Acceptance Criteria
 
@@ -48,14 +48,14 @@ This story uses the Story 1a API contract for client-side product reads. It does
 
 ### Dependency On Story 1a
 
-Story 1b assumes Story 1a is implemented first or in the same release branch:
+Story 1b assumes Story 1a is already implemented:
 
 - Client components use `/api/catalog/category`, `/api/catalog/brand`, and existing initial server-rendered products.
 - API responses use `{ success: true, data }` or `{ success: false, code, message }`.
 - Errors expose stable `CAT_*` codes and do not expose Apollo/Strapi internals.
 - `Home.tsx` no longer imports `fetchProductsByCategory` or `fetchProductsByBrand` directly after Story 1a.
 
-If Story 1a is not implemented yet, Story 1b planning should include it as a prerequisite rather than reintroducing direct server-action imports.
+Do not reintroduce direct server-action imports in Story 1b.
 
 ## Technical Research
 
@@ -98,9 +98,9 @@ Tests:
 - Category/brand errors are logged and do not show user-facing copy.
 - Empty product grids currently render English copy: `No products available`.
 
-### Current Behavior After Story 1a
+### Current Behavior With Implemented Story 1a
 
-Story 1a planning migrates the client fetches:
+Story 1a migrated the client fetches:
 
 - `Home.tsx` calls `/api/catalog/category?categoryId=...` for category fetches.
 - `Home.tsx` calls `/api/catalog/brand?brandId=...` for brand fetches.
@@ -211,13 +211,6 @@ Status: pending
 Context: Existing app copy is Spanish but inconsistently accented.
 Explanation: Avoid a broad copy cleanup in Story 1b unless product explicitly wants it.
 
-### API Dependency
-
-I: Question: Is Story 1a implemented before Story 1b?
-Status: pending
-Context: Story 1b expects category/brand client calls to go through `/api/catalog/*`.
-Explanation: If Story 1a is not implemented, Story 1b should wait or be planned with Story 1a as Phase 0.
-
 ### Verification
 
 I: Question: Should manual browser verification cover both mobile and desktop layouts?
@@ -232,7 +225,7 @@ Context: Story 1b touches client components that call App Router API routes.
 
 ## Assumptions Made
 
-- Story 1a API routes and envelopes are available before Story 1b implementation.
+- Story 1a API routes and envelopes are available.
 - Story 1b does not add catalog-wide search.
 - Story 1b does not change the hardcoded 5-page pagination ceiling.
 - Story 1b does not replace hardcoded category/brand dropdown options.
