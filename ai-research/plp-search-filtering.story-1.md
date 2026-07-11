@@ -17,13 +17,13 @@ Improve PLP Search And Filtering Behavior
 
 Make product listing discovery more predictable by separating local visible-result filtering from catalog-wide product search, category filters, brand filters, empty states, and filter reset flows.
 
-This original Story 1 research is now an umbrella reference, not the implementation unit. Story 1a has been implemented and provides the catalog API contract. Story 1b owns current filter state/feedback. Story 1c owns catalog-wide product search.
+This original Story 1 research is now an umbrella reference, not the implementation unit. Story 1a has been implemented and provides the catalog API contract. Story 1b owns local visible-results filter state/feedback. Story 1c owns the catalog-wide search drawer.
 
 ### Split Status
 
 - Story 1a: `ai-research/plp-catalog-api.story1a.md` and `ai-planning/planning-plp-catalog-api.story1a.md` - implemented baseline for catalog API routes, API envelopes, `CAT_*` errors, and client API usage.
 - Story 1b: `ai-research/plp-filter-state-feedback.story1b.md` - current filter state, empty/loading/error feedback, and clear behavior.
-- Story 1c: `ai-research/plp-catalog-wide-search.story1c.md` - catalog-wide product-name search and UI distinction from local visible-results filtering.
+- Story 1c: `ai-research/plp-catalog-wide-search.story1c.md` - catalog-wide search drawer for product name, category, and brand, plus UI distinction from local visible-results filtering.
 
 ### Acceptance Criteria
 
@@ -54,7 +54,7 @@ This original Story 1 research is now an umbrella reference, not the implementat
 - Story has since been split for implementation.
 - Story 1a is implemented and is the baseline for client API calls and error envelopes.
 - Story 1b covers UI filter state/feedback.
-- Story 1c covers catalog-wide search.
+- Story 1c covers the catalog-wide search drawer for product name, category, and brand.
 - Assume Strapi GraphQL can support product name filtering for catalog-wide search.
 - Story 1c adds search-specific API/data work using the Story 1a route/action/error-code pattern.
 
@@ -301,7 +301,7 @@ Context: ProductCard and listing layout have mobile-aware behavior.
 - Story 1 is no longer one independently deliverable story; it is an umbrella split into 1a, 1b, and 1c.
 - Story 1a is implemented and provides the API/error-envelope baseline.
 - Story 1b owns current filter state and feedback.
-- Story 1c owns catalog-wide product search.
+- Story 1c owns the catalog-wide search drawer.
 - Catalog-wide search by product name is assumed to be supported by Strapi GraphQL, though exact query shape still needs implementation-time confirmation in Story 1c.
 - Category and brand filters remain mutually exclusive unless product explicitly changes that model.
 - URL-synced filters remain nice-to-have and out of scope for Story 1b and Story 1c.
@@ -312,4 +312,4 @@ Context: ProductCard and listing layout have mobile-aware behavior.
 - Story 1 is now an umbrella record, not the implementation unit.
 - Story 1a handled the catalog API foundation.
 - Story 1b should handle explicit UI filter state and Spanish feedback copy.
-- Story 1c should handle catalog-wide name search through the Story 1a API/server-action pattern.
+- Story 1c should handle the catalog-wide search drawer through the Story 1a API/server-action pattern.

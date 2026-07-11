@@ -4,7 +4,7 @@
 
 ### Story Title
 
-Add Catalog-Wide Product Search
+Add Catalog-Wide Search Drawer
 
 ### Source
 
@@ -15,38 +15,40 @@ Add Catalog-Wide Product Search
   - `ai-planning/planning-plp-catalog-api.story1a.md`
 - Complements Story 1b:
   - `ai-research/plp-filter-state-feedback.story1b.md`
-- Scope decision: Story 1c, catalog-wide product search only.
+- Scope decision: Story 1c, catalog-wide search drawer for product name, category, and brand.
 
 ### Story Description
 
-Add a catalog-wide product-name search path so users can search beyond the products currently loaded on the visible page or active category/brand working set. The UI must clearly distinguish local visible-results filtering from server-backed catalog-wide search.
+Add a catalog-wide search drawer so users can search beyond the products currently loaded on the visible page. The drawer contains the catalog-wide product-name search plus the existing catalog-wide category and brand search controls.
 
-This story assumes Story 1a is already implemented: client code uses `/api/catalog/*`, API responses use success/error envelopes, Strapi/Apollo calls are behind server actions, and errors use `CAT_*` codes. Story 1c extends that API pattern with a dedicated search route rather than changing existing product/category/brand routes.
+This story assumes Story 1a is already implemented: client code uses `/api/catalog/*`, API responses use success/error envelopes, Strapi/Apollo calls are behind server actions, and errors use `CAT_*` codes. Story 1c extends that API pattern with a dedicated search route and relocates the existing category/brand wide-search UI into the same drawer.
 
 ### Acceptance Criteria
 
-1. Users can distinguish `Filtrar resultados visibles` from `Buscar en todo el catalogo` through labels and helper text.
+1. Users can distinguish `Filtrar resultados visibles` from a catalog-wide search drawer through labels and helper text.
 2. Local visible-results filtering remains client-side and continues to narrow only the current working set.
-3. Catalog-wide search queries Strapi by product name through a new API route and replaces the current working set with matching products.
-4. Catalog-wide search uses Story 1a response envelopes and `CAT_*` error codes; raw Apollo/Strapi errors are not shown to users.
-5. Search input is validated before reaching the GraphQL layer: trim whitespace, reject unsafe characters/control characters, and cap length at 100 characters.
-6. Catalog-wide search empty, loading, invalid-input, and failure states render Spanish user-facing copy.
-7. Clearing search/filter state returns users to the current page's original server-rendered products unless a later URL-sync story changes that behavior.
+3. Catalog-wide product-name search queries Strapi through a new API route and replaces the current working set with matching products.
+4. Existing category and brand wide-search dropdowns move into the catalog-wide search drawer and continue to use Story 1a `/api/catalog/category` and `/api/catalog/brand` routes.
+5. Catalog-wide search uses Story 1a response envelopes and `CAT_*` error codes; raw Apollo/Strapi errors are not shown to users.
+6. Search input is validated before reaching the GraphQL layer: trim whitespace, reject unsafe characters/control characters, and cap length at 100 characters.
+7. Catalog-wide search empty, loading, invalid-input, and failure states render Spanish user-facing copy.
+8. Clearing search/filter state returns users to the current page's original server-rendered products unless a later URL-sync story changes that behavior.
 
 ### Task Breakdown
 
 1. Add a product-name GraphQL query and server action following Story 1a patterns.
 2. Add a dedicated `/api/catalog/search` route that calls the server action and returns Story 1a envelopes.
 3. Add validation for the search term and map invalid input to `CAT_VAL_006`.
-4. Add UI that separates local visible-result filtering from catalog-wide search.
-5. Add Spanish loading, empty, invalid, and error copy for catalog-wide search.
-6. Preserve Story 1b filter-state behavior and avoid URL-sync/pagination metadata work.
+4. Add a catalog-wide search drawer that contains product-name search, category search, and brand search controls.
+5. Remove the wide-search category/brand dropdowns from the main inline PLP controls once they are available in the drawer.
+6. Add Spanish loading, empty, invalid, and error copy for catalog-wide search.
+7. Preserve Story 1b local filter behavior and avoid URL-sync/pagination metadata work.
 
 ### Scope Assessment
 
-- Classification: single search feature story.
-- In scope: name-search GraphQL operation, server action, `/api/catalog/search` route, search-term validation, UI distinction between local and catalog search, search result state, Spanish search copy, Story 1a error envelope handling.
-- Out of scope: category/brand API creation, existing product/category/brand route refactors, URL-synced filters, search result pagination beyond current fixed first-page behavior, backend schema changes, taxonomy dropdown replacement, product card redesign, variants drawer behavior, new dependencies, test framework setup.
+- Classification: single catalog-wide search drawer story.
+- In scope: name-search GraphQL operation, server action, `/api/catalog/search` route, search-term validation, catalog-wide search drawer, moving existing category/brand wide-search dropdowns into the drawer, UI distinction between local and catalog search, search result state, Spanish search copy, Story 1a error envelope handling.
+- Out of scope: category/brand API creation, existing product/category/brand route refactors, URL-synced filters, search result pagination beyond current fixed first-page behavior, backend schema changes, replacing hardcoded dropdown option source, product card redesign, variants drawer behavior, new dependencies, test framework setup.
 
 ### Baseline From Story 1a
 
@@ -63,13 +65,14 @@ Story 1a is treated as implemented for Story 1c planning:
 
 ### Relationship To Story 1b
 
-Story 1b owns current filter state and feedback:
+Story 1b owns local visible-results filter state and feedback:
 
-- Active category/brand/local filter state.
-- Clear-filter behavior.
-- Spanish empty/loading/error states for current category/brand/local filtering.
+- Active local visible-results filter state.
+- Local filter clear behavior.
+- Spanish empty state for local filtering.
+- Existing category/brand dropdowns remain in place as wide-search controls until Story 1c moves them.
 
-Story 1c should not redo that work. It should add catalog-wide search as a distinct control and state on top of the Story 1b model.
+Story 1c should not redo local filtering work. It should move all catalog-wide search controls into one drawer.
 
 ## Technical Research
 
@@ -83,9 +86,10 @@ Routes/pages:
 
 Feature UI:
 
-- `src/features/Home/Home.tsx` owns working set, visible products, category/brand selection, clear behavior, and should own catalog-search state.
+- `src/features/Home/Home.tsx` owns working set, visible products, category/brand selection, clear behavior, and should own catalog-search drawer state.
 - `src/features/ProductListing/SearchInput.tsx` currently represents local filtering but is labeled generically as `Buscar producto`.
-- ProductListing controls need clear labels/helpers so users know whether they are filtering visible products or searching the whole catalog.
+- `DropdownCategories` and `DropdownBrands` currently render inline in `Home`; Story 1c moves these wide-search controls into the catalog-wide search drawer.
+- ProductListing controls need clear labels/helpers so users know whether they are filtering visible products or opening/searching the whole catalog.
 - `src/features/ProductListing/ProductListing.tsx` owns the grid empty fallback.
 
 Shared code:
@@ -107,7 +111,7 @@ Tests:
 - Local search filters only `allProducts.current` in memory by product name.
 - Local search fires on every input change.
 - Local search does not query Strapi and does not reset page to 1.
-- Category/brand filters replace the working set via API after Story 1a.
+- Category/brand dropdowns replace the working set via API after Story 1a and are catalog-wide search controls that Story 1c moves into the drawer.
 - Empty grid copy is handled by Story 1b if implemented first.
 - There is no product-name search API route.
 
@@ -115,8 +119,10 @@ Tests:
 
 - Local visible-results filter: narrows `filteredProducts` from `allProducts.current` only.
 - Catalog-wide search: submits a validated search term to `/api/catalog/search` and replaces `allProducts.current` plus `filteredProducts` with the server result set.
-- Category/brand filters remain mutually exclusive with each other.
-- Catalog-wide search should clear category and brand selections when it becomes active, unless product later requests combined search/filter semantics.
+- Catalog-wide drawer controls are mutually exclusive for Story 1c: product-name search, category search, and brand search each replace the working set.
+- Product-name search clears category and brand selections when it becomes active.
+- Category search clears product-name search and brand selection when it becomes active.
+- Brand search clears product-name search and category selection when it becomes active.
 - Clearing all filters/search returns to the current page's original server-rendered products.
 - Pagination remains hidden while catalog-wide search is active, matching current filtered-list behavior and avoiding unsupported pagination metadata claims.
 
@@ -170,8 +176,11 @@ Suggested copy for planning:
 
 - Local label: `Filtrar resultados visibles`
 - Local helper: `Filtra los productos que ya estas viendo`
-- Catalog label: `Buscar en todo el catalogo`
+- Drawer trigger: `Buscar en todo el catalogo`
+- Drawer title: `Buscar en todo el catalogo`
 - Catalog helper: `Busca coincidencias por nombre en el catalogo`
+- Category helper: `Busca productos por categoria en todo el catalogo`
+- Brand helper: `Busca productos por marca en todo el catalogo`
 - Recovery prompt after local empty state: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
 - Catalog loading: `Buscando productos en el catalogo...`
 - Catalog empty: `No encontramos productos en el catalogo.`
@@ -229,11 +238,11 @@ Explanation: Do not invent totals or page counts.
 
 ### Catalog Behavior
 
-I: Question: Should catalog-wide search combine with active category/brand filters?
+I: Question: Should catalog-wide product-name search combine with category/brand wide-search filters?
 Status: answered
 Answer: No for Story 1c.
 Context: Parent Story 1 says keep one clear filter model and do not add query-builder behavior without product need.
-Explanation: Catalog-wide search clears category and brand selections when it becomes active.
+Explanation: Drawer controls are mutually exclusive: product-name, category, and brand each replace the working set.
 
 II: Question: Should catalog-wide search trigger on every keystroke or explicit submission?
 Status: answered
@@ -265,10 +274,11 @@ Answer: No count for Story 1c.
 Context: No reliable total count or pagination metadata is available.
 Explanation: A generic result state is safer than claiming totals.
 
-III: Question: Should local and catalog search be two visible inputs or one input with two actions?
-Status: pending
-Context: Parent story requires users to clearly separate the two behaviors.
-Explanation: Planning should pick the smallest clear UI. Two labeled controls are clearer; one input with two actions reduces UI but risks ambiguity.
+III: Question: Should catalog-wide search live inline or in a drawer?
+Status: answered
+Answer: Use a drawer.
+Context: User specified Story 1c should bring the wide UI, including category and brand dropdowns, into a drawer with product-name search.
+Explanation: Main PLP keeps local visible-results filtering inline; catalog-wide search lives in the drawer.
 
 ### Validation And Security
 
@@ -305,10 +315,10 @@ Context: Story 1c adds an API route and client/API integration.
 ## Assumptions Made
 
 - Story 1a is implemented.
-- Story 1b filter feedback either is implemented first or Story 1c planning accounts for any missing UI states without expanding scope.
+- Story 1b local filter feedback either is implemented first or Story 1c planning accounts for any missing local UI states without expanding scope.
 - Catalog-wide search uses a new `/api/catalog/search` route.
 - Search returns first page only with fixed `pageSize: 50`.
-- Search clears active category and brand filters.
+- Catalog-wide drawer controls are mutually exclusive: product name, category, and brand each replace the working set.
 - Search does not sync to the URL.
 - Search does not show totals or page counts.
 - No new dependencies are needed.
@@ -316,6 +326,5 @@ Context: Story 1c adds an API route and client/API integration.
 ## Research Outcome
 
 - Story 1c is independently plannable after Story 1a.
-- Story 1c should not be merged back into Story 1b; search has its own API/data and UI decisions.
-- Main implementation work is a search query/server action/API route plus UI separation between local filtering and catalog-wide search.
-- Remaining planning choice: exact UI shape for two search-like controls.
+- Story 1c should not be merged back into Story 1b; catalog-wide search has its own API/data and drawer UI decisions.
+- Main implementation work is a search query/server action/API route plus a catalog-wide search drawer containing product-name, category, and brand search controls.
