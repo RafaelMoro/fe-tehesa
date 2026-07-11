@@ -1,7 +1,8 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Button, Pagination, useOverlayState } from "@heroui/react"
+import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
+import { RiInformationLine } from "@remixicon/react"
 
 import { Product } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
@@ -134,13 +135,41 @@ export const Home = ({
     <>
       <div>
         <SearchInput value={localSearchTerm} onSearch={handleSearch} />
+        {isLocalFilterActive && (
+          <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
+            <span>Filtrando productos visibles por: &quot;{localSearchTerm}&quot;</span>
+            <Popover>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="tertiary"
+                aria-label="¿Qué significa este filtro?"
+              >
+                <RiInformationLine />
+              </Button>
+              <Popover.Content className="max-w-64">
+                <Popover.Dialog>
+                  <p className="text-sm">Este filtro solo busca en los productos que estás viendo.</p>
+                </Popover.Dialog>
+              </Popover.Content>
+            </Popover>
+            <Button size="sm" variant="tertiary" onPress={clearLocalFilter}>
+              Limpiar filtro local
+            </Button>
+          </div>
+        )}
         <div className="flex gap-3 items-center mb-5">
           <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
           <DropdownBrands selectedBrand={selectedBrand} updateSelectedBrand={handleBrandSelect} />
           <Button onPress={clearFilters} isDisabled={isLoadingCategory || isLoadingBrand}>Limpiar filtros</Button>
         </div>
       </div>
-      <ProductListing products={filteredProducts} handleProductClick={handleProductClick} />
+      <ProductListing
+        products={filteredProducts}
+        handleProductClick={handleProductClick}
+        isLocalFilterActive={isLocalFilterActive}
+        onClearLocalFilter={clearLocalFilter}
+      />
       {selectedCategory === null && selectedBrand === null && (
         <div className="w-full flex justify-center">
           <Pagination size="md">

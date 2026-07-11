@@ -1,15 +1,34 @@
+import { Button } from "@heroui/react"
+
 import { ProductCard } from "@/components/ProductCard"
 import { Product } from "@/shared/types/global.types"
 
 interface ProductListingProps {
   products: Product[];
   handleProductClick: (product: Product) => void;
+  isLocalFilterActive: boolean;
+  onClearLocalFilter?: () => void;
 }
 
-export const ProductListing = ({ products, handleProductClick }: ProductListingProps) => {
+export const ProductListing = ({ products, handleProductClick, isLocalFilterActive, onClearLocalFilter }: ProductListingProps) => {
   if (products.length === 0) {
+    if (isLocalFilterActive) {
+      return (
+        <div className="flex flex-col gap-2">
+          <p>No hay coincidencias en los productos que estás viendo.</p>
+          <p>¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.</p>
+          {onClearLocalFilter && (
+            <div>
+              <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
+                Limpiar filtro local
+              </Button>
+            </div>
+          )}
+        </div>
+      )
+    }
     return (
-      <div>No products available</div>
+      <div>No hay productos disponibles.</div>
     )
   }
 
