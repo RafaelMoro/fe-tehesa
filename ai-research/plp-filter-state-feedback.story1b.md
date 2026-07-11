@@ -19,7 +19,7 @@ Improve PLP Local Filter State And Feedback
 
 Make the current local visible-results filter flow understandable and resilient without adding catalog-wide search. Users should see when they are filtering already-loaded products, understand empty states, and clear the local filter without losing the current catalog context unexpectedly.
 
-The existing category and brand dropdowns currently perform catalog-wide searches through the Story 1a API. Story 1b leaves those dropdowns in place and does not redesign, relocate, or relabel them as local filters. Story 1c will move the catalog-wide category, brand, and product-name search UI into a drawer.
+The existing category and brand dropdowns currently perform catalog-wide searches through the Story 1a API. Story 1b leaves those dropdowns in place and does not redesign or relocate them, but updates their button copy so users understand they are catalog-wide searches. Story 1c will move the catalog-wide category, brand, and product-name search UI into a drawer.
 
 ### Acceptance Criteria
 
@@ -27,20 +27,20 @@ The existing category and brand dropdowns currently perform catalog-wide searche
 2. Users can clear the local visible-results filter without resetting catalog-wide category/brand results unexpectedly.
 3. Empty local filter results render Spanish user-facing copy instead of `No products available`.
 4. Local visible-result filtering remains client-side and filters the current working set only.
-5. Existing category and brand dropdowns remain in place and keep their current catalog-wide search behavior until Story 1c moves them into the wide-search drawer.
+5. Existing category and brand dropdowns remain in place, keep their current catalog-wide search behavior, and use Spanish button copy that indicates catalog-wide category/brand search until Story 1c moves them into the wide-search drawer.
 
 ### Task Breakdown
 
 1. Represent active local visible-results filter state clearly in `src/features/Home/Home.tsx` and related ProductListing controls.
 2. Keep local visible-result filtering separate from the existing server-backed category/brand catalog-wide search dropdowns.
 3. Add Spanish empty copy for local visible-results filtering.
-4. Preserve existing category/brand dropdown placement and behavior for now.
+4. Preserve existing category/brand dropdown placement and behavior for now, while updating their button labels to catalog-wide Spanish copy.
 5. Keep catalog-wide product-name/category/brand search drawer work out of this story.
 
 ### Scope Assessment
 
 - Classification: single local-filter UI behavior story.
-- In scope: local visible-results filter state, local empty copy, clear-local-filter behavior, preserving current category/brand dropdown behavior.
+- In scope: local visible-results filter state, local empty copy, clear-local-filter behavior, preserving current category/brand dropdown behavior, and updating category/brand dropdown button labels to clarify catalog-wide search.
 - Out of scope: catalog-wide product search, category/brand wide-search redesign, moving dropdowns into a drawer, name-search API route, search-result pagination, URL-synced filters, dynamic replacement of hardcoded dropdown options, product card redesign, variants drawer behavior, backend schema changes, new dependencies, test framework setup.
 
 ### Dependency On Story 1a
@@ -52,7 +52,7 @@ Story 1b assumes Story 1a is already implemented:
 - Errors expose stable `CAT_*` codes and do not expose Apollo/Strapi internals.
 - `Home.tsx` no longer imports `fetchProductsByCategory` or `fetchProductsByBrand` directly after Story 1a.
 
-Do not reintroduce direct server-action imports in Story 1b. Do not move category/brand dropdowns yet; Story 1c owns that drawer redesign.
+Do not reintroduce direct server-action imports in Story 1b. Do not move category/brand dropdowns yet; Story 1c owns that drawer redesign. Story 1b only updates the inline dropdown button copy.
 
 ## Technical Research
 
@@ -68,7 +68,7 @@ Feature UI:
 - `src/features/Home/Home.tsx` is the main state owner for products, local filter state, selected category, selected brand, loading flags, and clear behavior.
 - `src/features/ProductListing/ProductListing.tsx` owns the grid empty fallback and currently renders `No products available`.
 - `src/features/ProductListing/SearchInput.tsx` owns the current local input label and change handling.
-- `src/features/ProductListing/DropdownCategories.tsx` and `DropdownBrands.tsx` show selected labels and trigger filter callbacks.
+- `src/features/ProductListing/DropdownCategories.tsx` and `DropdownBrands.tsx` show selected labels and trigger catalog-wide search callbacks; Story 1b updates their default button copy.
 
 Shared code:
 
@@ -122,7 +122,15 @@ Suggested Story 1b copy can be finalized during planning:
 
 - Empty default list: `No hay productos disponibles.`
 - Empty local filter: `No encontramos productos en los resultados visibles.`
+- Category dropdown default: `Buscar categoría en todo el catálogo`
+- Brand dropdown default: `Buscar marca en todo el catálogo`
 - Clear action remains `Limpiar filtros`.
+
+Recommended local empty-state copy options:
+
+1. `No encontramos productos en los resultados visibles.`
+2. `No hay coincidencias en los productos que estás viendo.`
+3. `Prueba con otro término para filtrar estos resultados.`
 
 ### Error Handling With Story 1a Codes
 
@@ -152,9 +160,9 @@ Story 1b does not introduce new API behavior. If planning touches category/brand
 
 I: Question: Should category and brand dropdowns remain in place for Story 1b?
 Status: answered
-Answer: Yes.
+Answer: Yes, and update their default button labels to Spanish copy that makes catalog-wide search clear.
 Context: User clarified the dropdowns are catalog-wide search controls, not local filters.
-Explanation: Story 1b leaves them in place. Story 1c moves them into the wide-search drawer.
+Explanation: Story 1b leaves them in place and updates copy such as `Buscar categoría en todo el catálogo` and `Buscar marca en todo el catálogo`. Story 1c moves them into the wide-search drawer.
 
 II: Question: Should local visible-results filtering clear category/brand wide-search selections, or narrow the active working set after category/brand fetches?
 Status: answered
@@ -178,13 +186,13 @@ Explanation: Keep URL-synced filters for a later story.
 
 I: Question: What exact Spanish copy should be used for local empty states?
 Status: pending
-Context: Suggested copy is included in this research doc.
-Explanation: Planning can either use the suggested copy or ask product for final wording.
+Context: Suggested options are included in this research doc.
+Explanation: Recommended option is `No encontramos productos en los resultados visibles.` because it clearly says the filter only applies to visible/current results.
 
 II: Question: Should Spanish accents be normalized in new copy?
 Status: pending
 Context: Existing app copy is Spanish but inconsistently accented.
-Explanation: Avoid a broad copy cleanup in Story 1b unless product explicitly wants it.
+Explanation: This means whether new copy should use correct Spanish accents like `catálogo`, `categoría`, `búsqueda`, and `estás`, even though some existing app copy omits accents. Recommendation: use correct accents for new Story 1b copy, but do not do a broad cleanup of existing copy unless product asks for it.
 
 ### Verification
 
@@ -204,6 +212,7 @@ Context: Story 1b touches client components that call App Router API routes.
 - Story 1b does not add catalog-wide search and does not move category/brand dropdowns.
 - Story 1b does not change the hardcoded 5-page pagination ceiling.
 - Story 1b does not replace hardcoded category/brand dropdown options.
+- Story 1b updates only the default category/brand dropdown button labels, not the option source or drawer placement.
 - Story 1b does not modify the variants drawer.
 - Category and brand wide-search dropdowns remain mutually exclusive while they stay inline.
 - Clearing only the local filter returns to the current working set.
