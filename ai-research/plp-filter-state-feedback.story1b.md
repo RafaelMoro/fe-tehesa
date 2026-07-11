@@ -25,7 +25,7 @@ The existing category and brand dropdowns currently perform catalog-wide searche
 
 1. Users can see when the local visible-results filter is active.
 2. Users can clear the local visible-results filter without resetting catalog-wide category/brand results unexpectedly.
-3. Empty local filter results render Spanish user-facing copy instead of `No products available`.
+3. Empty local filter results render Spanish user-facing copy instead of `No products available`, including guidance to try catalog-wide search if the desired product is not visible.
 4. Local visible-result filtering remains client-side and filters the current working set only.
 5. Existing category and brand dropdowns remain in place, keep their current catalog-wide search behavior, and use Spanish button copy that indicates catalog-wide category/brand search until Story 1c moves them into the wide-search drawer.
 
@@ -33,15 +33,15 @@ The existing category and brand dropdowns currently perform catalog-wide searche
 
 1. Represent active local visible-results filter state clearly in `src/features/Home/Home.tsx` and related ProductListing controls.
 2. Keep local visible-result filtering separate from the existing server-backed category/brand catalog-wide search dropdowns.
-3. Add Spanish empty copy for local visible-results filtering.
+3. Add Spanish empty copy for local visible-results filtering, including advice to try catalog-wide search.
 4. Preserve existing category/brand dropdown placement and behavior for now, while updating their button labels to catalog-wide Spanish copy.
 5. Keep catalog-wide product-name/category/brand search drawer work out of this story.
 
 ### Scope Assessment
 
 - Classification: single local-filter UI behavior story.
-- In scope: local visible-results filter state, local empty copy, clear-local-filter behavior, preserving current category/brand dropdown behavior, and updating category/brand dropdown button labels to clarify catalog-wide search.
-- Out of scope: catalog-wide product search, category/brand wide-search redesign, moving dropdowns into a drawer, name-search API route, search-result pagination, URL-synced filters, dynamic replacement of hardcoded dropdown options, product card redesign, variants drawer behavior, backend schema changes, new dependencies, test framework setup.
+- In scope: local visible-results filter state, local empty copy, wider-search advice in the local empty state, a placeholder/non-functional wider-search button affordance if useful, clear-local-filter behavior, preserving current category/brand dropdown behavior, and updating category/brand dropdown button labels to clarify catalog-wide search.
+- Out of scope: making the wider-search button open a drawer, catalog-wide product search, category/brand wide-search redesign, moving dropdowns into a drawer, name-search API route, search-result pagination, URL-synced filters, dynamic replacement of hardcoded dropdown options, product card redesign, variants drawer behavior, backend schema changes, new dependencies, test framework setup.
 
 ### Dependency On Story 1a
 
@@ -122,6 +122,8 @@ Story 1b copy decisions:
 
 - Empty default list: `No hay productos disponibles.`
 - Empty local filter: `No hay coincidencias en los productos que estás viendo.`
+- Wider-search advice: `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.`
+- Wider-search button label: `Buscar en todo el catálogo`
 - Category dropdown default: `Buscar categoría en todo el catálogo`
 - Brand dropdown default: `Buscar marca en todo el catálogo`
 - Clear action remains `Limpiar filtros`.
@@ -131,6 +133,12 @@ Recommended local empty-state copy options:
 1. `No encontramos productos en los resultados visibles.`
 2. `No hay coincidencias en los productos que estás viendo.`
 3. `Prueba con otro término para filtrar estos resultados.`
+
+Recommended wider-search advice copy options:
+
+1. `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.`
+2. `¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.`
+3. `Este filtro solo revisa los productos visibles. Busca en todo el catálogo para ver más opciones.`
 
 ### Error Handling With Story 1a Codes
 
@@ -188,9 +196,14 @@ I: Question: What exact Spanish copy should be used for local empty states?
 Status: answered
 Answer: `No hay coincidencias en los productos que estás viendo.`
 Context: User selected option 2 from the recommended local empty-state copy options.
-Explanation: This copy keeps the scope clear: the local filter applies only to the products currently visible/loaded.
+Explanation: This copy keeps the scope clear: the local filter applies only to the products currently visible/loaded. Story 1b also advises users to try catalog-wide search when local filtering does not find the desired product.
 
-II: Question: Should Spanish accents be normalized in new copy?
+II: Question: What Spanish copy should advise users to try wider search?
+Status: pending
+Context: Story 1b can show the advice and button affordance, but Story 1c makes the button open the drawer.
+Explanation: Recommended option is `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.` because it is direct and avoids implying the product definitely exists.
+
+III: Question: Should Spanish accents be normalized in new copy?
 Status: answered
 Answer: Yes, use correct Spanish accents in new Story 1b copy.
 Context: Existing app copy is Spanish but inconsistently accented.
@@ -215,6 +228,7 @@ Context: Story 1b touches client components that call App Router API routes.
 - Story 1b does not change the hardcoded 5-page pagination ceiling.
 - Story 1b does not replace hardcoded category/brand dropdown options.
 - Story 1b updates only the default category/brand dropdown button labels, not the option source or drawer placement.
+- Story 1b may show a wider-search advice/button affordance in local empty states, but Story 1c wires it to the drawer.
 - Story 1b does not modify the variants drawer.
 - Category and brand wide-search dropdowns remain mutually exclusive while they stay inline.
 - Clearing only the local filter returns to the current working set.
@@ -225,5 +239,5 @@ Context: Story 1b touches client components that call App Router API routes.
 
 - Story 1 should be split: Story 1b handles local visible-results filter state/feedback; Story 1c should handle the catalog-wide search drawer.
 - Story 1b is scoped enough to plan and implement independently after Story 1a.
-- Main implementation work is in `Home`, ProductListing controls, and local empty-state display.
+- Main implementation work is in `Home`, ProductListing controls, and local empty-state display with wider-search advice.
 - The biggest remaining decision is copy placement/wording.

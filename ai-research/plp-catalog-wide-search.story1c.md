@@ -25,7 +25,7 @@ This story assumes Story 1a is already implemented: client code uses `/api/catal
 
 ### Acceptance Criteria
 
-1. Users can distinguish `Filtrar resultados visibles` from a catalog-wide search drawer through labels and helper text.
+1. Users can distinguish `Filtrar resultados visibles` from a catalog-wide search drawer through labels, helper text, and the Story 1b wider-search prompt.
 2. Local visible-results filtering remains client-side and continues to narrow only the current working set.
 3. Catalog-wide product-name search queries Strapi through a new API route and replaces the current working set with matching products.
 4. Existing category and brand wide-search dropdowns move into the catalog-wide search drawer and continue to use Story 1a `/api/catalog/category` and `/api/catalog/brand` routes.
@@ -41,8 +41,9 @@ This story assumes Story 1a is already implemented: client code uses `/api/catal
 3. Add validation for the search term and map invalid input to `CAT_VAL_006`.
 4. Add a catalog-wide search drawer that contains product-name search, category search, and brand search controls.
 5. Remove the wide-search category/brand dropdowns from the main inline PLP controls once they are available in the drawer.
-6. Add Spanish loading, empty, invalid, and error copy for catalog-wide search.
-7. Preserve Story 1b local filter behavior and avoid URL-sync/pagination metadata work.
+6. Wire the Story 1b wider-search button/prompt so it opens the catalog-wide search drawer.
+7. Add Spanish loading, empty, invalid, and error copy for catalog-wide search.
+8. Preserve Story 1b local filter behavior and avoid URL-sync/pagination metadata work.
 
 ### Scope Assessment
 
@@ -70,9 +71,11 @@ Story 1b owns local visible-results filter state and feedback:
 - Active local visible-results filter state.
 - Local filter clear behavior.
 - Spanish empty state for local filtering.
+- Wider-search advice/button affordance in the local empty state.
 - Existing category/brand dropdowns remain in place as wide-search controls until Story 1c moves them.
 
 Story 1c should not redo local filtering work. It should move all catalog-wide search controls into one drawer.
+Story 1c should make the wider-search prompt/button from Story 1b open the drawer.
 
 ## Technical Research
 
@@ -91,6 +94,7 @@ Feature UI:
 - `DropdownCategories` and `DropdownBrands` currently render inline in `Home`; Story 1c moves these wide-search controls into the catalog-wide search drawer.
 - Story 1b keeps those dropdowns inline and updates their default labels to `Buscar categoría en todo el catálogo` and `Buscar marca en todo el catálogo`; Story 1c should remove those inline controls once the drawer versions exist.
 - ProductListing controls need clear labels/helpers so users know whether they are filtering visible products or opening/searching the whole catalog.
+- If Story 1b added a wider-search button in the local empty state, Story 1c wires that button to open the catalog-wide search drawer.
 - `src/features/ProductListing/ProductListing.tsx` owns the grid empty fallback.
 
 Shared code:
@@ -183,6 +187,7 @@ Suggested copy for planning:
 - Category helper: `Busca productos por categoria en todo el catalogo`
 - Brand helper: `Busca productos por marca en todo el catalogo`
 - Recovery prompt after local empty state: `No encontraste el producto que buscas? Buscalo en todo el catalogo.`
+- Story 1b selected/recommended prompt: `Si no ves el producto que necesitas, prueba buscar en todo el catálogo.`
 - Catalog loading: `Buscando productos en el catalogo...`
 - Catalog empty: `No encontramos productos en el catalogo.`
 - Invalid search: `Revisa el texto de busqueda e intentalo de nuevo.`
@@ -281,6 +286,12 @@ Answer: Use a drawer.
 Context: User specified Story 1c should bring the wide UI, including category and brand dropdowns, into a drawer with product-name search.
 Explanation: Main PLP keeps local visible-results filtering inline. Story 1b temporarily leaves category/brand wide-search dropdowns inline with clearer labels, and Story 1c moves those controls into the drawer and removes the inline versions.
 
+IV: Question: Should Story 1c wire the wider-search button from Story 1b?
+Status: answered
+Answer: Yes.
+Context: Story 1b can show the advice/button affordance, but Story 1c owns the drawer behavior.
+Explanation: Story 1c makes that button open the catalog-wide search drawer.
+
 ### Validation And Security
 
 I: Question: Should validation strip control characters before validating, or reject inputs containing them?
@@ -317,6 +328,7 @@ Context: Story 1c adds an API route and client/API integration.
 
 - Story 1a is implemented.
 - Story 1b local filter feedback either is implemented first or Story 1c planning accounts for any missing local UI states without expanding scope.
+- Story 1b may add a wider-search advice/button affordance; Story 1c wires it to the drawer.
 - Catalog-wide search uses a new `/api/catalog/search` route.
 - Search returns first page only with fixed `pageSize: 50`.
 - Catalog-wide drawer controls are mutually exclusive: product name, category, and brand each replace the working set.
