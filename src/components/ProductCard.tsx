@@ -21,14 +21,14 @@ export const ProductCard = ({
 
   const brandName = product?.brand?.name ?? null
   const minPriceString = useMemo(() => {
-    if (!product.minPrice) {
+    if (product.minPrice == null) {
       return null
     }
     return formatNumberToCurrency(product.minPrice)
   }, [product.minPrice])
 
   const maxPriceString = useMemo(() => {
-    if (!product.maxPrice) {
+    if (product.maxPrice == null) {
       return null
     }
     return formatNumberToCurrency(product.maxPrice)
@@ -73,7 +73,7 @@ export const ProductCard = ({
       </Card.Header>
       <Card.Content>
         <div className="flex flex-col gap-6">
-          {product?.variantCount && (
+          {product.variantCount != null && (
             <Chip size="sm">
               <div className="inline-flex gap-2">
                 <RiStackLine size={18} />
