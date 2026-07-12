@@ -67,6 +67,24 @@ export const GET_PRODUCTS_BY_BRAND = gql`
   }
 `
 
+export const GET_PRODUCTS_BY_NAME = gql`
+  query GetProductsByName($filters: ProductFiltersInput, $pagination: PaginationArg) {
+    products(filters: $filters, pagination: $pagination) {
+      name
+      minPrice
+      maxPrice
+      documentId
+      variantCount
+      category {
+        name
+      }
+      brand {
+        name
+      }
+    }
+  }
+`
+
 export const GET_CATEGORIES = gql`
   query GetCategories {
     categories {

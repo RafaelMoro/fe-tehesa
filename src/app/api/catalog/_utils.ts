@@ -7,6 +7,7 @@ import {
   CAT_VAL_003,
   CAT_VAL_004,
   CAT_VAL_005,
+  CAT_VAL_006,
   DOCUMENT_ID_MAX_LENGTH,
   DOCUMENT_ID_PATTERN,
   MSG_CAT_ENV_001,
@@ -15,9 +16,12 @@ import {
   MSG_CAT_VAL_003,
   MSG_CAT_VAL_004,
   MSG_CAT_VAL_005,
+  MSG_CAT_VAL_006,
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
   PRODUCT_PAGE_SIZE,
+  SEARCH_TERM_MAX_LENGTH,
+  SEARCH_TERM_PATTERN,
   VARIANT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
 import type { TaxonomyItem } from "@/shared/types/global.types"
@@ -29,6 +33,7 @@ export type CatalogErrorCode =
   | typeof CAT_VAL_003
   | typeof CAT_VAL_004
   | typeof CAT_VAL_005
+  | typeof CAT_VAL_006
   | 'CAT_NF_001'
   | 'CAT_NF_002'
   | 'CAT_NF_003'
@@ -103,6 +108,25 @@ const parseDocumentId = (
   return { ok: true, value: raw }
 }
 
+const parseSearchTerm = (
+  raw: string | null,
+): { ok: true; value: string } | { ok: false; error: CatalogError } => {
+  if (raw === null) {
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+  }
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) {
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+  }
+  if (trimmed.length > SEARCH_TERM_MAX_LENGTH) {
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+  }
+  if (!SEARCH_TERM_PATTERN.test(trimmed)) {
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+  }
+  return { ok: true, value: trimmed }
+}
+
 export const readValidatedParams = (request: Request) => {
   const url = new URL(request.url)
   const params = url.searchParams
@@ -113,8 +137,9 @@ export const readValidatedParams = (request: Request) => {
   const categoryId = parseTaxonomyId(params.get('categoryId'), CAT_VAL_003, MSG_CAT_VAL_003)
   const brandId = parseTaxonomyId(params.get('brandId'), CAT_VAL_004, MSG_CAT_VAL_004)
   const documentId = parseDocumentId(params.get('documentId'))
+  const searchTerm = parseSearchTerm(params.get('q'))
 
-  return { page, productPageSize, variantPageSize, categoryId, brandId, documentId }
+  return { page, productPageSize, variantPageSize, categoryId, brandId, documentId, searchTerm }
 }
 
 export const findTaxonomyItem = (
