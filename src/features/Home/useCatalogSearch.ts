@@ -15,14 +15,14 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
   const catalogSearchDrawerState = useOverlayState()
   const [activeCatalogMode, setActiveCatalogMode] = useState<CatalogMode>(null)
   const [catalogSearchTerm, setCatalogSearchTerm] = useState("")
-  const [catalogMessage, setCatalogMessage] = useState<string | undefined>(undefined)
+  const [catalogMessage, setCatalogMessage] = useState<string | null>(null)
   const [isInvalidCatalogSearch, setIsInvalidCatalogSearch] = useState(false)
   const [isLoadingCatalogSearch, setIsLoadingCatalogSearch] = useState(false)
 
   useEffect(() => {
     setActiveCatalogMode(null)
     setCatalogSearchTerm("")
-    setCatalogMessage(undefined)
+    setCatalogMessage(null)
     setIsInvalidCatalogSearch(false)
     setIsLoadingCatalogSearch(false)
   }, [products])
@@ -30,7 +30,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
   const handleCatalogSearchTermChange = (term: string) => {
     setCatalogSearchTerm(term)
     if (isInvalidCatalogSearch) setIsInvalidCatalogSearch(false)
-    if (catalogMessage) setCatalogMessage(undefined)
+    if (catalogMessage) setCatalogMessage(null)
   }
 
   const handleCatalogNameSearch = async (): Promise<Product[] | null> => {
@@ -49,7 +49,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
       )
       setActiveCatalogMode('name')
       setCatalogSearchTerm("")
-      setCatalogMessage(results.length === 0 ? "No encontramos productos en el catálogo." : undefined)
+      setCatalogMessage(results.length === 0 ? "No encontramos productos en el catálogo." : null)
       catalogSearchDrawerState.close()
       return results
     } catch (error) {
@@ -75,7 +75,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
   const beginCatalogMode = (mode: 'category' | 'brand') => {
     setActiveCatalogMode(mode)
     setCatalogSearchTerm("")
-    setCatalogMessage(undefined)
+    setCatalogMessage(null)
     setIsInvalidCatalogSearch(false)
     catalogSearchDrawerState.close()
   }
@@ -83,7 +83,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
   const clearAllCatalogState = () => {
     setActiveCatalogMode(null)
     setCatalogSearchTerm("")
-    setCatalogMessage(undefined)
+    setCatalogMessage(null)
     setIsInvalidCatalogSearch(false)
     setIsLoadingCatalogSearch(false)
     catalogSearchDrawerState.close()

@@ -24,7 +24,7 @@ interface CatalogSearchDrawerProps {
   selectedCategory: string | null
   selectedBrand: string | null
   isLoading: boolean
-  message?: string
+  message?: string | null
   isInvalidSearch?: boolean
   onClearCatalogSearch: () => void
 }
