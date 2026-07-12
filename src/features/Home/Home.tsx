@@ -11,6 +11,7 @@ import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsD
 import { CatalogSearchDrawer } from "../CatalogSearchDrawer/CatalogSearchDrawer"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
+import { useCatalogSearch } from "./useCatalogSearch"
 import { catalogErrorToSpanish, fetchCatalog } from "@/shared/utils/catalog-api.utils"
 
 interface HomeProps {
@@ -18,8 +19,6 @@ interface HomeProps {
   currentPage: number;
   totalPages: number;
 }
-
-type CatalogMode = 'name' | 'category' | 'brand' | null
 
 export const Home = ({
   products,
@@ -40,16 +39,21 @@ export const Home = ({
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(false)
-  const [activeCatalogMode, setActiveCatalogMode] = useState<CatalogMode>(null)
-  const [catalogSearchTerm, setCatalogSearchTerm] = useState("")
-  const [catalogMessage, setCatalogMessage] = useState<string | undefined>(undefined)
-  const [isInvalidCatalogSearch, setIsInvalidCatalogSearch] = useState(false)
-  const [isLoadingCatalogSearch, setIsLoadingCatalogSearch] = useState(false)
-  // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const drawerState = useOverlayState();
-  const catalogSearchDrawerState = useOverlayState();
+  const {
+    catalogSearchDrawerState,
+    activeCatalogMode,
+    catalogSearchTerm,
+    catalogMessage,
+    isInvalidCatalogSearch,
+    isLoadingCatalogSearch,
+    handleCatalogSearchTermChange,
+    handleCatalogNameSearch,
+    beginCatalogMode,
+    clearAllCatalogState,
+  } = useCatalogSearch({ products })
 
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
@@ -61,11 +65,6 @@ export const Home = ({
     setLocalSearchTerm("");
     setLocalCategory(null);
     setLocalBrand(null);
-    setActiveCatalogMode(null);
-    setCatalogSearchTerm("");
-    setCatalogMessage(undefined);
-    setIsInvalidCatalogSearch(false);
-    setIsLoadingCatalogSearch(false);
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -109,7 +108,6 @@ export const Home = ({
   }
 
   const handleCategorySelect = async (categoryCustomId: string) => {
-    catalogSearchDrawerState.close();
     try {
       setIsLoadingCategory(true);
       const categoryProducts = await fetchCatalog<Product[]>(
@@ -118,15 +116,12 @@ export const Home = ({
       allProducts.current = categoryProducts;
       setFilteredProducts(categoryProducts);
       setSelectedCategory(categoryCustomId);
-      setActiveCatalogMode('category');
       setSelectedBrand(null);
-      setCatalogSearchTerm("");
-      setCatalogMessage(undefined);
-      setIsInvalidCatalogSearch(false);
       // Reset local filters when a catalog-wide category is selected
       setLocalSearchTerm("");
       setLocalCategory(null);
       setLocalBrand(null);
+      beginCatalogMode('category');
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by category:', code ? catalogErrorToSpanish(code) : error);
@@ -136,7 +131,6 @@ export const Home = ({
   }
 
   const handleBrandSelect = async (brandCustomId: string) => {
-    catalogSearchDrawerState.close();
     try {
       setIsLoadingBrand(true);
       const brandProducts = await fetchCatalog<Product[]>(
@@ -145,15 +139,12 @@ export const Home = ({
       allProducts.current = brandProducts;
       setFilteredProducts(brandProducts);
       setSelectedBrand(brandCustomId);
-      setActiveCatalogMode('brand');
       setSelectedCategory(null);
-      setCatalogSearchTerm("");
-      setCatalogMessage(undefined);
-      setIsInvalidCatalogSearch(false);
       // Reset local filters when a catalog-wide brand is selected
       setLocalSearchTerm("");
       setLocalCategory(null);
       setLocalBrand(null);
+      beginCatalogMode('brand');
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by brand:', code ? catalogErrorToSpanish(code) : error);
@@ -162,54 +153,16 @@ export const Home = ({
     }
   }
 
-  const handleCatalogSearchTermChange = (term: string) => {
-    setCatalogSearchTerm(term);
-    if (isInvalidCatalogSearch) {
-      setIsInvalidCatalogSearch(false);
-    }
-    if (catalogMessage) {
-      setCatalogMessage(undefined);
-    }
-  }
-
-  const handleCatalogNameSearch = async () => {
-    const trimmed = catalogSearchTerm.trim();
-    if (trimmed.length === 0) {
-      setIsInvalidCatalogSearch(true);
-      setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.");
-      return;
-    }
-    setIsLoadingCatalogSearch(true);
-    setIsInvalidCatalogSearch(false);
-    setCatalogMessage("Buscando productos en el catálogo...");
-    try {
-      const products = await fetchCatalog<Product[]>(
-        `/api/catalog/search?q=${encodeURIComponent(trimmed)}`,
-      );
-      allProducts.current = products;
-      setFilteredProducts(products);
-      setActiveCatalogMode('name');
+  const handleCatalogNameSearchSubmit = async () => {
+    const results = await handleCatalogNameSearch()
+    if (results) {
+      allProducts.current = results;
+      setFilteredProducts(results);
       setSelectedCategory(null);
       setSelectedBrand(null);
       setLocalSearchTerm("");
       setLocalCategory(null);
       setLocalBrand(null);
-      setCatalogMessage(products.length === 0 ? "No encontramos productos en el catálogo." : undefined);
-      catalogSearchDrawerState.close();
-    } catch (error) {
-      const code = (error as { code?: string })?.code
-      if (code === 'CAT_VAL_006') {
-        setIsInvalidCatalogSearch(true);
-        setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.");
-      } else {
-        setCatalogMessage(
-          code
-            ? catalogErrorToSpanish(code)
-            : "No pudimos buscar productos. Inténtalo de nuevo.",
-        );
-      }
-    } finally {
-      setIsLoadingCatalogSearch(false);
     }
   }
 
@@ -227,14 +180,9 @@ export const Home = ({
     setLocalBrand(null);
     setSelectedCategory(null);
     setSelectedBrand(null);
-    setActiveCatalogMode(null);
-    setCatalogSearchTerm("");
-    setCatalogMessage(undefined);
-    setIsInvalidCatalogSearch(false);
-    setIsLoadingCatalogSearch(false);
     allProducts.current = products;
     setFilteredProducts(products);
-    catalogSearchDrawerState.close();
+    clearAllCatalogState();
   }
 
   const handleProductClick = (product: Product) => {
@@ -328,7 +276,7 @@ export const Home = ({
         state={catalogSearchDrawerState}
         searchTerm={catalogSearchTerm}
         onSearchTermChange={handleCatalogSearchTermChange}
-        onSubmit={handleCatalogNameSearch}
+        onSubmit={handleCatalogNameSearchSubmit}
         onCategorySelect={handleCategorySelect}
         onBrandSelect={handleBrandSelect}
         selectedCategory={selectedCategory}
