@@ -14,7 +14,7 @@ A living reference for AI agents and developers working in this repository. It d
 
 - Next.js 15 App Router + React 19 + TypeScript strict mode.
 - pnpm lockfile with `.npmrc` hoisting for `@heroui/*` packages.
-- Tailwind v4 through `@tailwindcss/postcss` plus `tailwind.config.js` for HeroUI theme scanning and `darkMode: "class"`.
+- Tailwind v4 through `@tailwindcss/postcss` plus `tailwind.config.js` for `darkMode: "class"`.
 - HeroUI (`@heroui/react`) for UI primitives.
 - Apollo Client v4 + GraphQL for Strapi reads.
 - next-themes for class-based light/dark theme mode.
@@ -44,7 +44,7 @@ Strapi GraphQL API via ApolloClient
 Key invariants:
 
 - `src/app/layout.tsx` is the root server layout. It sets `lang="es"`, loads Google Geist fonts, wraps children in `Providers`, then wraps them in `NextThemesProvider` with `attribute="class"` and `defaultTheme="dark"`.
-- `src/app/providers.tsx` is a client wrapper around `HeroUIProvider`.
+- `src/app/providers.tsx` currently returns children unchanged; HeroUI v3 does not require a provider in this app.
 - `src/app/page.tsx` is the only page route currently present. It awaits `searchParams` per Next 15, clamps `page` to `1..5`, fetches products and the theme cookie in parallel, and wraps the catalog in `ChangeThemeStoreProvider`.
 - `src/app/page.tsx` has a hardcoded pagination ceiling of 5 pages. This is a known product/API constraint, not a bug.
 - Server data access lives in `src/shared/lib/global.lib.ts` with the `"use server"` directive. It creates a new Apollo Client for each call through `src/app/apollo-client.ts`.
@@ -210,7 +210,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 ## Styling And UI
 
 - Preserve HeroUI as the component system unless a task explicitly changes UI libraries.
-- `tailwind.config.js` includes only HeroUI theme dist in `content`; Tailwind v4 auto-detects app content. Do not broaden or remove this casually.
+- `tailwind.config.js` currently only sets `darkMode: "class"`; Tailwind v4 auto-detects app content.
 - `darkMode: "class"` is required for next-themes/HeroUI dark mode behavior.
 - Existing UI copy is Spanish (`Catalogo de productos`, `Limpiar filtros`, `Ver detalles`, etc.). Preserve language consistency unless the task is localization-related.
 - `ProductCard` uses `useMediaQuery()` for mobile-aware card header/title layout.
@@ -241,7 +241,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |
 | `eslint.config.mjs`                                                                        | ESLint flat config with Next presets.                                                                                                                                                               |
 | `postcss.config.mjs`                                                                       | Tailwind v4 PostCSS plugin.                                                                                                                                                                         |
-| `tailwind.config.js`                                                                       | HeroUI theme plugin/content and class dark mode.                                                                                                                                                    |
+| `tailwind.config.js`                                                                       | Minimal Tailwind config with class dark mode.                                                                                                                                                       |
 | `scripts/sync-opencode-commands.mjs`                                                       | Syncs opencode command prompts into `.github/prompts`.                                                                                                                                              |
 | `.github/workflows/check-label.yml`                                                        | PR label validation for `major`, `minor`, or `patch`.                                                                                                                                               |
 | `.github/workflows/develop-pipeline.yml`                                                   | Develop merge release/changelog automation.                                                                                                                                                         |
