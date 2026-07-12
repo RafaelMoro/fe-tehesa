@@ -20,17 +20,13 @@ export async function GET(request: Request) {
   const { brandId, wideSearchPage, productPageSize } =
     readValidatedParams(request)
   if (!brandId.ok) {
-    {
-      return failure(brandId.error.code, brandId.error.message)
-    }
-    if (!wideSearchPage.ok) {
-      return failure(wideSearchPage.error.code, wideSearchPage.error.message)
-    }
+    return failure(brandId.error.code, brandId.error.message)
+  }
+  if (!wideSearchPage.ok) {
+    return failure(wideSearchPage.error.code, wideSearchPage.error.message)
   }
   if (!productPageSize.ok) {
-    {
-      return failure(productPageSize.error.code, productPageSize.error.message)
-    }
+    return failure(productPageSize.error.code, productPageSize.error.message)
   }
 
   try {
