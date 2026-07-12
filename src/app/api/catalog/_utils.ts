@@ -85,7 +85,12 @@ const parsePageSize = (
   raw: string | null,
   fixedSize: number,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
-  if (raw === null) return { ok: true, value: fixedSize }
+  if (raw === null) {
+    return {
+      ok: true,
+      value: fixedSize
+    }
+  }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value !== fixedSize) {
     return { ok: false, error: { code: CAT_VAL_002, message: MSG_CAT_VAL_002 } }

@@ -12,3 +12,15 @@ Project-wide rules for writing code in `fe-tehesa`. Apply throughout; override d
     return failure(brandId.error.code, brandId.error.message)
   }
   ```
+
+## Object literals
+
+- **Object literals returned from a function: always break across multiple lines.** One key per line, trailing commas off, closing `}` on its own line. Even for short objects (2 keys) and even for "obvious" one-liners. This keeps the shape scannable in diffs and matches the repo's house style (see `src/app/api/catalog/_utils.ts:88-93`). Avoid the form at `src/app/api/catalog/_utils.ts:67` and `src/app/api/catalog/_utils.ts:76`.
+
+  ```ts
+  // ponytail: object literal on multiple lines, even for two keys
+  return {
+    ok: true,
+    value: fixedSize
+  }
+  ```
