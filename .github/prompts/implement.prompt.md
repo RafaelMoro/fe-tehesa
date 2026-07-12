@@ -49,8 +49,9 @@ For each phase in the plan:
 6. **Plan deviations:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, etc.) that forces a deviation. When that happens:
    - Stop and surface the deviation in the final report for that phase. Do not silently rewrite the plan.
    - After the phase is sign-offed, append a `## Plan deviation` section at the bottom of the planning doc under `ai-planning/`, grouped by phase. State the original requirement, the obstacle, the options considered, and the chosen path with a one-line rationale.
-   - The deviation note is the audit trail for "why the implementation differs from the plan"; it is read by the next person who picks up the story. Keep it concise and factual — no prose defending the choice, just the decision.
-   - Do not edit earlier sections of the planning doc to hide the deviation; the original plan text stays as approved and the deviation is appended.
+    - The deviation note is the audit trail for "why the implementation differs from the plan"; it is read by the next person who picks up the story. Keep it concise and factual — no prose defending the choice, just the decision.
+    - Do not edit earlier sections of the planning doc to hide the deviation; the original plan text stays as approved and the deviation is appended.
+7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, stop and ask the user what will be changed before implementing it. After the user approves and the change is implemented, append it to the plan's `## Plan deviation` notes with the reason and chosen path.
 
 ## Step 4 - Apply repo conventions while implementing
 

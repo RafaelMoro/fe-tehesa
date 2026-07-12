@@ -27,31 +27,62 @@ export const ProductVariantsDrawer = ({
   state,
 }: ProductVariantsDrawerProps) => {
   const [variants, setVariants] = useState<ProductVariantUI[]>([])
-  const resetVariants = () => setVariants([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const resetVariants = () => {
+    setVariants([])
+    setIsLoading(false)
+    setErrorMessage(null)
+  }
 
   useEffect(() => {
+    let isActive = true
+
     const loadProductData = async () => {
-      const data = await fetchCatalog<ProductVariant[]>(
-        `/api/catalog/variants?documentId=${encodeURIComponent(product.documentId)}`,
-      )
-      const formattedData = data
-        .map((variant) => ({
-          diameter: variant.diameter,
-          price: variant.pricing.price,
-          priceFormatted: formatNumberToCurrency(variant.pricing.price),
-        }))
-        .sort((a, b) => a.price - b.price)
-      setVariants(formattedData)
+      setVariants([])
+      setErrorMessage(null)
+      setIsLoading(true)
+      try {
+        const data = await fetchCatalog<ProductVariant[]>(
+          `/api/catalog/variants?documentId=${encodeURIComponent(product.documentId)}`,
+        )
+        if (!isActive) {
+          return
+        }
+        const formattedData = data
+          .map((variant) => ({
+            diameter: variant.diameter,
+            price: variant.pricing.price,
+            priceFormatted: formatNumberToCurrency(variant.pricing.price),
+          }))
+          .sort((a, b) => a.price - b.price)
+        setVariants(formattedData)
+      } catch (error) {
+        if (!isActive) {
+          return
+        }
+        const code = (error as { code?: string })?.code
+        const message = code
+          ? catalogErrorToSpanish(code)
+          : "No pudimos cargar las variantes. Inténtalo de nuevo."
+        setErrorMessage(message)
+        console.error("Error fetching product variants:", message)
+      } finally {
+        if (isActive) {
+          setIsLoading(false)
+        }
+      }
     }
 
     if (state.isOpen) {
-      loadProductData().catch((error) => {
-        const code = (error as { code?: string })?.code
-        console.error(
-          "Error fetching product variants:",
-          code ? catalogErrorToSpanish(code) : error,
-        )
-      })
+      loadProductData()
+    } else {
+      resetVariants()
+    }
+
+    return () => {
+      isActive = false
     }
   }, [state.isOpen, product.documentId])
 
@@ -69,7 +100,12 @@ export const ProductVariantsDrawer = ({
               {product.name}
             </Drawer.Header>
             <Drawer.Body>
-              {variants.length > 0 && (
+              {isLoading && <p role="status">Cargando variantes...</p>}
+              {errorMessage && <p role="alert">{errorMessage}</p>}
+              {!isLoading && !errorMessage && variants.length === 0 && (
+                <p>No encontramos variantes para este producto.</p>
+              )}
+              {!isLoading && !errorMessage && variants.length > 0 && (
                 <Table>
                   <Table.Content
                     aria-label={`Variantes del producto ${product.name}`}

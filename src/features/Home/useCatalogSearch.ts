@@ -10,6 +10,8 @@ import {
 
 export type CatalogMode = "name" | "category" | "brand" | null
 
+export type CatalogMessageKind = "status" | "error" | null
+
 interface UseCatalogSearchArgs {
   products: Product[]
 }
@@ -19,14 +21,21 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
   const [activeCatalogMode, setActiveCatalogMode] = useState<CatalogMode>(null)
   const [catalogSearchTerm, setCatalogSearchTerm] = useState("")
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null)
+  const [catalogMessageKind, setCatalogMessageKind] =
+    useState<CatalogMessageKind>(null)
   const [isInvalidCatalogSearch, setIsInvalidCatalogSearch] = useState(false)
+  const [invalidSearchMessage, setInvalidSearchMessage] = useState<
+    string | null
+  >(null)
   const [isLoadingCatalogSearch, setIsLoadingCatalogSearch] = useState(false)
 
   useEffect(() => {
     setActiveCatalogMode(null)
     setCatalogSearchTerm("")
     setCatalogMessage(null)
+    setCatalogMessageKind(null)
     setIsInvalidCatalogSearch(false)
+    setInvalidSearchMessage(null)
     setIsLoadingCatalogSearch(false)
   }, [products])
 
@@ -34,9 +43,11 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     setCatalogSearchTerm(term)
     if (isInvalidCatalogSearch) {
       setIsInvalidCatalogSearch(false)
+      setInvalidSearchMessage(null)
     }
     if (catalogMessage) {
       setCatalogMessage(null)
+      setCatalogMessageKind(null)
     }
   }
 
@@ -46,12 +57,14 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     const trimmed = catalogSearchTerm.trim()
     if (trimmed.length === 0) {
       setIsInvalidCatalogSearch(true)
-      setCatalogMessage("Ingresa un texto para buscar en el catálogo.")
+      setInvalidSearchMessage("Ingresa un texto para buscar en el catálogo.")
       return null
     }
     setIsLoadingCatalogSearch(true)
     setIsInvalidCatalogSearch(false)
+    setInvalidSearchMessage(null)
     setCatalogMessage("Buscando productos en el catálogo...")
+    setCatalogMessageKind("status")
     try {
       const results = await fetchCatalog<Product[]>(
         `/api/catalog/search?q=${encodeURIComponent(trimmed)}&page=${page}`,
@@ -59,8 +72,10 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
       setActiveCatalogMode("name")
       if (results.length === 0) {
         setCatalogMessage("No encontramos productos en el catálogo.")
+        setCatalogMessageKind("status")
       } else {
         setCatalogMessage(null)
+        setCatalogMessageKind(null)
       }
       catalogSearchDrawerState.close()
       return results
@@ -68,13 +83,16 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
       const code = (error as { code?: string })?.code
       if (code === "CAT_VAL_006") {
         setIsInvalidCatalogSearch(true)
-        setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.")
+        setInvalidSearchMessage(
+          "Revisa el texto de búsqueda e inténtalo de nuevo.",
+        )
       } else {
         setCatalogMessage(
           code
             ? catalogErrorToSpanish(code)
             : "No pudimos buscar productos. Inténtalo de nuevo.",
         )
+        setCatalogMessageKind("error")
       }
       return null
     } finally {
@@ -88,7 +106,9 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     setActiveCatalogMode(mode)
     setCatalogSearchTerm("")
     setCatalogMessage(null)
+    setCatalogMessageKind(null)
     setIsInvalidCatalogSearch(false)
+    setInvalidSearchMessage(null)
     catalogSearchDrawerState.close()
   }
 
@@ -96,7 +116,9 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     setActiveCatalogMode(null)
     setCatalogSearchTerm("")
     setCatalogMessage(null)
+    setCatalogMessageKind(null)
     setIsInvalidCatalogSearch(false)
+    setInvalidSearchMessage(null)
     setIsLoadingCatalogSearch(false)
     catalogSearchDrawerState.close()
   }
@@ -106,7 +128,9 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     activeCatalogMode,
     catalogSearchTerm,
     catalogMessage,
+    catalogMessageKind,
     isInvalidCatalogSearch,
+    invalidSearchMessage,
     isLoadingCatalogSearch,
     handleCatalogSearchTermChange,
     handleCatalogNameSearch,
