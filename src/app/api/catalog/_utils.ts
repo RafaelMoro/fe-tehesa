@@ -93,9 +93,18 @@ const parsePageSize = (
   }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value !== fixedSize) {
-    return { ok: false, error: { code: CAT_VAL_002, message: MSG_CAT_VAL_002 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_002,
+        message: MSG_CAT_VAL_002(fixedSize, value)
+      }
+    }
   }
-  return { ok: true, value }
+  return {
+    ok: true,
+    value
+  }
 }
 
 const parseTaxonomyId = (

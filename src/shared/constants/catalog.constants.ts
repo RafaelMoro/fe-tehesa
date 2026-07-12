@@ -12,7 +12,7 @@ export const CAT_ERR_001 = 'CAT_ERR_001'
 
 export const MSG_CAT_ENV_001 = 'Missing Strapi configuration'
 export const MSG_CAT_VAL_001 = 'Invalid page parameter'
-export const MSG_CAT_VAL_002 = 'Invalid pageSize parameter'
+export const MSG_CAT_VAL_002 = (fixedSize: number, value: unknown) => `pageSize must equal ${fixedSize}, got ${String(value)}`
 export const MSG_CAT_VAL_003 = 'Invalid categoryId'
 export const MSG_CAT_VAL_004 = 'Invalid brandId'
 export const MSG_CAT_VAL_005 = 'Invalid documentId'

@@ -24,3 +24,19 @@ Project-wide rules for writing code in `fe-tehesa`. Apply throughout; override d
     value: fixedSize
   }
   ```
+
+## Error messages
+
+- **Validation error messages must be specific.** A generic string like `"Invalid pageSize parameter"` (see `src/shared/constants/catalog.constants.ts:15`) hides what actually went wrong. The message should name the failing input and the rule it violated — expected value/range/type, and ideally the offending value (sanitized). This is what the API client gets back and what shows up in logs; "invalid" with no context is a debug trap.
+- Build messages at the call site, not in the constants file. Constants hold error **codes** and short **labels**; the human-readable detail (expected vs. actual, allowed range, format) is composed where the validation runs. See the bad pattern in `src/app/api/catalog/_utils.ts:95-103` where `MSG_CAT_VAL_002` is returned as-is with no context about `fixedSize` or `value`.
+
+  ```ts
+  // ponytail: compose the message at the call site, include both expected and actual
+  return {
+    ok: false,
+    error: {
+      code: CAT_VAL_002,
+      message: `pageSize must equal ${fixedSize}, got ${String(value)}`
+    }
+  }
+  ```
