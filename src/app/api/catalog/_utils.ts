@@ -16,7 +16,9 @@ import {
   MSG_CAT_VAL_003,
   MSG_CAT_VAL_004,
   MSG_CAT_VAL_005,
-  MSG_CAT_VAL_006,
+  MSG_CAT_VAL_006_EMPTY,
+  MSG_CAT_VAL_006_LENGTH,
+  MSG_CAT_VAL_006_PATTERN,
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
   PRODUCT_PAGE_SIZE,
@@ -112,17 +114,17 @@ const parseSearchTerm = (
   raw: string | null,
 ): { ok: true; value: string } | { ok: false; error: CatalogError } => {
   if (raw === null) {
-    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_EMPTY } }
   }
   const trimmed = raw.trim()
   if (trimmed.length === 0) {
-    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_EMPTY } }
   }
   if (trimmed.length > SEARCH_TERM_MAX_LENGTH) {
-    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_LENGTH } }
   }
   if (!SEARCH_TERM_PATTERN.test(trimmed)) {
-    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006 } }
+    return { ok: false, error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN } }
   }
   return { ok: true, value: trimmed }
 }
