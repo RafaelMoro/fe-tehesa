@@ -478,22 +478,15 @@ enforcement workflow remains unchanged.
 
 ## Open Questions
 
-### Data and Strapi Contract
+None. The remaining backlog items below are intentional follow-ups, not blockers for
+the epic:
 
-II: Question: Are query document and variable assertions sufficient for the Strapi
-adapter, given that no schema fixture is available?
-Status: pending
-Context: Without a schema, tests can assert variables, GraphQL operation names, and
-response shapes, but cannot verify field selection, type compatibility, or null-data
-fallbacks at the schema level. The question is whether the team accepts this coverage
-or wants a future fixture (MSW, schema snapshot, or a recorded response) to lift
-confidence further.
-
-### UI and Product Decisions
-
-III: Question: Should tests cover responsive `useMediaQuery` branches even though the
-hook intentionally does not subscribe to viewport changes?
-Status: pending
+- Future fixture for the Strapi adapter: variable-only assertions ship with this
+  epic, and a fixture layer (MSW, schema snapshot, or recorded response) is tracked
+  as a follow-up story. No file or skill is added in this epic.
+- Responsive `useMediaQuery` coverage ships in this epic so future work can
+  detect regressions when the responsive branch changes. The test asserts the
+  rendered output for each branch without depending on a viewport listener.
 
 ## Answered Questions
 
@@ -560,9 +553,13 @@ implementation detail.
 
 II: Question: Are query document and variable assertions sufficient for the Strapi
 adapter, given that no schema fixture is available?
-Status: pending
-Context: Implementation should consider MSW or recorded response fixtures in a later
-story if variable assertions prove insufficient.
+Status: answered
+Answer: Variable-only assertions ship with this epic. A future-fixture story
+(MSW, schema snapshot, or recorded response) is tracked as a follow-up. The
+follow-up lives outside this epic and is not started in this PR.
+Context: Until a fixture exists, the adapter tests assert the GraphQL operation
+name, variables, and response shape against the real helper. Schema-level
+assertions are deferred to the follow-up story.
 
 ### UI and Product Decisions
 
@@ -584,6 +581,16 @@ Answer: Add visible error feedback. Replace the current `console.error` fallback
 dedicated error region. The unit test for that feedback is in scope for Story 4.
 Context: The exact placement is a Story 4 implementation decision; the requirement to
 expose a visible message and cover it with a test is locked in here.
+
+III: Question: Should tests cover responsive `useMediaQuery` branches even though the
+hook intentionally does not subscribe to viewport changes?
+Status: answered
+Answer: Cover the responsive branches. Tests assert the rendered output for each
+`useMediaQuery` result so future work can detect regressions when the responsive
+branch changes. The test renders the consumer with a mocked `useMediaQuery` value
+and does not depend on a real viewport listener.
+Context: The future goal is to know that a specific UI is being shown according to
+the viewport. Covering each branch now is the cheapest way to lock that in.
 
 ### Theme and Persistence
 
