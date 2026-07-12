@@ -13,7 +13,7 @@ export const Header = ({ themeFetched }: HeaderProps) => {
 
   return (
     <header className="flex justify-between p-4">
-      { (theme === 'light' || themeFetched === 'light') ? (
+      {theme === "light" || themeFetched === "light" ? (
         <Image
           alt="Tehesa Logo"
           height={61}
@@ -21,7 +21,7 @@ export const Header = ({ themeFetched }: HeaderProps) => {
           className="rounded-sm"
           src="/tehesa-logo.webp"
         />
-      ): (
+      ) : (
         <Image
           alt="Tehesa Logo"
           height={61}

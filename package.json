@@ -1,12 +1,14 @@
 {
   "name": "fe-tehesa",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "sync:prompts": "node scripts/sync-opencode-commands.mjs",
     "design:lint": "designmd lint DESIGN.md",
     "design:export": "designmd export --format css-tailwind DESIGN.md"
@@ -33,6 +35,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

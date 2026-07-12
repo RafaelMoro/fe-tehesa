@@ -56,52 +56,52 @@ Key invariants:
 
 ### `src/app/`
 
-| Path                    | Purpose                                                                 |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `layout.tsx`            | Root layout; Google Geist fonts, global styles, HeroUI and theme setup. |
-| `page.tsx`              | Catalog route `/`; server fetches products + theme and renders `Home`.  |
-| `providers.tsx`         | Client provider for HeroUI.                                             |
-| `apollo-client.ts`      | Apollo Client factory for Strapi GraphQL.                               |
-| `api/preferences/route.ts` | Saves theme preference cookie via `POST /api/preferences`.           |
-| `api/catalog/_utils.ts`  | Shared catalog route helpers: `validateCatalogEnv`, envelope `success`/`failure`, and `readValidatedParams` for `page`/`pageSize`/`categoryId`/`brandId`/`documentId`. |
-| `api/catalog/products/route.ts` | `GET /api/catalog/products?page=&pageSize=` -> paged products. |
-| `api/catalog/category/route.ts` | `GET /api/catalog/category?categoryId=&pageSize=` -> products filtered by a live Strapi category. |
-| `api/catalog/brand/route.ts`    | `GET /api/catalog/brand?brandId=&pageSize=` -> products filtered by a live Strapi brand. |
-| `api/catalog/categories/route.ts` | `GET /api/catalog/categories` -> dynamic category taxonomy from Strapi. |
-| `api/catalog/brands/route.ts`  | `GET /api/catalog/brands` -> dynamic brand taxonomy from Strapi. |
-| `api/catalog/variants/route.ts` | `GET /api/catalog/variants?documentId=&pageSize=` -> product variants. |
-| `api/catalog/search/route.ts` | `GET /api/catalog/search?q=&pageSize=50` -> products whose `name` contains the validated term. |
-| `hero.ts`               | HeroUI-related setup file.                                              |
-| `globals.css`           | Tailwind/global CSS.                                                    |
+| Path                              | Purpose                                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout.tsx`                      | Root layout; Google Geist fonts, global styles, HeroUI and theme setup.                                                                                                |
+| `page.tsx`                        | Catalog route `/`; server fetches products + theme and renders `Home`.                                                                                                 |
+| `providers.tsx`                   | Client provider for HeroUI.                                                                                                                                            |
+| `apollo-client.ts`                | Apollo Client factory for Strapi GraphQL.                                                                                                                              |
+| `api/preferences/route.ts`        | Saves theme preference cookie via `POST /api/preferences`.                                                                                                             |
+| `api/catalog/_utils.ts`           | Shared catalog route helpers: `validateCatalogEnv`, envelope `success`/`failure`, and `readValidatedParams` for `page`/`pageSize`/`categoryId`/`brandId`/`documentId`. |
+| `api/catalog/products/route.ts`   | `GET /api/catalog/products?page=&pageSize=` -> paged products.                                                                                                         |
+| `api/catalog/category/route.ts`   | `GET /api/catalog/category?categoryId=&pageSize=` -> products filtered by a live Strapi category.                                                                      |
+| `api/catalog/brand/route.ts`      | `GET /api/catalog/brand?brandId=&pageSize=` -> products filtered by a live Strapi brand.                                                                               |
+| `api/catalog/categories/route.ts` | `GET /api/catalog/categories` -> dynamic category taxonomy from Strapi.                                                                                                |
+| `api/catalog/brands/route.ts`     | `GET /api/catalog/brands` -> dynamic brand taxonomy from Strapi.                                                                                                       |
+| `api/catalog/variants/route.ts`   | `GET /api/catalog/variants?documentId=&pageSize=` -> product variants.                                                                                                 |
+| `api/catalog/search/route.ts`     | `GET /api/catalog/search?q=&pageSize=50` -> products whose `name` contains the validated term.                                                                         |
+| `hero.ts`                         | HeroUI-related setup file.                                                                                                                                             |
+| `globals.css`                     | Tailwind/global CSS.                                                                                                                                                   |
 
 ### `src/features/`
 
-| Domain                   | Purpose                                                                                  |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
+| Domain                   | Purpose                                                                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Home/`                  | Main client catalog controller: search, category/brand filters, pagination, drawer state. Owns the `useCatalogSearch` hook for catalog-wide name search state. |
-| `ProductListing/`        | Product grid plus `SearchInput`, `DropdownCategories`, and `DropdownBrands`.             |
-| `ProductVariantsDrawer/` | HeroUI drawer that fetches, sorts, and displays product variants/prices.                 |
-| `CatalogSearchDrawer/`   | HeroUI drawer (right placement) with name-search form plus the catalog-wide category/brand dropdowns. |
+| `ProductListing/`        | Product grid plus `SearchInput`, `DropdownCategories`, and `DropdownBrands`.                                                                                   |
+| `ProductVariantsDrawer/` | HeroUI drawer that fetches, sorts, and displays product variants/prices.                                                                                       |
+| `CatalogSearchDrawer/`   | HeroUI drawer (right placement) with name-search form plus the catalog-wide category/brand dropdowns.                                                          |
 
 ### `src/shared/`
 
-| Subdir       | Purpose                                                                                 |
-| ------------ | --------------------------------------------------------------------------------------- |
-| `constants`  | Cross-cutting constants such as the theme cookie key and `CAT_*`/`MSG_CAT_*` catalog error codes. |
-| `hooks`      | Reusable client hooks; currently `useMediaQuery`.                                       |
-| `lib`        | Server actions for Strapi reads and theme cookie persistence.                           |
-| `queries`    | GraphQL operations for products, filtered products, variants, categories, and brands.   |
-| `types`      | Product, variant, app theme, error, pagination, category, brand, and dynamic `TaxonomyItem` types. |
-| `ui/atoms`   | Reusable atomic UI such as `ToggleDarkMode`.                                            |
-| `ui/organisms` | Reusable composed UI such as `Header`.                                               |
-| `utils`      | Pure helpers such as currency formatting and the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`). |
+| Subdir         | Purpose                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `constants`    | Cross-cutting constants such as the theme cookie key and `CAT_*`/`MSG_CAT_*` catalog error codes.              |
+| `hooks`        | Reusable client hooks; currently `useMediaQuery`.                                                              |
+| `lib`          | Server actions for Strapi reads and theme cookie persistence.                                                  |
+| `queries`      | GraphQL operations for products, filtered products, variants, categories, and brands.                          |
+| `types`        | Product, variant, app theme, error, pagination, category, brand, and dynamic `TaxonomyItem` types.             |
+| `ui/atoms`     | Reusable atomic UI such as `ToggleDarkMode`.                                                                   |
+| `ui/organisms` | Reusable composed UI such as `Header`.                                                                         |
+| `utils`        | Pure helpers such as currency formatting and the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`). |
 
 ### `src/zustand/`
 
-| Path                                    | Purpose                                                              |
-| --------------------------------------- | -------------------------------------------------------------------- |
-| `store/change-theme.store.ts`           | Vanilla Zustand theme store and React context.                       |
-| `provider/change-theme.provider.tsx`    | Client provider that creates a per-provider store with `useRef`.     |
+| Path                                 | Purpose                                                          |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| `store/change-theme.store.ts`        | Vanilla Zustand theme store and React context.                   |
+| `provider/change-theme.provider.tsx` | Client provider that creates a per-provider store with `useRef`. |
 
 ## Data Flow
 
@@ -143,16 +143,16 @@ Catalog behavior:
 
 ## API Route Inventory
 
-| Route                       | Methods | Purpose                                                                 |
-| --------------------------- | ------- | ----------------------------------------------------------------------- |
-| `/api/preferences`          | `POST`  | Requires JSON `{ "theme": "light" | "dark" }`; saves `tehesa-theme` cookie and returns `{ success, themeChangedTo }`. |
-| `/api/catalog/products`     | `GET`   | `?page=1..5&pageSize=50` (fixed). Returns paged products.               |
-| `/api/catalog/category`     | `GET`   | `?categoryId=...&pageSize=50` (fixed). Validates `categoryId` against the live Strapi taxonomy; returns matching products. |
-| `/api/catalog/brand`        | `GET`   | `?brandId=...&pageSize=50` (fixed). Validates `brandId` against the live Strapi taxonomy; returns matching products. |
-| `/api/catalog/categories`   | `GET`   | Dynamic category taxonomy list from Strapi.                             |
-| `/api/catalog/brands`       | `GET`   | Dynamic brand taxonomy list from Strapi.                                 |
-| `/api/catalog/variants`     | `GET`   | `?documentId=...&pageSize=100` (fixed). Returns product variants.       |
-| `/api/catalog/search`       | `GET`   | `?q=...` (trimmed, allowlisted, capped at 100 chars). Returns products whose `name` contains the term. First page only, `pageSize=50`. |
+| Route                     | Methods | Purpose                                                                                                                                |
+| ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/preferences`        | `POST`  | Requires JSON `{ "theme": "light"                                                                                                      | "dark" }`; saves `tehesa-theme`cookie and returns`{ success, themeChangedTo }`. |
+| `/api/catalog/products`   | `GET`   | `?page=1..5&pageSize=50` (fixed). Returns paged products.                                                                              |
+| `/api/catalog/category`   | `GET`   | `?categoryId=...&pageSize=50` (fixed). Validates `categoryId` against the live Strapi taxonomy; returns matching products.             |
+| `/api/catalog/brand`      | `GET`   | `?brandId=...&pageSize=50` (fixed). Validates `brandId` against the live Strapi taxonomy; returns matching products.                   |
+| `/api/catalog/categories` | `GET`   | Dynamic category taxonomy list from Strapi.                                                                                            |
+| `/api/catalog/brands`     | `GET`   | Dynamic brand taxonomy list from Strapi.                                                                                               |
+| `/api/catalog/variants`   | `GET`   | `?documentId=...&pageSize=100` (fixed). Returns product variants.                                                                      |
+| `/api/catalog/search`     | `GET`   | `?q=...` (trimmed, allowlisted, capped at 100 chars). Returns products whose `name` contains the term. First page only, `pageSize=50`. |
 
 Catalog routes share an envelope: `{ success: true, data }` for success, `{ success: false, code, message }` for failure. `code` is one of the `CAT_*` constants in `src/shared/constants/catalog.constants.ts` (`CAT_ENV_001`, `CAT_VAL_001..006`, `CAT_NF_001..003`, `CAT_ERR_001`). All catalog routes return `400` on any failure and require `STRAPI_HOST` + `STRAPI_API_TOKEN` at runtime; missing config is `CAT_ENV_001`. Route handlers wrap server actions in `src/shared/lib/global.lib.ts` and never call Apollo directly; the client never imports `global.lib.ts`. Clients parse envelopes through `fetchCatalog` + `catalogErrorToSpanish` in `src/shared/utils/catalog-api.utils.ts`. The `/api/catalog/search` route validates the `q` term (trim, allowlist of Unicode letters/numbers + ` -_. , & ()`, max 100 chars) and returns `CAT_VAL_006` on invalid input; the internal `message` differentiates empty/length/pattern for server-side logs while the client receives the same `CAT_VAL_006` code.
 
@@ -177,16 +177,16 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 
 ## Commands
 
-| Command                  | Purpose                                                                     |
-| ------------------------ | --------------------------------------------------------------------------- |
-| `pnpm dev`               | Start Next dev server with Turbopack.                                       |
-| `pnpm build`             | Production build with Turbopack; also runs type checking.                   |
-| `pnpm start`             | Start a built Next app.                                                     |
+| Command                  | Purpose                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `pnpm dev`               | Start Next dev server with Turbopack.                                          |
+| `pnpm build`             | Production build with Turbopack; also runs type checking.                      |
+| `pnpm start`             | Start a built Next app.                                                        |
 | `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
-| `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.           |
-| `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.  |
-| `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).     |
-| `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.     |
+| `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
+| `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.     |
+| `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).         |
+| `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.         |
 
 There is no `pnpm test` script and no test framework configured. Do not invent test commands.
 
@@ -232,38 +232,38 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 
 ## Key Files
 
-| File                                      | Purpose                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------ |
-| `AGENTS.md`                               | Compact agent instructions: commands, architecture, env, CI, styling.    |
-| `DESIGN.md`                               | Visual design system tokens + rationale; lint with `pnpm design:lint`.    |
-| `package.json`                            | Scripts and dependencies.                                                |
-| `next.config.ts`                          | Minimal Next config.                                                     |
-| `tsconfig.json`                           | Strict TypeScript, bundler module resolution, `@/*` path alias.          |
-| `eslint.config.mjs`                       | ESLint flat config with Next presets.                                    |
-| `postcss.config.mjs`                      | Tailwind v4 PostCSS plugin.                                              |
-| `tailwind.config.js`                      | HeroUI theme plugin/content and class dark mode.                         |
-| `scripts/sync-opencode-commands.mjs`      | Syncs opencode command prompts into `.github/prompts`.                   |
-| `.github/workflows/check-label.yml`       | PR label validation for `major`, `minor`, or `patch`.                    |
-| `.github/workflows/develop-pipeline.yml`  | Develop merge release/changelog automation.                              |
-| `src/app/layout.tsx`                      | Root layout, HeroUI provider, next-themes provider.                      |
-| `src/app/page.tsx`                        | Catalog page, pagination param handling, server data fetch.              |
-| `src/app/apollo-client.ts`                | Apollo Client factory using Strapi env vars.                             |
-| `src/app/api/preferences/route.ts`        | Theme cookie API route.                                                  |
-| `src/app/api/catalog/_utils.ts`           | Shared catalog route helpers: env validation, success/error envelopes, param parsing. |
-| `src/app/api/catalog/{products,category,brand,categories,brands,variants,search}/route.ts` | Catalog API route handlers (thin wrappers over server actions). |
-| `src/shared/constants/catalog.constants.ts` | `CAT_*` error codes, `MSG_CAT_*` internal messages, and validation constants (page bounds, page sizes, documentId pattern/length, `SEARCH_TERM_MAX_LENGTH = 100`, `SEARCH_TERM_PATTERN` allowlist). |
-| `src/shared/utils/catalog-api.utils.ts`   | Client-side `fetchCatalog<T>()` envelope wrapper, `CatalogApiError` with `code`, and `catalogErrorToSpanish` code-to-Spanish-copy map. |
-| `src/features/Home/Home.tsx`              | Client catalog controller.                                               |
-| `src/features/Home/useCatalogSearch.ts`    | Hook owning catalog-wide name-search state, drawer state, and mode coordination. |
-| `src/features/ProductListing/*.tsx`       | Listing grid, search input, category and brand dropdowns.                |
-| `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx` | HeroUI right-side drawer with name-search form plus the catalog-wide category/brand dropdowns. |
-| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` | Variant drawer and price display.                      |
-| `src/components/ProductCard.tsx`          | Product card UI.                                                         |
-| `src/shared/lib/global.lib.ts`            | Server actions for Strapi reads and theme cookies.                       |
-| `src/shared/queries/global.queries.ts`    | GraphQL operations.                                                      |
-| `src/shared/types/global.types.ts`        | Product/domain types plus hardcoded category and brand options.          |
-| `src/zustand/provider/change-theme.provider.tsx` | Theme store provider and hook.                                  |
-| `src/zustand/store/change-theme.store.ts` | Vanilla Zustand theme store.                                             |
+| File                                                                                       | Purpose                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AGENTS.md`                                                                                | Compact agent instructions: commands, architecture, env, CI, styling.                                                                                                                               |
+| `DESIGN.md`                                                                                | Visual design system tokens + rationale; lint with `pnpm design:lint`.                                                                                                                              |
+| `package.json`                                                                             | Scripts and dependencies.                                                                                                                                                                           |
+| `next.config.ts`                                                                           | Minimal Next config.                                                                                                                                                                                |
+| `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |
+| `eslint.config.mjs`                                                                        | ESLint flat config with Next presets.                                                                                                                                                               |
+| `postcss.config.mjs`                                                                       | Tailwind v4 PostCSS plugin.                                                                                                                                                                         |
+| `tailwind.config.js`                                                                       | HeroUI theme plugin/content and class dark mode.                                                                                                                                                    |
+| `scripts/sync-opencode-commands.mjs`                                                       | Syncs opencode command prompts into `.github/prompts`.                                                                                                                                              |
+| `.github/workflows/check-label.yml`                                                        | PR label validation for `major`, `minor`, or `patch`.                                                                                                                                               |
+| `.github/workflows/develop-pipeline.yml`                                                   | Develop merge release/changelog automation.                                                                                                                                                         |
+| `src/app/layout.tsx`                                                                       | Root layout, HeroUI provider, next-themes provider.                                                                                                                                                 |
+| `src/app/page.tsx`                                                                         | Catalog page, pagination param handling, server data fetch.                                                                                                                                         |
+| `src/app/apollo-client.ts`                                                                 | Apollo Client factory using Strapi env vars.                                                                                                                                                        |
+| `src/app/api/preferences/route.ts`                                                         | Theme cookie API route.                                                                                                                                                                             |
+| `src/app/api/catalog/_utils.ts`                                                            | Shared catalog route helpers: env validation, success/error envelopes, param parsing.                                                                                                               |
+| `src/app/api/catalog/{products,category,brand,categories,brands,variants,search}/route.ts` | Catalog API route handlers (thin wrappers over server actions).                                                                                                                                     |
+| `src/shared/constants/catalog.constants.ts`                                                | `CAT_*` error codes, `MSG_CAT_*` internal messages, and validation constants (page bounds, page sizes, documentId pattern/length, `SEARCH_TERM_MAX_LENGTH = 100`, `SEARCH_TERM_PATTERN` allowlist). |
+| `src/shared/utils/catalog-api.utils.ts`                                                    | Client-side `fetchCatalog<T>()` envelope wrapper, `CatalogApiError` with `code`, and `catalogErrorToSpanish` code-to-Spanish-copy map.                                                              |
+| `src/features/Home/Home.tsx`                                                               | Client catalog controller.                                                                                                                                                                          |
+| `src/features/Home/useCatalogSearch.ts`                                                    | Hook owning catalog-wide name-search state, drawer state, and mode coordination.                                                                                                                    |
+| `src/features/ProductListing/*.tsx`                                                        | Listing grid, search input, category and brand dropdowns.                                                                                                                                           |
+| `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx`                                 | HeroUI right-side drawer with name-search form plus the catalog-wide category/brand dropdowns.                                                                                                      |
+| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`                             | Variant drawer and price display.                                                                                                                                                                   |
+| `src/components/ProductCard.tsx`                                                           | Product card UI.                                                                                                                                                                                    |
+| `src/shared/lib/global.lib.ts`                                                             | Server actions for Strapi reads and theme cookies.                                                                                                                                                  |
+| `src/shared/queries/global.queries.ts`                                                     | GraphQL operations.                                                                                                                                                                                 |
+| `src/shared/types/global.types.ts`                                                         | Product/domain types plus hardcoded category and brand options.                                                                                                                                     |
+| `src/zustand/provider/change-theme.provider.tsx`                                           | Theme store provider and hook.                                                                                                                                                                      |
+| `src/zustand/store/change-theme.store.ts`                                                  | Vanilla Zustand theme store.                                                                                                                                                                        |
 
 ## External References
 
@@ -272,12 +272,12 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - **MCP server (primary):** `heroui-react` is configured in `opencode.json` via `@heroui/react-mcp`. Prefer it for component API, props, and pattern questions — it returns live v3 docs without a web fetch.
 - **LLM docs (fallback):** when the MCP is not loaded or for bulk context:
 
-| URL | Scope |
-| --- | --- |
-| https://heroui.com/react/llms.txt | Index/summary — start here |
-| https://heroui.com/react/llms-full.txt | Full React docs |
-| https://heroui.com/react/llms-components.txt | Component docs only |
-| https://heroui.com/react/llms-patterns.txt | Patterns/composition docs |
+| URL                                          | Scope                      |
+| -------------------------------------------- | -------------------------- |
+| https://heroui.com/react/llms.txt            | Index/summary — start here |
+| https://heroui.com/react/llms-full.txt       | Full React docs            |
+| https://heroui.com/react/llms-components.txt | Component docs only        |
+| https://heroui.com/react/llms-patterns.txt   | Patterns/composition docs  |
 
 ## Open Questions
 

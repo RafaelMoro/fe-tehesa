@@ -1,9 +1,9 @@
 "use client"
-import { saveThemeApi } from "@/shared/utils/global.utils";
+import { saveThemeApi } from "@/shared/utils/global.utils"
 import { Button } from "@heroui/react"
 import { RiMoonLine } from "@remixicon/react"
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export const ToggleDarkMode = () => {
   const [mounted, setMounted] = useState(false)
@@ -13,18 +13,20 @@ export const ToggleDarkMode = () => {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
+  if (!mounted) {
+    return null
+  }
 
   const toggleDarkMode = async () => {
     const isLight = theme === "light"
     if (isLight) {
-      await saveThemeApi('dark')
-      setTheme('dark')
+      await saveThemeApi("dark")
+      setTheme("dark")
       return
     }
 
-    await saveThemeApi('light')
-    setTheme('light')
+    await saveThemeApi("light")
+    setTheme("light")
   }
 
   return (

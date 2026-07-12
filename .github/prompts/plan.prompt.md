@@ -61,15 +61,15 @@ Common temptations to refuse:
 
 Break work into phases, each independently verifiable. Common phase patterns for this repo:
 
-| Story type                 | Phase pattern                                                                                                               |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Catalog UI feature         | Types/constants if needed -> feature component(s) under `src/features/<Feature>/` -> page/wiring -> focused verification    |
-| Product data change        | GraphQL query/type update -> server action in `src/shared/lib/global.lib.ts` -> client caller update -> focused verification |
-| New or changed API route   | Request/response shape -> route handler under `src/app/api/**/route.ts` -> callers -> focused verification                  |
-| New page                   | `src/app/<route>/page.tsx` -> feature UI -> navigation/metadata behavior -> focused verification                            |
-| Theme/state change         | cookie/server action or Zustand store update -> UI wiring -> theme persistence verification                                 |
-| Bug fix                    | Root cause -> smallest fix -> regression check if available -> focused verification                                          |
-| Test/tooling explicitly requested | Exact scope -> minimal config/test command -> focused verification                                                  |
+| Story type                        | Phase pattern                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Catalog UI feature                | Types/constants if needed -> feature component(s) under `src/features/<Feature>/` -> page/wiring -> focused verification     |
+| Product data change               | GraphQL query/type update -> server action in `src/shared/lib/global.lib.ts` -> client caller update -> focused verification |
+| New or changed API route          | Request/response shape -> route handler under `src/app/api/**/route.ts` -> callers -> focused verification                   |
+| New page                          | `src/app/<route>/page.tsx` -> feature UI -> navigation/metadata behavior -> focused verification                             |
+| Theme/state change                | cookie/server action or Zustand store update -> UI wiring -> theme persistence verification                                  |
+| Bug fix                           | Root cause -> smallest fix -> regression check if available -> focused verification                                          |
+| Test/tooling explicitly requested | Exact scope -> minimal config/test command -> focused verification                                                           |
 
 Do not create phases for linting, formatting, code review, CI release, or changelog work.
 
@@ -104,11 +104,11 @@ Do not tell implementers to run `pnpm install` unless the plan intentionally cha
 
 There is no test runner configured. Add a table like this and keep it honest:
 
-| Area/File                              | Coverage/check areas                                                 | Verification reference                                  |
-| -------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------- |
-| `src/features/Home/Home.tsx`           | search/filter/pagination interaction required by ACs                 | manual browser check + `pnpm lint` / `pnpm build`       |
-| `src/shared/lib/global.lib.ts`         | Strapi variables, return shapes, error behavior in scope             | `pnpm exec tsc --noEmit` + targeted manual data check   |
-| `src/app/api/preferences/route.ts`     | required theme payload, success/error response shape if touched      | manual API call or integration check + `pnpm build`     |
+| Area/File                          | Coverage/check areas                                            | Verification reference                                |
+| ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+| `src/features/Home/Home.tsx`       | search/filter/pagination interaction required by ACs            | manual browser check + `pnpm lint` / `pnpm build`     |
+| `src/shared/lib/global.lib.ts`     | Strapi variables, return shapes, error behavior in scope        | `pnpm exec tsc --noEmit` + targeted manual data check |
+| `src/app/api/preferences/route.ts` | required theme payload, success/error response shape if touched | manual API call or integration check + `pnpm build`   |
 
 If the story explicitly adds a test framework, plan only the minimum test setup required by that story. Otherwise, do not invent Jest, Testing Library, Vitest, Playwright, or test directories.
 

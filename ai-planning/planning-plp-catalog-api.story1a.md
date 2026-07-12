@@ -94,11 +94,11 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
+| Area/File                              | Coverage/check areas                                          | Verification reference                              |
+| -------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------- |
 | `src/shared/queries/global.queries.ts` | New taxonomy query fields match Strapi contract from research | `pnpm exec tsc --noEmit` + API taxonomy smoke check |
-| `src/shared/lib/global.lib.ts` | New actions reuse Apollo client factory and return arrays | `pnpm exec tsc --noEmit` + API taxonomy smoke check |
-| `src/shared/types/global.types.ts` | Dynamic taxonomy types do not replace hardcoded UI arrays | `pnpm exec tsc --noEmit` |
+| `src/shared/lib/global.lib.ts`         | New actions reuse Apollo client factory and return arrays     | `pnpm exec tsc --noEmit` + API taxonomy smoke check |
+| `src/shared/types/global.types.ts`     | Dynamic taxonomy types do not replace hardcoded UI arrays     | `pnpm exec tsc --noEmit`                            |
 
 ## Phase 2: Catalog API Routes
 
@@ -170,15 +170,15 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
-| `src/app/api/catalog/_utils.ts` | Env validation, response envelopes, fixed page size, id validation | `pnpm exec tsc --noEmit` + invalid-param API checks |
-| `src/app/api/catalog/products/route.ts` | Bounded paged product reads | manual API check + `pnpm build` |
-| `src/app/api/catalog/category/route.ts` | Dynamic category validation before product fetch | manual valid/invalid category checks + `pnpm build` |
-| `src/app/api/catalog/brand/route.ts` | Dynamic brand validation before product fetch | manual valid/invalid brand checks + `pnpm build` |
-| `src/app/api/catalog/categories/route.ts` | Category list success envelope | manual API check + `pnpm build` |
-| `src/app/api/catalog/brands/route.ts` | Brand list success envelope | manual API check + `pnpm build` |
-| `src/app/api/catalog/variants/route.ts` | Document id validation and variant envelope | manual valid/invalid variant checks + `pnpm build` |
+| Area/File                                 | Coverage/check areas                                               | Verification reference                              |
+| ----------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------- |
+| `src/app/api/catalog/_utils.ts`           | Env validation, response envelopes, fixed page size, id validation | `pnpm exec tsc --noEmit` + invalid-param API checks |
+| `src/app/api/catalog/products/route.ts`   | Bounded paged product reads                                        | manual API check + `pnpm build`                     |
+| `src/app/api/catalog/category/route.ts`   | Dynamic category validation before product fetch                   | manual valid/invalid category checks + `pnpm build` |
+| `src/app/api/catalog/brand/route.ts`      | Dynamic brand validation before product fetch                      | manual valid/invalid brand checks + `pnpm build`    |
+| `src/app/api/catalog/categories/route.ts` | Category list success envelope                                     | manual API check + `pnpm build`                     |
+| `src/app/api/catalog/brands/route.ts`     | Brand list success envelope                                        | manual API check + `pnpm build`                     |
+| `src/app/api/catalog/variants/route.ts`   | Document id validation and variant envelope                        | manual valid/invalid variant checks + `pnpm build`  |
 
 ## Phase 3: Client Migration To Fetch
 
@@ -222,11 +222,11 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
-| `src/features/Home/Home.tsx` | Dropdown fetch migration, envelope handling, filter state preservation | manual desktop/mobile checks + `pnpm lint` + `pnpm build` |
-| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` | Variant fetch migration, envelope handling, sort/format preservation | manual drawer check + `pnpm lint` + `pnpm build` |
-| `src/shared/utils/catalog-api.utils.ts` if created | Client-only code mapping and envelope parsing | `pnpm lint` + `pnpm build` |
+| Area/File                                                      | Coverage/check areas                                                   | Verification reference                                    |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| `src/features/Home/Home.tsx`                                   | Dropdown fetch migration, envelope handling, filter state preservation | manual desktop/mobile checks + `pnpm lint` + `pnpm build` |
+| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` | Variant fetch migration, envelope handling, sort/format preservation   | manual drawer check + `pnpm lint` + `pnpm build`          |
+| `src/shared/utils/catalog-api.utils.ts` if created             | Client-only code mapping and envelope parsing                          | `pnpm lint` + `pnpm build`                                |
 
 ## Cross-Cutting Concerns
 

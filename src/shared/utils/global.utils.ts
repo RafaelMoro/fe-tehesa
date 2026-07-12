@@ -5,24 +5,24 @@
  */
 export const saveThemeApi = async (theme: string) => {
   try {
-    const res = await fetch('/api/preferences', {
-      method: 'POST',
+    const res = await fetch("/api/preferences", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ theme }),
     })
     return res
   } catch (error) {
-    console.log('error while saving theme in api', error)
+    console.log("error while saving theme in api", error)
   }
 }
 
-const formatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
+const formatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
   minimumFractionDigits: 2,
-});
+})
 
 export const formatNumberToCurrency = (amount: number): string =>
-  formatter.format(amount);
+  formatter.format(amount)
