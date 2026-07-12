@@ -6,7 +6,7 @@
 
 1. **Server Component** (page.tsx:8) - Fetches products on initial load
    ```typescript
-   fetchProducts(); // Returns Product[]
+   fetchProducts() // Returns Product[]
    ```
 2. **Client Component** (Home.tsx) - Receives products as props, manages filtering
 3. **Pagination UI** (Home.tsx:79) - Static, non-functional
@@ -229,10 +229,10 @@ This means:
    ```typescript
    // Add new type for pagination props
    export interface PaginationProps {
-     currentPage: number;
-     hasNextPage: boolean;
-     hasPrevPage: boolean;
-     totalPages: number; // We know it's 5 max
+     currentPage: number
+     hasNextPage: boolean
+     hasPrevPage: boolean
+     totalPages: number // We know it's 5 max
    }
    ```
 
@@ -467,7 +467,7 @@ This approach provides:
 ```typescript
 // Add page parameter, keep pageSize fixed at 50
 export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
-  const client = createApolloClient();
+  const client = createApolloClient()
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS,
     variables: {
@@ -476,9 +476,9 @@ export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
         pageSize: 50, // Fixed
       },
     },
-  });
-  return res?.data?.products ?? [];
-};
+  })
+  return res?.data?.products ?? []
+}
 ```
 
 ---
@@ -541,10 +541,10 @@ export default async function MainPage({
 ```typescript
 // Add pagination props interface
 export interface PaginationProps {
-  currentPage: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  totalPages: number;
+  currentPage: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+  totalPages: number
 }
 
 // Optional: Can merge into HomeProps directly
@@ -692,24 +692,24 @@ export const Home = ({
 const handleSearch = (searchTerm: string) => {
   if (!searchTerm.trim()) {
     // If search is empty, show all products from current page
-    setFilteredProducts(allProducts.current);
-    return;
+    setFilteredProducts(allProducts.current)
+    return
   }
 
   // Filter by search term in product name (case-insensitive)
   // Only filters the 50 products on the current page
   const searchFiltered = allProducts.current.filter((prod) =>
     prod.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  )
 
-  setFilteredProducts(searchFiltered);
+  setFilteredProducts(searchFiltered)
   // Note: Does NOT reset to page 1
-};
+}
 
 const clearFilters = () => {
-  setFilteredProducts(allProducts.current);
+  setFilteredProducts(allProducts.current)
   // Shows all 50 products from current page
-};
+}
 ```
 
 **Behavior:**
@@ -771,7 +771,7 @@ export const Home = ({ ... }: HomeProps) => {
 **Determining hasNextPage:**
 
 ```typescript
-const hasNextPage = products.length === 50 && page < totalPages;
+const hasNextPage = products.length === 50 && page < totalPages
 ```
 
 **Why both conditions:**
@@ -782,7 +782,7 @@ const hasNextPage = products.length === 50 && page < totalPages;
 **Validating Page Number:**
 
 ```typescript
-const page = Math.max(1, Math.min(totalPages, parseInt(pageParam, 10) || 1));
+const page = Math.max(1, Math.min(totalPages, parseInt(pageParam, 10) || 1))
 ```
 
 **Pagination Component Props:**

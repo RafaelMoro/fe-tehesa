@@ -9,16 +9,24 @@ interface DropdownCategoriesProps {
   defaultLabel?: string
 }
 
-export const DropdownCategories = ({ selectedCategory, updateSelectedCategory, defaultLabel }: DropdownCategoriesProps) => {
+export const DropdownCategories = ({
+  selectedCategory,
+  updateSelectedCategory,
+  defaultLabel,
+}: DropdownCategoriesProps) => {
   const allCategories = [...CATEGORIES_PRODUCTS]
-  
+
   // Find the selected category object to display its name
-  const selectedCategoryObj = allCategories.find((cat) => cat.customId === selectedCategory)
+  const selectedCategoryObj = allCategories.find(
+    (cat) => cat.customId === selectedCategory,
+  )
 
   return (
     <Dropdown>
       <Button variant="secondary">
-        {selectedCategoryObj?.name ?? defaultLabel ?? 'Buscar categoría en todo el catálogo'}
+        {selectedCategoryObj?.name ??
+          defaultLabel ??
+          "Buscar categoría en todo el catálogo"}
         <RiArrowDownSLine />
       </Button>
       <Dropdown.Popover>
@@ -27,11 +35,15 @@ export const DropdownCategories = ({ selectedCategory, updateSelectedCategory, d
           aria-label="Dropdown menu categories"
           onAction={(key) => updateSelectedCategory(key as string)}
         >
-          { allCategories.map((category) => (
-            <Dropdown.Item key={category.customId} id={category.customId} textValue={category.name}>
+          {allCategories.map((category) => (
+            <Dropdown.Item
+              key={category.customId}
+              id={category.customId}
+              textValue={category.name}
+            >
               <Label>{category.name}</Label>
             </Dropdown.Item>
-          )) }
+          ))}
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown>

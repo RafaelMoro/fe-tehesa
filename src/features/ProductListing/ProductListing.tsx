@@ -4,18 +4,26 @@ import { ProductCard } from "@/components/ProductCard"
 import { Product } from "@/shared/types/global.types"
 
 interface ProductListingProps {
-  products: Product[];
-  handleProductClick: (product: Product) => void;
-  isLocalFilterActive: boolean;
-  onClearLocalFilter?: () => void;
+  products: Product[]
+  handleProductClick: (product: Product) => void
+  isLocalFilterActive: boolean
+  onClearLocalFilter?: () => void
 }
 
-export const ProductListing = ({ products, handleProductClick, isLocalFilterActive, onClearLocalFilter }: ProductListingProps) => {
+export const ProductListing = ({
+  products,
+  handleProductClick,
+  isLocalFilterActive,
+  onClearLocalFilter,
+}: ProductListingProps) => {
   if (products.length === 0 && isLocalFilterActive) {
     return (
       <div className="flex flex-col gap-2">
         <p>No hay coincidencias en los productos que estás viendo.</p>
-        <p>¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo completo.</p>
+        <p>
+          ¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo
+          completo.
+        </p>
         {onClearLocalFilter && (
           <div>
             <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
@@ -33,8 +41,12 @@ export const ProductListing = ({ products, handleProductClick, isLocalFilterActi
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      { products.map((product) => (
-        <ProductCard key={product.documentId} product={product} handleProductClick={handleProductClick} />
+      {products.map((product) => (
+        <ProductCard
+          key={product.documentId}
+          product={product}
+          handleProductClick={handleProductClick}
+        />
       ))}
     </div>
   )

@@ -117,10 +117,10 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
-| `src/features/Home/Home.tsx` | parent-owned local filters, stacked filter derivation, local clear preserving working set, catalog-wide category/brand reset of local filters | manual browser checks + `pnpm lint` + `pnpm build` |
-| `src/features/ProductListing/SearchInput.tsx` | controlled input value, change callback, parent reset reflected in field | manual browser checks + `pnpm lint` |
+| Area/File                                     | Coverage/check areas                                                                                                                          | Verification reference                             |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `src/features/Home/Home.tsx`                  | parent-owned local filters, stacked filter derivation, local clear preserving working set, catalog-wide category/brand reset of local filters | manual browser checks + `pnpm lint` + `pnpm build` |
+| `src/features/ProductListing/SearchInput.tsx` | controlled input value, change callback, parent reset reflected in field                                                                      | manual browser checks + `pnpm lint`                |
 
 ## Phase 2: Local Category And Brand Filters
 
@@ -174,11 +174,11 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
-| `src/features/Home/Home.tsx` | stacked local text/category/brand filtering, local-only clear, catalog-wide context preservation | manual browser checks + `pnpm lint` + `pnpm build` |
-| `src/features/ProductListing/DropdownCategories.tsx` | reusable default label, selected category display unchanged, no API behavior change | manual browser checks + `pnpm lint` |
-| `src/features/ProductListing/DropdownBrands.tsx` | reusable default label, selected brand display unchanged, no API behavior change | manual browser checks + `pnpm lint` |
+| Area/File                                            | Coverage/check areas                                                                             | Verification reference                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `src/features/Home/Home.tsx`                         | stacked local text/category/brand filtering, local-only clear, catalog-wide context preservation | manual browser checks + `pnpm lint` + `pnpm build` |
+| `src/features/ProductListing/DropdownCategories.tsx` | reusable default label, selected category display unchanged, no API behavior change              | manual browser checks + `pnpm lint`                |
+| `src/features/ProductListing/DropdownBrands.tsx`     | reusable default label, selected brand display unchanged, no API behavior change                 | manual browser checks + `pnpm lint`                |
 
 ## Phase 3: Visible Filter Feedback And Empty States
 
@@ -237,10 +237,10 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
-| `src/features/Home/Home.tsx` | active filter feedback visibility, local clear action, props passed to listing | manual browser checks + `pnpm lint` + `pnpm build` |
-| `src/features/ProductListing/ProductListing.tsx` | Spanish default empty copy, local empty copy, wider-search guidance, no grid regression | manual browser checks + `pnpm lint` |
+| Area/File                                        | Coverage/check areas                                                                    | Verification reference                             |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `src/features/Home/Home.tsx`                     | active filter feedback visibility, local clear action, props passed to listing          | manual browser checks + `pnpm lint` + `pnpm build` |
+| `src/features/ProductListing/ProductListing.tsx` | Spanish default empty copy, local empty copy, wider-search guidance, no grid regression | manual browser checks + `pnpm lint`                |
 
 ## Phase 4: Catalog-Wide Dropdown Copy
 
@@ -282,10 +282,10 @@ Manual:
 
 ### Verification Coverage
 
-| Area/File | Coverage/check areas | Verification reference |
-| --- | --- | --- |
+| Area/File                                            | Coverage/check areas                                                           | Verification reference              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
 | `src/features/ProductListing/DropdownCategories.tsx` | default Spanish catalog-wide label, selected label unchanged, action unchanged | manual browser checks + `pnpm lint` |
-| `src/features/ProductListing/DropdownBrands.tsx` | default Spanish catalog-wide label, selected label unchanged, action unchanged | manual browser checks + `pnpm lint` |
+| `src/features/ProductListing/DropdownBrands.tsx`     | default Spanish catalog-wide label, selected label unchanged, action unchanged | manual browser checks + `pnpm lint` |
 
 ## Cross-Cutting Concerns
 

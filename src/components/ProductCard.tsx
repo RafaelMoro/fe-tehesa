@@ -9,34 +9,40 @@ import { Product } from "@/shared/types/global.types"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
 
 interface ProductCardProps {
-  product: Product;
-  handleProductClick: (product: Product) => void;
+  product: Product
+  handleProductClick: (product: Product) => void
 }
 
-export const ProductCard = ({ product, handleProductClick }: ProductCardProps) => {
+export const ProductCard = ({
+  product,
+  handleProductClick,
+}: ProductCardProps) => {
   const { isMobile } = useMediaQuery()
-  
+
   const brandName = product?.brand?.name ?? null
   const minPriceString = useMemo(() => {
-    if (!product.minPrice) return null
+    if (!product.minPrice) {
+      return null
+    }
     return formatNumberToCurrency(product.minPrice)
   }, [product.minPrice])
 
   const maxPriceString = useMemo(() => {
-    if (!product.maxPrice) return null
+    if (!product.maxPrice) {
+      return null
+    }
     return formatNumberToCurrency(product.maxPrice)
   }, [product.maxPrice])
 
   const cardHeaderCss = clsx(
     { "flex justify-center": isMobile },
-    { "flex gap-3": !isMobile }
+    { "flex gap-3": !isMobile },
   )
   const titleCSS = clsx(
     "font-bold",
     { "text-2xl": !isMobile },
-    { "text-xl": isMobile }
+    { "text-xl": isMobile },
   )
-
 
   return (
     <Card>
@@ -67,7 +73,7 @@ export const ProductCard = ({ product, handleProductClick }: ProductCardProps) =
       </Card.Header>
       <Card.Content>
         <div className="flex flex-col gap-6">
-          { product?.variantCount && (
+          {product?.variantCount && (
             <Chip size="sm">
               <div className="inline-flex gap-2">
                 <RiStackLine size={18} />
@@ -75,10 +81,16 @@ export const ProductCard = ({ product, handleProductClick }: ProductCardProps) =
               </div>
             </Chip>
           )}
-          { (minPriceString && maxPriceString) && (
+          {minPriceString && maxPriceString && (
             <div className="flex gap-1 text-gray-400">
               <RiPriceTag3Line size={22} />
-              <p>Desde <span className="font-bold text-xl text-gray-950 dark:text-gray-100">{minPriceString}</span> hasta {maxPriceString}</p>
+              <p>
+                Desde{" "}
+                <span className="font-bold text-xl text-gray-950 dark:text-gray-100">
+                  {minPriceString}
+                </span>{" "}
+                hasta {maxPriceString}
+              </p>
             </div>
           )}
         </div>

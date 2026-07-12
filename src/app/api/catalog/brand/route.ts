@@ -6,15 +6,24 @@ import {
   validateCatalogEnv,
 } from "@/app/api/catalog/_utils"
 import { fetchBrands, fetchProductsByBrand } from "@/shared/lib/global.lib"
-import { CAT_NF_002, MSG_CAT_NF_002 } from "@/shared/constants/catalog.constants"
+import {
+  CAT_NF_002,
+  MSG_CAT_NF_002,
+} from "@/shared/constants/catalog.constants"
 
 export async function GET(request: Request) {
   const envError = validateCatalogEnv()
-  if (envError) return failure(envError.code, envError.message)
+  if (envError) {
+    return failure(envError.code, envError.message)
+  }
 
   const { brandId, productPageSize } = readValidatedParams(request)
-  if (!brandId.ok) return failure(brandId.error.code, brandId.error.message)
-  if (!productPageSize.ok) return failure(productPageSize.error.code, productPageSize.error.message)
+  if (!brandId.ok) {
+    return failure(brandId.error.code, brandId.error.message)
+  }
+  if (!productPageSize.ok) {
+    return failure(productPageSize.error.code, productPageSize.error.message)
+  }
 
   try {
     const brands = await fetchBrands()
@@ -24,7 +33,7 @@ export async function GET(request: Request) {
     const products = (await fetchProductsByBrand(brandId.value)) ?? []
     return success(products)
   } catch (error) {
-    console.error('GET /api/catalog/brand failed', error)
-    return failure('CAT_ERR_001', 'Upstream catalog error')
+    console.error("GET /api/catalog/brand failed", error)
+    return failure("CAT_ERR_001", "Upstream catalog error")
   }
 }

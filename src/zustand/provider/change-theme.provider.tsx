@@ -1,14 +1,21 @@
 "use client"
 
-import { ReactNode, useRef, useContext  } from "react"
-import { createThemeStore, ChangeThemeStoreApi, ChangeThemeStoreContext, type ChangeThemeStore } from "../store/change-theme.store"
+import { ReactNode, useRef, useContext } from "react"
+import {
+  createThemeStore,
+  ChangeThemeStoreApi,
+  ChangeThemeStoreContext,
+  type ChangeThemeStore,
+} from "../store/change-theme.store"
 import { useStore } from "zustand"
 
 interface ChangeThemeStoreProviderProps {
   children: ReactNode
 }
 
-export const ChangeThemeStoreProvider = ({ children }: ChangeThemeStoreProviderProps) => {
+export const ChangeThemeStoreProvider = ({
+  children,
+}: ChangeThemeStoreProviderProps) => {
   const storeRef = useRef<ChangeThemeStoreApi | null>(null)
   if (storeRef.current === null) {
     storeRef.current = createThemeStore()
@@ -27,7 +34,9 @@ export const useChangeThemeStore = <T,>(
   const changeThemeStoreContext = useContext(ChangeThemeStoreContext)
 
   if (!changeThemeStoreContext) {
-    throw new Error(`useDashboardStore must be used within DashboardStoreContext`)
+    throw new Error(
+      `useDashboardStore must be used within DashboardStoreContext`,
+    )
   }
 
   return useStore(changeThemeStoreContext, selector)
