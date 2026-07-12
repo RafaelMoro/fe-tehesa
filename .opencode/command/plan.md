@@ -20,11 +20,10 @@ Read in order:
 1. **The research document** provided by the user, or selected from `ai-research/*.md`. This is the source of truth for scope, affected files, ACs, and open questions. If the research doc is not sign-offed, stop and ask the user.
 2. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
 3. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
-4. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | sync:prompts`).
+4. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | test | test:watch | sync:prompts`).
 5. Relevant executable config if the story touches it: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.js`.
-6. CI files when release/PR behavior matters: `.github/workflows/check-label.yml` and `.github/workflows/develop-pipeline.yml`.
-
-There is no test framework configured and no `pnpm test` script. Do not invent test commands.
+6. CI files when release/PR behavior matters: `.github/workflows/check-label.yml`, `.github/workflows/develop-pipeline.yml`, and `.github/workflows/test.yml`.
+7. When the plan includes test work, also read `docs/UNIT_TESTING_GUIDELINES.md` for canonical test-authoring rules. Reference the guide instead of duplicating the policy.
 
 ## Step 2 - Verify research is plan-ready
 
@@ -96,6 +95,7 @@ Each phase needs:
   - `pnpm exec tsc --noEmit` for TypeScript-only verification.
   - `pnpm lint` for lint verification.
   - `pnpm build` for full production verification when server/client integration or data fetching changed.
+  - `pnpm test` and `pnpm test -- <relative test path>` when the story includes tests. No coverage threshold; treat the test command as the verification step.
 - **Manual** - specific user-facing steps when UI behavior is affected, including mobile/desktop when responsive behavior matters.
 
 Do not tell implementers to run `pnpm install` unless the plan intentionally changes dependencies.
@@ -110,7 +110,7 @@ There is no test runner configured. Add a table like this and keep it honest:
 | `src/shared/lib/global.lib.ts`     | Strapi variables, return shapes, error behavior in scope        | `pnpm exec tsc --noEmit` + targeted manual data check |
 | `src/app/api/preferences/route.ts` | required theme payload, success/error response shape if touched | manual API call or integration check + `pnpm build`   |
 
-If the story explicitly adds a test framework, plan only the minimum test setup required by that story. Otherwise, do not invent Jest, Testing Library, Vitest, Playwright, or test directories.
+If the story explicitly adds a test framework, plan only the minimum test setup required by that story. Jest 30 + Testing Library are already configured; do not reinvent them. Do not invent Vitest, Playwright, or other test frameworks.
 
 Describe **what** to verify, not full test implementations.
 
@@ -152,5 +152,5 @@ Do **not** start implementing. Wait for human sign-off.
 - Do not include full code implementations.
 - Do not repeat the research doc wholesale; link to it and plan the work.
 - Do not add phases for tooling-only concerns like formatting, CI release, changelog, or version bumps.
-- Do not assume TanStack Query, Flowbite, Jest, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo.
+- Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo. Jest and Testing Library are present.
 - Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work; the develop merge workflow handles release automation.

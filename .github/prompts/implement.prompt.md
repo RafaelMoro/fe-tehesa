@@ -23,9 +23,8 @@ Read in order:
 4. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 5. `package.json` - dependencies and scripts.
 6. The research doc the plan references, usually `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md`, for ACs and assumptions.
-7. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
-
-There is no test framework configured and no `pnpm test` script. Do not invent test commands.
+7. When the approved plan includes test work, also read `docs/UNIT_TESTING_GUIDELINES.md` for canonical test-authoring rules. Reference the guide instead of duplicating the policy.
+8. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
 
 ## Step 2 - Confirm plan-ready
 
@@ -70,14 +69,13 @@ These are non-negotiable. If the plan violates one, stop and ask because the pla
 
 ## Step 5 - Verification
 
-There is no configured test runner. Follow the planning doc's verification section and use only real commands:
+Follow the planning doc's verification section and use only real commands:
 
 - `pnpm exec tsc --noEmit` for TypeScript-only verification.
 - `pnpm lint` for lint verification.
 - `pnpm build` for full production verification when server/client integration, routing, or data fetching changed.
+- `pnpm test -- <relative test path>` for targeted test work, then `pnpm test` for the full suite, when the plan includes tests. No coverage threshold is enforced.
 - Manual browser/API checks when UI behavior, theme persistence, or route-handler behavior changed.
-
-Do not run `pnpm test` unless the plan explicitly added a test script and framework.
 
 If verification fails, fix the implementation or adjust the plan only with user approval. Do not weaken checks, ignore failures, or claim unrun verification passed.
 
@@ -87,7 +85,8 @@ If verification fails, fix the implementation or adjust the plan only with user 
 - Run the final verification appropriate for the change. Prefer focused checks first, then broader checks when warranted:
   - `pnpm exec tsc --noEmit`
   - `pnpm lint`
-  - `pnpm build`
+  - `pnpm test` when the change touched tests
+  - `pnpm build` when production behavior changed
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
 - If you update `.opencode/command/implement.md`, sync it to `.github/prompts/implement.prompt.md` afterward with the existing sync script.
@@ -119,5 +118,5 @@ End the turn with:
 - Do not add features beyond the plan. If something seems missing, stop and ask.
 - Do not remove pre-existing console statements unless planned.
 - Do not edit `CHANGELOG.md` or package version unless explicitly asked.
-- Do not assume TanStack Query, Flowbite, Jest, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo.
+- Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo. Jest and Testing Library are present.
 - Do not run `pnpm install` or package manager changes unless the plan intentionally changes dependencies.
