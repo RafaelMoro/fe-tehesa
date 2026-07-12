@@ -1,3 +1,9 @@
+## v0.18.0 (2026-07-12)
+
+### Pull Requests
+[#23](https://github.com/RafaelMoro/fe-tehesa/pull/23) | Add UT epic and execution of Story 1 of UT: Establish the Jest Testing Foundation
+
+
 ## v0.17.0 (2026-07-12)
 
 ### Pull Requests
