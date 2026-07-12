@@ -22,7 +22,44 @@ import {
   GET_PRODUCTS_BY_NAME,
 } from "../queries/global.queries"
 
+/**
+ * Adapter error-handling contract — applies to every Apollo-backed helper below
+ * (`fetchProducts`, `fetchProductsByCategory`, `fetchProductsByBrand`,
+ * `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`).
+ *
+ * None of them wraps the Apollo call in a local try/catch. The reason is the
+ * "throw at the boundary, catch at the edge" pattern: every catalog route handler
+ * under `src/app/api/catalog/.../route.ts` already owns the single try/catch that
+ * maps any thrown error to
+ *   { success: false, code: CAT_ERR_001, message: MSG_CAT_ERR_001 }
+ * with HTTP 400, so the client sees a real failure envelope.
+ *
+ * If an adapter caught locally it would either:
+ *   - swallow the error and return `undefined` (the old `fetchProductsByCategory`
+ *     and `fetchProductsByBrand` behaviour), which the route's `?? []` then
+ *     turned into a successful empty 200 — so a Strapi outage for
+ *     category-/brand-filtered reads silently looked like "no products match",
+ *     and `fetchProductsByCategory`/`fetchProductsByBrand` had to be given
+ *     explicit `Promise<Product[]>` return types and lose their local
+ *     catch-and-log branches; OR
+ *   - duplicate the error mapping, leaving every adapter free to invent a
+ *     slightly different failure shape.
+ *
+ * Story 3 (data and API boundary coverage) normalised every adapter on the
+ * "throw at the boundary, catch at the edge" contract, so rejections from
+ * Apollo or the network now propagate consistently and become `CAT_ERR_001` at
+ * the route edge.
+ *
+ * The `?? []` on `res?.data?.<field>` is still intentional on every adapter:
+ * a successful GraphQL response with a missing/null collection field is a
+ * legitimate empty result, not a failure.
+ *
+ * If a future adapter needs a different failure shape, change the route's
+ * edge handler — do not reintroduce a local try/catch here.
+ */
+
 export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
   const client = createApolloClient()
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS,
@@ -41,6 +78,9 @@ export const fetchProductsByCategory = async (
   customId: string,
   page: number,
 ): Promise<Product[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract (was previously
+  // swallowed to undefined and turned into [] by the route's `?? []`; Story 3
+  // removed the local catch and the `?? []` so rejections reach CAT_ERR_001)
   const client = createApolloClient()
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS_BY_CATEGORY,
@@ -65,6 +105,9 @@ export const fetchProductsByBrand = async (
   brandId: string,
   page: number,
 ): Promise<Product[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract (was previously
+  // swallowed to undefined and turned into [] by the route's `?? []`; Story 3
+  // removed the local catch and the `?? []` so rejections reach CAT_ERR_001)
   const client = createApolloClient()
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS_BY_BRAND,
