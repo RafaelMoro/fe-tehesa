@@ -273,3 +273,14 @@ None. The research document records all behavioral and Strapi-contract assumptio
 - New routes, error-status redesign, malformed catalog response handling, or client response-status handling.
 - Cookie expiry/path policy, theme UI refactors, direct cookie mutation from clients, Zustand changes, and test-guidance changes.
 - Coverage thresholds, test dependencies/configuration, generated prompt changes, version bumps, changelog work, and CI workflow changes.
+
+## Plan deviation
+
+### Phase 1 deviation
+
+The plan required "real `Request` objects and the actual `_utils.ts` validation/envelope code" in every catalog route test. jsdom (the Story 1 default test environment) does not provide `Request` as a global, and `next/server` references `Request` at module-load time (the `class NextRequest extends Request` declaration in `next/dist/server/web/spec-extension/request.js`). A `setupFiles` polyfill runs too late — the import chain in `_utils.ts → next/server → request.js` resolves before any `setupFilesAfterEnv` entry executes. Two options were considered:
+
+1. Add a `Request` polyfill in `setupFiles`. Verified locally: `Request` is `undefined` in the jsdom test environment even in `setupFiles` because jsdom does not expose Node's built-in `Request`. A `setupFiles` polyfill would need to import `undici` (not installed) or use a hand-rolled minimal stub, both of which are speculative and not required by the plan.
+2. Use the `node` test environment per file with the `@jest-environment node` docblock. This is the standard Jest pattern for API route tests and matches the plan's "real `Request` objects" requirement without adding dependencies, polyfills, or `jest.setup.ts` changes. The node environment also fits every other non-component test in this story (`__tests__/shared/*`, `__tests__/theme/*`, `__tests__/preferences/*`) because they all need real `next/headers` cookies and HTTP primitives.
+
+Chosen: option 2. Every test file under `__tests__/catalog/**` and `__tests__/theme/`, `__tests__/preferences/`, and the Apollo/client suites in `__tests__/shared/` starts with `/** @jest-environment node */`. The component test from Story 1 (`__tests__/product-listing/SearchInput.test.tsx`) is unchanged and continues to run under the jsdom default. `jest.setup.ts` is unchanged.
