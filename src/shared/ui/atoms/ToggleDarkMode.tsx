@@ -13,7 +13,9 @@ export const ToggleDarkMode = () => {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
+  if (!mounted) {
+    return null
+  }
 
   const toggleDarkMode = async () => {
     const isLight = theme === "light"

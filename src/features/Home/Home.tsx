@@ -79,9 +79,15 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
       ? (BRANDS_PRODUCTS.find((b) => b.customId === next.brand)?.name ?? null)
       : null
     const filtered = allProducts.current.filter((prod) => {
-      if (term && !prod.name.toLowerCase().includes(term)) return false
-      if (categoryName && prod.category?.name !== categoryName) return false
-      if (brandName && prod.brand?.name !== brandName) return false
+      if (term && !prod.name.toLowerCase().includes(term)) {
+        return false
+      }
+      if (categoryName && prod.category?.name !== categoryName) {
+        return false
+      }
+      if (brandName && prod.brand?.name !== brandName) {
+        return false
+      }
       return true
     })
     setFilteredProducts(filtered)

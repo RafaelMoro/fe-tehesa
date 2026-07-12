@@ -21,12 +21,16 @@ export const ProductCard = ({
 
   const brandName = product?.brand?.name ?? null
   const minPriceString = useMemo(() => {
-    if (!product.minPrice) return null
+    if (!product.minPrice) {
+      return null
+    }
     return formatNumberToCurrency(product.minPrice)
   }, [product.minPrice])
 
   const maxPriceString = useMemo(() => {
-    if (!product.maxPrice) return null
+    if (!product.maxPrice) {
+      return null
+    }
     return formatNumberToCurrency(product.maxPrice)
   }, [product.maxPrice])
 
