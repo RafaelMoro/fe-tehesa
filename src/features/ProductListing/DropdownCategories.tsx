@@ -20,6 +20,9 @@ export const DropdownCategories = ({
   const selectedCategoryObj = categories.find(
     (cat) => cat.customId === selectedCategory,
   )
+  const availableCategories = categories.filter(
+    (cat) => cat.customId !== selectedCategory,
+  )
 
   return (
     <Dropdown>
@@ -35,7 +38,7 @@ export const DropdownCategories = ({
           aria-label="Dropdown menu categories"
           onAction={(key) => updateSelectedCategory(key as string)}
         >
-          {categories.map((category) => (
+          {availableCategories.map((category) => (
             <Dropdown.Item
               key={category.customId}
               id={category.customId}

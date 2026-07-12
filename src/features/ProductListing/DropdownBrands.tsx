@@ -20,6 +20,9 @@ export const DropdownBrands = ({
   const selectedBrandObj = brands.find(
     (brand) => brand.customId === selectedBrand,
   )
+  const availableBrands = brands.filter(
+    (brand) => brand.customId !== selectedBrand,
+  )
 
   return (
     <Dropdown>
@@ -35,7 +38,7 @@ export const DropdownBrands = ({
           aria-label="Dropdown menu brands"
           onAction={(key) => updateSelectedBrand(key as string)}
         >
-          {brands.map((brand) => (
+          {availableBrands.map((brand) => (
             <Dropdown.Item
               key={brand.customId}
               id={brand.customId}
