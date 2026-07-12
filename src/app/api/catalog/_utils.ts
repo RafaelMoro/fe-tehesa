@@ -29,10 +29,10 @@ export type CatalogErrorCode =
   | typeof CAT_VAL_003
   | typeof CAT_VAL_004
   | typeof CAT_VAL_005
-  | 'CAT_NF_001'
-  | 'CAT_NF_002'
-  | 'CAT_NF_003'
-  | 'CAT_ERR_001'
+  | "CAT_NF_001"
+  | "CAT_NF_002"
+  | "CAT_NF_003"
+  | "CAT_ERR_001"
 
 export type CatalogEnvelope<T> =
   | { success: true; data: T }
@@ -56,10 +56,18 @@ export const validateCatalogEnv = (): CatalogError | null => {
   return null
 }
 
-const parsePage = (raw: string | null): { ok: true; value: number } | { ok: false; error: CatalogError } => {
-  if (raw === null) return { ok: true, value: PRODUCT_PAGE_MIN }
+const parsePage = (
+  raw: string | null,
+): { ok: true; value: number } | { ok: false; error: CatalogError } => {
+  if (raw === null) {
+    return { ok: true, value: PRODUCT_PAGE_MIN }
+  }
   const value = Number.parseInt(raw, 10)
-  if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN || value > PRODUCT_PAGE_MAX) {
+  if (
+    !Number.isInteger(value) ||
+    value < PRODUCT_PAGE_MIN ||
+    value > PRODUCT_PAGE_MAX
+  ) {
     return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
   }
   return { ok: true, value }
@@ -69,7 +77,9 @@ const parsePageSize = (
   raw: string | null,
   fixedSize: number,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
-  if (raw === null) return { ok: true, value: fixedSize }
+  if (raw === null) {
+    return { ok: true, value: fixedSize }
+  }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value !== fixedSize) {
     return { ok: false, error: { code: CAT_VAL_002, message: MSG_CAT_VAL_002 } }
@@ -107,18 +117,38 @@ export const readValidatedParams = (request: Request) => {
   const url = new URL(request.url)
   const params = url.searchParams
 
-  const page = parsePage(params.get('page'))
-  const productPageSize = parsePageSize(params.get('pageSize'), PRODUCT_PAGE_SIZE)
-  const variantPageSize = parsePageSize(params.get('pageSize'), VARIANT_PAGE_SIZE)
-  const categoryId = parseTaxonomyId(params.get('categoryId'), CAT_VAL_003, MSG_CAT_VAL_003)
-  const brandId = parseTaxonomyId(params.get('brandId'), CAT_VAL_004, MSG_CAT_VAL_004)
-  const documentId = parseDocumentId(params.get('documentId'))
+  const page = parsePage(params.get("page"))
+  const productPageSize = parsePageSize(
+    params.get("pageSize"),
+    PRODUCT_PAGE_SIZE,
+  )
+  const variantPageSize = parsePageSize(
+    params.get("pageSize"),
+    VARIANT_PAGE_SIZE,
+  )
+  const categoryId = parseTaxonomyId(
+    params.get("categoryId"),
+    CAT_VAL_003,
+    MSG_CAT_VAL_003,
+  )
+  const brandId = parseTaxonomyId(
+    params.get("brandId"),
+    CAT_VAL_004,
+    MSG_CAT_VAL_004,
+  )
+  const documentId = parseDocumentId(params.get("documentId"))
 
-  return { page, productPageSize, variantPageSize, categoryId, brandId, documentId }
+  return {
+    page,
+    productPageSize,
+    variantPageSize,
+    categoryId,
+    brandId,
+    documentId,
+  }
 }
 
 export const findTaxonomyItem = (
   items: TaxonomyItem[],
   customId: string,
-): TaxonomyItem | undefined =>
-  items.find((item) => item.customId === customId)
+): TaxonomyItem | undefined => items.find((item) => item.customId === customId)

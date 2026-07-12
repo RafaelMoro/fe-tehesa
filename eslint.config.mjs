@@ -11,20 +11,12 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("prettier"),
   {
     rules: {
-      "object-curly-newline": [
-        "error",
-        {
-          ObjectExpression: { minProperties: 1, multiline: true },
-          ObjectPattern: { minProperties: 3, multiline: true },
-          ImportDeclaration: { minProperties: 3, multiline: true },
-          ExportDeclaration: { minProperties: 3, multiline: true },
-        },
-      ],
+      curly: ["error", "all"],
     },
   },
-  ...compat.extends("prettier"),
   {
     ignores: [
       "node_modules/**",
