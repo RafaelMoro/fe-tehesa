@@ -8,6 +8,7 @@ interface ProductListingProps {
   handleProductClick: (product: Product) => void
   isLocalFilterActive: boolean
   onClearLocalFilter?: () => void
+  onOpenCatalogSearch?: () => void
 }
 
 export const ProductListing = ({
@@ -15,6 +16,7 @@ export const ProductListing = ({
   handleProductClick,
   isLocalFilterActive,
   onClearLocalFilter,
+  onOpenCatalogSearch,
 }: ProductListingProps) => {
   if (products.length === 0 && isLocalFilterActive) {
     return (
@@ -24,13 +26,18 @@ export const ProductListing = ({
           ¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo
           completo.
         </p>
-        {onClearLocalFilter && (
-          <div>
+        <div className="flex flex-wrap gap-2">
+          {onOpenCatalogSearch && (
+            <Button size="sm" variant="primary" onPress={onOpenCatalogSearch}>
+              Buscar en todo el catálogo
+            </Button>
+          )}
+          {onClearLocalFilter && (
             <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
               Limpiar filtros
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     )
   }

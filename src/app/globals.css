@@ -1,3 +1,41 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 @custom-variant dark (&:is(.dark *));
+
+/*
+ * Accent remap: drive HeroUI's --accent* from DESIGN.md's green primary scale,
+ * and expose the scale as Tailwind utility tokens (text-primary-700, bg-primary-200, ...).
+ * Source: DESIGN.md (colors block + "Colors" section).
+ *   --accent                 -> primary-200 (#4DF527)  - the brand accent
+ *   --accent-foreground      -> primary-900 (#0D3401)  - on-accent text
+ *   --accent-soft-foreground -> primary-700 light / primary-200 dark - secondary text
+ *   --focus                  -> primary-200 (#4DF527)  - focus ring color
+ * --accent-hover and --accent-soft are color-mix() of --accent, so they follow automatically.
+ */
+@theme {
+  --color-primary-50: #e3ffd6;
+  --color-primary-100: #b4fe99;
+  --color-primary-200: #4df527;
+  --color-primary-300: #3bd11a;
+  --color-primary-400: #24ad02;
+  --color-primary-500: #23890c;
+  --color-primary-600: #177303;
+  --color-primary-700: #125d03;
+  --color-primary-800: #0f4804;
+  --color-primary-900: #0d3401;
+  --color-primary-950: #0f2001;
+}
+
+:root {
+  --accent: #4df527;
+  --accent-foreground: #0d3401;
+  --accent-soft-foreground: #125d03;
+  --focus: #4df527;
+}
+
+.dark {
+  --accent: #4df527;
+  --accent-foreground: #0d3401;
+  --accent-soft-foreground: #4df527;
+  --focus: #4df527;
+}

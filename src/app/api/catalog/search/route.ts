@@ -1,14 +1,13 @@
 import {
   failure,
-  findTaxonomyItem,
   readValidatedParams,
   success,
   validateCatalogEnv,
 } from "@/app/api/catalog/_utils"
-import { fetchBrands, fetchProductsByBrand } from "@/shared/lib/global.lib"
+import { fetchProductsByName } from "@/shared/lib/global.lib"
 import {
-  CAT_NF_002,
-  MSG_CAT_NF_002,
+  CAT_ERR_001,
+  MSG_CAT_ERR_001,
 } from "@/shared/constants/catalog.constants"
 
 export async function GET(request: Request) {
@@ -17,10 +16,10 @@ export async function GET(request: Request) {
     return failure(envError.code, envError.message)
   }
 
-  const { brandId, wideSearchPage, productPageSize } =
+  const { searchTerm, wideSearchPage, productPageSize } =
     readValidatedParams(request)
-  if (!brandId.ok) {
-    return failure(brandId.error.code, brandId.error.message)
+  if (!searchTerm.ok) {
+    return failure(searchTerm.error.code, searchTerm.error.message)
   }
   if (!wideSearchPage.ok) {
     return failure(wideSearchPage.error.code, wideSearchPage.error.message)
@@ -30,15 +29,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const brands = await fetchBrands()
-    if (!findTaxonomyItem(brands, brandId.value)) {
-      return failure(CAT_NF_002, MSG_CAT_NF_002)
-    }
-    const products =
-      (await fetchProductsByBrand(brandId.value, wideSearchPage.value)) ?? []
+    const products = await fetchProductsByName(
+      searchTerm.value,
+      wideSearchPage.value,
+    )
     return success(products)
   } catch (error) {
-    console.error("GET /api/catalog/brand failed", error)
-    return failure("CAT_ERR_001", "Upstream catalog error")
+    console.error("GET /api/catalog/search failed", error)
+    return failure(CAT_ERR_001, MSG_CAT_ERR_001)
   }
 }

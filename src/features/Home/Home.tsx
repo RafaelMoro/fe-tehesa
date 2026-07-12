@@ -4,16 +4,14 @@ import { useRouter } from "next/navigation"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
 import { RiInformationLine } from "@remixicon/react"
 
-import {
-  BRANDS_PRODUCTS,
-  CATEGORIES_PRODUCTS,
-  Product,
-} from "@/shared/types/global.types"
+import { Product, TaxonomyItem } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
+import { CatalogSearchDrawer } from "../CatalogSearchDrawer/CatalogSearchDrawer"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
+import { useCatalogSearch } from "./useCatalogSearch"
 import {
   catalogErrorToSpanish,
   fetchCatalog,
@@ -23,9 +21,17 @@ interface HomeProps {
   products: Product[]
   currentPage: number
   totalPages: number
+  categories: TaxonomyItem[]
+  brands: TaxonomyItem[]
 }
 
-export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
+export const Home = ({
+  products,
+  currentPage,
+  totalPages,
+  categories: initialCategories,
+  brands: initialBrands,
+}: HomeProps) => {
   const router = useRouter()
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
@@ -40,10 +46,25 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(false)
-  // State to open the drawer and get variants
+  const [categories] = useState<TaxonomyItem[]>(initialCategories)
+  const [brands] = useState<TaxonomyItem[]>(initialBrands)
+  const [catalogPage, setCatalogPage] = useState(1)
+  const [hasNextCatalogPage, setHasNextCatalogPage] = useState(false)
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const drawerState = useOverlayState()
+  const {
+    catalogSearchDrawerState,
+    activeCatalogMode,
+    catalogSearchTerm,
+    catalogMessage,
+    isInvalidCatalogSearch,
+    isLoadingCatalogSearch,
+    handleCatalogSearchTermChange,
+    handleCatalogNameSearch,
+    beginCatalogMode,
+    clearAllCatalogState,
+  } = useCatalogSearch({ products })
 
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
@@ -55,6 +76,8 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     setLocalSearchTerm("")
     setLocalCategory(null)
     setLocalBrand(null)
+    setCatalogPage(1)
+    setHasNextCatalogPage(false)
   }, [products])
 
   // Handle pagination - navigate to new page
@@ -72,11 +95,11 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
   }) => {
     const term = next.searchTerm.trim().toLowerCase()
     const categoryName = next.category
-      ? (CATEGORIES_PRODUCTS.find((c) => c.customId === next.category)?.name ??
-        null)
+      ? (categories.find((category) => category.customId === next.category)
+          ?.name ?? null)
       : null
     const brandName = next.brand
-      ? (BRANDS_PRODUCTS.find((b) => b.customId === next.brand)?.name ?? null)
+      ? (brands.find((brand) => brand.customId === next.brand)?.name ?? null)
       : null
     const filtered = allProducts.current.filter((prod) => {
       if (term && !prod.name.toLowerCase().includes(term)) {
@@ -120,20 +143,23 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     })
   }
 
-  const handleCategorySelect = async (categoryCustomId: string) => {
+  const handleCategorySelect = async (categoryCustomId: string, page = 1) => {
     try {
       setIsLoadingCategory(true)
       const categoryProducts = await fetchCatalog<Product[]>(
-        `/api/catalog/category?categoryId=${encodeURIComponent(categoryCustomId)}`,
+        `/api/catalog/category?categoryId=${encodeURIComponent(categoryCustomId)}&page=${page}`,
       )
       allProducts.current = categoryProducts
       setFilteredProducts(categoryProducts)
       setSelectedCategory(categoryCustomId)
-      // Reset brand and all local filters when a catalog-wide category is selected
       setSelectedBrand(null)
+      // Reset local filters when a catalog-wide category is selected
       setLocalSearchTerm("")
       setLocalCategory(null)
       setLocalBrand(null)
+      beginCatalogMode("category")
+      setCatalogPage(page)
+      setHasNextCatalogPage(categoryProducts.length === 50)
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error(
@@ -145,20 +171,23 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     }
   }
 
-  const handleBrandSelect = async (brandCustomId: string) => {
+  const handleBrandSelect = async (brandCustomId: string, page = 1) => {
     try {
       setIsLoadingBrand(true)
       const brandProducts = await fetchCatalog<Product[]>(
-        `/api/catalog/brand?brandId=${encodeURIComponent(brandCustomId)}`,
+        `/api/catalog/brand?brandId=${encodeURIComponent(brandCustomId)}&page=${page}`,
       )
       allProducts.current = brandProducts
       setFilteredProducts(brandProducts)
       setSelectedBrand(brandCustomId)
-      // Reset category and all local filters when a catalog-wide brand is selected
       setSelectedCategory(null)
+      // Reset local filters when a catalog-wide brand is selected
       setLocalSearchTerm("")
       setLocalCategory(null)
       setLocalBrand(null)
+      beginCatalogMode("brand")
+      setCatalogPage(page)
+      setHasNextCatalogPage(brandProducts.length === 50)
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error(
@@ -170,12 +199,59 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     }
   }
 
-  const clearFilters = () => {
-    // Local-only clear per Story 1b; does not touch catalog-wide selectedCategory/selectedBrand.
+  const handleCatalogNameSearchSubmit = async () => {
+    const results = await handleCatalogNameSearch(1)
+    if (results) {
+      allProducts.current = results
+      setFilteredProducts(results)
+      setSelectedCategory(null)
+      setSelectedBrand(null)
+      setLocalSearchTerm("")
+      setLocalCategory(null)
+      setLocalBrand(null)
+      setCatalogPage(1)
+      setHasNextCatalogPage(results.length === 50)
+    }
+  }
+
+  const clearLocalFilters = () => {
     setLocalSearchTerm("")
     setLocalCategory(null)
     setLocalBrand(null)
     setFilteredProducts(allProducts.current)
+  }
+
+  const clearWideAndLocalFilters = () => {
+    setLocalSearchTerm("")
+    setLocalCategory(null)
+    setLocalBrand(null)
+    setSelectedCategory(null)
+    setSelectedBrand(null)
+    allProducts.current = products
+    setFilteredProducts(products)
+    setCatalogPage(1)
+    setHasNextCatalogPage(false)
+    clearAllCatalogState()
+  }
+
+  const handleCatalogPageChange = async (page: number) => {
+    if (activeCatalogMode === "name") {
+      const results = await handleCatalogNameSearch(page)
+      if (results) {
+        allProducts.current = results
+        setFilteredProducts(results)
+        setCatalogPage(page)
+        setHasNextCatalogPage(results.length === 50)
+      }
+      return
+    }
+    if (activeCatalogMode === "category" && selectedCategory) {
+      await handleCategorySelect(selectedCategory, page)
+      return
+    }
+    if (activeCatalogMode === "brand" && selectedBrand) {
+      await handleBrandSelect(selectedBrand, page)
+    }
   }
 
   const handleProductClick = (product: Product) => {
@@ -191,15 +267,17 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
           <DropdownCategories
             selectedCategory={localCategory}
             updateSelectedCategory={handleLocalCategorySelect}
+            categories={categories}
             defaultLabel="Filtrar por categoría visible"
           />
           <DropdownBrands
             selectedBrand={localBrand}
             updateSelectedBrand={handleLocalBrandSelect}
+            brands={brands}
             defaultLabel="Filtrar por marca visible"
           />
           <Button
-            onPress={clearFilters}
+            onPress={clearLocalFilters}
             isDisabled={isLoadingCategory || isLoadingBrand}
           >
             Limpiar filtros
@@ -211,9 +289,9 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
               Filtrando productos visibles
               {localSearchTerm.trim() && `: "${localSearchTerm}"`}
               {localCategory &&
-                ` · ${CATEGORIES_PRODUCTS.find((c) => c.customId === localCategory)?.name ?? ""}`}
+                ` · ${categories.find((category) => category.customId === localCategory)?.name ?? ""}`}
               {localBrand &&
-                ` · ${BRANDS_PRODUCTS.find((b) => b.customId === localBrand)?.name ?? ""}`}
+                ` · ${brands.find((brand) => brand.customId === localBrand)?.name ?? ""}`}
             </span>
             <Popover>
               <Button
@@ -235,23 +313,36 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
           </div>
         )}
         <div className="flex flex-wrap gap-3 items-center mb-5">
-          <DropdownCategories
-            selectedCategory={selectedCategory}
-            updateSelectedCategory={handleCategorySelect}
-          />
-          <DropdownBrands
-            selectedBrand={selectedBrand}
-            updateSelectedBrand={handleBrandSelect}
-          />
+          <Button
+            variant="secondary"
+            onPress={catalogSearchDrawerState.open}
+            isDisabled={
+              isLoadingCategory || isLoadingBrand || isLoadingCatalogSearch
+            }
+          >
+            Buscar en todo el catálogo
+          </Button>
+          {activeCatalogMode !== null && (
+            <Button
+              variant="tertiary"
+              onPress={clearWideAndLocalFilters}
+              isDisabled={
+                isLoadingCategory || isLoadingBrand || isLoadingCatalogSearch
+              }
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </div>
       </div>
       <ProductListing
         products={filteredProducts}
         handleProductClick={handleProductClick}
         isLocalFilterActive={isLocalFilterActive}
-        onClearLocalFilter={clearFilters}
+        onClearLocalFilter={clearLocalFilters}
+        onOpenCatalogSearch={catalogSearchDrawerState.open}
       />
-      {selectedCategory === null && selectedBrand === null && (
+      {activeCatalogMode === null ? (
         <div className="w-full flex justify-center">
           <Pagination size="md">
             <Pagination.Content>
@@ -272,10 +363,56 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
             </Pagination.Content>
           </Pagination>
         </div>
+      ) : (
+        <div className="w-full flex items-center justify-center gap-3">
+          <Button
+            variant="secondary"
+            onPress={() => handleCatalogPageChange(catalogPage - 1)}
+            isDisabled={
+              catalogPage === 1 ||
+              isLoadingCatalogSearch ||
+              isLoadingCategory ||
+              isLoadingBrand
+            }
+          >
+            Anterior
+          </Button>
+          <span className="text-sm">Página {catalogPage}</span>
+          <Button
+            variant="secondary"
+            onPress={() => handleCatalogPageChange(catalogPage + 1)}
+            isDisabled={
+              !hasNextCatalogPage ||
+              isLoadingCatalogSearch ||
+              isLoadingCategory ||
+              isLoadingBrand
+            }
+          >
+            Siguiente
+          </Button>
+        </div>
       )}
       {productDetails && (
         <ProductVariantsDrawer product={productDetails} state={drawerState} />
       )}
+      <CatalogSearchDrawer
+        state={catalogSearchDrawerState}
+        searchTerm={catalogSearchTerm}
+        onSearchTermChange={handleCatalogSearchTermChange}
+        onSubmit={handleCatalogNameSearchSubmit}
+        onCategorySelect={handleCategorySelect}
+        onBrandSelect={handleBrandSelect}
+        selectedCategory={selectedCategory}
+        selectedBrand={selectedBrand}
+        categories={categories}
+        brands={brands}
+        isLoading={
+          isLoadingCatalogSearch || isLoadingCategory || isLoadingBrand
+        }
+        message={catalogMessage}
+        isInvalidSearch={isInvalidCatalogSearch}
+        onClearCatalogSearch={clearWideAndLocalFilters}
+      />
     </>
   )
 }

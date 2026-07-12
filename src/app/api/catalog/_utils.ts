@@ -7,6 +7,7 @@ import {
   CAT_VAL_003,
   CAT_VAL_004,
   CAT_VAL_005,
+  CAT_VAL_006,
   DOCUMENT_ID_MAX_LENGTH,
   DOCUMENT_ID_PATTERN,
   MSG_CAT_ENV_001,
@@ -15,9 +16,14 @@ import {
   MSG_CAT_VAL_003,
   MSG_CAT_VAL_004,
   MSG_CAT_VAL_005,
+  MSG_CAT_VAL_006_EMPTY,
+  MSG_CAT_VAL_006_LENGTH,
+  MSG_CAT_VAL_006_PATTERN,
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
   PRODUCT_PAGE_SIZE,
+  SEARCH_TERM_MAX_LENGTH,
+  SEARCH_TERM_PATTERN,
   VARIANT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
 import type { TaxonomyItem } from "@/shared/types/global.types"
@@ -29,6 +35,7 @@ export type CatalogErrorCode =
   | typeof CAT_VAL_003
   | typeof CAT_VAL_004
   | typeof CAT_VAL_005
+  | typeof CAT_VAL_006
   | "CAT_NF_001"
   | "CAT_NF_002"
   | "CAT_NF_003"
@@ -73,6 +80,19 @@ const parsePage = (
   return { ok: true, value }
 }
 
+const parseWideSearchPage = (
+  raw: string | null,
+): { ok: true; value: number } | { ok: false; error: CatalogError } => {
+  if (raw === null) {
+    return { ok: true, value: PRODUCT_PAGE_MIN }
+  }
+  const value = Number.parseInt(raw, 10)
+  if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN) {
+    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+  }
+  return { ok: true, value }
+}
+
 const parsePageSize = (
   raw: string | null,
   fixedSize: number,
@@ -82,9 +102,18 @@ const parsePageSize = (
   }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value !== fixedSize) {
-    return { ok: false, error: { code: CAT_VAL_002, message: MSG_CAT_VAL_002 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_002,
+        message: MSG_CAT_VAL_002(fixedSize, value),
+      },
+    }
   }
-  return { ok: true, value }
+  return {
+    ok: true,
+    value,
+  }
 }
 
 const parseTaxonomyId = (
@@ -113,11 +142,43 @@ const parseDocumentId = (
   return { ok: true, value: raw }
 }
 
+const parseSearchTerm = (
+  raw: string | null,
+): { ok: true; value: string } | { ok: false; error: CatalogError } => {
+  if (raw === null) {
+    return {
+      ok: false,
+      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_EMPTY },
+    }
+  }
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) {
+    return {
+      ok: false,
+      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_EMPTY },
+    }
+  }
+  if (trimmed.length > SEARCH_TERM_MAX_LENGTH) {
+    return {
+      ok: false,
+      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_LENGTH },
+    }
+  }
+  if (!SEARCH_TERM_PATTERN.test(trimmed)) {
+    return {
+      ok: false,
+      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN },
+    }
+  }
+  return { ok: true, value: trimmed }
+}
+
 export const readValidatedParams = (request: Request) => {
   const url = new URL(request.url)
   const params = url.searchParams
 
   const page = parsePage(params.get("page"))
+  const wideSearchPage = parseWideSearchPage(params.get("page"))
   const productPageSize = parsePageSize(
     params.get("pageSize"),
     PRODUCT_PAGE_SIZE,
@@ -137,14 +198,17 @@ export const readValidatedParams = (request: Request) => {
     MSG_CAT_VAL_004,
   )
   const documentId = parseDocumentId(params.get("documentId"))
+  const searchTerm = parseSearchTerm(params.get("q"))
 
   return {
     page,
+    wideSearchPage,
     productPageSize,
     variantPageSize,
     categoryId,
     brandId,
     documentId,
+    searchTerm,
   }
 }
 

@@ -20,9 +20,13 @@ export async function GET(request: Request) {
     return failure(envError.code, envError.message)
   }
 
-  const { categoryId, productPageSize } = readValidatedParams(request)
+  const { categoryId, wideSearchPage, productPageSize } =
+    readValidatedParams(request)
   if (!categoryId.ok) {
     return failure(categoryId.error.code, categoryId.error.message)
+  }
+  if (!wideSearchPage.ok) {
+    return failure(wideSearchPage.error.code, wideSearchPage.error.message)
   }
   if (!productPageSize.ok) {
     return failure(productPageSize.error.code, productPageSize.error.message)
@@ -33,7 +37,9 @@ export async function GET(request: Request) {
     if (!findTaxonomyItem(categories, categoryId.value)) {
       return failure(CAT_NF_001, MSG_CAT_NF_001)
     }
-    const products = (await fetchProductsByCategory(categoryId.value)) ?? []
+    const products =
+      (await fetchProductsByCategory(categoryId.value, wideSearchPage.value)) ??
+      []
     return success(products)
   } catch (error) {
     console.error("GET /api/catalog/category failed", error)
