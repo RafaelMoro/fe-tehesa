@@ -226,3 +226,17 @@ None. Every research question is answered or deferred to a later story.
 - Include `matchMedia` as the sole global shim because the signed-off research explicitly requires it for mobile-aware tests; no additional shim is inferred from HeroUI.
 - Include CI coverage execution because the signed-off research explicitly answered yes, while keeping release and label workflows separate.
 - Use two proof tests rather than one: the component test proves jsdom, HeroUI, `jest-dom`, and `user-event`; the pure test isolates TypeScript and alias resolution at negligible scope.
+
+## Plan deviation notes
+
+### Phase 2 deviation
+
+The plan said to "preserve `next.config.ts`" and not add "speculative transforms or module mocks". Two changes were required for the foundation to work because `@heroui/react` v3 is ESM-only and uses a strict `exports` field with only an `import` entry (no `default`/`require`).
+
+1. `next.config.ts`: added `transpilePackages` for the HeroUI + React-Aria + Radix + Framer-Motion + tailwind-variants + input-otp + `@jridgewell/*` + `@cspotcode/*` ecosystem. Without this, SWC ignores ESM in `node_modules` and Jest fails with `SyntaxError: Unexpected token 'export'` on `.mjs` files like `@jridgewell/sourcemap-codec`. The plan's preserve rule assumed a CJS HeroUI; v3 is ESM-only.
+2. `jest.config.ts`: added `testEnvironmentOptions.customExportConditions: ["node", "node-addons"]` and a `moduleNameMapper` entry mapping `^@heroui/react$` to its `dist/index.js` file. The package's `exports['.']` has only `import` and `types` (no `default`/`require`), so Jest's CJS resolver cannot find it via package-name lookup — the file-path mapping bypasses the `exports` field and lets the SWC transform handle the ESM.
+
+Two supporting touches outside the plan's explicit change list:
+
+- `tsconfig.json`: added `"@__tests__/*": ["./__tests__/*"]` to `paths` so TypeScript can resolve the test helper the same way Jest does. Without this, `pnpm exec tsc --noEmit` fails on the proof test even though the test passes.
+- `eslint.config.mjs`: added `coverage/**` to `ignores`. The generated coverage report tripped a false `no-unused-vars` warning on a third-party `block-navigation.js` chunk.
