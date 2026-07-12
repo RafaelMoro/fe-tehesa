@@ -183,6 +183,13 @@ Acceptance criteria:
   component should remain real where it is rendered.
 - Environment-sensitive modules may need isolated module loading because
   `src/app/apollo-client.ts` reads environment variables at module evaluation time.
+- The Jest config is `jest.config.ts`; keep `ts-node` in dev dependencies so the
+  TypeScript config loads.
+- The default `pnpm test` script runs Jest once with coverage:
+  `jest --coverage --coverageReporters=text-summary --coverageReporters=lcov`. A
+  separate `pnpm test:watch` script wraps `jest --watch` for local development.
+- The Jest config excludes `node_modules`, `.next`, and any Storybook or test-output
+  directories that may appear later.
 
 ### Next.js Constraint
 
@@ -194,20 +201,29 @@ pure behavior only if implementation later makes that behavior independently tes
 or left to a future end-to-end layer. This epic should not refactor the page solely to
 increase a coverage number.
 
+The page parameter contract is "string at the boundary, numeric only." `searchParams`
+exposes a string. The server component parses it with a strict numeric check, the
+same regex used by the API validator, and treats any non-numeric value as missing so
+the validator and the page handler share a definition of "invalid." Numeric prefixes
+such as `page=1abc` are not allowed.
+
 ### Affected Areas
 
 - Routes/pages: `src/app/page.tsx` is an unsupported async Server Component test target;
   `layout.tsx` and `providers.tsx` are low-value framework composition; test
   `apollo-client.ts` only at its Strapi URI/token boundary.
-- API handlers: prioritize `src/app/api/catalog/_utils.ts`, then representative route
-  wiring under `src/app/api/catalog/**/route.ts` and theme input handling in
-  `src/app/api/preferences/route.ts`. Invoke handlers with real `Request` objects and
-  avoid repeating the shared validation matrix in every route.
+- API handlers: every catalog route gets its own folder under
+  `__tests__/catalog/<route>/` with a per-route fixtures file, a request builder,
+  and case files. Cover `src/app/api/catalog/_utils.ts` for shared validation and
+  every route in `src/app/api/catalog/**/route.ts` for wiring, envelope shape, and
+  upstream failure mapping. Cover `src/app/api/preferences/route.ts` for input
+  allowlist (light/dark only) and cookie persistence.
 - Feature UI: prioritize `src/features/Home/{Home.tsx,useCatalogSearch.ts}` and
   `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`; cover ProductListing
   controls and `CatalogSearchDrawer` through integrated behavior where practical.
 - Shared product card: cover `src/components/ProductCard.tsx` through listing flows;
-  add focused coverage only for explicit zero-value or responsive requirements.
+  add a focused test for the zero-value visibility contract (`price === 0` and
+  `variantCount === 0` are visible).
 - Shared code: prioritize `src/shared/utils/catalog-api.utils.ts`,
   `src/shared/utils/global.utils.ts`, `src/shared/lib/global.lib.ts`, and
   `src/shared/ui/atoms/ToggleDarkMode.tsx`. Constants, types, and GraphQL ASTs do not
@@ -325,6 +341,26 @@ shared setup.
   real contract is named. Mocks must still match the real module export shape.
 - Prefer behavior assertions over internal state, hook call counts, or component props.
 
+### Test Placement
+
+All tests live under a root `__tests__/` directory at the same level as `src/`.
+Route validation tests live under `__tests__/catalog/<route>/` where `<route>` mirrors
+the folder under `src/app/api/catalog/`. Each per-route folder holds:
+
+- A fixtures file (e.g. `fixtures.ts`) with realistic request URLs, expected
+  envelopes, and mock helper functions for Apollo and `next/headers`.
+- A request builder (e.g. `makeRequest.ts`) that returns a real `Request` for the
+  target route.
+- Case files (e.g. `validation.test.ts`, `envelope.test.ts`, `upstream.test.ts`)
+  that cover behavior per route.
+
+Non-route tests follow `__tests__/<area>/<file>.test.tsx`, e.g.
+`__tests__/home/Home.test.tsx`, `__tests__/home/useCatalogSearch.test.tsx`,
+`__tests__/variants/ProductVariantsDrawer.test.tsx`,
+`__tests__/theme/ToggleDarkMode.test.tsx`. Shared fixtures and wrappers exist only
+after at least two tests need them; do not create a general test-utils framework
+in advance.
+
 ### Existing Patterns to Follow
 
 - Preserve the App Router server/client split and do not import `"use server"` modules
@@ -345,18 +381,25 @@ shared setup.
   contact Strapi or depend on developer `.env.local` values.
 - Next's Jest integration can load environment files. Tests should set and restore only
   variables needed by each scenario to avoid local-environment coupling.
-- Prompt synchronization uses `pnpm sync:prompts`, but creating a skill does not require
-  editing `.opencode/command/research.md`.
-- The skill belongs under the repository's established OpenCode configuration area;
-  its exact registration pattern must be confirmed during implementation because no
-  project-local skill files are currently visible in the ordinary file inventory.
+- Prompt synchronization uses `pnpm sync:prompts`. The unit-test command mirrors
+  `.opencode/command/<unit-test>.md` to `.github/prompts/<unit-test>.prompt.md`;
+  edit the opencode command first and run `pnpm sync:prompts` to keep the GitHub
+  prompt in sync.
+- The skill file lives at `.opencode/skills/<skill-name>/SKILL.md`. Its body must
+  load `docs/UNIT_TESTING_GUIDELINES.md` as the source of truth and mirror the
+  rule set in condensed form. Avoid duplicating long rule lists in the skill so
+  the file stays a short entry point.
+- The unit-test command file lives at `.opencode/command/<unit-test>.md` and is
+  loaded by GitHub Copilot. Its instructions should reference the same Markdown
+  guide and the same skill.
 
 ### Verification Rules
 
 During implementation, use:
 
 - `pnpm test -- <relative path>` while iterating on a specific test file.
-- `pnpm test` for the full suite.
+- `pnpm test` for the full single-run suite with coverage output.
+- `pnpm test:watch` for local development.
 - `pnpm lint` for source and test lint rules.
 - `pnpm exec tsc --noEmit` for standalone TypeScript verification.
 - `pnpm build` for final Next production compatibility when environment requirements
@@ -365,9 +408,10 @@ During implementation, use:
 Research itself must not run tests, builds, installs, or mutate package files. None were
 run during this phase.
 
-CI currently validates PR labels and release behavior but does not run lint, build, or
-tests. Whether the test suite becomes a required GitHub Actions check is not specified
-and remains an open verification decision.
+CI must run the test job on every pull request and on merges to `develop`. The job
+uses Node 22, runs `pnpm install --frozen-lockfile`, then `pnpm lint` and
+`pnpm test --coverage`, and uploads the lcov coverage artifact. The PR label
+enforcement workflow remains unchanged.
 
 ### Edge Cases and Constraints
 
@@ -376,15 +420,25 @@ and remains an open verification decision.
 - Catalog-wide filtered pagination infers another page when exactly 50 results return.
 - Search terms are trimmed, capped at 100 characters, and allowlisted for Unicode
   letters/numbers plus selected punctuation.
-- Current integer parsing accepts numeric prefixes such as `1abc`; tests should first
-  capture the intended contract rather than silently bless or change this behavior.
+- The page parameter contract is "string at the boundary, numeric only" everywhere
+  it appears (`src/app/page.tsx`, `_utils.ts`, and any future admin tooling).
+  Numeric prefixes such as `1abc` are invalid.
 - Category and brand lists used for API validation come from live Strapi taxonomy.
 - Category and brand server helpers currently swallow Apollo errors and return
-  `undefined`; route behavior around this case needs an explicit expected contract.
+  `undefined`. The route must convert a falsy or absent result into
+  `CAT_ERR_001`; tests assert the envelope and status code, not the helper
+  implementation detail.
 - Local search filters only the current working set; catalog-wide search calls the API.
 - Only one catalog-wide mode is active at a time, while local filters stack.
-- Theme defaults differ: next-themes defaults to dark while cookie retrieval defaults
-  to light when the cookie is absent.
+- Theme defaults converge to light: `NextThemesProvider` must use
+  `defaultTheme="light"` and the cookie helper returns `"light"` when the cookie is
+  absent.
+- `/api/preferences` must accept only `light` or `dark`; any other value yields
+  a 400 with a `PRF_VAL_001`-family code.
+- Zero prices and zero variant counts are visible in `ProductCard`; the hidden-zero
+  guard must be removed and tested.
+- Catalog category/brand failures must surface a visible Spanish error message,
+  not just a console log; the unit test for that feedback is in scope.
 - Product image support is unfinished and should remain outside this testing epic.
 - HeroUI overlays may render in portals and require jsdom browser API shims.
 - Tests must not rely on the order of unrelated asynchronous state updates.
@@ -398,103 +452,48 @@ and remains an open verification decision.
 - `AppRouterContextProviderMock` and `QueryProviderMock` are external concepts, not
   existing project assets.
 - TanStack Query guidance is inapplicable to current production code.
-- Risk-based coverage yields more value by testing `_utils.ts` once and route wiring
-  selectively than by repeating validation matrices across seven routes.
+- Per-route validation folders are needed because each route composes different
+  parsers, different upstream calls, and different success envelopes; shared
+  validation in `_utils.ts` is not the only behavior under test.
+- The current page-parameter contract accepts `1abc`; the API contract must
+  change to "string at the boundary, numeric only" and the implementation story
+  must update the validator and the server component together.
+- The category/brand upstream failure contract must change to `CAT_ERR_001`
+  rather than a successful empty list; the implementation story must update the
+  route handlers and adjust the server helpers or wrap them in the route.
+- The default theme is light, which means `NextThemesProvider` must change from
+  its current `defaultTheme="dark"`. Implementation must update the layout and
+  document the decision in `REPO_CONTEXT.md`.
+- `/api/preferences` must reject non-{light, dark} values with a 400 and a
+  `PRF_VAL_001`-family code; the implementation story adds the allowlist constant.
+- `ProductCard` must stop hiding zero prices and zero variant counts; the
+  implementation story removes the truthiness guard and adds a focused test.
+- The implementation must surface category/brand failures as a visible Spanish
+  error message; the test lives in Story 4.
+- The CI test job is new; current workflows only enforce release labels and
+  post-merge release tasks.
 - No broadly useful verified architecture fact beyond testing scope was added to
-  `REPO_CONTEXT.md`; that file should be updated after the testing foundation actually
-  exists, not during research.
+  `REPO_CONTEXT.md`; that file should be updated after the testing foundation
+  actually exists, not during research.
 
 ## Open Questions
 
-### Testing Scope
-
-I: Question: Should route coverage include every catalog route or one representative
-route per distinct behavior pattern?
-Status: pending
-Context: Shared validation is centralized in `_utils.ts`; testing every route for every
-invalid parameter would duplicate expectations.
-
-II: Question: Should current numeric-prefix parsing such as `page=1abc` be accepted as
-existing behavior or treated as invalid input?
-Status: pending
-Context: Both catalog validation and `src/app/page.tsx` use `Number.parseInt`.
-
 ### Data and Strapi Contract
-
-I: Question: When category or brand Apollo calls fail, should the route return a
-`CAT_ERR_001` failure or a successful empty product list?
-Status: pending
-Context: `fetchProductsByCategory` and `fetchProductsByBrand` catch errors and return
-`undefined`, unlike the other server adapters.
 
 II: Question: Are query document and variable assertions sufficient for the Strapi
 adapter, given that no schema fixture is available?
 Status: pending
+Context: Without a schema, tests can assert variables, GraphQL operation names, and
+response shapes, but cannot verify field selection, type compatibility, or null-data
+fallbacks at the schema level. The question is whether the team accepts this coverage
+or wants a future fixture (MSW, schema snapshot, or a recorded response) to lift
+confidence further.
 
 ### UI and Product Decisions
-
-I: Question: Are zero-valued product prices and variant counts expected to be visible?
-Status: pending
-Context: `ProductCard` currently hides zero values through truthiness checks; tests
-should not define a product rule accidentally.
-
-II: Question: Should catalog category/brand failures remain console-only, or is visible
-error feedback required before those flows receive UI tests?
-Status: pending
 
 III: Question: Should tests cover responsive `useMediaQuery` branches even though the
 hook intentionally does not subscribe to viewport changes?
 Status: pending
-
-### Theme and Persistence
-
-I: Question: Which absent-preference default is authoritative: next-themes dark or the
-cookie helper's light default?
-Status: pending
-Context: Tests can preserve current behavior, but they cannot resolve the product-level
-inconsistency.
-
-II: Question: Should `/api/preferences` reject values other than `light` and `dark`?
-Status: pending
-Context: The current route and cookie helper accept a string without a documented
-runtime allowlist.
-
-### Test Infrastructure
-
-I: Question: Should Jest configuration use TypeScript and retain `ts-node`, or use an
-ESM JavaScript config and omit `ts-node`?
-Status: pending
-Context: Both are viable; the smallest dependency set favors JavaScript configuration,
-while the supplied and official Next list assumes TypeScript configuration.
-
-II: Question: Should tests be co-located with source files or stored under a root
-`__tests__` directory?
-Status: pending
-
-III: Question: What filename should hold the repository unit-testing guide?
-Status: pending
-Context: No testing-doc convention currently exists.
-
-IV: Question: Should the OpenCode skill contain the full rules or remain a short entry
-point that instructs agents to load the Markdown guide?
-Status: pending
-Context: A short skill avoids two sources of truth.
-
-### Verification and CI
-
-I: Question: Should `pnpm test` run once or in watch mode by default?
-Status: pending
-Context: A single-run default is more predictable for CI and agents; a separate watch
-script can be added only if developers request it.
-
-II: Question: Should this epic add a GitHub Actions test job, or is local verification
-sufficient for the initial foundation?
-Status: pending
-Context: Current workflows only enforce release labels and post-merge release tasks.
-
-III: Question: Is a coverage report desired without enforcing a percentage threshold?
-Status: pending
-Context: Risk-based coverage was selected; percentages can incentivize low-value tests.
 
 ## Answered Questions
 
@@ -522,21 +521,169 @@ Status: answered
 Answer: Adapt only when applicable. Add minimal router support for current Next usage;
 do not add TanStack Query infrastructure unless production adopts it.
 
+### Testing Scope
+
+I: Question: Should route coverage include every catalog route or one representative
+route per distinct behavior pattern?
+Status: answered
+Answer: Create a dedicated folder for route validation and test every catalog route.
+Use `__tests__/catalog/<route-name>/...` so each route owns a folder for shared
+fixtures, request builders, and case files. The path is independent of the broader
+`__tests__` layout because route validation has its own test data and helpers.
+Context: Per-route coverage is justified because each route composes different parsers,
+different upstream calls, and different success envelopes; the shared validation in
+`_utils.ts` is not the only behavior under test.
+
+II: Question: Should current numeric-prefix parsing such as `page=1abc` be accepted as
+existing behavior or treated as invalid input?
+Status: answered
+Answer: The API contract accepts a string at the boundary, but the validator must
+reject any non-numeric content. `page=1abc` is invalid; the route must return
+`CAT_VAL_001`. The `src/app/page.tsx` server-side coercion is also treated as a
+string at the boundary and parsed through a numeric-only path so the same rule
+holds end-to-end.
+Context: Implementation should switch the validation to a strict numeric regex or
+equivalent; `Number.parseInt` is not acceptable for the public API contract.
+
+### Data and Strapi Contract
+
+I: Question: When category or brand Apollo calls fail, should the route return a
+`CAT_ERR_001` failure or a successful empty product list?
+Status: answered
+Answer: Return `CAT_ERR_001` for any category/brand upstream failure. The route
+handler must detect a falsy or absent product result and wrap it in
+`failure(CAT_ERR_001, MSG_CAT_ERR_001)`. This requires `fetchProductsByCategory` and
+`fetchProductsByBrand` to either re-throw, return a sentinel, or be wrapped by the
+route; the route-level contract takes precedence.
+Context: Tests will assert the envelope and status code rather than the helper
+implementation detail.
+
+II: Question: Are query document and variable assertions sufficient for the Strapi
+adapter, given that no schema fixture is available?
+Status: pending
+Context: Implementation should consider MSW or recorded response fixtures in a later
+story if variable assertions prove insufficient.
+
+### UI and Product Decisions
+
+I: Question: Are zero-valued product prices and variant counts expected to be visible?
+Status: answered
+Answer: Zero prices and zero variant counts must be visible in the product card.
+This is intentional: hidden zeros would hide catalog mistakes. Update `ProductCard`
+to render zero as a real value (e.g. `0,00 €` and `0 variantes`) and remove the
+truthiness guard.
+Context: The unit tests must assert visibility for `price === 0` and
+`variantCount === 0` so future regressions reintroducing the hidden-zero behavior
+fail.
+
+II: Question: Should catalog category/brand failures remain console-only, or is visible
+error feedback required before those flows receive UI tests?
+Status: answered
+Answer: Add visible error feedback. Replace the current `console.error` fallback in
+`Home.tsx` with a Spanish message surfaced through the catalog search drawer or a
+dedicated error region. The unit test for that feedback is in scope for Story 4.
+Context: The exact placement is a Story 4 implementation decision; the requirement to
+expose a visible message and cover it with a test is locked in here.
+
+### Theme and Persistence
+
+I: Question: Which absent-preference default is authoritative: next-themes dark or the
+cookie helper's light default?
+Status: answered
+Answer: Light is the authoritative default. `NextThemesProvider` must use
+`defaultTheme="light"`, and the cookie helper already returns `"light"` when the
+cookie is absent, so the two paths converge. Implementation should align the layout
+configuration and document the decision in `REPO_CONTEXT.md`.
+Context: Tests assert the resulting theme class is `light` on first render with no
+cookie and after a cleared cookie.
+
+II: Question: Should `/api/preferences` reject values other than `light` and `dark`?
+Status: answered
+Answer: Yes. Reject any other value with a 400 response and a `PRF_VAL_001` (or
+equivalent) code, and add an allowlist constant. The route must validate the request
+body, the cookie helper must accept only `light` or `dark`, and unit tests must cover
+both the accept and reject paths.
+Context: New error code lives next to the catalog `CAT_*` family, e.g.
+`src/shared/constants/preferences.constants.ts`.
+
+### Test Infrastructure
+
+I: Question: Should Jest configuration use TypeScript and retain `ts-node`, or use an
+ESM JavaScript config and omit `ts-node`?
+Status: answered
+Answer: TypeScript `jest.config.ts`, retain `ts-node`. The existing project is
+TypeScript-first; matching the file extension aligns with `tsconfig.json` and the
+Next.js official guide.
+
+II: Question: Should tests be co-located with source files or stored under a root
+`__tests__` directory?
+Status: answered
+Answer: A single root `__tests__` directory next to `src` holds all tests. The
+catalog route validation folder lives under `__tests__/catalog/<route>/` and
+mirrors the route layout; other tests follow `__tests__/<area>/<file>.test.tsx`.
+Co-located tests are out of scope to keep ownership simple.
+
+III: Question: What filename should hold the repository unit-testing guide?
+Status: answered
+Answer: `docs/UNIT_TESTING_GUIDELINES.md`, modeled after
+`docs/IMPLEMENTATION_GUIDELINES.md`. It is the single source of truth.
+
+IV: Question: Should the OpenCode skill contain the full rules or remain a short entry
+point that instructs agents to load the Markdown guide?
+Status: answered
+Answer: The skill is a short entry point that loads `docs/UNIT_TESTING_GUIDELINES.md`.
+The skill's `SKILL.md` mirrors the same content in condensed form to satisfy
+context-limited agents, but the canonical rules live in the Markdown file. The
+unit-test command references the same file.
+
+### Verification and CI
+
+I: Question: Should `pnpm test` run once or in watch mode by default?
+Status: answered
+Answer: Run once with coverage output. Use a Jest config that prints a coverage
+table and a summary, and expose `pnpm test` (single run) and `pnpm test:watch` (watch
+mode) as separate scripts. The default `pnpm test` is the non-watch variant.
+
+II: Question: Should this epic add a GitHub Actions test job, or is local verification
+sufficient for the initial foundation?
+Status: answered
+Answer: Add a GitHub Actions test job. A new workflow (e.g.
+`.github/workflows/test.yml`) installs dependencies with pnpm on Node 22, runs
+`pnpm install --frozen-lockfile`, `pnpm lint`, and `pnpm test --coverage`, and
+uploads the coverage artifact. The job runs on pull requests and on merges to
+`develop`. PR label enforcement remains the responsibility of the existing
+`check-label.yml` workflow.
+
+III: Question: Is a coverage report desired without enforcing a percentage threshold?
+Status: answered
+Answer: Emit coverage without enforcing a percentage. The CI job uploads the
+coverage report; the README and the testing guide point to it. Adding a threshold
+can be revisited later.
+
 ## Assumptions
 
 - Jest is required rather than Vitest because the requested dependencies explicitly
   select Jest and Next provides first-party configuration support.
-- Risk-based coverage does not require every presentational component to have a direct
-  test file.
-- The testing guide and skill are implementation deliverables, not files to create in
-  this research phase.
-- No production behavior should be changed merely to make a test pass; discovered bugs
-  require explicit acceptance decisions or separate fixes.
-- Existing internal components will render as part of integration-oriented component
-  tests rather than being replaced with project-local mocks.
-- Network, cookie, router, and unavailable browser APIs remain valid mock boundaries.
-- A future implementation may add small shared test helpers only after repeated use
-  demonstrates a need.
+- Risk-based coverage still benefits from per-route folders and visible-zero
+  product tests because those behaviors are explicitly out-of-scope for the
+  presentational components that the rest of the suite covers.
+- The testing guide and skill are implementation deliverables, not files to create
+  in this research phase. The guide's filename is fixed to
+  `docs/UNIT_TESTING_GUIDELINES.md`; the skill and command load it as the source
+  of truth.
+- Several production behaviors must change to make the test contract enforceable:
+  page parameter parsing, the default theme, the `/api/preferences` allowlist, the
+  `ProductCard` zero-value guard, and the visible-error feedback for
+  category/brand failures. These are pre-conditions for the test, not scope
+  creep; the implementation stories own them.
+- No additional production behavior should be changed merely to make a test pass
+  beyond the pre-conditions above.
+- Existing internal components will render as part of integration-oriented
+  component tests rather than being replaced with project-local mocks.
+- Network, cookie, router, and unavailable browser APIs remain valid mock
+  boundaries.
+- A future implementation may add small shared test helpers only after repeated
+  use demonstrates a need; no shared test-utils module is created up front.
 
 ## External References
 
@@ -548,7 +695,14 @@ do not add TanStack Query infrastructure unless production adopts it.
 ## Research Outcome
 
 The epic is feasible with the current stack. The proposed dependencies are generally
-fit, with one required addition (`@testing-library/user-event`) and one conditional
-dependency (`ts-node`). The shortest reliable path is a minimal `next/jest` foundation,
-focused boundary and state tests, no TanStack Query scaffolding, no internal component
-mocks, and one Markdown guide used as the source of truth by a small dedicated skill.
+fit, with one required addition (`@testing-library/user-event`) and `ts-node` retained
+for the TypeScript Jest config. The shortest reliable path is a minimal `next/jest`
+foundation in `jest.config.ts`, per-route validation folders under
+`__tests__/catalog/<route>/`, focused boundary and state tests, no TanStack Query
+scaffolding, no internal component mocks, and one Markdown guide
+(`docs/UNIT_TESTING_GUIDELINES.md`) used as the source of truth by a small dedicated
+skill and a unit-test command. Several pre-existing behaviors must change to make
+the test contract enforceable: page parsing, the default theme, the preferences
+allowlist, the `ProductCard` zero-value guard, and visible category/brand error
+feedback. The CI workflow gains a dedicated test job that runs lint and coverage
+without enforcing a percentage threshold.
