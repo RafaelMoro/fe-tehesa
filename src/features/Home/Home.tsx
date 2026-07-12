@@ -249,6 +249,7 @@ export const Home = ({
         handleProductClick={handleProductClick}
         isLocalFilterActive={isLocalFilterActive}
         onClearLocalFilter={clearFilters}
+        onOpenCatalogSearch={catalogSearchDrawerState.open}
       />
       {activeCatalogMode === null && (
         <div className="w-full flex justify-center">
