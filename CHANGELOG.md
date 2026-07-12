@@ -1,3 +1,9 @@
+## v0.17.0 (2026-07-12)
+
+### Pull Requests
+[#21](https://github.com/RafaelMoro/fe-tehesa/pull/21) | Story 1c:  Add Catalog-Wide Search Drawer
+
+
 ## v0.16.0 (2026-07-12)
 
 ### Pull Requests
