@@ -148,15 +148,22 @@ Follow Story 1a architecture:
 Proposed GraphQL shape, subject to implementation-time confirmation from existing Strapi behavior:
 
 ```graphql
-query GetProductsByName($filters: ProductFiltersInput, $pagination: PaginationArg) {
+query GetProductsByName(
+  $filters: ProductFiltersInput
+  $pagination: PaginationArg
+) {
   products(filters: $filters, pagination: $pagination) {
     name
     minPrice
     maxPrice
     documentId
     variantCount
-    category { name }
-    brand { name }
+    category {
+      name
+    }
+    brand {
+      name
+    }
   }
 }
 ```
