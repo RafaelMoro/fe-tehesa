@@ -58,7 +58,27 @@ Acceptance criteria:
 5. No TanStack Query dependency or `QueryProviderMock` is introduced because the
    repository does not use TanStack Query.
 
-### Story 2: Protect Data and API Boundaries
+### Story 2: Publish and Enforce Unit-Test Guidance
+
+Description: add durable instructions for humans and agents creating future tests.
+Landing this story before authoring tests ensures the dependency decisions, mock
+boundaries, and project-specific rules are captured in one source of truth before
+any test code references them.
+
+Acceptance criteria:
+
+1. A repository Markdown file documents test placement, commands, query priorities,
+   interaction rules, mock boundaries, typing rules, and known Next/HeroUI concerns.
+2. A dedicated OpenCode unit-testing skill references or mirrors the approved guide
+   without conflicting duplicate rules.
+3. Router support is documented as conditional and provides `push` as `jest.fn()`;
+   no nonexistent `__tests__/home.test.tsx` is cited as a repository reference.
+4. Query-provider guidance is explicitly conditional on TanStack Query being added
+   in future, rather than introducing unused infrastructure now.
+5. The guide preserves intentional `it.skip()` and `test.skip()` calls unless a task
+   explicitly requests fixing those tests.
+
+### Story 3: Protect Data and API Boundaries
 
 Description: add focused tests around catalog validation, response envelopes,
 client fetch handling, Strapi query adapters, and theme cookie persistence.
@@ -75,10 +95,11 @@ Acceptance criteria:
 5. External calls are mocked at the network, Apollo client, or Next cookie boundary;
    internal components and pure utilities remain real.
 
-### Story 3: Protect Critical Client Behavior
+### Story 4: Protect Critical Client Behavior
 
 Description: test the highest-risk state transitions and user-visible catalog and
-theme behavior through real component trees where practical.
+theme behavior through real component trees where practical. This is sequenced last
+because the guidance from Story 2 and the boundaries from Story 3 are its inputs.
 
 Acceptance criteria:
 
@@ -90,23 +111,6 @@ Acceptance criteria:
    and close cleanup.
 4. Theme tests cover store updates and persistence-driven theme changes.
 5. Tests use semantic Testing Library queries and `userEvent.setup()` interactions.
-
-### Story 4: Publish and Enforce Unit-Test Guidance
-
-Description: add durable instructions for humans and agents creating future tests.
-
-Acceptance criteria:
-
-1. A repository Markdown file documents test placement, commands, query priorities,
-   interaction rules, mock boundaries, typing rules, and known Next/HeroUI concerns.
-2. A dedicated OpenCode unit-testing skill references or mirrors the approved guide
-   without conflicting duplicate rules.
-3. Router support is documented as conditional and provides `push` as `jest.fn()`;
-   no nonexistent `__tests__/home.test.tsx` is cited as a repository reference.
-4. Query-provider guidance is explicitly conditional on TanStack Query being added
-   in future, rather than introducing unused infrastructure now.
-5. The guide preserves intentional `it.skip()` and `test.skip()` calls unless a task
-   explicitly requests fixing those tests.
 
 ## Technical Research
 
