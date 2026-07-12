@@ -18,11 +18,12 @@ Parse `$ARGUMENTS` and the conversation for the planning doc path.
 Read in order:
 
 1. **The planning document** provided by the user, or selected from `ai-planning/*.md`. This is the source of truth for implementation; do not invent changes that are not in the plan.
-2. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
-3. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
-4. `package.json` - dependencies and scripts.
-5. The research doc the plan references, usually `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md`, for ACs and assumptions.
-6. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
+2. `docs/IMPLEMENTATION_GUIDELINES.md` - project-wide implementation guidelines. Apply them throughout; they override defaults when in conflict.
+3. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
+4. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
+5. `package.json` - dependencies and scripts.
+6. The research doc the plan references, usually `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md`, for ACs and assumptions.
+7. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
 
 There is no test framework configured and no `pnpm test` script. Do not invent test commands.
 
