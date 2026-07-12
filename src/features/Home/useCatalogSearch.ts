@@ -46,7 +46,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     const trimmed = catalogSearchTerm.trim()
     if (trimmed.length === 0) {
       setIsInvalidCatalogSearch(true)
-      setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.")
+      setCatalogMessage("Ingresa un texto para buscar en el catálogo.")
       return null
     }
     setIsLoadingCatalogSearch(true)
@@ -57,11 +57,11 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
         `/api/catalog/search?q=${encodeURIComponent(trimmed)}&page=${page}`,
       )
       setActiveCatalogMode("name")
-      setCatalogMessage(
-        results.length === 0
-          ? "No encontramos productos en el catálogo."
-          : null,
-      )
+      if (results.length === 0) {
+        setCatalogMessage("No encontramos productos en el catálogo.")
+      } else {
+        setCatalogMessage(null)
+      }
       catalogSearchDrawerState.close()
       return results
     } catch (error) {

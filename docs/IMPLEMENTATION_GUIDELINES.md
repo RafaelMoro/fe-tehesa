@@ -40,3 +40,18 @@ Project-wide rules for writing code in `fe-tehesa`. Apply throughout; override d
     },
   }
   ```
+
+## User-facing copy
+
+- **State-setting code paths: use `if`/`else`, not duplicate assignments.** Writing a value twice (first in an `if`, then immediately in a ternary that overrides it) is dead code that hides the real branch. Pick one form. Prefer the imperative `if`/`else` because it matches the rest of this file and is easier to extend. See the bad pattern at `src/features/Home/useCatalogSearch.ts:60-67` where the first `if` block was silently overridden by the ternary two lines below.
+
+  ```ts
+  // ponytail: one assignment per branch, not duplicate setState
+  if (results.length === 0) {
+    setCatalogMessage("No encontramos productos en el catálogo.")
+  } else {
+    setCatalogMessage(null)
+  }
+  ```
+
+- **User-facing error messages: name the failing input and the rule.** Generic copy like "Revisa el texto de búsqueda e inténtalo de nuevo." works as a fallback but hides what is actually wrong. For the empty-search-term path in `useCatalogSearch.ts:49`, prefer something that names the missing input — e.g. `"Ingresa un texto para buscar en el catálogo."` Reserve the generic copy for unknown/server-side errors that the user cannot self-diagnose.
