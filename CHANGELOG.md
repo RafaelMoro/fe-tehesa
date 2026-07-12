@@ -1,3 +1,9 @@
+## v0.21.0 (2026-07-12)
+
+### Pull Requests
+[#26](https://github.com/RafaelMoro/fe-tehesa/pull/26) | Add UTs | Story 4: Protect Critical Client Behavior
+
+
 ## v0.20.0 (2026-07-12)
 
 ### Pull Requests
