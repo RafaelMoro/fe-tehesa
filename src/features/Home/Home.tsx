@@ -4,12 +4,7 @@ import { useRouter } from "next/navigation"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
 import { RiInformationLine } from "@remixicon/react"
 
-import {
-  BRANDS_PRODUCTS,
-  CATEGORIES_PRODUCTS,
-  Product,
-  TaxonomyItem,
-} from "@/shared/types/global.types"
+import { Product, TaxonomyItem } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
@@ -232,15 +227,14 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     }
   }
 
-  const clearFilters = () => {
-    // Local-only clear per Story 1b; does not touch catalog-wide state.
+  const clearLocalFilters = () => {
     setLocalSearchTerm("")
     setLocalCategory(null)
     setLocalBrand(null)
     setFilteredProducts(allProducts.current)
   }
 
-  const clearAllFilters = () => {
+  const clearWideAndLocalFilters = () => {
     setLocalSearchTerm("")
     setLocalCategory(null)
     setLocalBrand(null)
@@ -296,7 +290,7 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
             defaultLabel="Filtrar por marca visible"
           />
           <Button
-            onPress={clearFilters}
+            onPress={clearLocalFilters}
             isDisabled={isLoadingCategory || isLoadingBrand}
           >
             Limpiar filtros
@@ -347,7 +341,7 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
         products={filteredProducts}
         handleProductClick={handleProductClick}
         isLocalFilterActive={isLocalFilterActive}
-        onClearLocalFilter={clearFilters}
+        onClearLocalFilter={clearLocalFilters}
         onOpenCatalogSearch={catalogSearchDrawerState.open}
       />
       {activeCatalogMode === null ? (
@@ -419,7 +413,7 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
         }
         message={catalogMessage}
         isInvalidSearch={isInvalidCatalogSearch}
-        onClearCatalogSearch={clearAllFilters}
+        onClearCatalogSearch={clearWideAndLocalFilters}
       />
     </>
   )

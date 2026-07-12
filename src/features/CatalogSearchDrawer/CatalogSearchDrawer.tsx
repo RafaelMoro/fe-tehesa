@@ -56,7 +56,7 @@ export const CatalogSearchDrawer = ({
   return (
     <Drawer state={state}>
       <Drawer.Backdrop>
-        <Drawer.Content placement="right">
+        <Drawer.Content placement="left">
           <Drawer.Dialog>
             <Drawer.Header>
               <Drawer.Heading>Buscar en todo el catálogo</Drawer.Heading>
@@ -74,9 +74,13 @@ export const CatalogSearchDrawer = ({
                   <Label>Nombre del producto</Label>
                   <Input placeholder="Ej. Llave allen" variant="secondary" />
                   {isInvalidSearch ? (
-                    <FieldError>Revisa el texto de búsqueda e inténtalo de nuevo.</FieldError>
+                    <FieldError>
+                      Revisa el texto de búsqueda e inténtalo de nuevo.
+                    </FieldError>
                   ) : (
-                    <Description>Busca coincidencias por nombre en el catálogo.</Description>
+                    <Description>
+                      Busca coincidencias por nombre en el catálogo.
+                    </Description>
                   )}
                 </TextField>
                 <Button type="submit" isPending={isLoading}>
