@@ -20,7 +20,7 @@ A living reference for AI agents and developers working in this repository. It d
 - next-themes for class-based light/dark theme mode.
 - Zustand vanilla store + provider pattern for theme state.
 - Remix Icon React, Framer Motion, and `clsx` for icons, motion support, and class composition.
-- No test framework or test script is configured.
+- Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) via `next/jest`. Tests live in root `__tests__/` (not co-located). See "Testing" below.
 
 ## High-Level Architecture
 
@@ -183,12 +183,12 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 | `pnpm build`             | Production build with Turbopack; also runs type checking.                      |
 | `pnpm start`             | Start a built Next app.                                                        |
 | `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
+| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).               |
+| `pnpm test:watch`        | Jest in watch mode.                                                            |
 | `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
 | `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.     |
 | `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).         |
 | `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.         |
-
-There is no `pnpm test` script and no test framework configured. Do not invent test commands.
 
 ## Prompt Sync
 
@@ -205,7 +205,19 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - PRs target `develop`.
 - `check-label.yml` requires at least one of `major`, `minor`, or `patch` on pull requests. CI fails when none are present.
 - `develop-pipeline.yml` runs on closed PRs to `develop`; when merged, it checks labels, bumps `package.json` with `npm version --no-git-tag-version`, tags `vX.Y.Z`, pushes tags, and prepends a generated entry to `CHANGELOG.md`.
+- `test.yml` runs on `pull_request` and on pushes to `develop`. It checks out the repo, enables pnpm via Corepack, sets up Node 22 with pnpm caching, runs `pnpm install --frozen-lockfile`, then `pnpm lint` and `pnpm test --coverage`, and uploads the `coverage/` directory as an artifact (`if-no-files-found: error`). It does not duplicate label enforcement, release versioning, tagging, or changelog behavior.
 - Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work unless explicitly requested.
+
+## Testing
+
+- Framework: Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) wired through `next/jest` in `jest.config.ts`.
+- Discovery: tests live in root `__tests__/` (not co-located with source). Pattern is `__tests__/**/*.{test,spec}.{ts,tsx}`.
+- Setup: `jest.setup.ts` loads `@testing-library/jest-dom` once and shims `window.matchMedia` (the only browser shim). `__tests__/test-utils.tsx` re-exports Testing Library and wraps `render` in the existing `Providers` component from `@/app/providers`. The `Providers` component is currently pass-through; using it keeps the app-provider seam stable.
+- Aliases: Jest mirrors `tsconfig.json` (`^@/(.*)$` → `src/$1`) and adds `^@__tests__/(.*)$` → `__tests__/$1` for the test helper. Both must be listed in `tsconfig.json` `paths` for TypeScript to resolve them.
+- Coverage: emitted via `pnpm test`; no threshold is enforced. Report writes to `coverage/` (gitignored implicitly by `eslint.config.mjs` ignores; do not commit it).
+- CI: `pnpm lint` + `pnpm test --coverage` run on every PR and merge to `develop` via `.github/workflows/test.yml`. The coverage artifact is uploaded with `if-no-files-found: error`.
+
+## Conventions And Gotchas
 
 ## Styling And UI
 
@@ -229,6 +241,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - `fetchProducts()`, `fetchProductVariants()`, and `fetchProductsByName()` do not catch Apollo errors; errors surface to the route handler, which maps them to `CAT_ERR_001`.
 - The catalog-wide name search, drawer state, and active-catalog-mode coordination are owned by the `useCatalogSearch` hook in `src/features/Home/useCatalogSearch.ts`. The hook returns state + handlers + `beginCatalogMode(mode)` / `clearAllCatalogState()` helpers that `Home` calls from `handleCategorySelect`/`handleBrandSelect` and `clearAllFilters`. Local filter state, product-details drawer, and pagination stay in `Home`. The hook is feature-local (not in `src/shared/hooks/`) because nothing else uses it.
 - Product image rendering in `ProductCard` is commented out and currently references localhost Strapi URLs. Treat image support as unfinished.
+- `@heroui/react` v3 is ESM-only and its `package.json` `exports['.']` exposes only an `import` entry (no `default`/`require`). Jest in CJS mode cannot resolve it through the package name. `jest.config.ts` maps `^@heroui/react$` to its `dist/index.js` to bypass the `exports` field, and `next.config.ts` lists the HeroUI + React-Aria + Radix + Framer-Motion + tailwind-variants + input-otp + `@jridgewell/*` + `@cspotcode/*` ecosystem in `transpilePackages` so SWC transforms their ESM. If you add a new client component that imports a different ESM-only package, add it to `transpilePackages` and confirm it resolves through the SWC transform.
 
 ## Key Files
 
