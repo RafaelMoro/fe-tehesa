@@ -8,6 +8,7 @@ import { BRANDS_PRODUCTS, CATEGORIES_PRODUCTS, Product } from "@/shared/types/gl
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
+import { CatalogSearchDrawer } from "../CatalogSearchDrawer/CatalogSearchDrawer"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
 import { catalogErrorToSpanish, fetchCatalog } from "@/shared/utils/catalog-api.utils"
@@ -18,10 +19,12 @@ interface HomeProps {
   totalPages: number;
 }
 
-export const Home = ({ 
+type CatalogMode = 'name' | 'category' | 'brand' | null
+
+export const Home = ({
   products,
   currentPage,
-  totalPages 
+  totalPages
 }: HomeProps) => {
   const router = useRouter();
   const allProducts = useRef<Product[]>(products)
@@ -37,10 +40,16 @@ export const Home = ({
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(false)
+  const [activeCatalogMode, setActiveCatalogMode] = useState<CatalogMode>(null)
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState("")
+  const [catalogMessage, setCatalogMessage] = useState<string | undefined>(undefined)
+  const [isInvalidCatalogSearch, setIsInvalidCatalogSearch] = useState(false)
+  const [isLoadingCatalogSearch, setIsLoadingCatalogSearch] = useState(false)
   // State to open the drawer and get variants
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const drawerState = useOverlayState();
+  const catalogSearchDrawerState = useOverlayState();
 
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
@@ -52,6 +61,11 @@ export const Home = ({
     setLocalSearchTerm("");
     setLocalCategory(null);
     setLocalBrand(null);
+    setActiveCatalogMode(null);
+    setCatalogSearchTerm("");
+    setCatalogMessage(undefined);
+    setIsInvalidCatalogSearch(false);
+    setIsLoadingCatalogSearch(false);
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -95,6 +109,7 @@ export const Home = ({
   }
 
   const handleCategorySelect = async (categoryCustomId: string) => {
+    catalogSearchDrawerState.close();
     try {
       setIsLoadingCategory(true);
       const categoryProducts = await fetchCatalog<Product[]>(
@@ -103,8 +118,12 @@ export const Home = ({
       allProducts.current = categoryProducts;
       setFilteredProducts(categoryProducts);
       setSelectedCategory(categoryCustomId);
-      // Reset brand and all local filters when a catalog-wide category is selected
+      setActiveCatalogMode('category');
       setSelectedBrand(null);
+      setCatalogSearchTerm("");
+      setCatalogMessage(undefined);
+      setIsInvalidCatalogSearch(false);
+      // Reset local filters when a catalog-wide category is selected
       setLocalSearchTerm("");
       setLocalCategory(null);
       setLocalBrand(null);
@@ -117,6 +136,7 @@ export const Home = ({
   }
 
   const handleBrandSelect = async (brandCustomId: string) => {
+    catalogSearchDrawerState.close();
     try {
       setIsLoadingBrand(true);
       const brandProducts = await fetchCatalog<Product[]>(
@@ -125,8 +145,12 @@ export const Home = ({
       allProducts.current = brandProducts;
       setFilteredProducts(brandProducts);
       setSelectedBrand(brandCustomId);
-      // Reset category and all local filters when a catalog-wide brand is selected
+      setActiveCatalogMode('brand');
       setSelectedCategory(null);
+      setCatalogSearchTerm("");
+      setCatalogMessage(undefined);
+      setIsInvalidCatalogSearch(false);
+      // Reset local filters when a catalog-wide brand is selected
       setLocalSearchTerm("");
       setLocalCategory(null);
       setLocalBrand(null);
@@ -138,12 +162,79 @@ export const Home = ({
     }
   }
 
+  const handleCatalogSearchTermChange = (term: string) => {
+    setCatalogSearchTerm(term);
+    if (isInvalidCatalogSearch) {
+      setIsInvalidCatalogSearch(false);
+    }
+    if (catalogMessage) {
+      setCatalogMessage(undefined);
+    }
+  }
+
+  const handleCatalogNameSearch = async () => {
+    const trimmed = catalogSearchTerm.trim();
+    if (trimmed.length === 0) {
+      setIsInvalidCatalogSearch(true);
+      setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.");
+      return;
+    }
+    setIsLoadingCatalogSearch(true);
+    setIsInvalidCatalogSearch(false);
+    setCatalogMessage("Buscando productos en el catálogo...");
+    try {
+      const products = await fetchCatalog<Product[]>(
+        `/api/catalog/search?q=${encodeURIComponent(trimmed)}`,
+      );
+      allProducts.current = products;
+      setFilteredProducts(products);
+      setActiveCatalogMode('name');
+      setSelectedCategory(null);
+      setSelectedBrand(null);
+      setLocalSearchTerm("");
+      setLocalCategory(null);
+      setLocalBrand(null);
+      setCatalogMessage(products.length === 0 ? "No encontramos productos en el catálogo." : undefined);
+      catalogSearchDrawerState.close();
+    } catch (error) {
+      const code = (error as { code?: string })?.code
+      if (code === 'CAT_VAL_006') {
+        setIsInvalidCatalogSearch(true);
+        setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.");
+      } else {
+        setCatalogMessage(
+          code
+            ? catalogErrorToSpanish(code)
+            : "No pudimos buscar productos. Inténtalo de nuevo.",
+        );
+      }
+    } finally {
+      setIsLoadingCatalogSearch(false);
+    }
+  }
+
   const clearFilters = () => {
-    // Local-only clear per Story 1b; does not touch catalog-wide selectedCategory/selectedBrand.
+    // Local-only clear per Story 1b; does not touch catalog-wide state.
     setLocalSearchTerm("");
     setLocalCategory(null);
     setLocalBrand(null);
     setFilteredProducts(allProducts.current);
+  }
+
+  const clearAllFilters = () => {
+    setLocalSearchTerm("");
+    setLocalCategory(null);
+    setLocalBrand(null);
+    setSelectedCategory(null);
+    setSelectedBrand(null);
+    setActiveCatalogMode(null);
+    setCatalogSearchTerm("");
+    setCatalogMessage(undefined);
+    setIsInvalidCatalogSearch(false);
+    setIsLoadingCatalogSearch(false);
+    allProducts.current = products;
+    setFilteredProducts(products);
+    catalogSearchDrawerState.close();
   }
 
   const handleProductClick = (product: Product) => {
@@ -196,8 +287,13 @@ export const Home = ({
           </div>
         )}
         <div className="flex flex-wrap gap-3 items-center mb-5">
-          <DropdownCategories selectedCategory={selectedCategory} updateSelectedCategory={handleCategorySelect} />
-          <DropdownBrands selectedBrand={selectedBrand} updateSelectedBrand={handleBrandSelect} />
+          <Button
+            variant="secondary"
+            onPress={catalogSearchDrawerState.open}
+            isDisabled={isLoadingCategory || isLoadingBrand || isLoadingCatalogSearch}
+          >
+            Buscar en todo el catálogo
+          </Button>
         </div>
       </div>
       <ProductListing
@@ -206,7 +302,7 @@ export const Home = ({
         isLocalFilterActive={isLocalFilterActive}
         onClearLocalFilter={clearFilters}
       />
-      {selectedCategory === null && selectedBrand === null && (
+      {activeCatalogMode === null && (
         <div className="w-full flex justify-center">
           <Pagination size="md">
             <Pagination.Content>
@@ -228,6 +324,20 @@ export const Home = ({
       { productDetails && (
         <ProductVariantsDrawer product={productDetails} state={drawerState} />
       )}
+      <CatalogSearchDrawer
+        state={catalogSearchDrawerState}
+        searchTerm={catalogSearchTerm}
+        onSearchTermChange={handleCatalogSearchTermChange}
+        onSubmit={handleCatalogNameSearch}
+        onCategorySelect={handleCategorySelect}
+        onBrandSelect={handleBrandSelect}
+        selectedCategory={selectedCategory}
+        selectedBrand={selectedBrand}
+        isLoading={isLoadingCatalogSearch}
+        message={catalogMessage}
+        isInvalidSearch={isInvalidCatalogSearch}
+        onClearCatalogSearch={clearAllFilters}
+      />
     </>
   )
 }
