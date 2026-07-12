@@ -1,6 +1,11 @@
 import { Home } from "@/features/Home/Home"
 import { Header } from "@/shared/ui/organisms/Header"
-import { fetchProducts, getThemePreference } from "@/shared/lib/global.lib"
+import {
+  fetchBrands,
+  fetchCategories,
+  fetchProducts,
+  getThemePreference,
+} from "@/shared/lib/global.lib"
 import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
 
 export default async function MainPage({
@@ -15,8 +20,10 @@ export default async function MainPage({
   const pageParam = params.page || "1"
   const currentPage = Math.max(1, Math.min(5, parseInt(pageParam, 10) || 1))
 
-  const [products, themeFetched] = await Promise.all([
+  const [products, categories, brands, themeFetched] = await Promise.all([
     fetchProducts(currentPage),
+    fetchCategories(),
+    fetchBrands(),
     getThemePreference(),
   ])
 
@@ -35,6 +42,8 @@ export default async function MainPage({
             products={products}
             currentPage={currentPage}
             totalPages={totalPages}
+            categories={categories}
+            brands={brands}
           />
         </main>
       </div>

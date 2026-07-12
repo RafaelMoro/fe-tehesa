@@ -21,9 +21,17 @@ interface HomeProps {
   products: Product[]
   currentPage: number
   totalPages: number
+  categories: TaxonomyItem[]
+  brands: TaxonomyItem[]
 }
 
-export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
+export const Home = ({
+  products,
+  currentPage,
+  totalPages,
+  categories: initialCategories,
+  brands: initialBrands,
+}: HomeProps) => {
   const router = useRouter()
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
@@ -38,8 +46,8 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(false)
-  const [categories, setCategories] = useState<TaxonomyItem[]>([])
-  const [brands, setBrands] = useState<TaxonomyItem[]>([])
+  const [categories] = useState<TaxonomyItem[]>(initialCategories)
+  const [brands] = useState<TaxonomyItem[]>(initialBrands)
   const [catalogPage, setCatalogPage] = useState(1)
   const [hasNextCatalogPage, setHasNextCatalogPage] = useState(false)
   const [productDetails, setProductDetails] = useState<Product | null>(null)
@@ -57,27 +65,6 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     beginCatalogMode,
     clearAllCatalogState,
   } = useCatalogSearch({ products })
-
-  useEffect(() => {
-    let isCurrent = true
-
-    void Promise.all([
-      fetchCatalog<TaxonomyItem[]>("/api/catalog/categories"),
-      fetchCatalog<TaxonomyItem[]>("/api/catalog/brands"),
-    ])
-      .then(([fetchedCategories, fetchedBrands]) => {
-        if (!isCurrent) return
-        setCategories(fetchedCategories)
-        setBrands(fetchedBrands)
-      })
-      .catch((error) => {
-        console.error("Error fetching catalog filters:", error)
-      })
-
-    return () => {
-      isCurrent = false
-    }
-  }, [])
 
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
