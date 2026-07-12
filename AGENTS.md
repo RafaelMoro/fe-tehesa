@@ -8,7 +8,7 @@ Compact guidance for OpenCode sessions working in this repo.
 - `pnpm dev` — dev server (Next.js + **Turbopack**).
 - `pnpm build` — production build (Turbopack); also runs type checking.
 - `pnpm lint` — ESLint flat config (`eslint.config.mjs`), extends `next/core-web-vitals` + `next/typescript`.
-- No test script, no test framework configured. Do not invent test commands.
+- `pnpm test` — one-shot Jest run with coverage output (no threshold). `pnpm test:watch` for interactive; `pnpm test -- <relative test path>` for targeted runs. Tests live in root `__tests__/` (not co-located). Canonical rules in `docs/UNIT_TESTING_GUIDELINES.md`; create and fix tests through the `/unit-test` skill/command.
 - No dedicated typecheck script; run `pnpm exec tsc --noEmit` if you need a standalone check.
 
 ## Environment
