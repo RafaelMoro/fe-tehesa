@@ -1,6 +1,6 @@
 # Repository Context - fe-tehesa
 
-**Last Updated:** 2026-07-11
+**Last Updated:** 2026-07-12
 
 A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
 
@@ -183,7 +183,7 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 | `pnpm build`             | Production build with Turbopack; also runs type checking.                      |
 | `pnpm start`             | Start a built Next app.                                                        |
 | `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
-| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).               |
+| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).                |
 | `pnpm test:watch`        | Jest in watch mode.                                                            |
 | `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
 | `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.     |
@@ -250,7 +250,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | `AGENTS.md`                                                                                | Compact agent instructions: commands, architecture, env, CI, styling.                                                                                                                               |
 | `DESIGN.md`                                                                                | Visual design system tokens + rationale; lint with `pnpm design:lint`.                                                                                                                              |
 | `docs/UNIT_TESTING_GUIDELINES.md`                                                          | Canonical Jest/Testing Library authoring rules; the only full copy of test policy.                                                                                                                  |
-| `.opencode/skills/unit-test/SKILL.md`                                                     | Thin discoverable skill that points to the guide and the `/unit-test` command.                                                                                                                       |
+| `.opencode/skills/unit-test/SKILL.md`                                                      | Thin discoverable skill that points to the guide and the `/unit-test` command.                                                                                                                      |
 | `.opencode/command/{research,plan,implement,unit-test}.md`                                 | OpenCode command sources. Edit these, then run `pnpm sync:prompts` to regenerate the matching GitHub prompts.                                                                                       |
 | `package.json`                                                                             | Scripts and dependencies.                                                                                                                                                                           |
 | `next.config.ts`                                                                           | Minimal Next config.                                                                                                                                                                                |
