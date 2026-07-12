@@ -358,10 +358,11 @@ or overlay shims.
 
 II: Question: Should implementation add a shared render helper or app test
 provider now?
-Status: pending
-Context: The current best proof target does not need a shared provider.
-Explanation: A helper is only justified after repeated setup appears across real
-tests.
+Status: answered
+Answer: Yes.
+Context: Add a minimal shared render helper now.
+Explanation: A helper is the fastest way to ensure consistent app test provider
+behavior and to avoid divergence across test files.
 
 ### Theme/Persistence
 
@@ -373,10 +374,11 @@ Context: Theme persistence is unrelated to Jest foundation setup.
 
 II: Question: Should `window.matchMedia` be shimmed globally for theme or mobile
 tests?
-Status: pending
+Status: answered
+Answer: Shimmed for mobile tests.
 Context: `useMediaQuery()` handles missing `matchMedia` by returning false flags.
-Explanation: Add the shim only if a selected proof test needs a positive media
-query branch.
+Explanation: Add the `matchMedia` shim so mobile-aware code paths (e.g.
+`ProductCard`) are reachable in jsdom.
 
 ### Verification
 
@@ -391,12 +393,14 @@ Answer: No.
 Context: The epic says emit coverage without enforcing a percentage.
 
 III: Question: Should this story add CI test workflow wiring?
-Status: pending
-Context: The epic answered yes for the broader initiative, but Story 1 acceptance
-criteria only mention local Jest setup, shared setup, dependencies, shims, and
-avoiding TanStack Query.
-Explanation: Confirm before adding a new workflow in implementation; otherwise
-keep Story 1 to the local foundation.
+Status: answered
+Answer: Yes.
+Context: The epic answered yes for the broader initiative. Add a
+`.github/workflows/test.yml` job that installs with pnpm on Node 22, runs
+`pnpm install --frozen-lockfile`, `pnpm lint`, and `pnpm test --coverage`, and
+uploads the coverage artifact. The job runs on pull requests and on merges to
+`develop`. PR label enforcement remains the responsibility of
+`check-label.yml`.
 
 IV: Question: Should `jest.config.ts` be used instead of a JavaScript config?
 Status: answered
