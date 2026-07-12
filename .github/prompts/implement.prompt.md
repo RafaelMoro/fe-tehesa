@@ -46,6 +46,11 @@ For each phase in the plan:
 3. Fix failures before moving to the next phase.
 4. Update any implementation checklist in the planning doc if the plan includes one.
 5. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Do not auto-continue across phase boundaries even if the plan does not say to pause. The user must say "continue", "go", or otherwise approve the next phase. While waiting, summarize the completed phase (files touched, what was built, what was verified) and ask for sign-off.
+6. **Plan deviations:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, etc.) that forces a deviation. When that happens:
+   - Stop and surface the deviation in the final report for that phase. Do not silently rewrite the plan.
+   - After the phase is sign-offed, append a `## Plan deviation` section at the bottom of the planning doc under `ai-planning/`, grouped by phase. State the original requirement, the obstacle, the options considered, and the chosen path with a one-line rationale.
+   - The deviation note is the audit trail for "why the implementation differs from the plan"; it is read by the next person who picks up the story. Keep it concise and factual — no prose defending the choice, just the decision.
+   - Do not edit earlier sections of the planning doc to hide the deviation; the original plan text stays as approved and the deviation is appended.
 
 ## Step 4 - Apply repo conventions while implementing
 

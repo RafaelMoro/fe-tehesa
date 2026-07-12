@@ -20,7 +20,7 @@ Compact guidance for OpenCode sessions working in this repo.
 
 - Next.js 15 App Router, React 19. Router root is `src/app`; path alias `@/*` → `./src/*`.
 - Data flow: server components call server actions in `src/shared/lib/global.lib.ts` (`"use server"`), which create a **per-request ApolloClient** from `src/app/apollo-client.ts` against Strapi. GraphQL operations live in `src/shared/queries/global.queries.ts`.
-- Theme persistence: next-themes (`attribute="class"`, dark default) + cookie via `POST /api/preferences` → `saveThemeCookie`. Cookie key in `src/shared/constants`.
+- Theme persistence: next-themes (`attribute="class"`, **light default**) + cookie via `POST /api/preferences` → `saveThemeCookie`. Cookie key in `src/shared/constants`. `AppTheme` is validated at the cookie helper and the route — only `"light"` or `"dark"` are accepted, anything else falls back to `light` without mutating the cookie.
 - State: Zustand stores under `src/zustand/store`, SSR-safe providers under `src/zustand/provider`. Follow the provider-wraps-store pattern there when adding stores.
 - UI stack: **HeroUI v3** (`@heroui/react`, formerly NextUI) + Tailwind v4 via `@tailwindcss/postcss`. `darkMode: "class"`. For HeroUI docs, prefer the `heroui-react` MCP (configured in `opencode.json`); fallback to the LLM docs at https://heroui.com/react/llms.txt. Note: `tailwind.config.js` `content` only lists HeroUI's theme dist — Tailwind v4 auto-detects app content; do not break this.
 - Directory layout: `src/features/<Feature>/` (scoped UI), `src/shared/{constants,data,hooks,lib,queries,types,ui,utils}` (cross-cutting). `src/shared/ui` is split into `atoms` and `organisms`. `src/components` only holds the shared `ProductCard`.

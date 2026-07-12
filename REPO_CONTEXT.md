@@ -145,7 +145,7 @@ Catalog behavior:
 
 | Route                     | Methods | Purpose                                                                                                                                |
 | ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `/api/preferences`        | `POST`  | Requires JSON `{ "theme": "light"                                                                                                      | "dark" }`; saves `tehesa-theme`cookie and returns`{ success, themeChangedTo }`. |
+| `/api/preferences`        | `POST`  | Requires JSON `{ "theme": "light"                                                                                                      | "dark" }`; saves the `tehesa-theme` cookie and returns HTTP 201 `{ success: true, themeChangedTo }`. Invalid input (missing, null, non-string, unsupported, extra field, or malformed JSON) returns HTTP 400 with `PRF_VAL_001`. |
 | `/api/catalog/products`   | `GET`   | `?page=1..5&pageSize=50` (fixed). Returns paged products.                                                                              |
 | `/api/catalog/category`   | `GET`   | `?categoryId=...&pageSize=50` (fixed). Validates `categoryId` against the live Strapi taxonomy; returns matching products.             |
 | `/api/catalog/brand`      | `GET`   | `?brandId=...&pageSize=50` (fixed). Validates `brandId` against the live Strapi taxonomy; returns matching products.                   |
@@ -161,10 +161,24 @@ There are no auth, checkout, order, or backend proxy route handlers in this repo
 ## Theme And Cookies
 
 - Cookie key: `THEME_COOKIE_KEY = 'tehesa-theme'`.
-- `getThemePreference()` reads the cookie server-side and returns `'light'` when absent.
-- `saveThemeCookie(theme)` sets an httpOnly, secure, sameSite strict cookie.
-- `NextThemesProvider` defaults to dark, while `getThemePreference()` defaults to light when no cookie exists. Be explicit when changing theme initialization behavior because these defaults currently differ.
+- `getThemePreference()` reads the cookie server-side and returns `Promise<AppTheme>`; missing, empty, or unsupported values fall back to `light` without mutating the cookie.
+- `saveThemeCookie(theme)` accepts `AppTheme` and validates at runtime; invalid values reject and do not call `cookies().set`. Valid writes use `httpOnly: true`, `secure: true`, `sameSite: "strict"`.
+- `NextThemesProvider` defaults to `light` (matches the cookie helper, the Zustand initial state, and `DEFAULT_THEME`).
+- `isAppTheme(value)` in `src/shared/constants/global.constants.ts` is the shared runtime guard reused by both the cookie helper and the preference route; the allowlist cannot drift between them.
 - Client theme UI should use the existing `ChangeThemeStoreProvider`, `useChangeThemeStore`, `ToggleDarkMode`, and `/api/preferences` flow rather than writing cookies directly.
+
+## Catalog Query String Parsing
+
+- All catalog and page-string parsers are strict digits-only: empty strings, decimals, signs, whitespace padding, numeric prefixes/suffixes, and mixed content are rejected before numeric conversion.
+- Product `page` accepts only `1..5`; wide-search `page` (category, brand, search) accepts any positive integer with no upper bound. Fixed `pageSize` values (`50` for products, `100` for variants) require the exact configured numeric string.
+- The same rule applies to `src/app/page.tsx`: invalid or missing page values default to `1`, valid numeric input remains clamped to the `1..5` ceiling.
+- Category, brand, and document IDs remain limited to the existing safe pattern (`/^[A-Za-z0-9_-]+$/`) and 30-character maximum.
+- Search terms remain trimmed, required, maximum 100 characters, and constrained by the existing Unicode/punctuation allowlist.
+
+## Category And Brand Upstream Errors
+
+- `fetchProductsByCategory` and `fetchProductsByBrand` have explicit `Promise<Product[]>` return types and no local try/catch. Rejected Apollo work propagates to the route's edge handler and becomes `CAT_ERR_001` (HTTP 400); a successful GraphQL response with a missing/null `products` field still returns `[]`.
+- The five other Apollo-backed helpers (`fetchProducts`, `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`) follow the same "throw at the boundary, catch at the edge" contract. The shared contract is documented in a JSDoc block at the top of `src/shared/lib/global.lib.ts`.
 
 ## Environment Variables
 

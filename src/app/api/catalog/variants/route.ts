@@ -5,6 +5,10 @@ import {
   validateCatalogEnv,
 } from "@/app/api/catalog/_utils"
 import { fetchProductVariants } from "@/shared/lib/global.lib"
+import {
+  CAT_ERR_001,
+  MSG_CAT_ERR_001,
+} from "@/shared/constants/catalog.constants"
 
 export async function GET(request: Request) {
   const envError = validateCatalogEnv()
@@ -27,6 +31,6 @@ export async function GET(request: Request) {
     return success(variants)
   } catch (error) {
     console.error("GET /api/catalog/variants failed", error)
-    return failure("CAT_ERR_001", "Upstream catalog error")
+    return failure(CAT_ERR_001, MSG_CAT_ERR_001)
   }
 }
