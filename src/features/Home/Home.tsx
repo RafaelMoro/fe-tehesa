@@ -17,9 +17,7 @@ import {
   fetchCatalog,
 } from "@/shared/utils/catalog-api.utils"
 
-type PageFeedback =
-  | { message: string; kind: "status" | "error" }
-  | null
+type PageFeedback = { message: string; kind: "status" | "error" } | null
 
 const GENERIC_CATALOG_ERROR =
   "No se pudo completar la operación. Inténtalo de nuevo."
@@ -380,12 +378,12 @@ export const Home = ({
           )}
         </div>
         {pageFeedback && (
-          <div
+          <p
             className="mb-4 text-sm"
             role={pageFeedback.kind === "error" ? "alert" : "status"}
           >
             {pageFeedback.message}
-          </div>
+          </p>
         )}
       </div>
       <ProductListing
