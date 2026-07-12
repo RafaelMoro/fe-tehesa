@@ -1,3 +1,9 @@
+## v0.16.0 (2026-07-12)
+
+### Pull Requests
+[#22](https://github.com/RafaelMoro/fe-tehesa/pull/22) | Add prettier
+
+
 ## v0.15.0 (2026-07-11)
 
 ### Pull Requests
