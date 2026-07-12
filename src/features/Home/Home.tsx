@@ -322,6 +322,17 @@ export const Home = ({
           >
             Buscar en todo el catálogo
           </Button>
+          {activeCatalogMode !== null && (
+            <Button
+              variant="tertiary"
+              onPress={clearWideAndLocalFilters}
+              isDisabled={
+                isLoadingCategory || isLoadingBrand || isLoadingCatalogSearch
+              }
+            >
+              Limpiar búsqueda
+            </Button>
+          )}
         </div>
       </div>
       <ProductListing
