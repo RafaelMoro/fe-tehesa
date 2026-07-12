@@ -114,28 +114,6 @@ export const fetchProductsByName = async (
   return res?.data?.products ?? []
 }
 
-export const fetchProductsByName = async (
-  searchTerm: string,
-  page: number,
-): Promise<Product[]> => {
-  const client = createApolloClient()
-  const res = await client.query<FetchProductsResponse>({
-    query: GET_PRODUCTS_BY_NAME,
-    variables: {
-      filters: {
-        name: {
-          contains: searchTerm,
-        },
-      },
-      pagination: {
-        page,
-        pageSize: 50,
-      },
-    },
-  })
-  return res?.data?.products ?? []
-}
-
 export const fetchProductVariants = async ({
   documentId,
 }: {

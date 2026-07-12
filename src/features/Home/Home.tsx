@@ -232,21 +232,6 @@ export const Home = ({ products, currentPage, totalPages }: HomeProps) => {
     }
   }
 
-  const handleCatalogNameSearchSubmit = async () => {
-    const results = await handleCatalogNameSearch(1)
-    if (results) {
-      allProducts.current = results
-      setFilteredProducts(results)
-      setSelectedCategory(null)
-      setSelectedBrand(null)
-      setLocalSearchTerm("")
-      setLocalCategory(null)
-      setLocalBrand(null)
-      setCatalogPage(1)
-      setHasNextCatalogPage(results.length === 50)
-    }
-  }
-
   const clearFilters = () => {
     // Local-only clear per Story 1b; does not touch catalog-wide state.
     setLocalSearchTerm("")

@@ -16,8 +16,6 @@ export const DropdownBrands = ({
   brands,
   defaultLabel,
 }: DropdownBrandsProps) => {
-  const allBrands = [...BRANDS_PRODUCTS]
-
   // Find the selected brand object to display its name
   const selectedBrandObj = brands.find(
     (brand) => brand.customId === selectedBrand,

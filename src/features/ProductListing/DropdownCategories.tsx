@@ -16,8 +16,6 @@ export const DropdownCategories = ({
   categories,
   defaultLabel,
 }: DropdownCategoriesProps) => {
-  const allCategories = [...CATEGORIES_PRODUCTS]
-
   // Find the selected category object to display its name
   const selectedCategoryObj = categories.find(
     (cat) => cat.customId === selectedCategory,
