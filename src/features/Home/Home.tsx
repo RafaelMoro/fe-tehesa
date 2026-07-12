@@ -17,6 +17,21 @@ import {
   fetchCatalog,
 } from "@/shared/utils/catalog-api.utils"
 
+type PageFeedback =
+  | { message: string; kind: "status" | "error" }
+  | null
+
+const GENERIC_CATALOG_ERROR =
+  "No se pudo completar la operación. Inténtalo de nuevo."
+
+const buildErrorMessage = (error: unknown): string => {
+  const code = (error as { code?: string })?.code
+  if (typeof code === "string") {
+    return catalogErrorToSpanish(code)
+  }
+  return GENERIC_CATALOG_ERROR
+}
+
 interface HomeProps {
   products: Product[]
   currentPage: number
@@ -51,6 +66,7 @@ export const Home = ({
   const [catalogPage, setCatalogPage] = useState(1)
   const [hasNextCatalogPage, setHasNextCatalogPage] = useState(false)
   const [productDetails, setProductDetails] = useState<Product | null>(null)
+  const [pageFeedback, setPageFeedback] = useState<PageFeedback>(null)
 
   const drawerState = useOverlayState()
   const {
@@ -58,13 +74,22 @@ export const Home = ({
     activeCatalogMode,
     catalogSearchTerm,
     catalogMessage,
+    catalogMessageKind,
+    invalidSearchMessage,
     isInvalidCatalogSearch,
     isLoadingCatalogSearch,
-    handleCatalogSearchTermChange,
+    handleCatalogSearchTermChange: handleHookSearchTermChange,
     handleCatalogNameSearch,
     beginCatalogMode,
     clearAllCatalogState,
   } = useCatalogSearch({ products })
+
+  const handleCatalogSearchTermChange = (term: string) => {
+    handleHookSearchTermChange(term)
+    if (pageFeedback) {
+      setPageFeedback(null)
+    }
+  }
 
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
@@ -78,6 +103,7 @@ export const Home = ({
     setLocalBrand(null)
     setCatalogPage(1)
     setHasNextCatalogPage(false)
+    setPageFeedback(null)
   }, [products])
 
   // Handle pagination - navigate to new page
@@ -144,8 +170,9 @@ export const Home = ({
   }
 
   const handleCategorySelect = async (categoryCustomId: string, page = 1) => {
+    setIsLoadingCategory(true)
+    setPageFeedback(null)
     try {
-      setIsLoadingCategory(true)
       const categoryProducts = await fetchCatalog<Product[]>(
         `/api/catalog/category?categoryId=${encodeURIComponent(categoryCustomId)}&page=${page}`,
       )
@@ -160,20 +187,18 @@ export const Home = ({
       beginCatalogMode("category")
       setCatalogPage(page)
       setHasNextCatalogPage(categoryProducts.length === 50)
+      setPageFeedback(null)
     } catch (error) {
-      const code = (error as { code?: string })?.code
-      console.error(
-        "Error fetching products by category:",
-        code ? catalogErrorToSpanish(code) : error,
-      )
+      setPageFeedback({ kind: "error", message: buildErrorMessage(error) })
     } finally {
       setIsLoadingCategory(false)
     }
   }
 
   const handleBrandSelect = async (brandCustomId: string, page = 1) => {
+    setIsLoadingBrand(true)
+    setPageFeedback(null)
     try {
-      setIsLoadingBrand(true)
       const brandProducts = await fetchCatalog<Product[]>(
         `/api/catalog/brand?brandId=${encodeURIComponent(brandCustomId)}&page=${page}`,
       )
@@ -188,18 +213,16 @@ export const Home = ({
       beginCatalogMode("brand")
       setCatalogPage(page)
       setHasNextCatalogPage(brandProducts.length === 50)
+      setPageFeedback(null)
     } catch (error) {
-      const code = (error as { code?: string })?.code
-      console.error(
-        "Error fetching products by brand:",
-        code ? catalogErrorToSpanish(code) : error,
-      )
+      setPageFeedback({ kind: "error", message: buildErrorMessage(error) })
     } finally {
       setIsLoadingBrand(false)
     }
   }
 
   const handleCatalogNameSearchSubmit = async () => {
+    setPageFeedback(null)
     const results = await handleCatalogNameSearch(1)
     if (results) {
       allProducts.current = results
@@ -211,6 +234,16 @@ export const Home = ({
       setLocalBrand(null)
       setCatalogPage(1)
       setHasNextCatalogPage(results.length === 50)
+      if (results.length === 0) {
+        setPageFeedback({
+          kind: "status",
+          message: "No encontramos productos en el catálogo.",
+        })
+      } else {
+        setPageFeedback(null)
+      }
+    } else if (invalidSearchMessage) {
+      setPageFeedback({ kind: "error", message: invalidSearchMessage })
     }
   }
 
@@ -231,17 +264,29 @@ export const Home = ({
     setFilteredProducts(products)
     setCatalogPage(1)
     setHasNextCatalogPage(false)
+    setPageFeedback(null)
     clearAllCatalogState()
   }
 
   const handleCatalogPageChange = async (page: number) => {
     if (activeCatalogMode === "name") {
+      setPageFeedback(null)
       const results = await handleCatalogNameSearch(page)
       if (results) {
         allProducts.current = results
         setFilteredProducts(results)
         setCatalogPage(page)
         setHasNextCatalogPage(results.length === 50)
+        if (results.length === 0) {
+          setPageFeedback({
+            kind: "status",
+            message: "No encontramos productos en el catálogo.",
+          })
+        } else {
+          setPageFeedback(null)
+        }
+      } else if (invalidSearchMessage) {
+        setPageFeedback({ kind: "error", message: invalidSearchMessage })
       }
       return
     }
@@ -334,6 +379,14 @@ export const Home = ({
             </Button>
           )}
         </div>
+        {pageFeedback && (
+          <div
+            className="mb-4 text-sm"
+            role={pageFeedback.kind === "error" ? "alert" : "status"}
+          >
+            {pageFeedback.message}
+          </div>
+        )}
       </div>
       <ProductListing
         products={filteredProducts}
@@ -410,7 +463,9 @@ export const Home = ({
           isLoadingCatalogSearch || isLoadingCategory || isLoadingBrand
         }
         message={catalogMessage}
+        messageKind={catalogMessageKind}
         isInvalidSearch={isInvalidCatalogSearch}
+        invalidSearchMessage={invalidSearchMessage}
         onClearCatalogSearch={clearWideAndLocalFilters}
       />
     </>

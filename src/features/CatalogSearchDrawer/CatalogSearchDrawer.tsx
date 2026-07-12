@@ -28,7 +28,9 @@ interface CatalogSearchDrawerProps {
   brands: TaxonomyItem[]
   isLoading: boolean
   message?: string | null
+  messageKind?: "status" | "error" | null
   isInvalidSearch?: boolean
+  invalidSearchMessage?: string | null
   onClearCatalogSearch: () => void
 }
 
@@ -45,7 +47,9 @@ export const CatalogSearchDrawer = ({
   brands,
   isLoading,
   message,
+  messageKind,
   isInvalidSearch,
+  invalidSearchMessage,
   onClearCatalogSearch,
 }: CatalogSearchDrawerProps) => {
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,7 +79,8 @@ export const CatalogSearchDrawer = ({
                   <Input placeholder="Ej. Llave allen" variant="secondary" />
                   {isInvalidSearch ? (
                     <FieldError>
-                      Revisa el texto de búsqueda e inténtalo de nuevo.
+                      {invalidSearchMessage ??
+                        "Revisa el texto de búsqueda e inténtalo de nuevo."}
                     </FieldError>
                   ) : (
                     <Description>
@@ -114,7 +119,12 @@ export const CatalogSearchDrawer = ({
                   <span>Buscando productos en el catálogo...</span>
                 </div>
               ) : message ? (
-                <p className="mt-4 text-sm">{message}</p>
+                <p
+                  className="mt-4 text-sm"
+                  role={messageKind === "error" ? "alert" : "status"}
+                >
+                  {message}
+                </p>
               ) : null}
             </Drawer.Body>
             <Drawer.Footer>

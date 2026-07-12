@@ -249,3 +249,9 @@ None. The research resolves all client behavior, state ownership, and error-disp
 - Catalog API/route, Apollo, Strapi, cookie validation, or server-component tests.
 - ProductCard responsive style assertions, Header logo precedence, Zustand provider isolation, UI redesign, currency changes, or changes to the 50-item heuristic.
 - Real network calls, coverage thresholds, Jest/CI/configuration changes, version/changelog/release changes, and historical research rewrites.
+
+## Plan deviation
+
+### Phase 1 deviation
+
+- Home integration coverage keeps the real drawer/category success path, pagination, local filters, and product details coverage, but does not assert the category failure alert through HeroUI dropdown selection because that interaction is flaky in jsdom. The failure/message lifecycle is covered in `useCatalogSearch.test.tsx` against the real hook and `fetchCatalog` path instead.
