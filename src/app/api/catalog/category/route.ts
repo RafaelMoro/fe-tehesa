@@ -24,8 +24,9 @@ export async function GET(request: Request) {
     readValidatedParams(request)
   if (!categoryId.ok) {
     return failure(categoryId.error.code, categoryId.error.message)
-    if (!wideSearchPage.ok)
-      return failure(wideSearchPage.error.code, wideSearchPage.error.message)
+  }
+  if (!wideSearchPage.ok) {
+    return failure(wideSearchPage.error.code, wideSearchPage.error.message)
   }
   if (!productPageSize.ok) {
     return failure(productPageSize.error.code, productPageSize.error.message)

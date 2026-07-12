@@ -3,9 +3,12 @@ import { useEffect, useState } from "react"
 import { useOverlayState } from "@heroui/react"
 
 import { Product } from "@/shared/types/global.types"
-import { catalogErrorToSpanish, fetchCatalog } from "@/shared/utils/catalog-api.utils"
+import {
+  catalogErrorToSpanish,
+  fetchCatalog,
+} from "@/shared/utils/catalog-api.utils"
 
-export type CatalogMode = 'name' | 'category' | 'brand' | null
+export type CatalogMode = "name" | "category" | "brand" | null
 
 interface UseCatalogSearchArgs {
   products: Product[]
@@ -29,11 +32,17 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
 
   const handleCatalogSearchTermChange = (term: string) => {
     setCatalogSearchTerm(term)
-    if (isInvalidCatalogSearch) setIsInvalidCatalogSearch(false)
-    if (catalogMessage) setCatalogMessage(null)
+    if (isInvalidCatalogSearch) {
+      setIsInvalidCatalogSearch(false)
+    }
+    if (catalogMessage) {
+      setCatalogMessage(null)
+    }
   }
 
-  const handleCatalogNameSearch = async (page = 1): Promise<Product[] | null> => {
+  const handleCatalogNameSearch = async (
+    page = 1,
+  ): Promise<Product[] | null> => {
     const trimmed = catalogSearchTerm.trim()
     if (trimmed.length === 0) {
       setIsInvalidCatalogSearch(true)
@@ -47,13 +56,17 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
       const results = await fetchCatalog<Product[]>(
         `/api/catalog/search?q=${encodeURIComponent(trimmed)}&page=${page}`,
       )
-      setActiveCatalogMode('name')
-      setCatalogMessage(results.length === 0 ? "No encontramos productos en el catálogo." : null)
+      setActiveCatalogMode("name")
+      setCatalogMessage(
+        results.length === 0
+          ? "No encontramos productos en el catálogo."
+          : null,
+      )
       catalogSearchDrawerState.close()
       return results
     } catch (error) {
       const code = (error as { code?: string })?.code
-      if (code === 'CAT_VAL_006') {
+      if (code === "CAT_VAL_006") {
         setIsInvalidCatalogSearch(true)
         setCatalogMessage("Revisa el texto de búsqueda e inténtalo de nuevo.")
       } else {
@@ -71,7 +84,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
 
   // ponytail: single helper to coordinate catalog-wide category/brand selection
   // with the search state (clears the search box, dismisses any prior message, closes the drawer).
-  const beginCatalogMode = (mode: 'category' | 'brand') => {
+  const beginCatalogMode = (mode: "category" | "brand") => {
     setActiveCatalogMode(mode)
     setCatalogSearchTerm("")
     setCatalogMessage(null)

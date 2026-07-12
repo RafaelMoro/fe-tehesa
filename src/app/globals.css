@@ -13,29 +13,29 @@
  * --accent-hover and --accent-soft are color-mix() of --accent, so they follow automatically.
  */
 @theme {
-  --color-primary-50: #E3FFD6;
-  --color-primary-100: #B4FE99;
-  --color-primary-200: #4DF527;
-  --color-primary-300: #3BD11A;
-  --color-primary-400: #24AD02;
-  --color-primary-500: #23890C;
+  --color-primary-50: #e3ffd6;
+  --color-primary-100: #b4fe99;
+  --color-primary-200: #4df527;
+  --color-primary-300: #3bd11a;
+  --color-primary-400: #24ad02;
+  --color-primary-500: #23890c;
   --color-primary-600: #177303;
-  --color-primary-700: #125D03;
-  --color-primary-800: #0F4804;
-  --color-primary-900: #0D3401;
-  --color-primary-950: #0F2001;
+  --color-primary-700: #125d03;
+  --color-primary-800: #0f4804;
+  --color-primary-900: #0d3401;
+  --color-primary-950: #0f2001;
 }
 
 :root {
-  --accent: #4DF527;
-  --accent-foreground: #0D3401;
-  --accent-soft-foreground: #125D03;
-  --focus: #4DF527;
+  --accent: #4df527;
+  --accent-foreground: #0d3401;
+  --accent-soft-foreground: #125d03;
+  --focus: #4df527;
 }
 
 .dark {
-  --accent: #4DF527;
-  --accent-foreground: #0D3401;
-  --accent-soft-foreground: #4DF527;
-  --focus: #4DF527;
+  --accent: #4df527;
+  --accent-foreground: #0d3401;
+  --accent-soft-foreground: #4df527;
+  --focus: #4df527;
 }

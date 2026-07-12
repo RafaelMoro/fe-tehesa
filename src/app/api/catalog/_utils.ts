@@ -83,7 +83,9 @@ const parsePage = (
 const parseWideSearchPage = (
   raw: string | null,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
-  if (raw === null) return { ok: true, value: PRODUCT_PAGE_MIN }
+  if (raw === null) {
+    return { ok: true, value: PRODUCT_PAGE_MIN }
+  }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN) {
     return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
