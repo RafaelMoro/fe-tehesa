@@ -1,3 +1,9 @@
+## v0.20.0 (2026-07-12)
+
+### Pull Requests
+[#25](https://github.com/RafaelMoro/fe-tehesa/pull/25) | Unit testing epic | Story 3: Protect Data and API Boundaries
+
+
 ## v0.19.0 (2026-07-12)
 
 ### Pull Requests
