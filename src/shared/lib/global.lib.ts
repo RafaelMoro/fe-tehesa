@@ -40,56 +40,49 @@ export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
 export const fetchProductsByCategory = async (
   customId: string,
   page: number,
-) => {
-  try {
-    const client = createApolloClient()
-    const res = await client.query<FetchProductsResponse>({
-      query: GET_PRODUCTS_BY_CATEGORY,
-      variables: {
-        filters: {
-          category: {
-            customId: {
-              contains: customId,
-            },
+): Promise<Product[]> => {
+  const client = createApolloClient()
+  const res = await client.query<FetchProductsResponse>({
+    query: GET_PRODUCTS_BY_CATEGORY,
+    variables: {
+      filters: {
+        category: {
+          customId: {
+            contains: customId,
           },
         },
-        pagination: {
-          page,
-          pageSize: 50,
-        },
       },
-    })
-    const products = res?.data?.products ?? []
-    return products
-  } catch (error) {
-    console.log("error fetching products by category", error)
-  }
+      pagination: {
+        page,
+        pageSize: 50,
+      },
+    },
+  })
+  return res?.data?.products ?? []
 }
 
-export const fetchProductsByBrand = async (brandId: string, page: number) => {
-  try {
-    const client = createApolloClient()
-    const res = await client.query<FetchProductsResponse>({
-      query: GET_PRODUCTS_BY_BRAND,
-      variables: {
-        filters: {
-          brand: {
-            customId: {
-              contains: brandId,
-            },
+export const fetchProductsByBrand = async (
+  brandId: string,
+  page: number,
+): Promise<Product[]> => {
+  const client = createApolloClient()
+  const res = await client.query<FetchProductsResponse>({
+    query: GET_PRODUCTS_BY_BRAND,
+    variables: {
+      filters: {
+        brand: {
+          customId: {
+            contains: brandId,
           },
         },
-        pagination: {
-          page,
-          pageSize: 50,
-        },
       },
-    })
-    const products = res?.data?.products ?? []
-    return products
-  } catch (error) {
-    console.log("error fetching products by brand", error)
-  }
+      pagination: {
+        page,
+        pageSize: 50,
+      },
+    },
+  })
+  return res?.data?.products ?? []
 }
 
 export const fetchProductsByName = async (

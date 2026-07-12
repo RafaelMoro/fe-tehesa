@@ -18,7 +18,9 @@ export default async function MainPage({
 
   // Parse and validate page parameter
   const pageParam = params.page || "1"
-  const currentPage = Math.max(1, Math.min(5, parseInt(pageParam, 10) || 1))
+  const digitsOnly = /^[0-9]+$/.test(pageParam)
+  const parsedPage = digitsOnly ? parseInt(pageParam, 10) : NaN
+  const currentPage = Math.max(1, Math.min(5, parsedPage || 1))
 
   const [products, categories, brands, themeFetched] = await Promise.all([
     fetchProducts(currentPage),

@@ -63,11 +63,16 @@ export const validateCatalogEnv = (): CatalogError | null => {
   return null
 }
 
+const DIGITS_ONLY = /^[0-9]+$/
+
 const parsePage = (
   raw: string | null,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
   if (raw === null) {
     return { ok: true, value: PRODUCT_PAGE_MIN }
+  }
+  if (!DIGITS_ONLY.test(raw)) {
+    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
   }
   const value = Number.parseInt(raw, 10)
   if (
@@ -86,6 +91,9 @@ const parseWideSearchPage = (
   if (raw === null) {
     return { ok: true, value: PRODUCT_PAGE_MIN }
   }
+  if (!DIGITS_ONLY.test(raw)) {
+    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+  }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN) {
     return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
@@ -99,6 +107,15 @@ const parsePageSize = (
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
   if (raw === null) {
     return { ok: true, value: fixedSize }
+  }
+  if (!DIGITS_ONLY.test(raw)) {
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_002,
+        message: MSG_CAT_VAL_002(fixedSize, raw),
+      },
+    }
   }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value !== fixedSize) {

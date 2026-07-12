@@ -10,7 +10,9 @@ import {
   fetchProductsByCategory,
 } from "@/shared/lib/global.lib"
 import {
+  CAT_ERR_001,
   CAT_NF_001,
+  MSG_CAT_ERR_001,
   MSG_CAT_NF_001,
 } from "@/shared/constants/catalog.constants"
 
@@ -37,12 +39,13 @@ export async function GET(request: Request) {
     if (!findTaxonomyItem(categories, categoryId.value)) {
       return failure(CAT_NF_001, MSG_CAT_NF_001)
     }
-    const products =
-      (await fetchProductsByCategory(categoryId.value, wideSearchPage.value)) ??
-      []
+    const products = await fetchProductsByCategory(
+      categoryId.value,
+      wideSearchPage.value,
+    )
     return success(products)
   } catch (error) {
     console.error("GET /api/catalog/category failed", error)
-    return failure("CAT_ERR_001", "Upstream catalog error")
+    return failure(CAT_ERR_001, MSG_CAT_ERR_001)
   }
 }
