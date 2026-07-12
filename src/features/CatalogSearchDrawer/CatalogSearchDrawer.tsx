@@ -89,18 +89,24 @@ export const CatalogSearchDrawer = ({
               </form>
               <div className="mt-5 flex flex-col gap-3">
                 <span className="text-sm font-medium">O busca por</span>
-                <DropdownCategories
-                  selectedCategory={selectedCategory}
-                  updateSelectedCategory={onCategorySelect}
-                  categories={categories}
-                  defaultLabel="Buscar categoría en todo el catálogo"
-                />
-                <DropdownBrands
-                  selectedBrand={selectedBrand}
-                  updateSelectedBrand={onBrandSelect}
-                  brands={brands}
-                  defaultLabel="Buscar marca en todo el catálogo"
-                />
+                <div className="flex flex-col gap-1">
+                  <Label>Categoría</Label>
+                  <DropdownCategories
+                    selectedCategory={selectedCategory}
+                    updateSelectedCategory={onCategorySelect}
+                    categories={categories}
+                    defaultLabel="Buscar categoría en todo el catálogo"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label>Marca</Label>
+                  <DropdownBrands
+                    selectedBrand={selectedBrand}
+                    updateSelectedBrand={onBrandSelect}
+                    brands={brands}
+                    defaultLabel="Buscar marca en todo el catálogo"
+                  />
+                </div>
               </div>
               {isLoading ? (
                 <div className="mt-4 flex items-center gap-2 text-sm">
