@@ -207,3 +207,30 @@ No additional source changes. This phase verifies the completed story end-to-end
 
 - Use a small `CatalogSearchDrawer` component only if it keeps `Home.tsx` manageable; otherwise inline drawer markup in `Home` is acceptable. This is a structure choice, not a behavior change.
 - Add `CAT_VAL_006` to existing catalog helpers rather than creating a separate validation module. The existing route helper is already the shared boundary for catalog request validation.
+
+## Appendix: Wide-Search Pagination And Dynamic Filters
+
+### Scope
+
+- Update catalog-wide name, category, and brand searches to request a fixed 50 products per page.
+- Show previous/next pagination while a catalog-wide mode is active. The next control is available only when the current response contains 50 products; no totals or page counts are claimed.
+- Remove hardcoded taxonomy options and fetch categories and brands through the existing `/api/catalog/categories` and `/api/catalog/brands` routes for the drawer filters.
+
+### Changes Required
+
+| Path | Action | Details |
+| --- | --- | --- |
+| `src/app/api/catalog/_utils.ts` | Modify | Parse a positive, uncapped page number for catalog-wide searches without changing the base PLP's five-page limit. |
+| `src/shared/lib/global.lib.ts` | Modify | Pass the requested page to name, category, and brand GraphQL queries while retaining `pageSize: 50`. |
+| `src/app/api/catalog/{search,category,brand}/route.ts` | Modify | Validate the wide-search page and pass it through to the corresponding server action. |
+| `src/features/Home/Home.tsx` | Modify | Track the active catalog page and response-length next-page state, request the selected catalog mode for a new page, and render previous/next controls. Fetch live taxonomy lists once for filter controls. |
+| `src/features/Home/useCatalogSearch.ts` | Modify | Retain the submitted search term and accept a requested result page for repeat name-search requests. |
+| `src/features/{CatalogSearchDrawer,ProductListing}/**` | Modify | Receive taxonomy lists as props rather than importing hardcoded options. |
+| `src/shared/types/global.types.ts` | Modify | Delete hardcoded category/brand arrays and their derived types; retain `TaxonomyItem` for live API data. |
+
+### Edge Cases And Verification
+
+- A full 50-item response only means another page may exist; a shorter response disables `Siguiente`.
+- `Anterior` is disabled on page 1. Clearing catalog-wide state returns to the original server-rendered products and removes wide-search pagination.
+- Verify with `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm build`.
+- Manually verify name, category, and brand searches across page 1 and page 2, plus empty taxonomy/loading behavior on desktop and mobile.

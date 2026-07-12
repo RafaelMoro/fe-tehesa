@@ -72,6 +72,15 @@ const parsePage = (raw: string | null): { ok: true; value: number } | { ok: fals
   return { ok: true, value }
 }
 
+const parseWideSearchPage = (raw: string | null): { ok: true; value: number } | { ok: false; error: CatalogError } => {
+  if (raw === null) return { ok: true, value: PRODUCT_PAGE_MIN }
+  const value = Number.parseInt(raw, 10)
+  if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN) {
+    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+  }
+  return { ok: true, value }
+}
+
 const parsePageSize = (
   raw: string | null,
   fixedSize: number,
@@ -134,6 +143,7 @@ export const readValidatedParams = (request: Request) => {
   const params = url.searchParams
 
   const page = parsePage(params.get('page'))
+  const wideSearchPage = parseWideSearchPage(params.get('page'))
   const productPageSize = parsePageSize(params.get('pageSize'), PRODUCT_PAGE_SIZE)
   const variantPageSize = parsePageSize(params.get('pageSize'), VARIANT_PAGE_SIZE)
   const categoryId = parseTaxonomyId(params.get('categoryId'), CAT_VAL_003, MSG_CAT_VAL_003)
@@ -141,7 +151,7 @@ export const readValidatedParams = (request: Request) => {
   const documentId = parseDocumentId(params.get('documentId'))
   const searchTerm = parseSearchTerm(params.get('q'))
 
-  return { page, productPageSize, variantPageSize, categoryId, brandId, documentId, searchTerm }
+  return { page, wideSearchPage, productPageSize, variantPageSize, categoryId, brandId, documentId, searchTerm }
 }
 
 export const findTaxonomyItem = (

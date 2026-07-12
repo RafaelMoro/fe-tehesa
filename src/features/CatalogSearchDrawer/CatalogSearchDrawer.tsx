@@ -13,6 +13,7 @@ import {
 
 import { DropdownCategories } from "@/features/ProductListing/DropdownCategories"
 import { DropdownBrands } from "@/features/ProductListing/DropdownBrands"
+import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface CatalogSearchDrawerProps {
   state: UseOverlayStateReturn
@@ -23,6 +24,8 @@ interface CatalogSearchDrawerProps {
   onBrandSelect: (brandId: string) => void
   selectedCategory: string | null
   selectedBrand: string | null
+  categories: TaxonomyItem[]
+  brands: TaxonomyItem[]
   isLoading: boolean
   message?: string | null
   isInvalidSearch?: boolean
@@ -38,6 +41,8 @@ export const CatalogSearchDrawer = ({
   onBrandSelect,
   selectedCategory,
   selectedBrand,
+  categories,
+  brands,
   isLoading,
   message,
   isInvalidSearch,
@@ -83,11 +88,13 @@ export const CatalogSearchDrawer = ({
                 <DropdownCategories
                   selectedCategory={selectedCategory}
                   updateSelectedCategory={onCategorySelect}
+                  categories={categories}
                   defaultLabel="Buscar categoría en todo el catálogo"
                 />
                 <DropdownBrands
                   selectedBrand={selectedBrand}
                   updateSelectedBrand={onBrandSelect}
+                  brands={brands}
                   defaultLabel="Buscar marca en todo el catálogo"
                 />
               </div>

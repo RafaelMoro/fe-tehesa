@@ -33,7 +33,7 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     if (catalogMessage) setCatalogMessage(null)
   }
 
-  const handleCatalogNameSearch = async (): Promise<Product[] | null> => {
+  const handleCatalogNameSearch = async (page = 1): Promise<Product[] | null> => {
     const trimmed = catalogSearchTerm.trim()
     if (trimmed.length === 0) {
       setIsInvalidCatalogSearch(true)
@@ -45,10 +45,9 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     setCatalogMessage("Buscando productos en el catálogo...")
     try {
       const results = await fetchCatalog<Product[]>(
-        `/api/catalog/search?q=${encodeURIComponent(trimmed)}`,
+        `/api/catalog/search?q=${encodeURIComponent(trimmed)}&page=${page}`,
       )
       setActiveCatalogMode('name')
-      setCatalogSearchTerm("")
       setCatalogMessage(results.length === 0 ? "No encontramos productos en el catálogo." : null)
       catalogSearchDrawerState.close()
       return results

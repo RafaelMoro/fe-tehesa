@@ -12,8 +12,9 @@ export async function GET(request: Request) {
   const envError = validateCatalogEnv()
   if (envError) return failure(envError.code, envError.message)
 
-  const { brandId, productPageSize } = readValidatedParams(request)
+  const { brandId, wideSearchPage, productPageSize } = readValidatedParams(request)
   if (!brandId.ok) return failure(brandId.error.code, brandId.error.message)
+  if (!wideSearchPage.ok) return failure(wideSearchPage.error.code, wideSearchPage.error.message)
   if (!productPageSize.ok) return failure(productPageSize.error.code, productPageSize.error.message)
 
   try {
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
     if (!findTaxonomyItem(brands, brandId.value)) {
       return failure(CAT_NF_002, MSG_CAT_NF_002)
     }
-    const products = (await fetchProductsByBrand(brandId.value)) ?? []
+    const products = (await fetchProductsByBrand(brandId.value, wideSearchPage.value)) ?? []
     return success(products)
   } catch (error) {
     console.error('GET /api/catalog/brand failed', error)

@@ -21,7 +21,7 @@ export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
   return products;
 }
 
-export const fetchProductsByCategory = async (customId: string) => {
+export const fetchProductsByCategory = async (customId: string, page: number) => {
   try {
     const client = createApolloClient();
     const res = await client.query<FetchProductsResponse>({
@@ -35,7 +35,7 @@ export const fetchProductsByCategory = async (customId: string) => {
           }
         },
         pagination: {
-          page: 1,
+          page,
           pageSize: 50
         }
       }
@@ -47,7 +47,7 @@ export const fetchProductsByCategory = async (customId: string) => {
   }
 }
 
-export const fetchProductsByBrand = async (brandId: string) => {
+export const fetchProductsByBrand = async (brandId: string, page: number) => {
   try {
     const client = createApolloClient();
     const res = await client.query<FetchProductsResponse>({
@@ -61,7 +61,7 @@ export const fetchProductsByBrand = async (brandId: string) => {
           }
         },
         pagination: {
-          page: 1,
+          page,
           pageSize: 50
         }
       }
@@ -73,7 +73,7 @@ export const fetchProductsByBrand = async (brandId: string) => {
   }
 }
 
-export const fetchProductsByName = async (searchTerm: string): Promise<Product[]> => {
+export const fetchProductsByName = async (searchTerm: string, page: number): Promise<Product[]> => {
   const client = createApolloClient();
   const res = await client.query<FetchProductsResponse>({
     query: GET_PRODUCTS_BY_NAME,
@@ -84,7 +84,7 @@ export const fetchProductsByName = async (searchTerm: string): Promise<Product[]
         }
       },
       pagination: {
-        page: 1,
+          page,
         pageSize: 50
       }
     }

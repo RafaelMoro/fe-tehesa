@@ -1,19 +1,18 @@
 import { Button, Dropdown, Label } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
-import { CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
+import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface DropdownCategoriesProps {
   selectedCategory: string | null
   updateSelectedCategory: (categoryCustomId: string) => void
+  categories: TaxonomyItem[]
   defaultLabel?: string
 }
 
-export const DropdownCategories = ({ selectedCategory, updateSelectedCategory, defaultLabel }: DropdownCategoriesProps) => {
-  const allCategories = [...CATEGORIES_PRODUCTS]
-  
+export const DropdownCategories = ({ selectedCategory, updateSelectedCategory, categories, defaultLabel }: DropdownCategoriesProps) => {
   // Find the selected category object to display its name
-  const selectedCategoryObj = allCategories.find((cat) => cat.customId === selectedCategory)
+  const selectedCategoryObj = categories.find((cat) => cat.customId === selectedCategory)
 
   return (
     <Dropdown>
@@ -27,7 +26,7 @@ export const DropdownCategories = ({ selectedCategory, updateSelectedCategory, d
           aria-label="Dropdown menu categories"
           onAction={(key) => updateSelectedCategory(key as string)}
         >
-          { allCategories.map((category) => (
+          { categories.map((category) => (
             <Dropdown.Item key={category.customId} id={category.customId} textValue={category.name}>
               <Label>{category.name}</Label>
             </Dropdown.Item>

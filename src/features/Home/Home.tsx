@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
 import { RiInformationLine } from "@remixicon/react"
 
-import { BRANDS_PRODUCTS, CATEGORIES_PRODUCTS, Product } from "@/shared/types/global.types"
+import { Product, TaxonomyItem } from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
@@ -39,6 +39,10 @@ export const Home = ({
   const [isLoadingCategory, setIsLoadingCategory] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(false)
+  const [categories, setCategories] = useState<TaxonomyItem[]>([])
+  const [brands, setBrands] = useState<TaxonomyItem[]>([])
+  const [catalogPage, setCatalogPage] = useState(1)
+  const [hasNextCatalogPage, setHasNextCatalogPage] = useState(false)
   const [productDetails, setProductDetails] = useState<Product | null>(null)
 
   const drawerState = useOverlayState();
@@ -55,6 +59,25 @@ export const Home = ({
     clearAllCatalogState,
   } = useCatalogSearch({ products })
 
+  useEffect(() => {
+    let isCurrent = true
+
+    void Promise.all([
+      fetchCatalog<TaxonomyItem[]>("/api/catalog/categories"),
+      fetchCatalog<TaxonomyItem[]>("/api/catalog/brands"),
+    ]).then(([fetchedCategories, fetchedBrands]) => {
+      if (!isCurrent) return
+      setCategories(fetchedCategories)
+      setBrands(fetchedBrands)
+    }).catch((error) => {
+      console.error('Error fetching catalog filters:', error)
+    })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
+
   // Update products when page changes (new products fetched from server)
   useEffect(() => {
     allProducts.current = products;
@@ -65,6 +88,8 @@ export const Home = ({
     setLocalSearchTerm("");
     setLocalCategory(null);
     setLocalBrand(null);
+    setCatalogPage(1);
+    setHasNextCatalogPage(false);
   }, [products]);
 
   // Handle pagination - navigate to new page
@@ -78,10 +103,10 @@ export const Home = ({
   const applyLocalFilters = (next: { searchTerm: string; category: string | null; brand: string | null }) => {
     const term = next.searchTerm.trim().toLowerCase();
     const categoryName = next.category
-      ? CATEGORIES_PRODUCTS.find((c) => c.customId === next.category)?.name ?? null
+      ? categories.find((category) => category.customId === next.category)?.name ?? null
       : null;
     const brandName = next.brand
-      ? BRANDS_PRODUCTS.find((b) => b.customId === next.brand)?.name ?? null
+      ? brands.find((brand) => brand.customId === next.brand)?.name ?? null
       : null;
     const filtered = allProducts.current.filter((prod) => {
       if (term && !prod.name.toLowerCase().includes(term)) return false;
@@ -107,11 +132,11 @@ export const Home = ({
     applyLocalFilters({ searchTerm: localSearchTerm, category: localCategory, brand: brandCustomId });
   }
 
-  const handleCategorySelect = async (categoryCustomId: string) => {
+  const handleCategorySelect = async (categoryCustomId: string, page = 1) => {
     try {
       setIsLoadingCategory(true);
       const categoryProducts = await fetchCatalog<Product[]>(
-        `/api/catalog/category?categoryId=${encodeURIComponent(categoryCustomId)}`,
+        `/api/catalog/category?categoryId=${encodeURIComponent(categoryCustomId)}&page=${page}`,
       );
       allProducts.current = categoryProducts;
       setFilteredProducts(categoryProducts);
@@ -122,6 +147,8 @@ export const Home = ({
       setLocalCategory(null);
       setLocalBrand(null);
       beginCatalogMode('category');
+      setCatalogPage(page);
+      setHasNextCatalogPage(categoryProducts.length === 50);
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by category:', code ? catalogErrorToSpanish(code) : error);
@@ -130,11 +157,11 @@ export const Home = ({
     }
   }
 
-  const handleBrandSelect = async (brandCustomId: string) => {
+  const handleBrandSelect = async (brandCustomId: string, page = 1) => {
     try {
       setIsLoadingBrand(true);
       const brandProducts = await fetchCatalog<Product[]>(
-        `/api/catalog/brand?brandId=${encodeURIComponent(brandCustomId)}`,
+        `/api/catalog/brand?brandId=${encodeURIComponent(brandCustomId)}&page=${page}`,
       );
       allProducts.current = brandProducts;
       setFilteredProducts(brandProducts);
@@ -145,6 +172,8 @@ export const Home = ({
       setLocalCategory(null);
       setLocalBrand(null);
       beginCatalogMode('brand');
+      setCatalogPage(page);
+      setHasNextCatalogPage(brandProducts.length === 50);
     } catch (error) {
       const code = (error as { code?: string })?.code
       console.error('Error fetching products by brand:', code ? catalogErrorToSpanish(code) : error);
@@ -154,7 +183,7 @@ export const Home = ({
   }
 
   const handleCatalogNameSearchSubmit = async () => {
-    const results = await handleCatalogNameSearch()
+    const results = await handleCatalogNameSearch(1)
     if (results) {
       allProducts.current = results;
       setFilteredProducts(results);
@@ -163,6 +192,8 @@ export const Home = ({
       setLocalSearchTerm("");
       setLocalCategory(null);
       setLocalBrand(null);
+      setCatalogPage(1);
+      setHasNextCatalogPage(results.length === 50);
     }
   }
 
@@ -182,7 +213,29 @@ export const Home = ({
     setSelectedBrand(null);
     allProducts.current = products;
     setFilteredProducts(products);
+    setCatalogPage(1);
+    setHasNextCatalogPage(false);
     clearAllCatalogState();
+  }
+
+  const handleCatalogPageChange = async (page: number) => {
+    if (activeCatalogMode === 'name') {
+      const results = await handleCatalogNameSearch(page)
+      if (results) {
+        allProducts.current = results
+        setFilteredProducts(results)
+        setCatalogPage(page)
+        setHasNextCatalogPage(results.length === 50)
+      }
+      return
+    }
+    if (activeCatalogMode === 'category' && selectedCategory) {
+      await handleCategorySelect(selectedCategory, page)
+      return
+    }
+    if (activeCatalogMode === 'brand' && selectedBrand) {
+      await handleBrandSelect(selectedBrand, page)
+    }
   }
 
   const handleProductClick = (product: Product) => {
@@ -198,11 +251,13 @@ export const Home = ({
           <DropdownCategories
             selectedCategory={localCategory}
             updateSelectedCategory={handleLocalCategorySelect}
+            categories={categories}
             defaultLabel="Filtrar por categoría visible"
           />
           <DropdownBrands
             selectedBrand={localBrand}
             updateSelectedBrand={handleLocalBrandSelect}
+            brands={brands}
             defaultLabel="Filtrar por marca visible"
           />
           <Button onPress={clearFilters} isDisabled={isLoadingCategory || isLoadingBrand}>
@@ -214,8 +269,8 @@ export const Home = ({
             <span>
               Filtrando productos visibles
               {localSearchTerm.trim() && `: "${localSearchTerm}"`}
-              {localCategory && ` · ${CATEGORIES_PRODUCTS.find((c) => c.customId === localCategory)?.name ?? ''}`}
-              {localBrand && ` · ${BRANDS_PRODUCTS.find((b) => b.customId === localBrand)?.name ?? ''}`}
+              {localCategory && ` · ${categories.find((category) => category.customId === localCategory)?.name ?? ''}`}
+              {localBrand && ` · ${brands.find((brand) => brand.customId === localBrand)?.name ?? ''}`}
             </span>
             <Popover>
               <Button
@@ -251,7 +306,7 @@ export const Home = ({
         onClearLocalFilter={clearFilters}
         onOpenCatalogSearch={catalogSearchDrawerState.open}
       />
-      {activeCatalogMode === null && (
+      {activeCatalogMode === null ? (
         <div className="w-full flex justify-center">
           <Pagination size="md">
             <Pagination.Content>
@@ -269,6 +324,24 @@ export const Home = ({
             </Pagination.Content>
           </Pagination>
         </div>
+      ) : (
+        <div className="w-full flex items-center justify-center gap-3">
+          <Button
+            variant="secondary"
+            onPress={() => handleCatalogPageChange(catalogPage - 1)}
+            isDisabled={catalogPage === 1 || isLoadingCatalogSearch || isLoadingCategory || isLoadingBrand}
+          >
+            Anterior
+          </Button>
+          <span className="text-sm">Página {catalogPage}</span>
+          <Button
+            variant="secondary"
+            onPress={() => handleCatalogPageChange(catalogPage + 1)}
+            isDisabled={!hasNextCatalogPage || isLoadingCatalogSearch || isLoadingCategory || isLoadingBrand}
+          >
+            Siguiente
+          </Button>
+        </div>
       )}
       { productDetails && (
         <ProductVariantsDrawer product={productDetails} state={drawerState} />
@@ -282,7 +355,9 @@ export const Home = ({
         onBrandSelect={handleBrandSelect}
         selectedCategory={selectedCategory}
         selectedBrand={selectedBrand}
-        isLoading={isLoadingCatalogSearch}
+        categories={categories}
+        brands={brands}
+        isLoading={isLoadingCatalogSearch || isLoadingCategory || isLoadingBrand}
         message={catalogMessage}
         isInvalidSearch={isInvalidCatalogSearch}
         onClearCatalogSearch={clearAllFilters}

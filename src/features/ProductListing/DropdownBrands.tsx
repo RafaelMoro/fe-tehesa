@@ -1,19 +1,18 @@
 import { Button, Dropdown, Label } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
-import { BRANDS_PRODUCTS } from "@/shared/types/global.types"
+import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface DropdownBrandsProps {
   selectedBrand: string | null
   updateSelectedBrand: (brandCustomId: string) => void
+  brands: TaxonomyItem[]
   defaultLabel?: string
 }
 
-export const DropdownBrands = ({ selectedBrand, updateSelectedBrand, defaultLabel }: DropdownBrandsProps) => {
-  const allBrands = [...BRANDS_PRODUCTS]
-  
+export const DropdownBrands = ({ selectedBrand, updateSelectedBrand, brands, defaultLabel }: DropdownBrandsProps) => {
   // Find the selected brand object to display its name
-  const selectedBrandObj = allBrands.find((brand) => brand.customId === selectedBrand)
+  const selectedBrandObj = brands.find((brand) => brand.customId === selectedBrand)
 
   return (
     <Dropdown>
@@ -27,7 +26,7 @@ export const DropdownBrands = ({ selectedBrand, updateSelectedBrand, defaultLabe
           aria-label="Dropdown menu brands"
           onAction={(key) => updateSelectedBrand(key as string)}
         >
-          { allBrands.map((brand) => (
+          { brands.map((brand) => (
             <Dropdown.Item key={brand.customId} id={brand.customId} textValue={brand.name}>
               <Label>{brand.name}</Label>
             </Dropdown.Item>
