@@ -1,3 +1,9 @@
+## v0.19.0 (2026-07-12)
+
+### Pull Requests
+[#24](https://github.com/RafaelMoro/fe-tehesa/pull/24) | Add Unit testing | Story 2 | Publish and Enforce Unit-Test Guidance skills and commands
+
+
 ## v0.18.0 (2026-07-12)
 
 ### Pull Requests
