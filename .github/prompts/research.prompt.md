@@ -19,11 +19,10 @@ Before any codebase exploration, read these files and do not re-discover what is
 
 1. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions
 2. `AGENTS.md` - compact toolchain, commands, env, tests, structure, and PR/release guidance
-3. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | sync:prompts`)
+3. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | test | test:watch | sync:prompts`)
 4. Relevant executable config: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.js`
-5. CI files when release/PR behavior matters: `.github/workflows/check-label.yml` and `.github/workflows/develop-pipeline.yml`
-
-There is no test framework configured and no `pnpm test` script. Do not invent test commands.
+5. CI files when release/PR behavior matters: `.github/workflows/check-label.yml`, `.github/workflows/develop-pipeline.yml`, and `.github/workflows/test.yml`
+6. When the story includes test work, also read `docs/UNIT_TESTING_GUIDELINES.md` for canonical test-authoring rules. Do not duplicate the rules in the research doc; reference them.
 
 ## Step 2 - Story quality check
 
@@ -115,9 +114,9 @@ The research doc must include:
   - Shared product card: `src/components/ProductCard.tsx`
   - Shared code: `src/shared/{constants,hooks,lib,queries,types,ui,utils}`
   - Zustand theme state: `src/zustand/{provider,store}`
-  - Tests: none configured; use lint/build/TypeScript checks for verification unless the task adds tests intentionally
+  - Tests: Jest 30 + Testing Library through `next/jest.js`; root `__tests__/` discovery; `pnpm test` runs once with coverage, `pnpm test:watch` is interactive, `pnpm test -- <relative path>` is targeted. See `docs/UNIT_TESTING_GUIDELINES.md` for the full policy.
 - **Existing patterns to follow** - App Router server/client split, server actions in `src/shared/lib/global.lib.ts`, per-call Apollo client factory in `src/app/apollo-client.ts`, HeroUI components, Tailwind v4 class styling, next-themes class dark mode, Zustand provider-wraps-store pattern
-- **Verification rules to follow** - use `pnpm lint`, `pnpm build`, and `pnpm exec tsc --noEmit` when relevant; do not run nonexistent tests; do not run `pnpm install` during research
+- **Verification rules to follow** - use `pnpm lint`, `pnpm build`, and `pnpm exec tsc --noEmit` when relevant; use `pnpm test` / `pnpm test -- <relative path>` when the story touches tests; do not run `pnpm install` during research
 - **Dependencies / integration points** - new deps require `package.json` and `pnpm-lock.yaml` changes; Strapi env vars are `STRAPI_HOST` and `STRAPI_API_TOKEN`; prompt sync uses `pnpm sync:prompts`
 - **Edge cases and constraints** - hardcoded 5-page catalog ceiling, page size 50 for products, page size 100 for variants, no GraphQL pagination metadata documented, category/brand lists are hardcoded, theme defaults differ between next-themes and cookie fallback, filtered lists hide pagination, search filters only the current working set
 
@@ -158,5 +157,5 @@ Do **not** start planning or writing code. Wait for human sign-off.
 - Do not propose implementation; that is the planning phase.
 - Do not write or modify source files other than the research doc, except for a verified broadly useful `REPO_CONTEXT.md` note.
 - Do not run tests, builds, `pnpm install`, or package manager changes during research.
-- Do not assume TanStack Query, Flowbite, Jest, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo.
+- Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo. Jest and Testing Library are present.
 - Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work; the develop merge workflow handles release automation.

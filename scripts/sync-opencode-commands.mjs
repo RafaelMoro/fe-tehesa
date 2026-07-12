@@ -6,6 +6,7 @@ const files = [
   ["research.md", "research.prompt.md"],
   ["plan.md", "plan.prompt.md"],
   ["implement.md", "implement.prompt.md"],
+  ["unit-test.md", "unit-test.prompt.md"],
 ]
 
 for (const [sourceName, targetName] of files) {

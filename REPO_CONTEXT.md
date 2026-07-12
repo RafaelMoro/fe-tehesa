@@ -1,6 +1,6 @@
 # Repository Context - fe-tehesa
 
-**Last Updated:** 2026-07-11
+**Last Updated:** 2026-07-12
 
 A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
 
@@ -183,7 +183,7 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 | `pnpm build`             | Production build with Turbopack; also runs type checking.                      |
 | `pnpm start`             | Start a built Next app.                                                        |
 | `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
-| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).               |
+| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).                |
 | `pnpm test:watch`        | Jest in watch mode.                                                            |
 | `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
 | `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.     |
@@ -196,7 +196,8 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 
 - `.opencode/command/research.md` -> `.github/prompts/research.prompt.md`
 - `.opencode/command/plan.md` -> `.github/prompts/plan.prompt.md`
-- `.opencode/command/implement.md` -> `.github/prompts/implement.md`
+- `.opencode/command/implement.md` -> `.github/prompts/implement.prompt.md`
+- `.opencode/command/unit-test.md` -> `.github/prompts/unit-test.prompt.md`
 
 When editing an opencode command that has a GitHub prompt counterpart, edit the opencode command first and run `pnpm sync:prompts`. The sync script skips command files that do not exist in the checkout.
 
@@ -210,14 +211,13 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 
 ## Testing
 
-- Framework: Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) wired through `next/jest` in `jest.config.ts`.
+- Framework: Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) wired through `next/jest.js` in `jest.config.ts`.
 - Discovery: tests live in root `__tests__/` (not co-located with source). Pattern is `__tests__/**/*.{test,spec}.{ts,tsx}`.
 - Setup: `jest.setup.ts` loads `@testing-library/jest-dom` once and shims `window.matchMedia` (the only browser shim). `__tests__/test-utils.tsx` re-exports Testing Library and wraps `render` in the existing `Providers` component from `@/app/providers`. The `Providers` component is currently pass-through; using it keeps the app-provider seam stable.
 - Aliases: Jest mirrors `tsconfig.json` (`^@/(.*)$` → `src/$1`) and adds `^@__tests__/(.*)$` → `__tests__/$1` for the test helper. Both must be listed in `tsconfig.json` `paths` for TypeScript to resolve them.
-- Coverage: emitted via `pnpm test`; no threshold is enforced. Report writes to `coverage/` (gitignored implicitly by `eslint.config.mjs` ignores; do not commit it).
-- CI: `pnpm lint` + `pnpm test --coverage` run on every PR and merge to `develop` via `.github/workflows/test.yml`. The coverage artifact is uploaded with `if-no-files-found: error`.
-
-## Conventions And Gotchas
+- Coverage: emitted via `pnpm test`; no threshold is enforced. Report writes to `coverage/` which is explicitly gitignored by `.gitignore` (`/coverage`) and also ignored by `eslint.config.mjs`; do not commit it.
+- CI: `pnpm lint` + `pnpm test --coverage` run on every pull request and on pushes to `develop` via `.github/workflows/test.yml`. The coverage artifact is uploaded with `if-no-files-found: error`.
+- Authoring and repair: canonical rules live in `docs/UNIT_TESTING_GUIDELINES.md`. The OpenCode `unit-test` skill (`.opencode/skills/unit-test/SKILL.md`) and the `/unit-test` command (`.opencode/command/unit-test.md`, synced to `.github/prompts/unit-test.prompt.md`) cover create and fix flows without requiring an approved plan.
 
 ## Styling And UI
 
@@ -249,6 +249,9 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `AGENTS.md`                                                                                | Compact agent instructions: commands, architecture, env, CI, styling.                                                                                                                               |
 | `DESIGN.md`                                                                                | Visual design system tokens + rationale; lint with `pnpm design:lint`.                                                                                                                              |
+| `docs/UNIT_TESTING_GUIDELINES.md`                                                          | Canonical Jest/Testing Library authoring rules; the only full copy of test policy.                                                                                                                  |
+| `.opencode/skills/unit-test/SKILL.md`                                                      | Thin discoverable skill that points to the guide and the `/unit-test` command.                                                                                                                      |
+| `.opencode/command/{research,plan,implement,unit-test}.md`                                 | OpenCode command sources. Edit these, then run `pnpm sync:prompts` to regenerate the matching GitHub prompts.                                                                                       |
 | `package.json`                                                                             | Scripts and dependencies.                                                                                                                                                                           |
 | `next.config.ts`                                                                           | Minimal Next config.                                                                                                                                                                                |
 | `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |
