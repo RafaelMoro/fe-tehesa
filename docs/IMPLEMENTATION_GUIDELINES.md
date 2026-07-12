@@ -21,7 +21,7 @@ Project-wide rules for writing code in `fe-tehesa`. Apply throughout; override d
   // ponytail: object literal on multiple lines, even for two keys
   return {
     ok: true,
-    value: fixedSize
+    value: fixedSize,
   }
   ```
 
@@ -36,7 +36,7 @@ Project-wide rules for writing code in `fe-tehesa`. Apply throughout; override d
     ok: false,
     error: {
       code: CAT_VAL_002,
-      message: `pageSize must equal ${fixedSize}, got ${String(value)}`
-    }
+      message: `pageSize must equal ${fixedSize}, got ${String(value)}`,
+    },
   }
   ```
