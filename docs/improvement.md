@@ -20,6 +20,7 @@ Suggested BE contract shape:
 - Investigate graphql on the server using api from next js
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
 - Analytics, other than GA4, we can do our own analytics or search analytics tools
+- Show a notification error when the theme is changed but the cookie persistance failed
 
 ## Catalog API follow-up
 
