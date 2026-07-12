@@ -192,7 +192,9 @@ describe("catalog _utils", () => {
         requestWith("?pageSize=50abc"),
       )
       expect(productPageSize.ok).toBe(false)
-      if (productPageSize.ok) return
+      if (productPageSize.ok) {
+        return
+      }
       expect(productPageSize.error.code).toBe(CAT_VAL_002)
       expect(productPageSize.error.message).toBe(
         MSG_CAT_VAL_002(PRODUCT_PAGE_SIZE, "50abc"),
@@ -204,7 +206,9 @@ describe("catalog _utils", () => {
         requestWith(`?pageSize=${VARIANT_PAGE_SIZE}`),
       )
       expect(productPageSize.ok).toBe(false)
-      if (productPageSize.ok) return
+      if (productPageSize.ok) {
+        return
+      }
       expect(productPageSize.error.code).toBe(CAT_VAL_002)
     })
 
@@ -213,7 +217,9 @@ describe("catalog _utils", () => {
         requestWith("?pageSize=0"),
       )
       expect(productPageSize.ok).toBe(false)
-      if (productPageSize.ok) return
+      if (productPageSize.ok) {
+        return
+      }
       expect(productPageSize.error.code).toBe(CAT_VAL_002)
     })
   })
@@ -236,7 +242,9 @@ describe("catalog _utils", () => {
         requestWith("?pageSize=50"),
       )
       expect(variantPageSize.ok).toBe(false)
-      if (variantPageSize.ok) return
+      if (variantPageSize.ok) {
+        return
+      }
       expect(variantPageSize.error.code).toBe(CAT_VAL_002)
     })
   })
@@ -262,7 +270,9 @@ describe("catalog _utils", () => {
         requestWith("?categoryId=cat!1"),
       )
       expect(categoryId.ok).toBe(false)
-      if (categoryId.ok) return
+      if (categoryId.ok) {
+        return
+      }
       expect(categoryId.error.code).toBe(CAT_VAL_003)
     })
 
@@ -272,7 +282,9 @@ describe("catalog _utils", () => {
         requestWith(`?categoryId=${longId}`),
       )
       expect(categoryId.ok).toBe(false)
-      if (categoryId.ok) return
+      if (categoryId.ok) {
+        return
+      }
       expect(categoryId.error.code).toBe(CAT_VAL_003)
     })
 
@@ -311,7 +323,9 @@ describe("catalog _utils", () => {
         requestWith("?documentId=doc@1"),
       )
       expect(documentId.ok).toBe(false)
-      if (documentId.ok) return
+      if (documentId.ok) {
+        return
+      }
       expect(documentId.error.code).toBe(CAT_VAL_005)
     })
   })

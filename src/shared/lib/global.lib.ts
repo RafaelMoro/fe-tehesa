@@ -11,7 +11,12 @@ import type {
   ProductVariant,
   TaxonomyItem,
 } from "../types/global.types"
-import { THEME_COOKIE_KEY } from "../constants/global.constants"
+import {
+  DEFAULT_THEME,
+  isAppTheme,
+  THEME_COOKIE_KEY,
+  type AppTheme,
+} from "../constants/global.constants"
 import {
   GET_BRANDS,
   GET_CATEGORIES,
@@ -185,17 +190,19 @@ export const fetchBrands = async (): Promise<TaxonomyItem[]> => {
   return res?.data?.brands ?? []
 }
 
-export const getThemePreference = async () => {
+export const getThemePreference = async (): Promise<AppTheme> => {
   const cookieStore = await cookies()
-  const theme = cookieStore.get(THEME_COOKIE_KEY)?.value
-  if (!theme) {
-    // Return default
-    return "light"
+  const value = cookieStore.get(THEME_COOKIE_KEY)?.value
+  if (!value) {
+    return DEFAULT_THEME
   }
-  return theme
+  return isAppTheme(value) ? value : DEFAULT_THEME
 }
 
-export const saveThemeCookie = async (theme: string): Promise<void> => {
+export const saveThemeCookie = async (theme: AppTheme): Promise<void> => {
+  if (!isAppTheme(theme)) {
+    return
+  }
   const cookieStore = await cookies()
   cookieStore.set(THEME_COOKIE_KEY, theme, {
     httpOnly: true,
