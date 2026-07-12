@@ -14,13 +14,13 @@ A living reference for AI agents and developers working in this repository. It d
 
 - Next.js 15 App Router + React 19 + TypeScript strict mode.
 - pnpm lockfile with `.npmrc` hoisting for `@heroui/*` packages.
-- Tailwind v4 through `@tailwindcss/postcss` plus `tailwind.config.js` for HeroUI theme scanning and `darkMode: "class"`.
+- Tailwind v4 through `@tailwindcss/postcss` plus `tailwind.config.js` for `darkMode: "class"`.
 - HeroUI (`@heroui/react`) for UI primitives.
 - Apollo Client v4 + GraphQL for Strapi reads.
 - next-themes for class-based light/dark theme mode.
 - Zustand vanilla store + provider pattern for theme state.
 - Remix Icon React, Framer Motion, and `clsx` for icons, motion support, and class composition.
-- No test framework or test script is configured.
+- Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) via `next/jest`. Tests live in root `__tests__/` (not co-located). See "Testing" below.
 
 ## High-Level Architecture
 
@@ -44,7 +44,7 @@ Strapi GraphQL API via ApolloClient
 Key invariants:
 
 - `src/app/layout.tsx` is the root server layout. It sets `lang="es"`, loads Google Geist fonts, wraps children in `Providers`, then wraps them in `NextThemesProvider` with `attribute="class"` and `defaultTheme="dark"`.
-- `src/app/providers.tsx` is a client wrapper around `HeroUIProvider`.
+- `src/app/providers.tsx` currently returns children unchanged; HeroUI v3 does not require a provider in this app.
 - `src/app/page.tsx` is the only page route currently present. It awaits `searchParams` per Next 15, clamps `page` to `1..5`, fetches products and the theme cookie in parallel, and wraps the catalog in `ChangeThemeStoreProvider`.
 - `src/app/page.tsx` has a hardcoded pagination ceiling of 5 pages. This is a known product/API constraint, not a bug.
 - Server data access lives in `src/shared/lib/global.lib.ts` with the `"use server"` directive. It creates a new Apollo Client for each call through `src/app/apollo-client.ts`.
@@ -183,12 +183,12 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 | `pnpm build`             | Production build with Turbopack; also runs type checking.                      |
 | `pnpm start`             | Start a built Next app.                                                        |
 | `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
+| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).               |
+| `pnpm test:watch`        | Jest in watch mode.                                                            |
 | `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
 | `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.     |
 | `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).         |
 | `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.         |
-
-There is no `pnpm test` script and no test framework configured. Do not invent test commands.
 
 ## Prompt Sync
 
@@ -205,12 +205,24 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - PRs target `develop`.
 - `check-label.yml` requires at least one of `major`, `minor`, or `patch` on pull requests. CI fails when none are present.
 - `develop-pipeline.yml` runs on closed PRs to `develop`; when merged, it checks labels, bumps `package.json` with `npm version --no-git-tag-version`, tags `vX.Y.Z`, pushes tags, and prepends a generated entry to `CHANGELOG.md`.
+- `test.yml` runs on `pull_request` and on pushes to `develop`. It checks out the repo, enables pnpm via Corepack, sets up Node 22 with pnpm caching, runs `pnpm install --frozen-lockfile`, then `pnpm lint` and `pnpm test --coverage`, and uploads the `coverage/` directory as an artifact (`if-no-files-found: error`). It does not duplicate label enforcement, release versioning, tagging, or changelog behavior.
 - Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work unless explicitly requested.
+
+## Testing
+
+- Framework: Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) wired through `next/jest` in `jest.config.ts`.
+- Discovery: tests live in root `__tests__/` (not co-located with source). Pattern is `__tests__/**/*.{test,spec}.{ts,tsx}`.
+- Setup: `jest.setup.ts` loads `@testing-library/jest-dom` once and shims `window.matchMedia` (the only browser shim). `__tests__/test-utils.tsx` re-exports Testing Library and wraps `render` in the existing `Providers` component from `@/app/providers`. The `Providers` component is currently pass-through; using it keeps the app-provider seam stable.
+- Aliases: Jest mirrors `tsconfig.json` (`^@/(.*)$` → `src/$1`) and adds `^@__tests__/(.*)$` → `__tests__/$1` for the test helper. Both must be listed in `tsconfig.json` `paths` for TypeScript to resolve them.
+- Coverage: emitted via `pnpm test`; no threshold is enforced. Report writes to `coverage/` (gitignored implicitly by `eslint.config.mjs` ignores; do not commit it).
+- CI: `pnpm lint` + `pnpm test --coverage` run on every PR and merge to `develop` via `.github/workflows/test.yml`. The coverage artifact is uploaded with `if-no-files-found: error`.
+
+## Conventions And Gotchas
 
 ## Styling And UI
 
 - Preserve HeroUI as the component system unless a task explicitly changes UI libraries.
-- `tailwind.config.js` includes only HeroUI theme dist in `content`; Tailwind v4 auto-detects app content. Do not broaden or remove this casually.
+- `tailwind.config.js` currently only sets `darkMode: "class"`; Tailwind v4 auto-detects app content.
 - `darkMode: "class"` is required for next-themes/HeroUI dark mode behavior.
 - Existing UI copy is Spanish (`Catalogo de productos`, `Limpiar filtros`, `Ver detalles`, etc.). Preserve language consistency unless the task is localization-related.
 - `ProductCard` uses `useMediaQuery()` for mobile-aware card header/title layout.
@@ -229,6 +241,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 - `fetchProducts()`, `fetchProductVariants()`, and `fetchProductsByName()` do not catch Apollo errors; errors surface to the route handler, which maps them to `CAT_ERR_001`.
 - The catalog-wide name search, drawer state, and active-catalog-mode coordination are owned by the `useCatalogSearch` hook in `src/features/Home/useCatalogSearch.ts`. The hook returns state + handlers + `beginCatalogMode(mode)` / `clearAllCatalogState()` helpers that `Home` calls from `handleCategorySelect`/`handleBrandSelect` and `clearAllFilters`. Local filter state, product-details drawer, and pagination stay in `Home`. The hook is feature-local (not in `src/shared/hooks/`) because nothing else uses it.
 - Product image rendering in `ProductCard` is commented out and currently references localhost Strapi URLs. Treat image support as unfinished.
+- `@heroui/react` v3 is ESM-only and its `package.json` `exports['.']` exposes only an `import` entry (no `default`/`require`). Jest in CJS mode cannot resolve it through the package name. `jest.config.ts` maps `^@heroui/react$` to its `dist/index.js` to bypass the `exports` field, and `next.config.ts` lists the HeroUI + React-Aria + Radix + Framer-Motion + tailwind-variants + input-otp + `@jridgewell/*` + `@cspotcode/*` ecosystem in `transpilePackages` so SWC transforms their ESM. If you add a new client component that imports a different ESM-only package, add it to `transpilePackages` and confirm it resolves through the SWC transform.
 
 ## Key Files
 
@@ -241,7 +254,7 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |
 | `eslint.config.mjs`                                                                        | ESLint flat config with Next presets.                                                                                                                                                               |
 | `postcss.config.mjs`                                                                       | Tailwind v4 PostCSS plugin.                                                                                                                                                                         |
-| `tailwind.config.js`                                                                       | HeroUI theme plugin/content and class dark mode.                                                                                                                                                    |
+| `tailwind.config.js`                                                                       | Minimal Tailwind config with class dark mode.                                                                                                                                                       |
 | `scripts/sync-opencode-commands.mjs`                                                       | Syncs opencode command prompts into `.github/prompts`.                                                                                                                                              |
 | `.github/workflows/check-label.yml`                                                        | PR label validation for `major`, `minor`, or `patch`.                                                                                                                                               |
 | `.github/workflows/develop-pipeline.yml`                                                   | Develop merge release/changelog automation.                                                                                                                                                         |
