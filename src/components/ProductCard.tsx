@@ -21,6 +21,10 @@ export const ProductCard = ({
     product.minPrice == null ? null : formatNumberToCurrency(product.minPrice)
   const maxPriceString =
     product.maxPrice == null ? null : formatNumberToCurrency(product.maxPrice)
+  const primaryButtonText =
+    product.variantCount != null
+      ? `Explorar las ${product.variantCount} variantes`
+      : "Ver variantes"
 
   return (
     <Card className="h-full gap-0 overflow-hidden">
@@ -49,17 +53,21 @@ export const ProductCard = ({
           </div>
         )}
       </Card.Content>
-      <Card.Footer className="mt-auto p-0">
-        {product.variantCount != null && (
-          <Button
-            fullWidth
-            className="rounded-t-none"
-            variant="primary"
-            onPress={() => handleProductClick(product)}
-          >
-            Explorar las {product.variantCount} variantes
-          </Button>
-        )}
+      <Card.Footer className="flex justify-between">
+        <Button
+          fullWidth
+          variant="secondary"
+          // onPress={() => handleProductClick(product)}
+        >
+          Agregar al carrito
+        </Button>
+        <Button
+          fullWidth
+          variant="primary"
+          onPress={() => handleProductClick(product)}
+        >
+          {primaryButtonText}
+        </Button>
       </Card.Footer>
     </Card>
   )
