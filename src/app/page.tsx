@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
-import { Header } from "@/shared/ui/organisms/Header"
+import { CatalogPageLayout } from "@/features/Home/CatalogPageLayout"
 import {
   fetchBrands,
   fetchCategories,
@@ -43,24 +43,21 @@ export default async function MainPage({
 
   return (
     <ChangeThemeStoreProvider>
-      <div>
-        <Header themeFetched={themeFetched} />
-        <main className="flex flex-col gap-7 p-4 sm:p-6">
-          <Home
-            products={products}
-            currentPage={selection.page}
-            totalPages={PRODUCT_PAGE_MAX}
-            categories={categories}
-            brands={brands}
-            catalogMode={selection.mode}
-            catalogValue={selection.value}
-            catalogPage={selection.page}
-            hasPreviousCatalogPage={selection.hasPrevious}
-            hasNextCatalogPage={products.length === 50}
-            initialCatalogFeedback={selection.feedback}
-          />
-        </main>
-      </div>
+      <CatalogPageLayout themeFetched={themeFetched}>
+        <Home
+          products={products}
+          currentPage={selection.page}
+          totalPages={PRODUCT_PAGE_MAX}
+          categories={categories}
+          brands={brands}
+          catalogMode={selection.mode}
+          catalogValue={selection.value}
+          catalogPage={selection.page}
+          hasPreviousCatalogPage={selection.hasPrevious}
+          hasNextCatalogPage={products.length === 50}
+          initialCatalogFeedback={selection.feedback}
+        />
+      </CatalogPageLayout>
     </ChangeThemeStoreProvider>
   )
 }
