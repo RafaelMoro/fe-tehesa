@@ -9,7 +9,6 @@ import {
   CAT_VAL_004,
   CAT_VAL_005,
   CAT_VAL_006,
-  DOCUMENT_ID_MAX_LENGTH,
   MSG_CAT_ENV_001,
   MSG_CAT_VAL_001,
   MSG_CAT_VAL_002,
@@ -30,12 +29,10 @@ import {
  */
 import {
   failure,
-  findTaxonomyItem,
   readValidatedParams,
   success,
   validateCatalogEnv,
 } from "@/app/api/catalog/_utils"
-import type { TaxonomyItem } from "@/shared/types/global.types"
 
 const requestWith = (query: string) =>
   new Request(`http://localhost/api/catalog/products${query}`)
@@ -117,7 +114,8 @@ describe("catalog _utils", () => {
       ["omitted", undefined, PRODUCT_PAGE_MIN],
       ["1", "1", 1],
       ["3", "3", 3],
-      ["5 (max)", String(PRODUCT_PAGE_MAX), PRODUCT_PAGE_MAX],
+      ["6", "6", 6],
+      ["7 (max)", String(PRODUCT_PAGE_MAX), PRODUCT_PAGE_MAX],
     ])("accepts %s as page %i", (_label, raw, expected) => {
       const url = raw === undefined ? "" : `?page=${raw}`
       const { page } = readValidatedParams(requestWith(url))
@@ -127,7 +125,7 @@ describe("catalog _utils", () => {
     it.each([
       ["empty", ""],
       ["0", "0"],
-      ["6 (over max)", "6"],
+      ["8 (over max)", "8"],
       ["1.5 (decimal)", "1.5"],
       ["1abc (prefix)", "1abc"],
       ["abc1 (suffix)", "abc1"],
@@ -249,53 +247,59 @@ describe("catalog _utils", () => {
     })
   })
 
-  describe("readValidatedParams - taxonomy IDs", () => {
-    it("accepts a valid categoryId", () => {
-      const { categoryId } = readValidatedParams(
-        requestWith("?categoryId=cat-1"),
+  describe("readValidatedParams - taxonomy names", () => {
+    it("trims and accepts a valid category name", () => {
+      const { categoryName } = readValidatedParams(
+        requestWith("?category=%20Tubos%20y%20conexiones%20"),
       )
-      expect(categoryId).toEqual({ ok: true, value: "cat-1" })
+      expect(categoryName).toEqual({
+        ok: true,
+        value: "Tubos y conexiones",
+      })
     })
 
-    it("rejects an empty categoryId with CAT_VAL_003", () => {
-      const { categoryId } = readValidatedParams(requestWith("?categoryId="))
-      expect(categoryId).toEqual({
+    it("rejects an empty category name with CAT_VAL_003", () => {
+      const { categoryName } = readValidatedParams(requestWith("?category="))
+      expect(categoryName).toEqual({
         ok: false,
         error: { code: CAT_VAL_003, message: MSG_CAT_VAL_003 },
       })
     })
 
-    it("rejects an unsafe categoryId pattern with CAT_VAL_003", () => {
-      const { categoryId } = readValidatedParams(
-        requestWith("?categoryId=cat!1"),
+    it("rejects an unsafe category name pattern with CAT_VAL_003", () => {
+      const { categoryName } = readValidatedParams(
+        requestWith("?category=cat%2F1"),
       )
-      expect(categoryId.ok).toBe(false)
-      if (categoryId.ok) {
+      expect(categoryName.ok).toBe(false)
+      if (categoryName.ok) {
         return
       }
-      expect(categoryId.error.code).toBe(CAT_VAL_003)
+      expect(categoryName.error.code).toBe(CAT_VAL_003)
     })
 
-    it(`rejects a categoryId longer than ${DOCUMENT_ID_MAX_LENGTH} chars with CAT_VAL_003`, () => {
-      const longId = "a".repeat(DOCUMENT_ID_MAX_LENGTH + 1)
-      const { categoryId } = readValidatedParams(
-        requestWith(`?categoryId=${longId}`),
+    it(`rejects a category name longer than ${SEARCH_TERM_MAX_LENGTH} chars with CAT_VAL_003`, () => {
+      const longName = "a".repeat(SEARCH_TERM_MAX_LENGTH + 1)
+      const { categoryName } = readValidatedParams(
+        requestWith(`?category=${longName}`),
       )
-      expect(categoryId.ok).toBe(false)
-      if (categoryId.ok) {
+      expect(categoryName.ok).toBe(false)
+      if (categoryName.ok) {
         return
       }
-      expect(categoryId.error.code).toBe(CAT_VAL_003)
+      expect(categoryName.error.code).toBe(CAT_VAL_003)
     })
 
-    it("accepts a valid brandId", () => {
-      const { brandId } = readValidatedParams(requestWith("?brandId=brand-1"))
-      expect(brandId).toEqual({ ok: true, value: "brand-1" })
+    it("accepts a valid brand name", () => {
+      const { brandName } = readValidatedParams(requestWith("?brand=Acme%20MX"))
+      expect(brandName).toEqual({
+        ok: true,
+        value: "Acme MX",
+      })
     })
 
-    it("rejects an empty brandId with CAT_VAL_004", () => {
-      const { brandId } = readValidatedParams(requestWith("?brandId="))
-      expect(brandId).toEqual({
+    it("rejects an empty brand name with CAT_VAL_004", () => {
+      const { brandName } = readValidatedParams(requestWith("?brand="))
+      expect(brandName).toEqual({
         ok: false,
         error: { code: CAT_VAL_004, message: MSG_CAT_VAL_004 },
       })
@@ -361,28 +365,6 @@ describe("catalog _utils", () => {
         ok: false,
         error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN },
       })
-    })
-  })
-
-  describe("findTaxonomyItem", () => {
-    const items: TaxonomyItem[] = [
-      { name: "Tubes", customId: "tubes" },
-      { name: "Wheels", customId: "wheels" },
-    ]
-
-    it("returns the matching taxonomy item by customId", () => {
-      expect(findTaxonomyItem(items, "wheels")).toEqual({
-        name: "Wheels",
-        customId: "wheels",
-      })
-    })
-
-    it("returns undefined when customId is unknown", () => {
-      expect(findTaxonomyItem(items, "unknown")).toBeUndefined()
-    })
-
-    it("returns undefined for an empty list", () => {
-      expect(findTaxonomyItem([], "anything")).toBeUndefined()
     })
   })
 })
