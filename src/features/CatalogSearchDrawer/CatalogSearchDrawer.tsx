@@ -6,7 +6,6 @@ import {
   FieldError,
   Input,
   Label,
-  Spinner,
   TextField,
   type UseOverlayStateReturn,
 } from "@heroui/react"
@@ -20,8 +19,8 @@ interface CatalogSearchDrawerProps {
   searchTerm: string
   onSearchTermChange: (term: string) => void
   onSubmit: () => void
-  onCategorySelect: (categoryId: string) => void
-  onBrandSelect: (brandId: string) => void
+  onCategorySelect: (categoryName: string) => void
+  onBrandSelect: (brandName: string) => void
   selectedCategory: string | null
   selectedBrand: string | null
   categories: TaxonomyItem[]
@@ -88,7 +87,7 @@ export const CatalogSearchDrawer = ({
                     </Description>
                   )}
                 </TextField>
-                <Button type="submit" isPending={isLoading}>
+                <Button type="submit" isPending={isLoading} isDisabled={isLoading}>
                   Buscar
                 </Button>
               </form>
@@ -101,6 +100,8 @@ export const CatalogSearchDrawer = ({
                     updateSelectedCategory={onCategorySelect}
                     categories={categories}
                     defaultLabel="Buscar categoría en todo el catálogo"
+                    valueKey="name"
+                    isDisabled={isLoading}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -110,15 +111,12 @@ export const CatalogSearchDrawer = ({
                     updateSelectedBrand={onBrandSelect}
                     brands={brands}
                     defaultLabel="Buscar marca en todo el catálogo"
+                    valueKey="name"
+                    isDisabled={isLoading}
                   />
                 </div>
               </div>
-              {isLoading ? (
-                <div className="mt-4 flex items-center gap-2 text-sm">
-                  <Spinner size="sm" />
-                  <span>Buscando productos en el catálogo...</span>
-                </div>
-              ) : message ? (
+              {message ? (
                 <p
                   className="mt-4 text-sm"
                   role={messageKind === "error" ? "alert" : "status"}
@@ -128,7 +126,11 @@ export const CatalogSearchDrawer = ({
               ) : null}
             </Drawer.Body>
             <Drawer.Footer>
-              <Button variant="tertiary" onPress={onClearCatalogSearch}>
+              <Button
+                variant="tertiary"
+                onPress={onClearCatalogSearch}
+                isDisabled={isLoading}
+              >
                 Limpiar búsqueda
               </Button>
               <Button slot="close" variant="secondary">

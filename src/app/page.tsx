@@ -1,36 +1,38 @@
+import { redirect } from "next/navigation"
+
 import { Home } from "@/features/Home/Home"
 import { Header } from "@/shared/ui/organisms/Header"
+import { fetchBrands, fetchCategories, getThemePreference } from "@/shared/lib/global.lib"
+import { PRODUCT_PAGE_MAX, PRODUCT_PAGE_MIN } from "@/shared/constants/catalog.constants"
 import {
-  fetchBrands,
-  fetchCategories,
-  fetchProducts,
-  getThemePreference,
-} from "@/shared/lib/global.lib"
+  buildPageOneUrl,
+  buildPreviousNoticeUrl,
+  getCatalogSelection,
+} from "@/features/Pagination/utils.pagination"
+import type { MainPageSearchParams } from "@/features/Pagination/types.pagination"
 import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
 
 export default async function MainPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<MainPageSearchParams>
 }) {
-  // Await searchParams (Next.js 15+ requirement)
   const params = await searchParams
-
-  // Parse and validate page parameter
-  const pageParam = params.page || "1"
-  const digitsOnly = /^[0-9]+$/.test(pageParam)
-  const parsedPage = digitsOnly ? parseInt(pageParam, 10) : NaN
-  const currentPage = Math.max(1, Math.min(5, parsedPage || 1))
+  const selection = getCatalogSelection(params)
 
   const [products, categories, brands, themeFetched] = await Promise.all([
-    fetchProducts(currentPage),
+    selection.fetchProducts(),
     fetchCategories(),
     fetchBrands(),
     getThemePreference(),
   ])
 
-  // Calculate pagination props
-  const totalPages = 5 // Known constraint: 5 pages maximum
+  if (selection.page > PRODUCT_PAGE_MIN && products.length === 0) {
+    if (params.notice === "end") {
+      redirect(buildPreviousNoticeUrl(selection))
+    }
+    redirect(buildPageOneUrl(selection))
+  }
 
   return (
     <ChangeThemeStoreProvider>
@@ -42,10 +44,16 @@ export default async function MainPage({
           </h1>
           <Home
             products={products}
-            currentPage={currentPage}
-            totalPages={totalPages}
+            currentPage={selection.page}
+            totalPages={PRODUCT_PAGE_MAX}
             categories={categories}
             brands={brands}
+            catalogMode={selection.mode}
+            catalogValue={selection.value}
+            catalogPage={selection.page}
+            hasPreviousCatalogPage={selection.hasPrevious}
+            hasNextCatalogPage={products.length === 50}
+            initialCatalogFeedback={selection.feedback}
           />
         </main>
       </div>

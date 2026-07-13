@@ -1,6 +1,5 @@
 import {
   failure,
-  findTaxonomyItem,
   readValidatedParams,
   success,
   validateCatalogEnv,
@@ -19,10 +18,10 @@ export async function GET(request: Request) {
     return failure(envError.code, envError.message)
   }
 
-  const { brandId, wideSearchPage, productPageSize } =
+  const { brandName, wideSearchPage, productPageSize } =
     readValidatedParams(request)
-  if (!brandId.ok) {
-    return failure(brandId.error.code, brandId.error.message)
+  if (!brandName.ok) {
+    return failure(brandName.error.code, brandName.error.message)
   }
   if (!wideSearchPage.ok) {
     return failure(wideSearchPage.error.code, wideSearchPage.error.message)
@@ -33,11 +32,11 @@ export async function GET(request: Request) {
 
   try {
     const brands = await fetchBrands()
-    if (!findTaxonomyItem(brands, brandId.value)) {
+    if (!brands.some((brand) => brand.name.includes(brandName.value))) {
       return failure(CAT_NF_002, MSG_CAT_NF_002)
     }
     const products = await fetchProductsByBrand(
-      brandId.value,
+      brandName.value,
       wideSearchPage.value,
     )
     return success(products)

@@ -1,6 +1,5 @@
 import {
   failure,
-  findTaxonomyItem,
   readValidatedParams,
   success,
   validateCatalogEnv,
@@ -22,10 +21,10 @@ export async function GET(request: Request) {
     return failure(envError.code, envError.message)
   }
 
-  const { categoryId, wideSearchPage, productPageSize } =
+  const { categoryName, wideSearchPage, productPageSize } =
     readValidatedParams(request)
-  if (!categoryId.ok) {
-    return failure(categoryId.error.code, categoryId.error.message)
+  if (!categoryName.ok) {
+    return failure(categoryName.error.code, categoryName.error.message)
   }
   if (!wideSearchPage.ok) {
     return failure(wideSearchPage.error.code, wideSearchPage.error.message)
@@ -36,11 +35,13 @@ export async function GET(request: Request) {
 
   try {
     const categories = await fetchCategories()
-    if (!findTaxonomyItem(categories, categoryId.value)) {
+    if (
+      !categories.some((category) => category.name.includes(categoryName.value))
+    ) {
       return failure(CAT_NF_001, MSG_CAT_NF_001)
     }
     const products = await fetchProductsByCategory(
-      categoryId.value,
+      categoryName.value,
       wideSearchPage.value,
     )
     return success(products)

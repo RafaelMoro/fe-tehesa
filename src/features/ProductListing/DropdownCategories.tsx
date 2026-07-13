@@ -5,9 +5,11 @@ import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface DropdownCategoriesProps {
   selectedCategory: string | null
-  updateSelectedCategory: (categoryCustomId: string) => void
+  updateSelectedCategory: (categoryValue: string) => void
   categories: TaxonomyItem[]
   defaultLabel?: string
+  valueKey?: "customId" | "name"
+  isDisabled?: boolean
 }
 
 export const DropdownCategories = ({
@@ -15,18 +17,20 @@ export const DropdownCategories = ({
   updateSelectedCategory,
   categories,
   defaultLabel,
+  valueKey = "customId",
+  isDisabled = false,
 }: DropdownCategoriesProps) => {
   // Find the selected category object to display its name
   const selectedCategoryObj = categories.find(
-    (cat) => cat.customId === selectedCategory,
+    (cat) => cat[valueKey] === selectedCategory,
   )
   const availableCategories = categories.filter(
-    (cat) => cat.customId !== selectedCategory,
+    (cat) => cat[valueKey] !== selectedCategory,
   )
 
   return (
     <Dropdown>
-      <Button variant="secondary">
+      <Button variant="secondary" isDisabled={isDisabled}>
         {selectedCategoryObj?.name ??
           defaultLabel ??
           "Buscar categoría en todo el catálogo"}
@@ -40,8 +44,8 @@ export const DropdownCategories = ({
         >
           {availableCategories.map((category) => (
             <Dropdown.Item
-              key={category.customId}
-              id={category.customId}
+              key={category[valueKey]}
+              id={category[valueKey]}
               textValue={category.name}
             >
               <Label>{category.name}</Label>

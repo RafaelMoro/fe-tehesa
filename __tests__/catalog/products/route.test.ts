@@ -80,6 +80,28 @@ describe("GET /api/catalog/products", () => {
     expect(fetchProductsMock).toHaveBeenCalledWith(1)
   })
 
+  it.each([6, 7])("accepts page %i", async (page) => {
+    setEnv()
+    fetchProductsMock.mockResolvedValue([])
+
+    const res = await GET(requestWith(`?page=${page}`))
+    expect(res.status).toBe(200)
+    expect(fetchProductsMock).toHaveBeenCalledWith(page)
+  })
+
+  it("rejects page 8 with CAT_VAL_001", async () => {
+    setEnv()
+
+    const res = await GET(requestWith("?page=8"))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
+      success: false,
+      code: CAT_VAL_001,
+      message: MSG_CAT_VAL_001,
+    })
+    expect(fetchProductsMock).not.toHaveBeenCalled()
+  })
+
   it("rejects an invalid page size with CAT_VAL_002 without calling the adapter", async () => {
     setEnv()
 

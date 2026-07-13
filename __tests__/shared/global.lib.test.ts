@@ -65,29 +65,29 @@ describe("Apollo adapters", () => {
     })
   })
 
-  it("fetchProductsByCategory sends category customId.contains and page size 50", async () => {
+  it("fetchProductsByCategory sends category name.contains and page size 50", async () => {
     queryMock.mockResolvedValue(ok<FetchProductsResponse>({ products: [product] }))
 
-    const result = await fetchProductsByCategory("tubes", 2)
+    const result = await fetchProductsByCategory("Tubos", 2)
     expect(result).toEqual([product])
     expect(queryMock).toHaveBeenCalledWith({
       query: GET_PRODUCTS_BY_CATEGORY,
       variables: {
-        filters: { category: { customId: { contains: "tubes" } } },
+        filters: { category: { name: { contains: "Tubos" } } },
         pagination: { page: 2, pageSize: 50 },
       },
     })
   })
 
-  it("fetchProductsByBrand sends brand customId.contains and page size 50", async () => {
+  it("fetchProductsByBrand sends brand name.contains and page size 50", async () => {
     queryMock.mockResolvedValue(ok<FetchProductsResponse>({ products: [product] }))
 
-    const result = await fetchProductsByBrand("acme", 4)
+    const result = await fetchProductsByBrand("Acme", 4)
     expect(result).toEqual([product])
     expect(queryMock).toHaveBeenCalledWith({
       query: GET_PRODUCTS_BY_BRAND,
       variables: {
-        filters: { brand: { customId: { contains: "acme" } } },
+        filters: { brand: { name: { contains: "Acme" } } },
         pagination: { page: 4, pageSize: 50 },
       },
     })

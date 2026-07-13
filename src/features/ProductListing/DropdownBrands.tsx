@@ -5,9 +5,11 @@ import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface DropdownBrandsProps {
   selectedBrand: string | null
-  updateSelectedBrand: (brandCustomId: string) => void
+  updateSelectedBrand: (brandValue: string) => void
   brands: TaxonomyItem[]
   defaultLabel?: string
+  valueKey?: "customId" | "name"
+  isDisabled?: boolean
 }
 
 export const DropdownBrands = ({
@@ -15,18 +17,20 @@ export const DropdownBrands = ({
   updateSelectedBrand,
   brands,
   defaultLabel,
+  valueKey = "customId",
+  isDisabled = false,
 }: DropdownBrandsProps) => {
   // Find the selected brand object to display its name
   const selectedBrandObj = brands.find(
-    (brand) => brand.customId === selectedBrand,
+    (brand) => brand[valueKey] === selectedBrand,
   )
   const availableBrands = brands.filter(
-    (brand) => brand.customId !== selectedBrand,
+    (brand) => brand[valueKey] !== selectedBrand,
   )
 
   return (
     <Dropdown>
-      <Button variant="secondary">
+      <Button variant="secondary" isDisabled={isDisabled}>
         {selectedBrandObj?.name ??
           defaultLabel ??
           "Buscar marca en todo el catálogo"}
@@ -40,8 +44,8 @@ export const DropdownBrands = ({
         >
           {availableBrands.map((brand) => (
             <Dropdown.Item
-              key={brand.customId}
-              id={brand.customId}
+              key={brand[valueKey]}
+              id={brand[valueKey]}
               textValue={brand.name}
             >
               <Label>{brand.name}</Label>

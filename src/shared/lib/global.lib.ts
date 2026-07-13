@@ -80,7 +80,7 @@ export const fetchProducts = async (page: number = 1): Promise<Product[]> => {
 }
 
 export const fetchProductsByCategory = async (
-  customId: string,
+  categoryName: string,
   page: number,
 ): Promise<Product[]> => {
   // ponytail: see the JSDoc above — no local try/catch by contract (was previously
@@ -92,8 +92,8 @@ export const fetchProductsByCategory = async (
     variables: {
       filters: {
         category: {
-          customId: {
-            contains: customId,
+          name: {
+            contains: categoryName,
           },
         },
       },
@@ -107,7 +107,7 @@ export const fetchProductsByCategory = async (
 }
 
 export const fetchProductsByBrand = async (
-  brandId: string,
+  brandName: string,
   page: number,
 ): Promise<Product[]> => {
   // ponytail: see the JSDoc above — no local try/catch by contract (was previously
@@ -119,8 +119,8 @@ export const fetchProductsByBrand = async (
     variables: {
       filters: {
         brand: {
-          customId: {
-            contains: brandId,
+          name: {
+            contains: brandName,
           },
         },
       },

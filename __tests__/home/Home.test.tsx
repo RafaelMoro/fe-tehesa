@@ -76,7 +76,7 @@ const renderHome = (overrides: Partial<Parameters<typeof Home>[0]> = {}) =>
     <Home
       products={products}
       currentPage={1}
-      totalPages={5}
+      totalPages={7}
       categories={categories}
       brands={brands}
       {...overrides}
@@ -100,232 +100,166 @@ describe("Home - local filtering", () => {
     expect(screen.getByText("Tire A")).toBeInTheDocument()
     expect(screen.queryByText("Chain C")).not.toBeInTheDocument()
 
-    const clearButton = screen.getByRole("button", { name: "Limpiar filtros" })
-    await user.click(clearButton)
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }))
 
     await waitFor(() => {
       expect(screen.getByText("Chain C")).toBeInTheDocument()
     })
   })
-
-  it("opens the catalog search drawer from the main button", async () => {
-    const user = userEvent.setup()
-    renderHome()
-
-    await user.click(
-      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
-    )
-
-    expect(
-      await screen.findByRole("dialog", { name: "Buscar en todo el catálogo" }),
-    ).toBeInTheDocument()
-  })
 })
 
-describe("Home - catalog-wide modes through the drawer", () => {
-  it("applies category then brand wide results; replaces data and resets local filters", async () => {
+describe("Home - URL-backed catalog modes", () => {
+  it("submits name search as a canonical URL", async () => {
     const user = userEvent.setup()
-    const fetchMock = jest.fn<
-      Promise<{ ok: boolean; status: number; headers: { get: () => string }; json: () => Promise<unknown> }>,
-      [RequestInfo, RequestInit?]
-    >()
-
-    setFetch(fetchMock as unknown as typeof fetch)
-
-    const categoryProducts: Product[] = [
-      {
-        name: "CatProduct",
-        documentId: "cat-1",
-        category: { name: "Tubes" },
-        brand: { name: "Acme" },
-      },
-    ]
-    const brandProducts: Product[] = [
-      {
-        name: "BrandProduct",
-        documentId: "brand-1",
-        category: { name: "Brakes" },
-        brand: { name: "Other" },
-      },
-    ]
-
-    fetchMock.mockImplementation((url) => {
-      const target = String(url)
-      if (target.includes("/api/catalog/category")) {
-        return Promise.resolve(jsonResponse({ success: true, data: categoryProducts }))
-      }
-      if (target.includes("/api/catalog/brand")) {
-        return Promise.resolve(jsonResponse({ success: true, data: brandProducts }))
-      }
-      return Promise.resolve(jsonResponse({ success: true, data: [] }))
-    })
-
     renderHome()
 
-    // Open the catalog search drawer
     await user.click(
       screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Buscar en todo el catálogo",
     })
+    await user.type(within(dialog).getByLabelText("Nombre del producto"), " llave ")
+    await user.click(within(dialog).getByRole("button", { name: "Buscar" }))
 
-    // Select category inside the drawer
-    const categoryDropdown = within(dialog).getByRole("button", {
-      name: /Buscar categoría en todo el catálogo/,
-    })
-    await user.click(categoryDropdown)
-    await user.click(await screen.findByText("Tubes"))
-
+    expect(pushMock).not.toHaveBeenCalled()
     await waitFor(() => {
-      expect(screen.getByText("CatProduct")).toBeInTheDocument()
+      expect(pushMock).toHaveBeenCalledWith("/?mode=name&q=llave&page=1")
+    })
+  })
+
+  it("navigates category and brand by encoded names", async () => {
+    const user = userEvent.setup()
+    renderHome({
+      categories: [{ name: "Tubos PVC", customId: "tubes" }],
+      brands: [{ name: "Marca Norte", customId: "north" }],
     })
 
-    const lastCategoryCall = fetchMock.mock.calls
-      .map((c) => String(c[0]))
-      .filter((u) => u.includes("/api/catalog/category"))
-      .pop()
-    expect(lastCategoryCall).toBe(
-      "/api/catalog/category?categoryId=tubes&page=1",
+    await user.click(
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
+    const dialog = await screen.findByRole("dialog", {
+      name: "Buscar en todo el catálogo",
+    })
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: /Buscar categoría en todo el catálogo/,
+      }),
+    )
+    await user.click(await screen.findByText("Tubos PVC"))
+    expect(pushMock).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenLastCalledWith(
+        "/?mode=category&category=Tubos%20PVC&page=1",
+      )
+    })
 
-    // Open drawer again and select brand
     await user.click(
       screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog2 = await screen.findByRole("dialog", {
       name: "Buscar en todo el catálogo",
     })
-    const brandDropdown = within(dialog2).getByRole("button", {
-      name: /Buscar marca en todo el catálogo/,
-    })
-    await user.click(brandDropdown)
-    await user.click(await screen.findByText("Other"))
-
+    await user.click(
+      within(dialog2).getByRole("button", {
+        name: /Buscar marca en todo el catálogo/,
+      }),
+    )
+    await user.click(await screen.findByText("Marca Norte"))
     await waitFor(() => {
-      expect(screen.getByText("BrandProduct")).toBeInTheDocument()
+      expect(pushMock).toHaveBeenLastCalledWith(
+        "/?mode=brand&brand=Marca%20Norte&page=1",
+      )
     })
-
-    const lastBrandCall = fetchMock.mock.calls
-      .map((c) => String(c[0]))
-      .filter((u) => u.includes("/api/catalog/brand"))
-      .pop()
-    expect(lastBrandCall).toBe("/api/catalog/brand?brandId=other&page=1")
-
-    expect(screen.queryByText("CatProduct")).not.toBeInTheDocument()
   })
 
-  it("keeps the original products visible when a drawer interaction is dismissed", async () => {
+  it("clear wide search returns to base page 1", async () => {
     const user = userEvent.setup()
-    renderHome()
+    renderHome({ catalogMode: "name", catalogValue: "llave", catalogPage: 2 })
 
-    await user.click(
-      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
-    )
-    expect(
-      await screen.findByRole("dialog", { name: "Buscar en todo el catálogo" }),
-    ).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Limpiar búsqueda" }))
 
-    // Original products remain visible while the drawer is open
-    expect(screen.getByText("Tire A")).toBeInTheDocument()
-    expect(screen.getByText("Chain C")).toBeInTheDocument()
+    expect(pushMock).toHaveBeenCalledWith("/?page=1")
   })
 })
 
 describe("Home - pagination", () => {
-  it("calls push and scrollTo for normal pagination", async () => {
+  it("renders pages 1-7 and pushes page 6 and 7 URLs", async () => {
     const user = userEvent.setup()
     renderHome()
 
-    const page2 = screen.getByRole("button", { name: "2" })
-    await user.click(page2)
+    expect(screen.getByRole("button", { name: "7" })).toBeInTheDocument()
 
-    expect(pushMock).toHaveBeenCalledWith("/?page=2")
+    await user.click(screen.getByRole("button", { name: "6" }))
+    expect(pushMock).toHaveBeenLastCalledWith("/?page=6")
+
+    await user.click(screen.getByRole("button", { name: "7" }))
+    expect(pushMock).toHaveBeenLastCalledWith("/?page=7")
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 0,
       behavior: "smooth",
     })
   })
 
-  it("enables Siguiente for 50-item wide result and uses the active mode parameter on page 2", async () => {
+  it("uses canonical wide Previous and Next URLs", async () => {
     const user = userEvent.setup()
-    const fetchMock = jest.fn<Promise<{ ok: boolean; status: number; headers: { get: () => string }; json: () => Promise<unknown> }>, [RequestInfo, RequestInit?]>()
-    setFetch(fetchMock as unknown as typeof fetch)
-
-    const page1Products: Product[] = Array.from({ length: 50 }, (_, index) => ({
-      name: `Wide ${index + 1}`,
-      documentId: `wide-${index + 1}`,
-      category: { name: "Tubes" },
-      brand: { name: "Acme" },
-    }))
-    const page2Products: Product[] = Array.from({ length: 50 }, (_, index) => ({
-      name: `Page2 ${index + 1}`,
-      documentId: `p2-${index + 1}`,
-      category: { name: "Tubes" },
-      brand: { name: "Acme" },
-    }))
-
-    fetchMock.mockImplementation((url) => {
-      const target = String(url)
-      if (target.includes("page=2")) {
-        return Promise.resolve(jsonResponse({ success: true, data: page2Products }))
-      }
-      return Promise.resolve(jsonResponse({ success: true, data: page1Products }))
+    renderHome({
+      catalogMode: "category",
+      catalogValue: "Tubos PVC",
+      catalogPage: 2,
+      hasPreviousCatalogPage: true,
+      hasNextCatalogPage: true,
     })
 
-    renderHome()
-
-    await user.click(
-      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
+    await user.click(screen.getByRole("button", { name: "Anterior" }))
+    expect(pushMock).toHaveBeenLastCalledWith(
+      "/?mode=category&category=Tubos%20PVC&page=1",
     )
-    const dialog = await screen.findByRole("dialog", {
-      name: "Buscar en todo el catálogo",
+
+    await user.click(screen.getByRole("button", { name: "Siguiente" }))
+    expect(pushMock).toHaveBeenLastCalledWith(
+      "/?mode=category&category=Tubos%20PVC&page=3",
+    )
+  })
+
+  it("shows notice=end feedback and disables Next", () => {
+    renderHome({
+      catalogMode: "brand",
+      catalogValue: "Acme",
+      catalogPage: 2,
+      hasPreviousCatalogPage: true,
+      hasNextCatalogPage: true,
+      initialCatalogFeedback: {
+        kind: "status",
+        message: "No hay más resultados.",
+      },
     })
-    const categoryDropdown = within(dialog).getByRole("button", {
-      name: /Buscar categoría en todo el catálogo/,
-    })
-    await user.click(categoryDropdown)
-    await user.click(await screen.findByText("Tubes"))
 
-    const siguiente = await screen.findByRole("button", { name: "Siguiente" })
-    expect(siguiente).not.toBeDisabled()
-
-    const anterior = screen.getByRole("button", { name: "Anterior" })
-    expect(anterior).toBeDisabled()
-
-    await user.click(siguiente)
-
-    await waitFor(() => {
-      expect(screen.getByText("Página 2")).toBeInTheDocument()
-    })
-
-    const page2Call = fetchMock.mock.calls
-      .map((c) => String(c[0]))
-      .filter((u) => u.includes("page=2"))
-      .pop()
-    expect(page2Call).toBe("/api/catalog/category?categoryId=tubes&page=2")
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "No hay más resultados.",
+    )
+    expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled()
   })
 })
 
 describe("Home - product details", () => {
   it("opens the variants drawer with the selected product's documentId", async () => {
     const user = userEvent.setup()
-    const fetchMock = jest.fn<Promise<{ ok: boolean; status: number; headers: { get: () => string }; json: () => Promise<unknown> }>, [RequestInfo, RequestInit?]>()
+    const fetchMock = jest.fn<
+      Promise<{
+        ok: boolean
+        status: number
+        headers: { get: () => string }
+        json: () => Promise<unknown>
+      }>,
+      [RequestInfo, RequestInit?]
+    >()
     setFetch(fetchMock as unknown as typeof fetch)
-    fetchMock.mockImplementation((url) => {
-      const target = String(url)
-      if (target.includes("/api/catalog/variants")) {
-        return Promise.resolve(jsonResponse({ success: true, data: [] }))
-      }
-      return Promise.resolve(jsonResponse({ success: true, data: [] }))
-    })
+    fetchMock.mockResolvedValue(jsonResponse({ success: true, data: [] }))
 
     renderHome()
 
-    const verDetallesButtons = screen.getAllByRole("button", {
-      name: "Ver detalles",
-    })
-    await user.click(verDetallesButtons[0])
+    await user.click(screen.getAllByRole("button", { name: "Ver detalles" })[0])
 
     const dialog = await screen.findByRole("dialog")
     expect(within(dialog).getByText("Tire A")).toBeInTheDocument()

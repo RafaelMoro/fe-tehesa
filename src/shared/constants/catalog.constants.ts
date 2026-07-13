@@ -14,8 +14,8 @@ export const MSG_CAT_ENV_001 = "Missing Strapi configuration"
 export const MSG_CAT_VAL_001 = "Invalid page parameter"
 export const MSG_CAT_VAL_002 = (fixedSize: number, value: unknown) =>
   `pageSize must equal ${fixedSize}, got ${String(value)}`
-export const MSG_CAT_VAL_003 = "Invalid categoryId"
-export const MSG_CAT_VAL_004 = "Invalid brandId"
+export const MSG_CAT_VAL_003 = "Invalid category name"
+export const MSG_CAT_VAL_004 = "Invalid brand name"
 export const MSG_CAT_VAL_005 = "Invalid documentId"
 export const MSG_CAT_VAL_006 = "Invalid search term"
 export const MSG_CAT_VAL_006_EMPTY = "Invalid search term: empty"
@@ -29,7 +29,10 @@ export const MSG_CAT_ERR_001 = "Upstream catalog error"
 export const PRODUCT_PAGE_SIZE = 50
 export const VARIANT_PAGE_SIZE = 100
 export const PRODUCT_PAGE_MIN = 1
-export const PRODUCT_PAGE_MAX = 5
+export const KNOWN_PRODUCT_TOTAL = 333
+export const PRODUCT_PAGE_MAX = Math.ceil(
+  KNOWN_PRODUCT_TOTAL / PRODUCT_PAGE_SIZE,
+)
 export const DOCUMENT_ID_MAX_LENGTH = 30
 export const DOCUMENT_ID_PATTERN = /^[A-Za-z0-9_-]+$/
 export const SEARCH_TERM_MAX_LENGTH = 100

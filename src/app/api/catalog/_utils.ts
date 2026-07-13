@@ -26,7 +26,6 @@ import {
   SEARCH_TERM_PATTERN,
   VARIANT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
-import type { TaxonomyItem } from "@/shared/types/global.types"
 
 export type CatalogErrorCode =
   | typeof CAT_ENV_001
@@ -48,7 +47,10 @@ export type CatalogEnvelope<T> =
 export type CatalogError = { code: CatalogErrorCode; message: string }
 
 export const success = <T>(data: T) =>
-  NextResponse.json<CatalogEnvelope<T>>({ success: true, data })
+  NextResponse.json<CatalogEnvelope<T>>({
+    success: true,
+    data,
+  })
 
 export const failure = (code: CatalogErrorCode, message: string) =>
   NextResponse.json<CatalogEnvelope<never>>(
@@ -58,7 +60,10 @@ export const failure = (code: CatalogErrorCode, message: string) =>
 
 export const validateCatalogEnv = (): CatalogError | null => {
   if (!process.env.STRAPI_HOST || !process.env.STRAPI_API_TOKEN) {
-    return { code: CAT_ENV_001, message: MSG_CAT_ENV_001 }
+    return {
+      code: CAT_ENV_001,
+      message: MSG_CAT_ENV_001,
+    }
   }
   return null
 }
@@ -69,10 +74,19 @@ const parsePage = (
   raw: string | null,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
   if (raw === null) {
-    return { ok: true, value: PRODUCT_PAGE_MIN }
+    return {
+      ok: true,
+      value: PRODUCT_PAGE_MIN,
+    }
   }
   if (!DIGITS_ONLY.test(raw)) {
-    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_001,
+        message: MSG_CAT_VAL_001,
+      },
+    }
   }
   const value = Number.parseInt(raw, 10)
   if (
@@ -80,25 +94,52 @@ const parsePage = (
     value < PRODUCT_PAGE_MIN ||
     value > PRODUCT_PAGE_MAX
   ) {
-    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_001,
+        message: MSG_CAT_VAL_001,
+      },
+    }
   }
-  return { ok: true, value }
+  return {
+    ok: true,
+    value,
+  }
 }
 
 const parseWideSearchPage = (
   raw: string | null,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
   if (raw === null) {
-    return { ok: true, value: PRODUCT_PAGE_MIN }
+    return {
+      ok: true,
+      value: PRODUCT_PAGE_MIN,
+    }
   }
   if (!DIGITS_ONLY.test(raw)) {
-    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_001,
+        message: MSG_CAT_VAL_001,
+      },
+    }
   }
   const value = Number.parseInt(raw, 10)
   if (!Number.isInteger(value) || value < PRODUCT_PAGE_MIN) {
-    return { ok: false, error: { code: CAT_VAL_001, message: MSG_CAT_VAL_001 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_001,
+        message: MSG_CAT_VAL_001,
+      },
+    }
   }
-  return { ok: true, value }
+  return {
+    ok: true,
+    value,
+  }
 }
 
 const parsePageSize = (
@@ -106,7 +147,10 @@ const parsePageSize = (
   fixedSize: number,
 ): { ok: true; value: number } | { ok: false; error: CatalogError } => {
   if (raw === null) {
-    return { ok: true, value: fixedSize }
+    return {
+      ok: true,
+      value: fixedSize,
+    }
   }
   if (!DIGITS_ONLY.test(raw)) {
     return {
@@ -133,30 +177,73 @@ const parsePageSize = (
   }
 }
 
-const parseTaxonomyId = (
+const parseTaxonomyName = (
   raw: string | null,
   errorCode: typeof CAT_VAL_003 | typeof CAT_VAL_004,
   errorMessage: string,
 ): { ok: true; value: string } | { ok: false; error: CatalogError } => {
-  if (!raw) {
-    return { ok: false, error: { code: errorCode, message: errorMessage } }
+  if (raw === null) {
+    return {
+      ok: false,
+      error: {
+        code: errorCode,
+        message: errorMessage,
+      },
+    }
   }
-  if (!DOCUMENT_ID_PATTERN.test(raw) || raw.length > DOCUMENT_ID_MAX_LENGTH) {
-    return { ok: false, error: { code: errorCode, message: errorMessage } }
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) {
+    return {
+      ok: false,
+      error: {
+        code: errorCode,
+        message: errorMessage,
+      },
+    }
   }
-  return { ok: true, value: raw }
+  if (
+    trimmed.length > SEARCH_TERM_MAX_LENGTH ||
+    !SEARCH_TERM_PATTERN.test(trimmed)
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: errorCode,
+        message: errorMessage,
+      },
+    }
+  }
+  return {
+    ok: true,
+    value: trimmed,
+  }
 }
 
 const parseDocumentId = (
   raw: string | null,
 ): { ok: true; value: string } | { ok: false; error: CatalogError } => {
   if (!raw) {
-    return { ok: false, error: { code: CAT_VAL_005, message: MSG_CAT_VAL_005 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_005,
+        message: MSG_CAT_VAL_005,
+      },
+    }
   }
   if (!DOCUMENT_ID_PATTERN.test(raw) || raw.length > DOCUMENT_ID_MAX_LENGTH) {
-    return { ok: false, error: { code: CAT_VAL_005, message: MSG_CAT_VAL_005 } }
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_005,
+        message: MSG_CAT_VAL_005,
+      },
+    }
   }
-  return { ok: true, value: raw }
+  return {
+    ok: true,
+    value: raw,
+  }
 }
 
 const parseSearchTerm = (
@@ -165,29 +252,44 @@ const parseSearchTerm = (
   if (raw === null) {
     return {
       ok: false,
-      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_EMPTY },
+      error: {
+        code: CAT_VAL_006,
+        message: MSG_CAT_VAL_006_EMPTY,
+      },
     }
   }
   const trimmed = raw.trim()
   if (trimmed.length === 0) {
     return {
       ok: false,
-      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_EMPTY },
+      error: {
+        code: CAT_VAL_006,
+        message: MSG_CAT_VAL_006_EMPTY,
+      },
     }
   }
   if (trimmed.length > SEARCH_TERM_MAX_LENGTH) {
     return {
       ok: false,
-      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_LENGTH },
+      error: {
+        code: CAT_VAL_006,
+        message: MSG_CAT_VAL_006_LENGTH,
+      },
     }
   }
   if (!SEARCH_TERM_PATTERN.test(trimmed)) {
     return {
       ok: false,
-      error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN },
+      error: {
+        code: CAT_VAL_006,
+        message: MSG_CAT_VAL_006_PATTERN,
+      },
     }
   }
-  return { ok: true, value: trimmed }
+  return {
+    ok: true,
+    value: trimmed,
+  }
 }
 
 export const readValidatedParams = (request: Request) => {
@@ -204,13 +306,13 @@ export const readValidatedParams = (request: Request) => {
     params.get("pageSize"),
     VARIANT_PAGE_SIZE,
   )
-  const categoryId = parseTaxonomyId(
-    params.get("categoryId"),
+  const categoryName = parseTaxonomyName(
+    params.get("category"),
     CAT_VAL_003,
     MSG_CAT_VAL_003,
   )
-  const brandId = parseTaxonomyId(
-    params.get("brandId"),
+  const brandName = parseTaxonomyName(
+    params.get("brand"),
     CAT_VAL_004,
     MSG_CAT_VAL_004,
   )
@@ -222,14 +324,9 @@ export const readValidatedParams = (request: Request) => {
     wideSearchPage,
     productPageSize,
     variantPageSize,
-    categoryId,
-    brandId,
+    categoryName,
+    brandName,
     documentId,
     searchTerm,
   }
 }
-
-export const findTaxonomyItem = (
-  items: TaxonomyItem[],
-  customId: string,
-): TaxonomyItem | undefined => items.find((item) => item.customId === customId)

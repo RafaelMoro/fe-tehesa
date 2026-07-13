@@ -44,11 +44,11 @@ afterEach(() => {
   }
 })
 
-const categories: TaxonomyItem[] = [{ name: "Tubes", customId: "tubes" }]
+const categories: TaxonomyItem[] = [{ name: "Tubos PVC", customId: "tubes" }]
 const products = [
   {
     name: "Tire",
-    category: { name: "Tubes" },
+    category: { name: "Tubos PVC" },
     brand: { name: "Acme" },
     documentId: "doc-1",
   },
@@ -58,21 +58,21 @@ const requestWith = (query: string) =>
   new Request(`http://localhost/api/catalog/category${query}`)
 
 describe("GET /api/catalog/category", () => {
-  it("returns the product envelope on success and forwards category + page", async () => {
+  it("returns the product envelope on success and forwards category name + page", async () => {
     setEnv()
     fetchCategoriesMock.mockResolvedValue(categories)
     fetchProductsByCategoryMock.mockResolvedValue(products)
 
-    const res = await GET(requestWith("?categoryId=tubes&page=2"))
+    const res = await GET(requestWith("?category=Tubos&page=2"))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ success: true, data: products })
-    expect(fetchProductsByCategoryMock).toHaveBeenCalledWith("tubes", 2)
+    expect(fetchProductsByCategoryMock).toHaveBeenCalledWith("Tubos", 2)
   })
 
-  it("rejects an invalid categoryId with CAT_VAL_003", async () => {
+  it("rejects an invalid category name with CAT_VAL_003", async () => {
     setEnv()
 
-    const res = await GET(requestWith("?categoryId=bad!id"))
+    const res = await GET(requestWith("?category=bad%2Fname"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
@@ -86,7 +86,7 @@ describe("GET /api/catalog/category", () => {
     setEnv()
     fetchCategoriesMock.mockResolvedValue(categories)
 
-    const res = await GET(requestWith("?categoryId=unknown"))
+    const res = await GET(requestWith("?category=unknown"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
@@ -101,7 +101,7 @@ describe("GET /api/catalog/category", () => {
     fetchCategoriesMock.mockResolvedValue(categories)
     fetchProductsByCategoryMock.mockRejectedValue(new Error("up"))
 
-    const res = await GET(requestWith("?categoryId=tubes"))
+    const res = await GET(requestWith("?category=Tubos"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
@@ -114,7 +114,7 @@ describe("GET /api/catalog/category", () => {
     setEnv()
     fetchCategoriesMock.mockRejectedValue(new Error("up"))
 
-    const res = await GET(requestWith("?categoryId=tubes"))
+    const res = await GET(requestWith("?category=Tubos"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,

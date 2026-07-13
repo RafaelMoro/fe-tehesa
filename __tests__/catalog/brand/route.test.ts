@@ -44,12 +44,12 @@ afterEach(() => {
   }
 })
 
-const brands: TaxonomyItem[] = [{ name: "Acme", customId: "acme" }]
+const brands: TaxonomyItem[] = [{ name: "Acme MX", customId: "acme" }]
 const products = [
   {
     name: "Tire",
     category: { name: "Tubes" },
-    brand: { name: "Acme" },
+    brand: { name: "Acme MX" },
     documentId: "doc-1",
   },
 ]
@@ -58,21 +58,21 @@ const requestWith = (query: string) =>
   new Request(`http://localhost/api/catalog/brand${query}`)
 
 describe("GET /api/catalog/brand", () => {
-  it("returns the product envelope on success and forwards brand + page", async () => {
+  it("returns the product envelope on success and forwards brand name + page", async () => {
     setEnv()
     fetchBrandsMock.mockResolvedValue(brands)
     fetchProductsByBrandMock.mockResolvedValue(products)
 
-    const res = await GET(requestWith("?brandId=acme&page=2"))
+    const res = await GET(requestWith("?brand=Acme&page=2"))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ success: true, data: products })
-    expect(fetchProductsByBrandMock).toHaveBeenCalledWith("acme", 2)
+    expect(fetchProductsByBrandMock).toHaveBeenCalledWith("Acme", 2)
   })
 
-  it("rejects an invalid brandId with CAT_VAL_004", async () => {
+  it("rejects an invalid brand name with CAT_VAL_004", async () => {
     setEnv()
 
-    const res = await GET(requestWith("?brandId=bad!id"))
+    const res = await GET(requestWith("?brand=bad%2Fname"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
@@ -86,7 +86,7 @@ describe("GET /api/catalog/brand", () => {
     setEnv()
     fetchBrandsMock.mockResolvedValue(brands)
 
-    const res = await GET(requestWith("?brandId=unknown"))
+    const res = await GET(requestWith("?brand=unknown"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
@@ -101,7 +101,7 @@ describe("GET /api/catalog/brand", () => {
     fetchBrandsMock.mockResolvedValue(brands)
     fetchProductsByBrandMock.mockRejectedValue(new Error("up"))
 
-    const res = await GET(requestWith("?brandId=acme"))
+    const res = await GET(requestWith("?brand=Acme"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
