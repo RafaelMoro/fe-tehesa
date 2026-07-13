@@ -1,24 +1,11 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useOverlayState } from "@heroui/react"
 
-import { Product } from "@/shared/types/global.types"
-import {
-  catalogErrorToSpanish,
-  fetchCatalog,
-} from "@/shared/utils/catalog-api.utils"
+type CatalogMessageKind = "status" | "error" | null
 
-export type CatalogMode = "name" | "category" | "brand" | null
-
-export type CatalogMessageKind = "status" | "error" | null
-
-interface UseCatalogSearchArgs {
-  products: Product[]
-}
-
-export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
+export const useCatalogSearch = () => {
   const catalogSearchDrawerState = useOverlayState()
-  const [activeCatalogMode, setActiveCatalogMode] = useState<CatalogMode>(null)
   const [catalogSearchTerm, setCatalogSearchTerm] = useState("")
   const [catalogMessage, setCatalogMessage] = useState<string | null>(null)
   const [catalogMessageKind, setCatalogMessageKind] =
@@ -28,16 +15,6 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     string | null
   >(null)
   const [isLoadingCatalogSearch, setIsLoadingCatalogSearch] = useState(false)
-
-  useEffect(() => {
-    setActiveCatalogMode(null)
-    setCatalogSearchTerm("")
-    setCatalogMessage(null)
-    setCatalogMessageKind(null)
-    setIsInvalidCatalogSearch(false)
-    setInvalidSearchMessage(null)
-    setIsLoadingCatalogSearch(false)
-  }, [products])
 
   const handleCatalogSearchTermChange = (term: string) => {
     setCatalogSearchTerm(term)
@@ -51,59 +28,21 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     }
   }
 
-  const handleCatalogNameSearch = async (
-    page = 1,
-  ): Promise<Product[] | null> => {
+  const validateCatalogSearchTerm = (): string | null => {
     const trimmed = catalogSearchTerm.trim()
     if (trimmed.length === 0) {
       setIsInvalidCatalogSearch(true)
       setInvalidSearchMessage("Ingresa un texto para buscar en el catálogo.")
       return null
     }
-    setIsLoadingCatalogSearch(true)
     setIsInvalidCatalogSearch(false)
     setInvalidSearchMessage(null)
-    setCatalogMessage("Buscando productos en el catálogo...")
-    setCatalogMessageKind("status")
-    try {
-      const results = await fetchCatalog<Product[]>(
-        `/api/catalog/search?q=${encodeURIComponent(trimmed)}&page=${page}`,
-      )
-      setActiveCatalogMode("name")
-      if (results.length === 0) {
-        setCatalogMessage("No encontramos productos en el catálogo.")
-        setCatalogMessageKind("status")
-      } else {
-        setCatalogMessage(null)
-        setCatalogMessageKind(null)
-      }
-      catalogSearchDrawerState.close()
-      return results
-    } catch (error) {
-      const code = (error as { code?: string })?.code
-      if (code === "CAT_VAL_006") {
-        setIsInvalidCatalogSearch(true)
-        setInvalidSearchMessage(
-          "Revisa el texto de búsqueda e inténtalo de nuevo.",
-        )
-      } else {
-        setCatalogMessage(
-          code
-            ? catalogErrorToSpanish(code)
-            : "No pudimos buscar productos. Inténtalo de nuevo.",
-        )
-        setCatalogMessageKind("error")
-      }
-      return null
-    } finally {
-      setIsLoadingCatalogSearch(false)
-    }
+    setCatalogMessage(null)
+    setCatalogMessageKind(null)
+    return trimmed
   }
 
-  // ponytail: single helper to coordinate catalog-wide category/brand selection
-  // with the search state (clears the search box, dismisses any prior message, closes the drawer).
-  const beginCatalogMode = (mode: "category" | "brand") => {
-    setActiveCatalogMode(mode)
+  const clearCatalogSearchInput = () => {
     setCatalogSearchTerm("")
     setCatalogMessage(null)
     setCatalogMessageKind(null)
@@ -113,7 +52,6 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
   }
 
   const clearAllCatalogState = () => {
-    setActiveCatalogMode(null)
     setCatalogSearchTerm("")
     setCatalogMessage(null)
     setCatalogMessageKind(null)
@@ -125,7 +63,6 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
 
   return {
     catalogSearchDrawerState,
-    activeCatalogMode,
     catalogSearchTerm,
     catalogMessage,
     catalogMessageKind,
@@ -133,8 +70,8 @@ export const useCatalogSearch = ({ products }: UseCatalogSearchArgs) => {
     invalidSearchMessage,
     isLoadingCatalogSearch,
     handleCatalogSearchTermChange,
-    handleCatalogNameSearch,
-    beginCatalogMode,
+    validateCatalogSearchTerm,
+    clearCatalogSearchInput,
     clearAllCatalogState,
   }
 }
