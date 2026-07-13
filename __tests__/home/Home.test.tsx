@@ -201,6 +201,9 @@ describe("Home - pagination", () => {
     renderHome()
 
     expect(screen.getByRole("button", { name: "7" })).toBeInTheDocument()
+    expect(screen.getByText(/Mostrando/)).toHaveTextContent(
+      "Mostrando 1-3 de 333 productos",
+    )
 
     await user.click(screen.getByRole("button", { name: "6" }))
     expect(pushMock).toHaveBeenLastCalledWith("/?page=6")
