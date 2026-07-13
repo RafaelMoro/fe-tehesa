@@ -20,6 +20,8 @@ import { useCatalogSearch } from "./useCatalogSearch"
 
 type PageFeedback = { message: string; kind: "status" | "error" } | null
 
+const DRAWER_CLOSE_DELAY_MS = 500
+
 interface HomeProps {
   products: Product[]
   currentPage: number
@@ -67,7 +69,8 @@ export const Home = ({
   const activeCatalogMode = catalogMode === "base" ? null : catalogMode
   const selectedCategory = catalogMode === "category" ? catalogValue : null
   const selectedBrand = catalogMode === "brand" ? catalogValue : null
-  const isEndNotice = initialCatalogFeedback?.message === "No hay más resultados."
+  const isEndNotice =
+    initialCatalogFeedback?.message === "No hay más resultados."
 
   const drawerState = useOverlayState()
   const {
@@ -106,6 +109,10 @@ export const Home = ({
       router.push(url)
     })
     window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const navigateAfterCatalogDrawerClose = (url: string) => {
+    window.setTimeout(() => navigateTo(url), DRAWER_CLOSE_DELAY_MS)
   }
 
   const handlePageChange = (page: number) => {
@@ -174,7 +181,7 @@ export const Home = ({
   const handleCategorySelect = (categoryName: string) => {
     clearCatalogSearchInput()
     setPageFeedback(null)
-    navigateTo(
+    navigateAfterCatalogDrawerClose(
       `/?mode=category&category=${encodeURIComponent(categoryName)}&page=1`,
     )
   }
@@ -182,7 +189,9 @@ export const Home = ({
   const handleBrandSelect = (brandName: string) => {
     clearCatalogSearchInput()
     setPageFeedback(null)
-    navigateTo(`/?mode=brand&brand=${encodeURIComponent(brandName)}&page=1`)
+    navigateAfterCatalogDrawerClose(
+      `/?mode=brand&brand=${encodeURIComponent(brandName)}&page=1`,
+    )
   }
 
   const handleCatalogNameSearchSubmit = () => {
@@ -192,7 +201,9 @@ export const Home = ({
       return
     }
     catalogSearchDrawerState.close()
-    navigateTo(`/?mode=name&q=${encodeURIComponent(trimmed)}&page=1`)
+    navigateAfterCatalogDrawerClose(
+      `/?mode=name&q=${encodeURIComponent(trimmed)}&page=1`,
+    )
   }
 
   const clearLocalFilters = () => {
@@ -217,7 +228,9 @@ export const Home = ({
     }
     setPageFeedback(null)
     if (activeCatalogMode === "name") {
-      navigateTo(`/?mode=name&q=${encodeURIComponent(catalogValue)}&page=${page}`)
+      navigateTo(
+        `/?mode=name&q=${encodeURIComponent(catalogValue)}&page=${page}`,
+      )
     }
     if (activeCatalogMode === "category") {
       navigateTo(
@@ -253,10 +266,7 @@ export const Home = ({
             brands={brands}
             defaultLabel="Filtrar por marca visible"
           />
-          <Button
-            onPress={clearLocalFilters}
-            isDisabled={isBusy}
-          >
+          <Button onPress={clearLocalFilters} isDisabled={isBusy}>
             Limpiar filtros
           </Button>
         </div>
@@ -350,9 +360,7 @@ export const Home = ({
           <Button
             variant="secondary"
             onPress={() => handleCatalogPageChange(initialCatalogPage - 1)}
-            isDisabled={
-              !initialHasPreviousCatalogPage || isBusy
-            }
+            isDisabled={!initialHasPreviousCatalogPage || isBusy}
           >
             Anterior
           </Button>
@@ -360,9 +368,7 @@ export const Home = ({
           <Button
             variant="secondary"
             onPress={() => handleCatalogPageChange(initialCatalogPage + 1)}
-            isDisabled={
-              !initialHasNextCatalogPage || isEndNotice || isBusy
-            }
+            isDisabled={!initialHasNextCatalogPage || isEndNotice || isBusy}
           >
             Siguiente
           </Button>
@@ -382,9 +388,7 @@ export const Home = ({
         selectedBrand={selectedBrand}
         categories={categories}
         brands={brands}
-        isLoading={
-          isBusy
-        }
+        isLoading={isBusy}
         message={catalogMessage}
         messageKind={catalogMessageKind}
         isInvalidSearch={isInvalidCatalogSearch}

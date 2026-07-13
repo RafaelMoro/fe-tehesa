@@ -122,7 +122,10 @@ describe("Home - URL-backed catalog modes", () => {
     await user.type(within(dialog).getByLabelText("Nombre del producto"), " llave ")
     await user.click(within(dialog).getByRole("button", { name: "Buscar" }))
 
-    expect(pushMock).toHaveBeenCalledWith("/?mode=name&q=llave&page=1")
+    expect(pushMock).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/?mode=name&q=llave&page=1")
+    })
   })
 
   it("navigates category and brand by encoded names", async () => {
@@ -144,9 +147,12 @@ describe("Home - URL-backed catalog modes", () => {
       }),
     )
     await user.click(await screen.findByText("Tubos PVC"))
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?mode=category&category=Tubos%20PVC&page=1",
-    )
+    expect(pushMock).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenLastCalledWith(
+        "/?mode=category&category=Tubos%20PVC&page=1",
+      )
+    })
 
     await user.click(
       screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
@@ -160,9 +166,11 @@ describe("Home - URL-backed catalog modes", () => {
       }),
     )
     await user.click(await screen.findByText("Marca Norte"))
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?mode=brand&brand=Marca%20Norte&page=1",
-    )
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenLastCalledWith(
+        "/?mode=brand&brand=Marca%20Norte&page=1",
+      )
+    })
   })
 
   it("clear wide search returns to base page 1", async () => {
