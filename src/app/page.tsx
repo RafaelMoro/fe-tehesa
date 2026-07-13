@@ -1,9 +1,16 @@
 import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
-import { Header } from "@/shared/ui/organisms/Header"
-import { fetchBrands, fetchCategories, getThemePreference } from "@/shared/lib/global.lib"
-import { PRODUCT_PAGE_MAX, PRODUCT_PAGE_MIN } from "@/shared/constants/catalog.constants"
+import { CatalogPageLayout } from "@/features/Home/CatalogPageLayout"
+import {
+  fetchBrands,
+  fetchCategories,
+  getThemePreference,
+} from "@/shared/lib/global.lib"
+import {
+  PRODUCT_PAGE_MAX,
+  PRODUCT_PAGE_MIN,
+} from "@/shared/constants/catalog.constants"
 import {
   buildPageOneUrl,
   buildPreviousNoticeUrl,
@@ -36,27 +43,21 @@ export default async function MainPage({
 
   return (
     <ChangeThemeStoreProvider>
-      <div>
-        <Header themeFetched={themeFetched} />
-        <main className="p-10 flex flex-col gap-10">
-          <h1 className="text-4xl font-bold text-center mb-5">
-            Catalogo de productos
-          </h1>
-          <Home
-            products={products}
-            currentPage={selection.page}
-            totalPages={PRODUCT_PAGE_MAX}
-            categories={categories}
-            brands={brands}
-            catalogMode={selection.mode}
-            catalogValue={selection.value}
-            catalogPage={selection.page}
-            hasPreviousCatalogPage={selection.hasPrevious}
-            hasNextCatalogPage={products.length === 50}
-            initialCatalogFeedback={selection.feedback}
-          />
-        </main>
-      </div>
+      <CatalogPageLayout themeFetched={themeFetched}>
+        <Home
+          products={products}
+          currentPage={selection.page}
+          totalPages={PRODUCT_PAGE_MAX}
+          categories={categories}
+          brands={brands}
+          catalogMode={selection.mode}
+          catalogValue={selection.value}
+          catalogPage={selection.page}
+          hasPreviousCatalogPage={selection.hasPrevious}
+          hasNextCatalogPage={products.length === 50}
+          initialCatalogFeedback={selection.feedback}
+        />
+      </CatalogPageLayout>
     </ChangeThemeStoreProvider>
   )
 }

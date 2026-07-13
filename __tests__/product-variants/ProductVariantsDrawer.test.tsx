@@ -1,5 +1,5 @@
 import { Button, useOverlayState } from "@heroui/react"
-import { render, screen, userEvent, within } from "@__tests__/test-utils"
+import { render, screen, userEvent } from "@__tests__/test-utils"
 import { ProductVariantsDrawer } from "@/features/ProductVariantsDrawer/ProductVariantsDrawer"
 import type { Product } from "@/shared/types/global.types"
 import type { CatalogEnvelope } from "@/shared/utils/catalog-api.utils"
@@ -129,7 +129,7 @@ describe("ProductVariantsDrawer", () => {
     )
   })
 
-  it("renders sorted variant rows with USD formatting", async () => {
+  it("renders sorted selectable variants with USD formatting", async () => {
     const user = userEvent.setup()
     const fetchMock = mockFetch()
     fetchMock.mockResolvedValue(
@@ -145,14 +145,44 @@ describe("ProductVariantsDrawer", () => {
     render(<DrawerHarness product={product} />)
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
-    const table = await screen.findByRole("grid", {
-      name: "Variantes del producto Tire A",
+    expect(
+      await screen.findByRole("checkbox", { name: /Pequeña/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByText("$10.00")).toBeInTheDocument()
+    expect(screen.getByText("Grande")).toBeInTheDocument()
+    expect(screen.getByText("$30.00")).toBeInTheDocument()
+  })
+
+  it("updates the selected count and total", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    await user.click(checkbox)
+
+    expect(checkbox).toBeChecked()
+    expect(screen.getByText("1 variante · 1 pieza")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Agregar 1 al carrito" })).toBeEnabled()
+
+    const quantity = screen.getByRole("spinbutton", {
+      name: "Cantidad de Pequeña",
     })
-    const rows = within(table).getAllByRole("row")
-    expect(rows[1]).toHaveTextContent("Pequeña")
-    expect(rows[1]).toHaveTextContent("$10.00")
-    expect(rows[2]).toHaveTextContent("Grande")
-    expect(rows[2]).toHaveTextContent("$30.00")
+    await user.clear(quantity)
+    await user.type(quantity, "3")
+
+    expect(screen.getByText(/1 variante/)).toHaveTextContent(
+      "1 variante · 3 piezas",
+    )
+    expect(screen.getByText("$30.00")).toBeInTheDocument()
   })
 
   it("clears old rows on close and refetches on reopen", async () => {
@@ -172,7 +202,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
     expect(await screen.findByText("Primera")).toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: "Cancelar" }))
+    await user.click(screen.getByRole("button", { name: "Cerrar" }))
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("status")).toHaveTextContent(

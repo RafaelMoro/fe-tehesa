@@ -10,6 +10,7 @@ interface DropdownBrandsProps {
   defaultLabel?: string
   valueKey?: "customId" | "name"
   isDisabled?: boolean
+  fullWidth?: boolean
 }
 
 export const DropdownBrands = ({
@@ -19,18 +20,19 @@ export const DropdownBrands = ({
   defaultLabel,
   valueKey = "customId",
   isDisabled = false,
+  fullWidth = false,
 }: DropdownBrandsProps) => {
-  // Find the selected brand object to display its name
   const selectedBrandObj = brands.find(
     (brand) => brand[valueKey] === selectedBrand,
-  )
-  const availableBrands = brands.filter(
-    (brand) => brand[valueKey] !== selectedBrand,
   )
 
   return (
     <Dropdown>
-      <Button variant="secondary" isDisabled={isDisabled}>
+      <Button
+        className={fullWidth ? "w-full justify-between" : "w-full justify-between sm:w-48"}
+        variant="secondary"
+        isDisabled={isDisabled}
+      >
         {selectedBrandObj?.name ??
           defaultLabel ??
           "Buscar marca en todo el catálogo"}
@@ -42,7 +44,7 @@ export const DropdownBrands = ({
           aria-label="Dropdown menu brands"
           onAction={(key) => updateSelectedBrand(key as string)}
         >
-          {availableBrands.map((brand) => (
+          {brands.map((brand) => (
             <Dropdown.Item
               key={brand[valueKey]}
               id={brand[valueKey]}

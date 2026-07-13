@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
-import { RiInformationLine } from "@remixicon/react"
+import { RiArrowLeftLine, RiArrowRightLine, RiInformationLine } from "@remixicon/react"
 
 import {
   CatalogMode,
@@ -10,6 +10,10 @@ import {
   Product,
   TaxonomyItem,
 } from "@/shared/types/global.types"
+import {
+  KNOWN_PRODUCT_TOTAL,
+  PRODUCT_PAGE_SIZE,
+} from "@/shared/constants/catalog.constants"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
@@ -17,6 +21,7 @@ import { CatalogSearchDrawer } from "../CatalogSearchDrawer/CatalogSearchDrawer"
 import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
 import { useCatalogSearch } from "./useCatalogSearch"
+import { CatalogHero } from "./CatalogHero"
 
 type PageFeedback = { message: string; kind: "status" | "error" } | null
 
@@ -88,6 +93,15 @@ export const Home = ({
     clearAllCatalogState,
   } = useCatalogSearch()
   const isBusy = isRoutePending || isLoadingCatalogSearch
+  const visibleProductStart =
+    products.length === 0 ? 0 : (currentPage - 1) * PRODUCT_PAGE_SIZE + 1
+  const visibleProductEnd =
+    products.length === 0
+      ? 0
+      : Math.min(
+          (currentPage - 1) * PRODUCT_PAGE_SIZE + products.length,
+          KNOWN_PRODUCT_TOTAL,
+        )
 
   const handleCatalogSearchTermChange = (term: string) => {
     handleHookSearchTermChange(term)
@@ -261,24 +275,33 @@ export const Home = ({
 
   return (
     <>
+      <CatalogHero
+        productCount={products.length}
+        onAction={catalogSearchDrawerState.open}
+        isDisabled={isBusy}
+      />
       <div>
-        <SearchInput value={localSearchTerm} onSearch={handleSearch} />
-        <div className="flex flex-wrap gap-3 items-center mb-3">
-          <DropdownCategories
-            selectedCategory={localCategory}
-            updateSelectedCategory={handleLocalCategorySelect}
-            categories={categories}
-            defaultLabel="Filtrar por categoría visible"
-          />
-          <DropdownBrands
-            selectedBrand={localBrand}
-            updateSelectedBrand={handleLocalBrandSelect}
-            brands={brands}
-            defaultLabel="Filtrar por marca visible"
-          />
-          <Button onPress={clearLocalFilters} isDisabled={isBusy}>
-            Limpiar filtros
-          </Button>
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row">
+          <SearchInput value={localSearchTerm} onSearch={handleSearch} />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <DropdownCategories
+              selectedCategory={localCategory}
+              updateSelectedCategory={handleLocalCategorySelect}
+              categories={categories}
+              defaultLabel="Filtrar categorías"
+            />
+            <DropdownBrands
+              selectedBrand={localBrand}
+              updateSelectedBrand={handleLocalBrandSelect}
+              brands={brands}
+              defaultLabel="Filtrar marcas"
+            />
+            {isLocalFilterActive && (
+              <Button onPress={clearLocalFilters} isDisabled={isBusy}>
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
         </div>
         {isLocalFilterActive && (
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
@@ -310,13 +333,6 @@ export const Home = ({
           </div>
         )}
         <div className="flex flex-wrap gap-3 items-center mb-5">
-          <Button
-            variant="secondary"
-            onPress={catalogSearchDrawerState.open}
-            isDisabled={isBusy}
-          >
-            Buscar en todo el catálogo
-          </Button>
           {activeCatalogMode !== null && (
             <Button
               variant="tertiary"
@@ -344,26 +360,51 @@ export const Home = ({
         onOpenCatalogSearch={catalogSearchDrawerState.open}
       />
       {activeCatalogMode === null ? (
-        <div className="w-full flex justify-center">
-          <Pagination size="md">
-            <Pagination.Content>
-              {Array.from({ length: totalPages }, (_, index) => {
-                const page = index + 1
+        <div className="flex flex-col gap-3 rounded-xl border border-default-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted">
+            Mostrando <span className="font-medium text-foreground">{visibleProductStart}-{visibleProductEnd}</span> de {KNOWN_PRODUCT_TOTAL} productos
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              isIconOnly
+              size="sm"
+              variant="tertiary"
+              aria-label="Página anterior"
+              onPress={() => handlePageChange(currentPage - 1)}
+              isDisabled={currentPage === 1 || isRoutePending}
+            >
+              <RiArrowLeftLine />
+            </Button>
+            <Pagination size="sm">
+              <Pagination.Content>
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const page = index + 1
 
-                return (
-                  <Pagination.Item key={page}>
-                    <Pagination.Link
-                      isActive={page === currentPage}
-                      onPress={() => handlePageChange(page)}
-                      isDisabled={page === currentPage || isRoutePending}
-                    >
-                      {page}
-                    </Pagination.Link>
-                  </Pagination.Item>
-                )
-              })}
-            </Pagination.Content>
-          </Pagination>
+                  return (
+                    <Pagination.Item key={page}>
+                      <Pagination.Link
+                        isActive={page === currentPage}
+                        onPress={() => handlePageChange(page)}
+                        isDisabled={page === currentPage || isRoutePending}
+                      >
+                        {page}
+                      </Pagination.Link>
+                    </Pagination.Item>
+                  )
+                })}
+              </Pagination.Content>
+            </Pagination>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="tertiary"
+              aria-label="Página siguiente"
+              onPress={() => handlePageChange(currentPage + 1)}
+              isDisabled={currentPage === totalPages || isRoutePending}
+            >
+              <RiArrowRightLine />
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="w-full flex items-center justify-center gap-3">

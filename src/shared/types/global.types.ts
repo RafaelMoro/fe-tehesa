@@ -23,8 +23,8 @@ export type Brand = {
 
 export type Product = {
   name: string
-  category: Category
-  brand: Brand
+  category: Category | null
+  brand: Brand | null
   documentId: string
   minPrice?: number
   maxPrice?: number
@@ -60,6 +60,7 @@ export interface PaginationProps {
 }
 
 export type ProductVariant = {
+  internalId?: string
   diameter: string
   pricing: {
     price: number

@@ -1,4 +1,5 @@
 import { Button } from "@heroui/react"
+import { RiArrowRightLine, RiSearchLine } from "@remixicon/react"
 
 import { ProductCard } from "@/components/ProductCard"
 import { Product } from "@/shared/types/global.types"
@@ -20,18 +21,27 @@ export const ProductListing = ({
 }: ProductListingProps) => {
   if (products.length === 0 && isLocalFilterActive) {
     return (
-      <div className="flex flex-col gap-2">
-        <p>No hay coincidencias en los productos que estás viendo.</p>
-        <p>
-          ¿No encontraste lo que buscabas? Amplía la búsqueda al catálogo
-          completo.
+      <div className="flex min-h-102 flex-col items-center justify-center rounded-xl border border-default-200 bg-emerald-50 dark:bg-emerald-950 to-transparent px-6 py-14 text-center">
+        <div className="mb-6 flex size-13 items-center justify-center rounded-full border border-default-200 bg-surface text-muted">
+          <RiSearchLine aria-hidden="true" size={22} />
+        </div>
+        <h2 className="text-2xl font-bold">
+          No hay coincidencias en estos productos
+        </h2>
+        <p className="mt-3 max-w-md text-muted">
+          No encontramos resultados en la selección que estás viendo. Podemos
+          ampliar la búsqueda sin perder tus filtros.
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-col items-center gap-3">
           {onOpenCatalogSearch && (
-            <Button size="sm" variant="primary" onPress={onOpenCatalogSearch}>
+            <Button size="lg" variant="primary" onPress={onOpenCatalogSearch}>
               Buscar en todo el catálogo
+              <RiArrowRightLine aria-hidden="true" />
             </Button>
           )}
+          <p className="text-xs text-muted mt-8">
+            La búsqueda incluirá productos fuera de la selección actual.
+          </p>
           {onClearLocalFilter && (
             <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
               Limpiar filtros

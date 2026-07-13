@@ -10,6 +10,7 @@ interface DropdownCategoriesProps {
   defaultLabel?: string
   valueKey?: "customId" | "name"
   isDisabled?: boolean
+  fullWidth?: boolean
 }
 
 export const DropdownCategories = ({
@@ -19,18 +20,19 @@ export const DropdownCategories = ({
   defaultLabel,
   valueKey = "customId",
   isDisabled = false,
+  fullWidth = false,
 }: DropdownCategoriesProps) => {
-  // Find the selected category object to display its name
   const selectedCategoryObj = categories.find(
     (cat) => cat[valueKey] === selectedCategory,
-  )
-  const availableCategories = categories.filter(
-    (cat) => cat[valueKey] !== selectedCategory,
   )
 
   return (
     <Dropdown>
-      <Button variant="secondary" isDisabled={isDisabled}>
+      <Button
+        className={fullWidth ? "w-full justify-between" : "w-full justify-between sm:w-48"}
+        variant="secondary"
+        isDisabled={isDisabled}
+      >
         {selectedCategoryObj?.name ??
           defaultLabel ??
           "Buscar categoría en todo el catálogo"}
@@ -42,7 +44,7 @@ export const DropdownCategories = ({
           aria-label="Dropdown menu categories"
           onAction={(key) => updateSelectedCategory(key as string)}
         >
-          {availableCategories.map((category) => (
+          {categories.map((category) => (
             <Dropdown.Item
               key={category[valueKey]}
               id={category[valueKey]}
