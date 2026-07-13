@@ -1,7 +1,8 @@
 import { Header } from "@/shared/ui/organisms/Header"
+import type { AppTheme } from "@/shared/types/global.types"
 
 interface CatalogPageLayoutProps {
-  themeFetched: string
+  themeFetched: AppTheme
   children: React.ReactNode
 }
 
