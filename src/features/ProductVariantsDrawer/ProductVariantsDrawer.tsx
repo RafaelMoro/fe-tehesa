@@ -108,6 +108,16 @@ export const ProductVariantsDrawer = ({
         <Drawer.Content placement="right" className="w-full">
           <Drawer.Dialog className="flex h-full flex-col">
             <Drawer.Header className="flex items-start justify-between gap-4 border-b border-default-200 p-6">
+              <div className="w-full flex justify-end">
+                <Button
+                  isIconOnly
+                  variant="secondary"
+                  aria-label="Cerrar"
+                  onPress={handleClose}
+                >
+                  <RiCloseLine />
+                </Button>
+              </div>
               <div>
                 <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase dark:text-emerald-400">
                   Seleccionar variantes
@@ -116,14 +126,6 @@ export const ProductVariantsDrawer = ({
                   {product.name}
                 </Drawer.Heading>
               </div>
-              <Button
-                isIconOnly
-                variant="secondary"
-                aria-label="Cerrar"
-                onPress={handleClose}
-              >
-                <RiCloseLine />
-              </Button>
             </Drawer.Header>
             <Drawer.Body className="flex-1 p-6">
               {isLoading && <p role="status">Cargando variantes...</p>}
