@@ -2,8 +2,15 @@ import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
 import { Header } from "@/shared/ui/organisms/Header"
-import { fetchBrands, fetchCategories, getThemePreference } from "@/shared/lib/global.lib"
-import { PRODUCT_PAGE_MAX, PRODUCT_PAGE_MIN } from "@/shared/constants/catalog.constants"
+import {
+  fetchBrands,
+  fetchCategories,
+  getThemePreference,
+} from "@/shared/lib/global.lib"
+import {
+  PRODUCT_PAGE_MAX,
+  PRODUCT_PAGE_MIN,
+} from "@/shared/constants/catalog.constants"
 import {
   buildPageOneUrl,
   buildPreviousNoticeUrl,
@@ -41,10 +48,10 @@ export default async function MainPage({
         <main className="flex flex-col gap-7 p-4 sm:p-6">
           <section className="flex flex-col gap-2">
             <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase dark:text-emerald-400">
-              Catálogo industrial
+              Suministro industrial
             </p>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Productos para cada instalación
+              Piezas precisas para trabajo exigente.
             </h1>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <p className="max-w-xl text-muted">
@@ -52,7 +59,8 @@ export default async function MainPage({
                 antes de elegir una variante.
               </p>
               <p className="text-sm text-muted">
-                {products.length} {products.length === 1 ? "producto" : "productos"}
+                {products.length}{" "}
+                {products.length === 1 ? "producto" : "productos"}
               </p>
             </div>
           </section>
