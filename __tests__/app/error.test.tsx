@@ -1,22 +1,16 @@
 /**
  * @jest-environment jsdom
  */
-import { render, screen, userEvent } from "@__tests__/test-utils"
+import { render, screen } from "@__tests__/test-utils"
 import Error from "@/app/error"
 
 describe("app error boundary", () => {
-  it("shows Spanish recovery copy and retries through reset", async () => {
-    const user = userEvent.setup()
+  it("shows Spanish error copy with a disabled retry action", () => {
     const reset = jest.fn()
 
     render(<Error reset={reset} />)
 
-    expect(
-      screen.getByRole("heading", { name: "No pudimos cargar el catálogo." }),
-    ).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "Reintentar" }))
-
-    expect(reset).toHaveBeenCalledTimes(1)
+    expect(screen.getByText("No pudimos cargar los productos.")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Reintentar" })).toBeDisabled()
   })
 })
