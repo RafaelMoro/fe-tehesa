@@ -1,4 +1,5 @@
 "use client"
+import { useState } from "react"
 import {
   Button,
   Description,
@@ -9,6 +10,7 @@ import {
   TextField,
   type UseOverlayStateReturn,
 } from "@heroui/react"
+import { RiCloseLine, RiSearchLine } from "@remixicon/react"
 
 import { DropdownCategories } from "@/features/ProductListing/DropdownCategories"
 import { DropdownBrands } from "@/features/ProductListing/DropdownBrands"
@@ -33,6 +35,16 @@ interface CatalogSearchDrawerProps {
   onClearCatalogSearch: () => void
 }
 
+type SearchMode = "product" | "category" | "brand"
+
+const searchModes: { id: SearchMode; label: string }[] = [
+  { id: "product", label: "Producto" },
+  { id: "category", label: "Categoría" },
+  { id: "brand", label: "Marca" },
+]
+
+const frequentSearches = ["Broca de cobalto", "Dado tarraja", "Llave Allen"]
+
 export const CatalogSearchDrawer = ({
   state,
   searchTerm,
@@ -51,6 +63,8 @@ export const CatalogSearchDrawer = ({
   invalidSearchMessage,
   onClearCatalogSearch,
 }: CatalogSearchDrawerProps) => {
+  const [searchMode, setSearchMode] = useState<SearchMode>("product")
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit()
@@ -58,43 +72,96 @@ export const CatalogSearchDrawer = ({
 
   return (
     <Drawer state={state}>
-      <Drawer.Backdrop>
-        <Drawer.Content placement="left">
-          <Drawer.Dialog>
-            <Drawer.Header>
-              <Drawer.Heading>Buscar en todo el catálogo</Drawer.Heading>
+      <Drawer.Backdrop className="bg-black/55 dark:bg-black/65">
+        <Drawer.Content className="w-full max-w-[28.75rem]" placement="left">
+          <Drawer.Dialog className="bg-background text-foreground">
+            <Drawer.Header className="items-start border-b border-default-200 px-6 py-6">
+              <div className="flex flex-1 flex-col gap-2">
+                <span className="text-xs font-bold tracking-wide text-primary-500 dark:text-primary-200">
+                  CATÁLOGO COMPLETO
+                </span>
+                <Drawer.Heading className="text-2xl font-bold tracking-tight">
+                  Búsqueda ampliada
+                </Drawer.Heading>
+                <p className="max-w-56 text-sm leading-5 text-muted">
+                  Encuentra productos fuera de la selección y los filtros actuales.
+                </p>
+              </div>
+              <Drawer.CloseTrigger
+                aria-label="Cerrar búsqueda ampliada"
+                className="rounded-lg border border-default-200 p-2 text-muted hover:bg-default"
+              >
+                <RiCloseLine className="size-5" />
+              </Drawer.CloseTrigger>
             </Drawer.Header>
-            <Drawer.Body>
-              <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-                <TextField
-                  fullWidth
-                  isInvalid={isInvalidSearch}
-                  name="catalog-search"
-                  type="text"
-                  value={searchTerm}
-                  onChange={onSearchTermChange}
-                >
-                  <Label>Nombre del producto</Label>
-                  <Input placeholder="Ej. Llave allen" variant="secondary" />
-                  {isInvalidSearch ? (
-                    <FieldError>
-                      {invalidSearchMessage ??
-                        "Revisa el texto de búsqueda e inténtalo de nuevo."}
-                    </FieldError>
-                  ) : (
-                    <Description>
-                      Busca coincidencias por nombre en el catálogo.
-                    </Description>
-                  )}
-                </TextField>
-                <Button type="submit" isPending={isLoading} isDisabled={isLoading}>
-                  Buscar
-                </Button>
-              </form>
-              <div className="mt-5 flex flex-col gap-3">
-                <span className="text-sm font-medium">O busca por</span>
-                <div className="flex flex-col gap-1">
-                  <Label>Categoría</Label>
+            <Drawer.Body className="px-6 py-6">
+              <p className="mb-3 text-xs font-medium tracking-wide text-muted">BUSCAR POR</p>
+              <div className="grid grid-cols-3 rounded-lg bg-default p-1" role="tablist">
+                {searchModes.map(({ id, label }) => (
+                  <Button
+                    key={id}
+                    aria-selected={searchMode === id}
+                    className="rounded-md text-sm data-[selected=true]:bg-default-100"
+                    isDisabled={isLoading}
+                    variant={searchMode === id ? "secondary" : "ghost"}
+                    onPress={() => setSearchMode(id)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              {searchMode === "product" ? (
+                <form className="mt-7 flex flex-col gap-6" onSubmit={handleSubmit}>
+                  <TextField
+                    fullWidth
+                    isInvalid={isInvalidSearch}
+                    name="catalog-search"
+                    type="text"
+                    value={searchTerm}
+                    onChange={onSearchTermChange}
+                  >
+                    <Label className="text-sm font-semibold">Nombre del producto</Label>
+                    <div className="relative">
+                      <RiSearchLine className="pointer-events-none absolute top-1/2 left-4 z-10 size-4 -translate-y-1/2 text-muted" />
+                      <Input
+                        className="h-12 border-primary-400 pl-10 focus-within:border-primary-300"
+                        placeholder="Ej. Llave Allen"
+                        variant="secondary"
+                      />
+                    </div>
+                    {isInvalidSearch ? (
+                      <FieldError>
+                        {invalidSearchMessage ?? "Ingresa un texto para buscar en el catálogo."}
+                      </FieldError>
+                    ) : (
+                      <Description>Busca coincidencias por nombre en todo el catálogo.</Description>
+                    )}
+                  </TextField>
+                  <div>
+                    <p className="mb-3 text-xs font-medium tracking-wide text-muted">
+                      BÚSQUEDAS FRECUENTES
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {frequentSearches.map((term) => (
+                        <Button
+                          key={term}
+                          className="h-8 rounded-full px-3 text-xs"
+                          isDisabled={isLoading}
+                          variant="outline"
+                          onPress={() => onSearchTermChange(term)}
+                        >
+                          {term}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <div className="mt-7 flex flex-col gap-2">
+                  <Label className="text-sm font-semibold">
+                    {searchMode === "category" ? "Categoría" : "Marca"}
+                  </Label>
+                  {searchMode === "category" ? (
                   <DropdownCategories
                     selectedCategory={selectedCategory}
                     updateSelectedCategory={onCategorySelect}
@@ -103,9 +170,7 @@ export const CatalogSearchDrawer = ({
                     valueKey="name"
                     isDisabled={isLoading}
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label>Marca</Label>
+                  ) : (
                   <DropdownBrands
                     selectedBrand={selectedBrand}
                     updateSelectedBrand={onBrandSelect}
@@ -114,8 +179,13 @@ export const CatalogSearchDrawer = ({
                     valueKey="name"
                     isDisabled={isLoading}
                   />
+                  )}
+                  <Description>
+                    Selecciona una {searchMode === "category" ? "categoría" : "marca"} para ver
+                    todos sus productos.
+                  </Description>
                 </div>
-              </div>
+              )}
               {message ? (
                 <p
                   className="mt-4 text-sm"
@@ -125,17 +195,26 @@ export const CatalogSearchDrawer = ({
                 </p>
               ) : null}
             </Drawer.Body>
-            <Drawer.Footer>
+            <Drawer.Footer className="flex-col gap-3 border-t border-default-200 px-6 py-5 sm:flex-row">
               <Button
+                className="order-2 self-start px-0 text-xs underline sm:order-1"
                 variant="tertiary"
                 onPress={onClearCatalogSearch}
                 isDisabled={isLoading}
               >
                 Limpiar búsqueda
               </Button>
-              <Button slot="close" variant="secondary">
-                Cerrar
-              </Button>
+              {searchMode === "product" ? (
+                <Button
+                  className="order-1 h-12 w-full sm:order-2"
+                  isDisabled={isLoading}
+                  isPending={isLoading}
+                  onPress={onSubmit}
+                >
+                  <RiSearchLine className="size-4" />
+                  Buscar en todo el catálogo
+                </Button>
+              ) : null}
             </Drawer.Footer>
           </Drawer.Dialog>
         </Drawer.Content>
