@@ -1,41 +1,63 @@
-import { Home } from "@/features/Home/Home";
-import { Header } from "@/shared/ui/organisms/Header";
-import { fetchProducts, getThemePreference } from "@/shared/lib/global.lib";
-import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider";
+import { redirect } from "next/navigation"
+
+import { Home } from "@/features/Home/Home"
+import { CatalogPageLayout } from "@/features/Home/CatalogPageLayout"
+import {
+  fetchBrands,
+  fetchCategories,
+  getThemePreference,
+} from "@/shared/lib/global.lib"
+import {
+  PRODUCT_PAGE_MAX,
+  PRODUCT_PAGE_MIN,
+} from "@/shared/constants/catalog.constants"
+import {
+  buildPageOneUrl,
+  buildPreviousNoticeUrl,
+  getCatalogSelection,
+} from "@/features/Pagination/utils.pagination"
+import type { MainPageSearchParams } from "@/features/Pagination/types.pagination"
+import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
 
 export default async function MainPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<MainPageSearchParams>
 }) {
-  // Await searchParams (Next.js 15+ requirement)
-  const params = await searchParams;
-  
-  // Parse and validate page parameter
-  const pageParam = params.page || '1';
-  const currentPage = Math.max(1, Math.min(5, parseInt(pageParam, 10) || 1));
+  const params = await searchParams
+  const selection = getCatalogSelection(params)
 
-  const [products, themeFetched] = await Promise.all([
-    fetchProducts(currentPage),
-    getThemePreference()
+  const [products, categories, brands, themeFetched] = await Promise.all([
+    selection.fetchProducts(),
+    fetchCategories(),
+    fetchBrands(),
+    getThemePreference(),
   ])
 
-  // Calculate pagination props
-  const totalPages = 5; // Known constraint: 5 pages maximum
+  if (selection.page > PRODUCT_PAGE_MIN && products.length === 0) {
+    if (params.notice === "end") {
+      redirect(buildPreviousNoticeUrl(selection))
+    }
+    redirect(buildPageOneUrl(selection))
+  }
 
   return (
     <ChangeThemeStoreProvider>
-      <div>
-        <Header themeFetched={themeFetched} />
-        <main className="p-10 flex flex-col gap-10">
-          <h1 className="text-4xl font-bold text-center mb-5">Catalogo de productos</h1>
-          <Home 
-            products={products}
-            currentPage={currentPage}
-            totalPages={totalPages}
-          />
-        </main>
-      </div>
+      <CatalogPageLayout themeFetched={themeFetched}>
+        <Home
+          products={products}
+          currentPage={selection.page}
+          totalPages={PRODUCT_PAGE_MAX}
+          categories={categories}
+          brands={brands}
+          catalogMode={selection.mode}
+          catalogValue={selection.value}
+          catalogPage={selection.page}
+          hasPreviousCatalogPage={selection.hasPrevious}
+          hasNextCatalogPage={products.length === 50}
+          initialCatalogFeedback={selection.feedback}
+        />
+      </CatalogPageLayout>
     </ChangeThemeStoreProvider>
-  );
+  )
 }

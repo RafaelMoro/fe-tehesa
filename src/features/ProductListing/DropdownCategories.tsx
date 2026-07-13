@@ -1,36 +1,60 @@
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react"
+import { Button, Dropdown, Label } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
-import { CATEGORIES_PRODUCTS } from "@/shared/types/global.types"
+import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface DropdownCategoriesProps {
   selectedCategory: string | null
-  updateSelectedCategory: (categoryCustomId: string) => void
+  updateSelectedCategory: (categoryValue: string) => void
+  categories: TaxonomyItem[]
+  defaultLabel?: string
+  valueKey?: "customId" | "name"
+  isDisabled?: boolean
+  fullWidth?: boolean
 }
 
-export const DropdownCategories = ({ selectedCategory, updateSelectedCategory }: DropdownCategoriesProps) => {
-  const allCategories = [...CATEGORIES_PRODUCTS]
-  
-  // Find the selected category object to display its name
-  const selectedCategoryObj = allCategories.find((cat) => cat.customId === selectedCategory)
+export const DropdownCategories = ({
+  selectedCategory,
+  updateSelectedCategory,
+  categories,
+  defaultLabel,
+  valueKey = "customId",
+  isDisabled = false,
+  fullWidth = false,
+}: DropdownCategoriesProps) => {
+  const selectedCategoryObj = categories.find(
+    (cat) => cat[valueKey] === selectedCategory,
+  )
 
   return (
     <Dropdown>
-      <DropdownTrigger>
-        <Button variant="bordered">
-          {selectedCategoryObj?.name ?? 'Categorias'}
-          <RiArrowDownSLine />
-        </Button>
-      </DropdownTrigger>
-      <DropdownMenu
-        disallowEmptySelection
-        aria-label="Dropdown menu categories"
-        onAction={(key) => updateSelectedCategory(key as string)}
+      <Button
+        className={fullWidth ? "w-full justify-between" : "w-full justify-between sm:w-48"}
+        variant="secondary"
+        isDisabled={isDisabled}
       >
-        { allCategories.map((category) => (
-          <DropdownItem key={category.customId}>{category.name}</DropdownItem>
-        )) }
-      </DropdownMenu>
+        {selectedCategoryObj?.name ??
+          defaultLabel ??
+          "Buscar categoría en todo el catálogo"}
+        <RiArrowDownSLine />
+      </Button>
+      <Dropdown.Popover>
+        <Dropdown.Menu
+          disallowEmptySelection
+          aria-label="Dropdown menu categories"
+          onAction={(key) => updateSelectedCategory(key as string)}
+        >
+          {categories.map((category) => (
+            <Dropdown.Item
+              key={category[valueKey]}
+              id={category[valueKey]}
+              textValue={category.name}
+            >
+              <Label>{category.name}</Label>
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
     </Dropdown>
   )
 }

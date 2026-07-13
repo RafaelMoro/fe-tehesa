@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+pnpm-lock.yaml
+next-env.d.ts
+.agents/skills
+ai-planning
+ai-research

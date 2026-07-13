@@ -1,35 +1,34 @@
 "use client"
-import { Image } from "@heroui/react"
+import Image from "next/image"
+import { useEffect, useState } from "react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { useTheme } from "next-themes"
+import type { AppTheme } from "@/shared/types/global.types"
 
 interface HeaderProps {
-  themeFetched: string
+  themeFetched: AppTheme
 }
 
 export const Header = ({ themeFetched }: HeaderProps) => {
   const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const logoTheme = mounted ? theme : themeFetched
 
   return (
     <header className="flex justify-between p-4">
-      { (theme === 'light' || themeFetched === 'light') ? (
-        <Image
-          alt="Tehesa Logo"
-          height={61}
-          width={115}
-          radius="sm"
-          src="/tehesa-logo.webp"
-        />
-      ): (
-        <Image
-          alt="Tehesa Logo"
-          height={61}
-          width={115}
-          radius="sm"
-          src="/tehesa-logo-negativo.webp"
-        />
-      )}
+      <Image
+        alt="Tehesa Logo"
+        height={61}
+        width={115}
+        className="rounded-sm"
+        src={logoTheme === "dark" ? "/tehesa-logo-negativo.webp" : "/tehesa-logo.webp"}
+      />
       <ToggleDarkMode />
     </header>
   )

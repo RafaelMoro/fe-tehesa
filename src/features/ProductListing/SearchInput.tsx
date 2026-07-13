@@ -1,30 +1,31 @@
 "use client"
-import { useState } from "react"
-import { Input } from "@heroui/react"
+import { Input, Label, TextField } from "@heroui/react"
 
 interface SearchInputProps {
+  value: string
   onSearch: (searchTerm: string) => void
+  isDisabled?: boolean
 }
 
-export const SearchInput = ({ onSearch }: SearchInputProps) => {
-  const [searchTerm, setSearchTerm] = useState("")
+export const SearchInput = ({
+  value,
+  onSearch,
+  isDisabled = false,
+}: SearchInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
     onSearch(e.target.value)
   }
 
   return (
-    <div className="mb-4 max-w-[500px]">
-      <Input
-        errorMessage="Busque un producto"
-        label="Buscar producto"
-        labelPlacement="outside"
-        name="search"
-        placeholder="Buscar producto"
-        type="text"
-        value={searchTerm}
-        onChange={handleChange}
-      />
+    <div className="w-full lg:flex-1">
+      <TextField isDisabled={isDisabled} name="local-search" type="text">
+        <Label className="sr-only">Filtrar resultados visibles</Label>
+        <Input
+          placeholder="Buscar tornillos, tuercas, herramientas..."
+          value={value}
+          onChange={handleChange}
+        />
+      </TextField>
     </div>
   )
 }

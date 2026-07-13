@@ -1,36 +1,60 @@
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react"
+import { Button, Dropdown, Label } from "@heroui/react"
 import { RiArrowDownSLine } from "@remixicon/react"
 
-import { BRANDS_PRODUCTS } from "@/shared/types/global.types"
+import { TaxonomyItem } from "@/shared/types/global.types"
 
 interface DropdownBrandsProps {
   selectedBrand: string | null
-  updateSelectedBrand: (brandCustomId: string) => void
+  updateSelectedBrand: (brandValue: string) => void
+  brands: TaxonomyItem[]
+  defaultLabel?: string
+  valueKey?: "customId" | "name"
+  isDisabled?: boolean
+  fullWidth?: boolean
 }
 
-export const DropdownBrands = ({ selectedBrand, updateSelectedBrand }: DropdownBrandsProps) => {
-  const allBrands = [...BRANDS_PRODUCTS]
-  
-  // Find the selected brand object to display its name
-  const selectedBrandObj = allBrands.find((brand) => brand.customId === selectedBrand)
+export const DropdownBrands = ({
+  selectedBrand,
+  updateSelectedBrand,
+  brands,
+  defaultLabel,
+  valueKey = "customId",
+  isDisabled = false,
+  fullWidth = false,
+}: DropdownBrandsProps) => {
+  const selectedBrandObj = brands.find(
+    (brand) => brand[valueKey] === selectedBrand,
+  )
 
   return (
     <Dropdown>
-      <DropdownTrigger>
-        <Button variant="bordered">
-          {selectedBrandObj?.name ?? 'Marcas'}
-          <RiArrowDownSLine />
-        </Button>
-      </DropdownTrigger>
-      <DropdownMenu
-        disallowEmptySelection
-        aria-label="Dropdown menu brands"
-        onAction={(key) => updateSelectedBrand(key as string)}
+      <Button
+        className={fullWidth ? "w-full justify-between" : "w-full justify-between sm:w-48"}
+        variant="secondary"
+        isDisabled={isDisabled}
       >
-        { allBrands.map((brand) => (
-          <DropdownItem key={brand.customId}>{brand.name}</DropdownItem>
-        )) }
-      </DropdownMenu>
+        {selectedBrandObj?.name ??
+          defaultLabel ??
+          "Buscar marca en todo el catálogo"}
+        <RiArrowDownSLine />
+      </Button>
+      <Dropdown.Popover>
+        <Dropdown.Menu
+          disallowEmptySelection
+          aria-label="Dropdown menu brands"
+          onAction={(key) => updateSelectedBrand(key as string)}
+        >
+          {brands.map((brand) => (
+            <Dropdown.Item
+              key={brand[valueKey]}
+              id={brand[valueKey]}
+              textValue={brand.name}
+            >
+              <Label>{brand.name}</Label>
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
     </Dropdown>
   )
 }
