@@ -31,12 +31,14 @@ export const ProductVariantsDrawer = ({
   const [selectedVariantIndexes, setSelectedVariantIndexes] = useState<
     Set<number>
   >(new Set())
+  const [quantities, setQuantities] = useState<Record<number, number | "">>({})
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const resetVariants = () => {
     setVariants([])
     setSelectedVariantIndexes(new Set())
+    setQuantities({})
     setIsLoading(false)
     setErrorMessage(null)
   }
@@ -63,6 +65,9 @@ export const ProductVariantsDrawer = ({
           }))
           .sort((a, b) => a.price - b.price)
         setVariants(formattedData)
+        setQuantities(
+          Object.fromEntries(formattedData.map((_, index) => [index, 1])),
+        )
       } catch (error) {
         if (!isActive) {
           return
@@ -98,7 +103,14 @@ export const ProductVariantsDrawer = ({
 
   const selectedTotal = variants.reduce(
     (total, variant, index) =>
-      selectedVariantIndexes.has(index) ? total + variant.price : total,
+      selectedVariantIndexes.has(index)
+        ? total + variant.price * (quantities[index] || 1)
+        : total,
+    0,
+  )
+  const selectedPieces = variants.reduce(
+    (total, _, index) =>
+      selectedVariantIndexes.has(index) ? total + (quantities[index] || 1) : total,
     0,
   )
 
@@ -136,43 +148,68 @@ export const ProductVariantsDrawer = ({
               {!isLoading && !errorMessage && variants.length > 0 && (
                 <div>
                   <p className="mb-4 text-sm text-muted">
-                    Selecciona una o más medidas para agregarlas juntas al
-                    carrito.
+                    Selecciona una o más medidas e indica cuántas piezas
+                    necesitas de cada una.
                   </p>
-                  <div className="mb-2 grid grid-cols-[1fr_auto] px-12 text-xs text-muted uppercase">
+                  <div className="mb-2 grid grid-cols-[1fr_70px_auto] gap-3 px-12 text-xs text-muted uppercase">
                     <span>Diámetro</span>
+                    <span>Cantidad</span>
                     <span>Precio</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     {variants.map((variant, index) => (
-                      <Checkbox
+                      <div
                         key={`${variant.diameter}-${variant.price}`}
-                        className="w-full rounded-lg border border-default-200 p-3 data-[selected=true]:border-emerald-700 data-[selected=true]:bg-emerald-50 dark:data-[selected=true]:bg-emerald-950/20"
-                        isSelected={selectedVariantIndexes.has(index)}
-                        onChange={(isSelected) => {
-                          setSelectedVariantIndexes((current) => {
-                            const next = new Set(current)
-                            if (isSelected) {
-                              next.add(index)
-                            } else {
-                              next.delete(index)
-                            }
-                            return next
-                          })
-                        }}
+                        className={`grid grid-cols-[auto_1fr_70px_auto] items-center gap-3 rounded-lg border p-3 ${
+                          selectedVariantIndexes.has(index)
+                            ? "border-emerald-700 bg-emerald-50 dark:bg-emerald-950/20"
+                            : "border-default-200"
+                        }`}
                       >
-                        <Checkbox.Content className="flex w-full items-center gap-3">
+                        <Checkbox
+                          aria-label={`Seleccionar ${variant.diameter}`}
+                          isSelected={selectedVariantIndexes.has(index)}
+                          onChange={(isSelected) => {
+                            setSelectedVariantIndexes((current) => {
+                              const next = new Set(current)
+                              if (isSelected) {
+                                next.add(index)
+                              } else {
+                                next.delete(index)
+                              }
+                              return next
+                            })
+                          }}
+                        >
+                          <Checkbox.Content>
                           <Checkbox.Control className="shrink-0">
                             <Checkbox.Indicator />
                           </Checkbox.Control>
-                          <span className="flex-1 font-medium">
-                            {variant.diameter}
-                          </span>
-                          <span className="text-muted">
-                            {variant.priceFormatted}
-                          </span>
                         </Checkbox.Content>
-                      </Checkbox>
+                        </Checkbox>
+                        <span className="font-medium">{variant.diameter}</span>
+                        <input
+                          aria-label={`Cantidad de ${variant.diameter}`}
+                          className="h-11 w-full rounded-md border border-default-200 bg-transparent px-2 text-center tabular-nums"
+                          min={1}
+                          type="number"
+                          value={quantities[index]}
+                          onChange={(event) => {
+                            const value = event.target.value
+                            const quantity = Number(value)
+                            setQuantities((current) => ({
+                              ...current,
+                              [index]:
+                                value === ""
+                                  ? ""
+                                  : Number.isInteger(quantity) && quantity > 0
+                                    ? quantity
+                                    : 1,
+                            }))
+                          }}
+                        />
+                        <span className="text-muted">{variant.priceFormatted}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -181,8 +218,9 @@ export const ProductVariantsDrawer = ({
             <Drawer.Footer className="flex-col gap-4 border-t border-default-200 p-6">
               <div className="flex w-full items-center justify-between">
                 <span className="text-sm text-muted">
-                  {selectedVariantIndexes.size} seleccionada
-                  {selectedVariantIndexes.size === 1 ? "" : "s"}
+                  {selectedVariantIndexes.size} variante
+                  {selectedVariantIndexes.size === 1 ? "" : "s"} · {selectedPieces} pieza
+                  {selectedPieces === 1 ? "" : "s"}
                 </span>
                 <span className="text-xl font-bold">
                   {formatNumberToCurrency(selectedTotal)}

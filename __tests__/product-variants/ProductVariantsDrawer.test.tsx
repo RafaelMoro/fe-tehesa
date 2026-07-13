@@ -170,8 +170,19 @@ describe("ProductVariantsDrawer", () => {
     await user.click(checkbox)
 
     expect(checkbox).toBeChecked()
-    expect(screen.getByText("1 seleccionada")).toBeInTheDocument()
+    expect(screen.getByText("1 variante · 1 pieza")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Agregar 1 al carrito" })).toBeEnabled()
+
+    const quantity = screen.getByRole("spinbutton", {
+      name: "Cantidad de Pequeña",
+    })
+    await user.clear(quantity)
+    await user.type(quantity, "3")
+
+    expect(screen.getByText(/1 variante/)).toHaveTextContent(
+      "1 variante · 3 piezas",
+    )
+    expect(screen.getByText("$30.00")).toBeInTheDocument()
   })
 
   it("clears old rows on close and refetches on reopen", async () => {
