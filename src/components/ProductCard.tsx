@@ -53,7 +53,7 @@ export const ProductCard = ({
           </div>
         )}
       </Card.Content>
-      <Card.Footer className="flex justify-between">
+      <Card.Footer className="flex justify-between gap-3">
         <Button
           fullWidth
           variant="secondary"
