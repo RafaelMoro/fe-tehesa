@@ -21,7 +21,7 @@ export const ProductListing = ({
 }: ProductListingProps) => {
   if (products.length === 0 && isLocalFilterActive) {
     return (
-      <div className="flex min-h-102 flex-col items-center justify-center rounded-xl border border-default-200 bg-default-50 px-6 py-14 text-center">
+      <div className="flex min-h-102 flex-col items-center justify-center rounded-xl border border-default-200 bg-gradient-to-b from-gray-50 to-transparent px-6 py-14 text-center">
         <div className="mb-6 flex size-13 items-center justify-center rounded-full border border-default-200 bg-surface text-muted">
           <RiSearchLine aria-hidden="true" size={22} />
         </div>
