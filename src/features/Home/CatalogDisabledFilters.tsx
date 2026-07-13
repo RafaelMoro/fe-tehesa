@@ -1,3 +1,5 @@
+"use client"
+
 import { DropdownBrands } from "@/features/ProductListing/DropdownBrands"
 import { DropdownCategories } from "@/features/ProductListing/DropdownCategories"
 import { SearchInput } from "@/features/ProductListing/SearchInput"
