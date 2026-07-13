@@ -3,13 +3,17 @@ import { RiSearchLine, RiShareLine } from "@remixicon/react"
 
 interface CatalogHeroProps {
   productCount?: number
-  onOpenCatalogSearch?: () => void
+  statusText?: string
+  actionLabel?: string
+  onAction?: () => void
   isDisabled?: boolean
 }
 
 export const CatalogHero = ({
   productCount,
-  onOpenCatalogSearch,
+  statusText,
+  actionLabel = "Buscar en catálogo completo",
+  onAction,
   isDisabled = false,
 }: CatalogHeroProps) => (
   <section className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -27,9 +31,10 @@ export const CatalogHero = ({
     </div>
     <div className="flex w-full flex-col gap-3 lg:max-w-85 lg:items-end">
       <p className="text-sm text-muted">
-        {productCount == null
-          ? "Cargando productos..."
-          : `${productCount} ${productCount === 1 ? "producto" : "productos"}`}
+        {statusText ??
+          (productCount == null
+            ? "Cargando productos..."
+            : `${productCount} ${productCount === 1 ? "producto" : "productos"}`)}
       </p>
       <aside className="w-full rounded-xl bg-emerald-950 p-5 text-white dark:bg-emerald-950">
         <div className="flex items-center gap-3">
@@ -44,10 +49,10 @@ export const CatalogHero = ({
           fullWidth
           className="mt-4"
           variant="primary"
-          onPress={onOpenCatalogSearch}
-          isDisabled={isDisabled || !onOpenCatalogSearch}
+          onPress={onAction}
+          isDisabled={isDisabled || !onAction}
         >
-          Buscar en catálogo completo
+          {actionLabel}
           <RiSearchLine aria-hidden="true" />
         </Button>
       </aside>

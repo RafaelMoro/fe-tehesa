@@ -264,7 +264,7 @@ export const Home = ({
     <>
       <CatalogHero
         productCount={products.length}
-        onOpenCatalogSearch={catalogSearchDrawerState.open}
+        onAction={catalogSearchDrawerState.open}
         isDisabled={isBusy}
       />
       <div>
