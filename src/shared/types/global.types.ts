@@ -1,5 +1,12 @@
 export type AppTheme = "light" | "dark"
 
+export type CatalogMode = "base" | "name" | "category" | "brand"
+
+export type InitialCatalogFeedback = {
+  message: string
+  kind: "status" | "error"
+} | null
+
 export type ErrorCatched = {
   message: string
   cause?: {

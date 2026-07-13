@@ -4,7 +4,12 @@ import { useRouter } from "next/navigation"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
 import { RiInformationLine } from "@remixicon/react"
 
-import { Product, TaxonomyItem } from "@/shared/types/global.types"
+import {
+  CatalogMode,
+  InitialCatalogFeedback,
+  Product,
+  TaxonomyItem,
+} from "@/shared/types/global.types"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
@@ -36,6 +41,12 @@ interface HomeProps {
   totalPages: number
   categories: TaxonomyItem[]
   brands: TaxonomyItem[]
+  catalogMode?: CatalogMode
+  catalogValue?: string | null
+  catalogPage?: number
+  hasPreviousCatalogPage?: boolean
+  hasNextCatalogPage?: boolean
+  initialCatalogFeedback?: InitialCatalogFeedback
 }
 
 export const Home = ({
@@ -44,7 +55,20 @@ export const Home = ({
   totalPages,
   categories: initialCategories,
   brands: initialBrands,
+  catalogMode = "base",
+  catalogValue = null,
+  catalogPage: initialCatalogPage = 1,
+  hasPreviousCatalogPage: initialHasPreviousCatalogPage = false,
+  hasNextCatalogPage: initialHasNextCatalogPage = false,
+  initialCatalogFeedback = null,
 }: HomeProps) => {
+  void catalogMode
+  void catalogValue
+  void initialCatalogPage
+  void initialHasPreviousCatalogPage
+  void initialHasNextCatalogPage
+  void initialCatalogFeedback
+
   const router = useRouter()
   const allProducts = useRef<Product[]>(products)
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
