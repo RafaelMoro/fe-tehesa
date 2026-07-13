@@ -21,6 +21,7 @@ import { useCatalogSearch } from "./useCatalogSearch"
 type PageFeedback = { message: string; kind: "status" | "error" } | null
 
 const DRAWER_CLOSE_DELAY_MS = 500
+const DROPDOWN_CLOSE_DELAY_MS = 250
 
 interface HomeProps {
   products: Product[]
@@ -115,6 +116,18 @@ export const Home = ({
     window.setTimeout(() => navigateTo(url), DRAWER_CLOSE_DELAY_MS)
   }
 
+  const closeCatalogDrawerThenNavigate = (url: string) => {
+    clearCatalogSearchInput()
+    navigateAfterCatalogDrawerClose(url)
+  }
+
+  const closeDropdownAndDrawerThenNavigate = (url: string) => {
+    window.setTimeout(
+      () => closeCatalogDrawerThenNavigate(url),
+      DROPDOWN_CLOSE_DELAY_MS,
+    )
+  }
+
   const handlePageChange = (page: number) => {
     if (page === currentPage || isRoutePending) {
       return
@@ -179,17 +192,15 @@ export const Home = ({
   }
 
   const handleCategorySelect = (categoryName: string) => {
-    clearCatalogSearchInput()
     setPageFeedback(null)
-    navigateAfterCatalogDrawerClose(
+    closeDropdownAndDrawerThenNavigate(
       `/?mode=category&category=${encodeURIComponent(categoryName)}&page=1`,
     )
   }
 
   const handleBrandSelect = (brandName: string) => {
-    clearCatalogSearchInput()
     setPageFeedback(null)
-    navigateAfterCatalogDrawerClose(
+    closeDropdownAndDrawerThenNavigate(
       `/?mode=brand&brand=${encodeURIComponent(brandName)}&page=1`,
     )
   }
@@ -200,8 +211,7 @@ export const Home = ({
     if (!trimmed) {
       return
     }
-    catalogSearchDrawerState.close()
-    navigateAfterCatalogDrawerClose(
+    closeCatalogDrawerThenNavigate(
       `/?mode=name&q=${encodeURIComponent(trimmed)}&page=1`,
     )
   }
