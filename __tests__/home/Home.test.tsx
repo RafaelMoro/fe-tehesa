@@ -123,7 +123,7 @@ describe("Home - URL-backed catalog modes", () => {
     renderHome()
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
+      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Buscar en todo el catálogo",
@@ -148,7 +148,7 @@ describe("Home - URL-backed catalog modes", () => {
     })
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
+      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Buscar en todo el catálogo",
@@ -167,7 +167,7 @@ describe("Home - URL-backed catalog modes", () => {
     })
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
+      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
     )
     const dialog2 = await screen.findByRole("dialog", {
       name: "Buscar en todo el catálogo",
