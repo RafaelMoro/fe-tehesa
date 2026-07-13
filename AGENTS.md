@@ -24,7 +24,7 @@ Compact guidance for OpenCode sessions working in this repo.
 - State: Zustand stores under `src/zustand/store`, SSR-safe providers under `src/zustand/provider`. Follow the provider-wraps-store pattern there when adding stores.
 - UI stack: **HeroUI v3** (`@heroui/react`, formerly NextUI) + Tailwind v4 via `@tailwindcss/postcss`. `darkMode: "class"`. For HeroUI docs, prefer the `heroui-react` MCP (configured in `opencode.json`); fallback to the LLM docs at https://heroui.com/react/llms.txt. Note: `tailwind.config.js` `content` only lists HeroUI's theme dist — Tailwind v4 auto-detects app content; do not break this.
 - Directory layout: `src/features/<Feature>/` (scoped UI), `src/shared/{constants,data,hooks,lib,queries,types,ui,utils}` (cross-cutting). `src/shared/ui` is split into `atoms` and `organisms`. `src/components` only holds the shared `ProductCard`.
-- Hardcoded pagination ceiling of 5 pages in `src/app/page.tsx` (known constraint, not a bug).
+- Base catalog pagination derives 7 pages from `KNOWN_PRODUCT_TOTAL = 333` and `PRODUCT_PAGE_SIZE = 50`; filtered modes keep Previous/current/Next until Strapi exposes filtered totals.
 
 ## Release / PR workflow (CI-enforced)
 
