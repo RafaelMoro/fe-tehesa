@@ -20,18 +20,14 @@ export const DropdownBrands = ({
   valueKey = "customId",
   isDisabled = false,
 }: DropdownBrandsProps) => {
-  // Find the selected brand object to display its name
   const selectedBrandObj = brands.find(
     (brand) => brand[valueKey] === selectedBrand,
-  )
-  const availableBrands = brands.filter(
-    (brand) => brand[valueKey] !== selectedBrand,
   )
 
   return (
     <Dropdown>
       <Button
-        className="w-full justify-between sm:min-w-48"
+        className="w-full justify-between sm:w-48"
         variant="secondary"
         isDisabled={isDisabled}
       >
@@ -46,7 +42,7 @@ export const DropdownBrands = ({
           aria-label="Dropdown menu brands"
           onAction={(key) => updateSelectedBrand(key as string)}
         >
-          {availableBrands.map((brand) => (
+          {brands.map((brand) => (
             <Dropdown.Item
               key={brand[valueKey]}
               id={brand[valueKey]}

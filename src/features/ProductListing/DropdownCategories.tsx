@@ -20,18 +20,14 @@ export const DropdownCategories = ({
   valueKey = "customId",
   isDisabled = false,
 }: DropdownCategoriesProps) => {
-  // Find the selected category object to display its name
   const selectedCategoryObj = categories.find(
     (cat) => cat[valueKey] === selectedCategory,
-  )
-  const availableCategories = categories.filter(
-    (cat) => cat[valueKey] !== selectedCategory,
   )
 
   return (
     <Dropdown>
       <Button
-        className="w-full justify-between sm:min-w-48"
+        className="w-full justify-between sm:w-48"
         variant="secondary"
         isDisabled={isDisabled}
       >
@@ -46,7 +42,7 @@ export const DropdownCategories = ({
           aria-label="Dropdown menu categories"
           onAction={(key) => updateSelectedCategory(key as string)}
         >
-          {availableCategories.map((category) => (
+          {categories.map((category) => (
             <Dropdown.Item
               key={category[valueKey]}
               id={category[valueKey]}
