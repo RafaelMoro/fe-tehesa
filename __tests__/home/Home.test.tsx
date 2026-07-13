@@ -126,13 +126,15 @@ describe("Home - URL-backed catalog modes", () => {
       screen.getByRole("button", { name: "Buscar en catálogo completo" }),
     )
     const dialog = await screen.findByRole("dialog", {
-      name: "Buscar en todo el catálogo",
+      name: "Búsqueda ampliada",
     })
     await user.type(
       within(dialog).getByLabelText("Nombre del producto"),
       " llave ",
     )
-    await user.click(within(dialog).getByRole("button", { name: "Buscar" }))
+    await user.click(
+      within(dialog).getByRole("button", { name: "Buscar en todo el catálogo" }),
+    )
 
     expect(pushMock).not.toHaveBeenCalled()
     await waitFor(() => {
@@ -151,8 +153,9 @@ describe("Home - URL-backed catalog modes", () => {
       screen.getByRole("button", { name: "Buscar en catálogo completo" }),
     )
     const dialog = await screen.findByRole("dialog", {
-      name: "Buscar en todo el catálogo",
+      name: "Búsqueda ampliada",
     })
+    await user.click(within(dialog).getByRole("button", { name: "Categoría" }))
     await user.click(
       within(dialog).getByRole("button", {
         name: /Buscar categoría en todo el catálogo/,
@@ -165,13 +168,17 @@ describe("Home - URL-backed catalog modes", () => {
         "/?mode=category&category=Tubos%20PVC&page=1",
       )
     })
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Búsqueda ampliada" })).not.toBeInTheDocument()
+    })
 
     await user.click(
       screen.getByRole("button", { name: "Buscar en catálogo completo" }),
     )
     const dialog2 = await screen.findByRole("dialog", {
-      name: "Buscar en todo el catálogo",
+      name: "Búsqueda ampliada",
     })
+    await user.click(within(dialog2).getByRole("button", { name: "Marca" }))
     await user.click(
       within(dialog2).getByRole("button", {
         name: /Buscar marca en todo el catálogo/,
