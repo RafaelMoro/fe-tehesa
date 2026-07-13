@@ -1,3 +1,9 @@
+## v0.23.0 (2026-07-13)
+
+### Pull Requests
+[#28](https://github.com/RafaelMoro/fe-tehesa/pull/28) | Improve design products
+
+
 ## v0.22.0 (2026-07-13)
 
 ### Pull Requests
