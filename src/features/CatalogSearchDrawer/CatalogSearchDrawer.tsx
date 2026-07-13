@@ -169,6 +169,7 @@ export const CatalogSearchDrawer = ({
                     defaultLabel="Buscar categoría en todo el catálogo"
                     valueKey="name"
                     isDisabled={isLoading}
+                    fullWidth
                   />
                   ) : (
                   <DropdownBrands
@@ -178,6 +179,7 @@ export const CatalogSearchDrawer = ({
                     defaultLabel="Buscar marca en todo el catálogo"
                     valueKey="name"
                     isDisabled={isLoading}
+                    fullWidth
                   />
                   )}
                   <Description>
@@ -195,9 +197,9 @@ export const CatalogSearchDrawer = ({
                 </p>
               ) : null}
             </Drawer.Body>
-            <Drawer.Footer className="flex-col gap-3 border-t border-default-200 px-6 py-5 sm:flex-row">
+            <Drawer.Footer className="flex-col gap-3 border-t border-default-200 px-6 py-5">
               <Button
-                className="order-2 self-start px-0 text-xs underline sm:order-1"
+                className="order-2 max-w-full self-start whitespace-normal px-0 text-left text-xs underline"
                 variant="tertiary"
                 onPress={onClearCatalogSearch}
                 isDisabled={isLoading}
@@ -206,7 +208,7 @@ export const CatalogSearchDrawer = ({
               </Button>
               {searchMode === "product" ? (
                 <Button
-                  className="order-1 h-12 w-full sm:order-2"
+                  className="order-1 h-12 w-full"
                   isDisabled={isLoading}
                   isPending={isLoading}
                   onPress={onSubmit}

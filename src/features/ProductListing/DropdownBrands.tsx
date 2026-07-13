@@ -10,6 +10,7 @@ interface DropdownBrandsProps {
   defaultLabel?: string
   valueKey?: "customId" | "name"
   isDisabled?: boolean
+  fullWidth?: boolean
 }
 
 export const DropdownBrands = ({
@@ -19,6 +20,7 @@ export const DropdownBrands = ({
   defaultLabel,
   valueKey = "customId",
   isDisabled = false,
+  fullWidth = false,
 }: DropdownBrandsProps) => {
   const selectedBrandObj = brands.find(
     (brand) => brand[valueKey] === selectedBrand,
@@ -27,7 +29,7 @@ export const DropdownBrands = ({
   return (
     <Dropdown>
       <Button
-        className="w-full justify-between sm:w-48"
+        className={fullWidth ? "w-full justify-between" : "w-full justify-between sm:w-48"}
         variant="secondary"
         isDisabled={isDisabled}
       >

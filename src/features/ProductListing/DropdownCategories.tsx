@@ -10,6 +10,7 @@ interface DropdownCategoriesProps {
   defaultLabel?: string
   valueKey?: "customId" | "name"
   isDisabled?: boolean
+  fullWidth?: boolean
 }
 
 export const DropdownCategories = ({
@@ -19,6 +20,7 @@ export const DropdownCategories = ({
   defaultLabel,
   valueKey = "customId",
   isDisabled = false,
+  fullWidth = false,
 }: DropdownCategoriesProps) => {
   const selectedCategoryObj = categories.find(
     (cat) => cat[valueKey] === selectedCategory,
@@ -27,7 +29,7 @@ export const DropdownCategories = ({
   return (
     <Dropdown>
       <Button
-        className="w-full justify-between sm:w-48"
+        className={fullWidth ? "w-full justify-between" : "w-full justify-between sm:w-48"}
         variant="secondary"
         isDisabled={isDisabled}
       >
