@@ -30,7 +30,11 @@ export const DropdownCategories = ({
 
   return (
     <Dropdown>
-      <Button variant="secondary" isDisabled={isDisabled}>
+      <Button
+        className="w-full justify-between sm:min-w-48"
+        variant="secondary"
+        isDisabled={isDisabled}
+      >
         {selectedCategoryObj?.name ??
           defaultLabel ??
           "Buscar categoría en todo el catálogo"}

@@ -262,23 +262,27 @@ export const Home = ({
   return (
     <>
       <div>
-        <SearchInput value={localSearchTerm} onSearch={handleSearch} />
-        <div className="flex flex-wrap gap-3 items-center mb-3">
-          <DropdownCategories
-            selectedCategory={localCategory}
-            updateSelectedCategory={handleLocalCategorySelect}
-            categories={categories}
-            defaultLabel="Filtrar por categoría visible"
-          />
-          <DropdownBrands
-            selectedBrand={localBrand}
-            updateSelectedBrand={handleLocalBrandSelect}
-            brands={brands}
-            defaultLabel="Filtrar por marca visible"
-          />
-          <Button onPress={clearLocalFilters} isDisabled={isBusy}>
-            Limpiar filtros
-          </Button>
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row">
+          <SearchInput value={localSearchTerm} onSearch={handleSearch} />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <DropdownCategories
+              selectedCategory={localCategory}
+              updateSelectedCategory={handleLocalCategorySelect}
+              categories={categories}
+              defaultLabel="Filtrar categorías"
+            />
+            <DropdownBrands
+              selectedBrand={localBrand}
+              updateSelectedBrand={handleLocalBrandSelect}
+              brands={brands}
+              defaultLabel="Filtrar marcas"
+            />
+            {isLocalFilterActive && (
+              <Button onPress={clearLocalFilters} isDisabled={isBusy}>
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
         </div>
         {isLocalFilterActive && (
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">

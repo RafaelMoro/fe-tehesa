@@ -38,10 +38,24 @@ export default async function MainPage({
     <ChangeThemeStoreProvider>
       <div>
         <Header themeFetched={themeFetched} />
-        <main className="p-10 flex flex-col gap-10">
-          <h1 className="text-4xl font-bold text-center mb-5">
-            Catalogo de productos
-          </h1>
+        <main className="flex flex-col gap-7 p-4 sm:p-6">
+          <section className="flex flex-col gap-2">
+            <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase dark:text-emerald-400">
+              Catálogo industrial
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              Productos para cada instalación
+            </h1>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <p className="max-w-xl text-muted">
+                Compara rangos de precio y consulta las dimensiones disponibles
+                antes de elegir una variante.
+              </p>
+              <p className="text-sm text-muted">
+                {products.length} {products.length === 1 ? "producto" : "productos"}
+              </p>
+            </div>
+          </section>
           <Home
             products={products}
             currentPage={selection.page}

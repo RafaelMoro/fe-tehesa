@@ -1,5 +1,5 @@
 "use client"
-import { Description, Input, Label, TextField } from "@heroui/react"
+import { Input, Label, TextField } from "@heroui/react"
 
 interface SearchInputProps {
   value: string
@@ -12,15 +12,14 @@ export const SearchInput = ({ value, onSearch }: SearchInputProps) => {
   }
 
   return (
-    <div className="mb-4 max-w-[500px]">
+    <div className="w-full lg:flex-1">
       <TextField name="local-search" type="text">
-        <Label>Filtrar resultados visibles</Label>
+        <Label className="sr-only">Filtrar resultados visibles</Label>
         <Input
-          placeholder="Filtra los productos que ya estás viendo"
+          placeholder="Buscar tornillos, tuercas, herramientas..."
           value={value}
           onChange={handleChange}
         />
-        <Description>Filtra los productos que ya estás viendo.</Description>
       </TextField>
     </div>
   )

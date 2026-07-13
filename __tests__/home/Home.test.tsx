@@ -95,7 +95,7 @@ describe("Home - local filtering", () => {
     await user.type(nameInput, "tire")
 
     const categoryTriggers = screen.getAllByRole("button", {
-      name: /Filtrar por categoría visible/,
+      name: "Todas las categorías",
     })
     await user.click(categoryTriggers[0])
     await user.click(await screen.findByText("Tubes"))

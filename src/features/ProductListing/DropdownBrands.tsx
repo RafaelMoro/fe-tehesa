@@ -30,7 +30,11 @@ export const DropdownBrands = ({
 
   return (
     <Dropdown>
-      <Button variant="secondary" isDisabled={isDisabled}>
+      <Button
+        className="w-full justify-between sm:min-w-48"
+        variant="secondary"
+        isDisabled={isDisabled}
+      >
         {selectedBrandObj?.name ??
           defaultLabel ??
           "Buscar marca en todo el catálogo"}
