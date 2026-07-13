@@ -17,18 +17,21 @@ const products: Product[] = [
   {
     name: "Tire A",
     documentId: "doc-1",
+    variantCount: 2,
     category: { name: "Tubes" },
     brand: { name: "Acme" },
   },
   {
     name: "Brake B",
     documentId: "doc-2",
+    variantCount: 1,
     category: { name: "Brakes" },
     brand: { name: "Acme" },
   },
   {
     name: "Chain C",
     documentId: "doc-3",
+    variantCount: 3,
     category: { name: "Drivetrain" },
     brand: { name: "Other" },
   },
@@ -259,7 +262,9 @@ describe("Home - product details", () => {
 
     renderHome()
 
-    await user.click(screen.getAllByRole("button", { name: "Ver detalles" })[0])
+    await user.click(
+      screen.getByRole("button", { name: "Explorar las 2 variantes" }),
+    )
 
     const dialog = await screen.findByRole("dialog")
     expect(within(dialog).getByText("Tire A")).toBeInTheDocument()
