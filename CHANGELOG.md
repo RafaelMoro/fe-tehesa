@@ -1,3 +1,9 @@
+## v0.22.0 (2026-07-13)
+
+### Pull Requests
+[#27](https://github.com/RafaelMoro/fe-tehesa/pull/27) | Story 2: Improve pagination and loading state
+
+
 ## v0.21.0 (2026-07-12)
 
 ### Pull Requests
