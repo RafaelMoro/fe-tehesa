@@ -32,6 +32,7 @@ interface HomeProps {
   products: Product[]
   currentPage: number
   totalPages: number
+  totalProducts?: number
   categories: TaxonomyItem[]
   brands: TaxonomyItem[]
   catalogMode?: CatalogMode
@@ -46,6 +47,7 @@ export const Home = ({
   products,
   currentPage,
   totalPages,
+  totalProducts = KNOWN_PRODUCT_TOTAL,
   categories: initialCategories,
   brands: initialBrands,
   catalogMode = "base",
@@ -98,10 +100,10 @@ export const Home = ({
   const visibleProductEnd =
     products.length === 0
       ? 0
-      : Math.min(
-          (currentPage - 1) * PRODUCT_PAGE_SIZE + products.length,
-          KNOWN_PRODUCT_TOTAL,
-        )
+       : Math.min(
+           (currentPage - 1) * PRODUCT_PAGE_SIZE + products.length,
+           totalProducts,
+         )
 
   const handleCatalogSearchTermChange = (term: string) => {
     handleHookSearchTermChange(term)
@@ -362,7 +364,7 @@ export const Home = ({
       {activeCatalogMode === null ? (
         <div className="flex flex-col gap-3 rounded-xl border border-default-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted">
-            Mostrando <span className="font-medium text-foreground">{visibleProductStart}-{visibleProductEnd}</span> de {KNOWN_PRODUCT_TOTAL} productos
+            Mostrando <span className="font-medium text-foreground">{visibleProductStart}-{visibleProductEnd}</span> de {totalProducts} productos
           </p>
           <div className="flex items-center justify-center gap-2">
             <Button

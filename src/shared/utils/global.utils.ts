@@ -18,9 +18,9 @@ export const saveThemeApi = async (theme: string) => {
   }
 }
 
-const formatter = new Intl.NumberFormat("en-US", {
+const formatter = new Intl.NumberFormat("es-MX", {
   style: "currency",
-  currency: "USD",
+  currency: "MXN",
   minimumFractionDigits: 2,
 })
 

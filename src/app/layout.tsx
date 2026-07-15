@@ -15,10 +15,10 @@ const geistMono = localFont({
   weight: "100 900",
 })
 
-// TODO: Change metadata
 export const metadata: Metadata = {
-  title: "Tehesa MVP",
-  description: "Esto es un MVP de Tehesa",
+  title: "Tehesa | Suministro industrial",
+  description:
+    "Herramientas, tornillería y suministros industriales con entrega en todo México.",
 }
 
 export default function RootLayout({

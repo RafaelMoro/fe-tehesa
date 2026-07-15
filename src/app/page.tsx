@@ -8,9 +8,16 @@ import {
   getThemePreference,
 } from "@/shared/lib/global.lib"
 import {
+  KNOWN_PRODUCT_TOTAL,
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
 } from "@/shared/constants/catalog.constants"
+import {
+  DEMO_BRANDS,
+  DEMO_CATEGORIES,
+  getDemoProducts,
+} from "@/shared/data/demo-catalog.data"
+import { getStrapiConfig } from "@/shared/utils/strapi-config.utils"
 import {
   buildPageOneUrl,
   buildPreviousNoticeUrl,
@@ -26,11 +33,18 @@ export default async function MainPage({
 }) {
   const params = await searchParams
   const selection = getCatalogSelection(params)
+  const isDemoCatalog = getStrapiConfig() === null
 
   const [products, categories, brands, themeFetched] = await Promise.all([
-    selection.fetchProducts(),
-    fetchCategories(),
-    fetchBrands(),
+    isDemoCatalog
+      ? getDemoProducts({
+          mode: selection.mode,
+          value: selection.value,
+          page: selection.page,
+        })
+      : selection.fetchProducts(),
+    isDemoCatalog ? DEMO_CATEGORIES : fetchCategories(),
+    isDemoCatalog ? DEMO_BRANDS : fetchBrands(),
     getThemePreference(),
   ])
 
@@ -47,15 +61,24 @@ export default async function MainPage({
         <Home
           products={products}
           currentPage={selection.page}
-          totalPages={PRODUCT_PAGE_MAX}
+          totalPages={isDemoCatalog ? 1 : PRODUCT_PAGE_MAX}
+          totalProducts={isDemoCatalog ? products.length : KNOWN_PRODUCT_TOTAL}
           categories={categories}
           brands={brands}
           catalogMode={selection.mode}
           catalogValue={selection.value}
           catalogPage={selection.page}
           hasPreviousCatalogPage={selection.hasPrevious}
-          hasNextCatalogPage={products.length === 50}
-          initialCatalogFeedback={selection.feedback}
+          hasNextCatalogPage={!isDemoCatalog && products.length === 50}
+          initialCatalogFeedback={
+            isDemoCatalog && !selection.feedback
+              ? {
+                  kind: "status",
+                  message:
+                    "Catálogo de demostración: precios y existencias son ilustrativos.",
+                }
+              : selection.feedback
+          }
         />
       </CatalogPageLayout>
     </ChangeThemeStoreProvider>

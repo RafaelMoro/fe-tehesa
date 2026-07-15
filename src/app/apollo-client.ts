@@ -1,14 +1,16 @@
 import { HttpLink } from "@apollo/client"
 import { ApolloClient, InMemoryCache } from "@apollo/client"
 
-const { STRAPI_HOST, STRAPI_API_TOKEN } = process.env
+import { requireStrapiConfig } from "@/shared/utils/strapi-config.utils"
 
 const createApolloClient = () => {
+  const { endpoint, token } = requireStrapiConfig()
+
   return new ApolloClient({
     link: new HttpLink({
-      uri: STRAPI_HOST,
+      uri: endpoint,
       headers: {
-        Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
     }),
     cache: new InMemoryCache(),

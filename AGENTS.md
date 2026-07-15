@@ -13,7 +13,7 @@ Compact guidance for OpenCode sessions working in this repo.
 
 ## Environment
 
-- `STRAPI_HOST` and `STRAPI_API_TOKEN` must be set (see `.env.local`, gitignored). Without them, Apollo queries in server components silently fail / return empty.
+- `STRAPI_HOST` (an absolute GraphQL endpoint URL) and `STRAPI_API_TOKEN` must be set for live data (see `.env.example`; `.env.local` is gitignored). Without valid values, the homepage uses the local demo catalog while catalog API routes return `CAT_ENV_001`.
 - Node 22 in CI.
 
 ## Architecture

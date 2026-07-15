@@ -107,6 +107,15 @@ describe("catalog _utils", () => {
         message: MSG_CAT_ENV_001,
       })
     })
+
+    it("returns CAT_ENV_001 when host is relative", () => {
+      process.env.STRAPI_HOST = "/graphql"
+      process.env.STRAPI_API_TOKEN = "token"
+      expect(validateCatalogEnv()).toEqual({
+        code: CAT_ENV_001,
+        message: MSG_CAT_ENV_001,
+      })
+    })
   })
 
   describe("readValidatedParams - product page (parsePage)", () => {

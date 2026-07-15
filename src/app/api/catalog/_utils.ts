@@ -26,6 +26,7 @@ import {
   SEARCH_TERM_PATTERN,
   VARIANT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
+import { getStrapiConfig } from "@/shared/utils/strapi-config.utils"
 
 export type CatalogErrorCode =
   | typeof CAT_ENV_001
@@ -59,7 +60,7 @@ export const failure = (code: CatalogErrorCode, message: string) =>
   )
 
 export const validateCatalogEnv = (): CatalogError | null => {
-  if (!process.env.STRAPI_HOST || !process.env.STRAPI_API_TOKEN) {
+  if (!getStrapiConfig()) {
     return {
       code: CAT_ENV_001,
       message: MSG_CAT_ENV_001,

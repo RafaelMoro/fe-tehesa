@@ -10,8 +10,10 @@ export const CatalogPageLayout = ({
   themeFetched,
   children,
 }: CatalogPageLayoutProps) => (
-  <div>
+  <div className="min-h-screen">
     <Header themeFetched={themeFetched} />
-    <main className="flex flex-col gap-7 p-4 sm:p-6">{children}</main>
+    <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 p-4 sm:p-6">
+      {children}
+    </main>
   </div>
 )
