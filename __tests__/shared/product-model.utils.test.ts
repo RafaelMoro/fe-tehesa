@@ -13,10 +13,10 @@ describe("getProductModelKind", () => {
     ["Tornillo ojo forjado", "Tornillería", "bolt"],
     ["Dado cuadro 1/2 pulgada", "Llaves", "socket"],
     ["Abrazadera reforzada", "Sujeción", "clamp"],
-  ])("maps %s to %s", (name, category, expected) => {
-    expect(
-      getProductModelKind({ name, category: { name: category } }),
-    ).toBe(expected)
+  ])("maps %s (%s) to %s", (name, category, expected) => {
+    expect(getProductModelKind({ name, category: { name: category } })).toBe(
+      expected,
+    )
   })
 
   it("uses category fallback for less specific product names", () => {

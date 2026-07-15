@@ -454,7 +454,8 @@ export const ProductVariantsDrawer = ({
                       )}
                     >
                       <ProductModel3D
-                        brand={brandName}
+                        key={product.documentId}
+                        product={product}
                         sku={activeSku ?? undefined}
                       />
                       <div className="mt-3 grid grid-cols-3 gap-2">

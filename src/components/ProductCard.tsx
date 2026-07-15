@@ -9,6 +9,7 @@ import {
 
 import { Product } from "@/shared/types/global.types"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
+import { ProductModelPreview } from "@/shared/ui/atoms/ProductModelPreview"
 
 interface ProductCardProps {
   product: Product
@@ -51,10 +52,7 @@ export const ProductCard = ({
             {rating.toFixed(1)}
           </span>
         </div>
-        <div className="product-card-part" aria-hidden="true">
-          <span className="product-card-part-hole" />
-          <span className="product-card-part-mark">TEHESA</span>
-        </div>
+        <ProductModelPreview product={product} />
         <div className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-bold text-emerald-950 backdrop-blur">
           <RiBox3Line aria-hidden="true" size={13} />
           Vista 3D disponible
