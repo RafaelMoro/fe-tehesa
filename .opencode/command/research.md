@@ -111,6 +111,18 @@ The research doc must include:
 - Task breakdown if complex
 - Epic structure if scope is too large
 
+### Design Agent Handoff
+
+Include this section only when the story creates or materially changes UI, user flows, visual states, responsive behavior, or other design work. It must give a design agent the product context without prescribing implementation:
+
+- User goal and affected screen or flow
+- Required UI states and interactions: default, loading, empty, error, success, and disabled states when applicable
+- Mobile and desktop expectations, accessibility requirements, and existing visual patterns to preserve
+- Content, data, and technical constraints the design must respect
+- Explicitly out-of-scope visual work and unanswered design questions
+
+Omit this section for backend-only, data-only, tooling-only, or non-visual stories.
+
 ### Technical Research
 
 - **Affected areas**, referencing this repo's layout:
@@ -155,6 +167,7 @@ End the turn with:
 2. Story / epic structure if broken down
 3. A bullet list of unresolved open questions
 4. A bullet list of assumptions made
+5. The design-agent handoff summary, when included
 
 Do **not** start planning or writing code. Wait for human sign-off.
 
