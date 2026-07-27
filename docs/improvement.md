@@ -27,3 +27,13 @@ Suggested BE contract shape:
 - Story 1a (`ai-research/plp-catalog-api.story.md`) ships the initial catalog API routes with fixed page sizes (50 for products, 100 for variants) to keep the spike thin and match current server-action behavior.
 - Caller-controlled page size with sane bounds is a deliberate follow-up, not part of Story 1a.
 - This should be addressed by a later story once the API is in use and we know the realistic upper bounds callers need.
+
+## Cart feature follow-up
+
+Pick this up when the cart feature reaches develop. Deferred from Story 3 (`ai-research/stories/plp-product-detail-signals.story3.md`, open question UI V).
+
+- `ProductVariantsDrawer` keys its selection state by array index (`selectedVariantIndexes`, `quantities`). Decide then whether to re-key it by `internalId`; Story 3 deliberately left it alone because nothing consumed the value yet.
+- Story 3 retains `internalId` on every mapped variant (`ProductVariantUI`) precisely so the cart does not have to refetch variants for a product the user already opened. The drawer is the only place `internalId` is ever fetched — no product list query returns it — so do not drop it from the selected-variant shape.
+- A selected line already carries everything a cart line needs: `internalId`, `diameter`, `price`, and quantity. No extra Strapi call should be required to build the cart payload.
+- `Agregar al carrito` exists but is inert in two places: `ProductCard.tsx` (handler commented out) and the drawer footer (currently just closes the drawer). Both need wiring, and the card-level action needs a product-level decision since the card has no variant selection.
+- Prices are already formatted as `$1,234.50 MXN` by the shared `formatNumberToCurrency`; reuse it rather than formatting cart totals separately.
