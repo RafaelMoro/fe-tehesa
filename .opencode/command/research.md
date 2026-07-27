@@ -92,7 +92,13 @@ Batch all of these into a single question UI call when the environment supports 
 
 ## Step 6 - Write the research doc
 
-File path: `ai-research/{name}.epic.md` if the research is an epic, or `ai-research/{name}.story.md` if it is a story (create the directory if it does not exist). Use the scope assessment from Step 3 to pick the suffix.
+File path:
+
+- Epic: `ai-research/epics/<epic-name>.epic.md`. Create `ai-research/epics/` if needed.
+- Story belonging to an epic: first check for `ai-research/<epic-folder-name>/`; create it when absent, then write `ai-research/<epic-folder-name>/<story-name>.story-<story-number>.md`.
+- Standalone story: `ai-research/<story-name>.story.md`.
+
+Use lowercase kebab-case names. An epic folder name is the epic name without the `.epic.md` suffix. Do not put epic stories in `ai-research/epics/` or flatten them into `ai-research/`.
 
 Length target: **~200-500 lines** for full mode, **~100-200 lines** for quick mode. Cut aggressively for small stories.
 
@@ -104,6 +110,18 @@ The research doc must include:
 - Acceptance criteria - 2-5 clear, testable criteria
 - Task breakdown if complex
 - Epic structure if scope is too large
+
+### Design Agent Handoff
+
+Include this section only when the story creates or materially changes UI, user flows, visual states, responsive behavior, or other design work. It must give a design agent the product context without prescribing implementation:
+
+- User goal and affected screen or flow
+- Required UI states and interactions: default, loading, empty, error, success, and disabled states when applicable
+- Mobile and desktop expectations, accessibility requirements, and existing visual patterns to preserve
+- Content, data, and technical constraints the design must respect
+- Explicitly out-of-scope visual work and unanswered design questions
+
+Omit this section for backend-only, data-only, tooling-only, or non-visual stories.
 
 ### Technical Research
 
@@ -139,7 +157,7 @@ Focus on **high-level actions** needed to accomplish the task. Do not include im
 
 If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
 
-If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so `.github/prompts/research.prompt.md` stays in sync.
+If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 8 - Present for review
 
@@ -149,6 +167,7 @@ End the turn with:
 2. Story / epic structure if broken down
 3. A bullet list of unresolved open questions
 4. A bullet list of assumptions made
+5. The design-agent handoff summary, when included
 
 Do **not** start planning or writing code. Wait for human sign-off.
 

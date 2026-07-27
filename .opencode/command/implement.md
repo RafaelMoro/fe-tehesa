@@ -8,8 +8,8 @@ You are running the **implementation phase** for `fe-tehesa` (Next.js 15 App Rou
 
 ## Inputs the user may provide
 
-- A planning doc path, e.g. `ai-planning/planning-{story-name}.md` - ideal
-- Nothing - list available planning docs under `ai-planning/*.md` and ask which one to implement
+- A planning doc path, e.g. `ai-planning/{story-name}.story.md` or `ai-planning/<epic-name>/<story-name>.story-<story-number>.md` - ideal
+- Nothing - list available planning docs recursively under `ai-planning/` and ask which one to implement
 
 Parse `$ARGUMENTS` and the conversation for the planning doc path.
 
@@ -17,12 +17,12 @@ Parse `$ARGUMENTS` and the conversation for the planning doc path.
 
 Read in order:
 
-1. **The planning document** provided by the user, or selected from `ai-planning/*.md`. This is the source of truth for implementation; do not invent changes that are not in the plan.
+1. **The planning document** provided by the user, or selected recursively from `ai-planning/`. This is the source of truth for implementation; do not invent changes that are not in the plan.
 2. `docs/IMPLEMENTATION_GUIDELINES.md` - project-wide implementation guidelines. Apply them throughout; they override defaults when in conflict.
 3. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
 4. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 5. `package.json` - dependencies and scripts.
-6. The research doc the plan references, usually `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md`, for ACs and assumptions.
+6. The research doc the plan references, usually `ai-research/{story-name}.story.md`, `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, or `ai-research/epics/<epic-name>.epic.md`, for ACs and assumptions.
 7. When the approved plan includes test work, also read `docs/UNIT_TESTING_GUIDELINES.md` for canonical test-authoring rules. Reference the guide instead of duplicating the policy.
 8. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
 
@@ -30,7 +30,7 @@ Read in order:
 
 Before writing code, confirm:
 
-- The plan exists at `ai-planning/planning-{story-name}.md` and all blocking open questions are resolved.
+- The plan exists under `ai-planning/` and all blocking open questions are resolved.
 - The user approved implementation; assume yes if they invoked `/implement` with a planning doc.
 - The plan's affected files still exist or have obvious current equivalents.
 - Strapi/GraphQL contract assumptions are explicit if the plan depends on behavior not verifiable from this repo.
@@ -46,12 +46,12 @@ For each phase in the plan:
 3. Fix failures before moving to the next phase.
 4. Update any implementation checklist in the planning doc if the plan includes one.
 5. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Do not auto-continue across phase boundaries even if the plan does not say to pause. The user must say "continue", "go", or otherwise approve the next phase. While waiting, summarize the completed phase (files touched, what was built, what was verified) and ask for sign-off.
-6. **Plan deviations:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, etc.) that forces a deviation. When that happens:
-   - Stop and surface the deviation in the final report for that phase. Do not silently rewrite the plan.
-   - After the phase is sign-offed, append a `## Plan deviation` section at the bottom of the planning doc under `ai-planning/`, grouped by phase. State the original requirement, the obstacle, the options considered, and the chosen path with a one-line rationale.
-    - The deviation note is the audit trail for "why the implementation differs from the plan"; it is read by the next person who picks up the story. Keep it concise and factual — no prose defending the choice, just the decision.
-    - Do not edit earlier sections of the planning doc to hide the deviation; the original plan text stays as approved and the deviation is appended.
-7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, stop and ask the user what will be changed before implementing it. After the user approves and the change is implemented, append it to the plan's `## Plan deviation` notes with the reason and chosen path.
+6. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
+    - Stop and obtain user approval before making the change. Do not silently expand the scope.
+    - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
+    - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
+    - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
+7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
 
 ## Step 4 - Apply repo conventions while implementing
 
@@ -95,7 +95,8 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm build` when production behavior changed
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
-- If you update `.opencode/command/implement.md`, sync it to `.github/prompts/implement.prompt.md` afterward with the existing sync script.
+- When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` after all planned work and verification pass. Add or update `Status: complete` under the matching story heading. Do not mark the epic complete unless every story is complete; do not update the epic for partial or failed implementation.
+- If you update `.opencode/command/implement.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 7 - Capture follow-ups
 
@@ -114,7 +115,9 @@ End the turn with:
 3. Typecheck / build / lint / manual verification status with exact commands run.
 4. Whether `REPO_CONTEXT.md` was updated and why.
 5. Deferred follow-ups.
-6. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
+6. Epic story status update, when applicable.
+7. Out-of-scope implementation changes recorded, when applicable.
+8. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
 ## Don'ts
 

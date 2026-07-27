@@ -5,6 +5,6 @@ description: Use when the user starts a research, investigation, exploration, or
 
 # Research workflow
 
-Run the `/research` command. The full workflow prompt lives in `.github/prompts/research.prompt.md`.
+Run the `/research` command. Use its epic and story artifact paths exactly; the full workflow prompt lives in `.github/prompts/research.prompt.md`.
 
 For answer-selection questions in opencode, use the `question` tool. In VS Code/GitHub Copilot, use the VS Code question/quick-pick tool instead.

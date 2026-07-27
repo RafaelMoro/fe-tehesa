@@ -8,8 +8,8 @@ You are running the **planning phase** for `fe-tehesa` (Next.js 15 App Router + 
 
 ## Inputs the user may provide
 
-- A research doc path, e.g. `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md` - ideal
-- Nothing - list available research docs under `ai-research/*.md` and ask which one to plan
+- A research doc path, e.g. `ai-research/{story-name}.story.md`, `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, or `ai-research/epics/<epic-name>.epic.md` - ideal
+- Nothing - list available research docs recursively under `ai-research/` and ask which one to plan
 
 Parse `$ARGUMENTS` and the conversation for the research doc path.
 
@@ -17,7 +17,7 @@ Parse `$ARGUMENTS` and the conversation for the research doc path.
 
 Read in order:
 
-1. **The research document** provided by the user, or selected from `ai-research/*.md`. This is the source of truth for scope, affected files, ACs, and open questions. If the research doc is not sign-offed, stop and ask the user.
+1. **The research document** provided by the user, or selected recursively from `ai-research/`. This is the source of truth for scope, affected files, ACs, and open questions. If the research doc is not sign-offed, stop and ask the user.
 2. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
 3. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 4. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | test | test:watch | sync:prompts`).
@@ -116,7 +116,11 @@ Describe **what** to verify, not full test implementations.
 
 ## Step 7 - Write the planning doc
 
-File path: `ai-planning/planning-{story-name}.md` (create the directory if it does not exist).
+File path: retain the research document's relative path and filename, replacing the `ai-research/` prefix with `ai-planning/`; create the target directory if needed. Do not add a `planning-` prefix.
+
+- `ai-research/epics/<epic-name>.epic.md` becomes `ai-planning/epics/<epic-name>.epic.md`.
+- `ai-research/<epic-folder-name>/<story-name>.story-<story-number>.md` becomes `ai-planning/<epic-folder-name>/<story-name>.story-<story-number>.md`.
+- `ai-research/<story-name>.story.md` becomes `ai-planning/<story-name>.story.md`.
 
 The planning doc should include:
 
@@ -131,7 +135,7 @@ The planning doc should include:
 
 If planning reveals a verified, broadly useful, non-obvious repo fact, add it to `REPO_CONTEXT.md`. Skip story-specific details.
 
-If you update `.opencode/command/plan.md`, sync it to `.github/prompts/plan.prompt.md` afterward with the existing sync script.
+If you update `.opencode/command/plan.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 9 - Present for review
 

@@ -118,3 +118,5 @@ Do not commit, push, or open a PR without explicit approval. Do not start a new 
 - Do not promise a router helper, provider mock, fixture layer, or TanStack Query setup that does not exist. The guide states those are conditional.
 - Do not edit `CHANGELOG.md`, `package.json` version, or release workflows.
 - Do not run `pnpm build` for a test-only change unless production source moved.
+
+If you update this command, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.

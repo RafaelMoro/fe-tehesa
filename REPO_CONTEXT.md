@@ -205,20 +205,18 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 | `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).                |
 | `pnpm test:watch`        | Jest in watch mode.                                                            |
 | `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
-| `pnpm sync:prompts`      | Copy `.opencode/command/*.md` commands to `.github/prompts/*` equivalents.     |
+| `pnpm sync:prompts`      | Copy OpenCode commands to GitHub prompts and project Claude skills.            |
 | `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).         |
 | `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.         |
 
 ## Prompt Sync
 
-`scripts/sync-opencode-commands.mjs` keeps GitHub prompt files aligned with opencode commands:
+`scripts/sync-opencode-commands.mjs` discovers every `.opencode/command/*.md` file and copies it to both generated targets:
 
-- `.opencode/command/research.md` -> `.github/prompts/research.prompt.md`
-- `.opencode/command/plan.md` -> `.github/prompts/plan.prompt.md`
-- `.opencode/command/implement.md` -> `.github/prompts/implement.prompt.md`
-- `.opencode/command/unit-test.md` -> `.github/prompts/unit-test.prompt.md`
+- `.github/prompts/<command>.prompt.md`
+- `.claude/skills/<command>/SKILL.md`
 
-When editing an opencode command that has a GitHub prompt counterpart, edit the opencode command first and run `pnpm sync:prompts`. The sync script skips command files that do not exist in the checkout.
+Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit either generated copy.
 
 ## CI And Release Workflow
 
@@ -269,14 +267,14 @@ When editing an opencode command that has a GitHub prompt counterpart, edit the 
 | `DESIGN.md`                                                                                | Visual design system tokens + rationale; lint with `pnpm design:lint`.                                                                                                                              |
 | `docs/UNIT_TESTING_GUIDELINES.md`                                                          | Canonical Jest/Testing Library authoring rules; the only full copy of test policy.                                                                                                                  |
 | `.opencode/skills/unit-test/SKILL.md`                                                      | Thin discoverable skill that points to the guide and the `/unit-test` command.                                                                                                                      |
-| `.opencode/command/{research,plan,implement,unit-test}.md`                                 | OpenCode command sources. Edit these, then run `pnpm sync:prompts` to regenerate the matching GitHub prompts.                                                                                       |
+| `.opencode/command/*.md`                                                                  | OpenCode command sources. Edit these, then run `pnpm sync:prompts` to regenerate matching GitHub prompts and Claude skills.                                                                         |
 | `package.json`                                                                             | Scripts and dependencies.                                                                                                                                                                           |
 | `next.config.ts`                                                                           | Minimal Next config.                                                                                                                                                                                |
 | `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |
 | `eslint.config.mjs`                                                                        | ESLint flat config with Next presets.                                                                                                                                                               |
 | `postcss.config.mjs`                                                                       | Tailwind v4 PostCSS plugin.                                                                                                                                                                         |
 | `tailwind.config.js`                                                                       | Minimal Tailwind config with class dark mode.                                                                                                                                                       |
-| `scripts/sync-opencode-commands.mjs`                                                       | Syncs opencode command prompts into `.github/prompts`.                                                                                                                                              |
+| `scripts/sync-opencode-commands.mjs`                                                       | Syncs OpenCode commands into `.github/prompts` and `.claude/skills`.                                                                                                                                |
 | `.github/workflows/check-label.yml`                                                        | PR label validation for `major`, `minor`, or `patch`.                                                                                                                                               |
 | `.github/workflows/develop-pipeline.yml`                                                   | Develop merge release/changelog automation.                                                                                                                                                         |
 | `src/app/layout.tsx`                                                                       | Root layout, HeroUI provider, next-themes provider.                                                                                                                                                 |
