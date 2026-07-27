@@ -92,7 +92,13 @@ Batch all of these into a single question UI call when the environment supports 
 
 ## Step 6 - Write the research doc
 
-File path: `ai-research/{name}.epic.md` if the research is an epic, or `ai-research/{name}.story.md` if it is a story (create the directory if it does not exist). Use the scope assessment from Step 3 to pick the suffix.
+File path:
+
+- Epic: `ai-research/epics/<epic-name>.epic.md`. Create `ai-research/epics/` if needed.
+- Story belonging to an epic: first check for `ai-research/<epic-folder-name>/`; create it when absent, then write `ai-research/<epic-folder-name>/<story-name>.story-<story-number>.md`.
+- Standalone story: `ai-research/<story-name>.story.md`.
+
+Use lowercase kebab-case names. An epic folder name is the epic name without the `.epic.md` suffix. Do not put epic stories in `ai-research/epics/` or flatten them into `ai-research/`.
 
 Length target: **~200-500 lines** for full mode, **~100-200 lines** for quick mode. Cut aggressively for small stories.
 
