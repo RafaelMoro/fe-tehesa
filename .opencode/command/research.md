@@ -60,10 +60,21 @@ Apply these constraints **before** exploration:
 - Do not invent features the story does not mention.
 - If scope seems unclear, ask before exploring.
 - Respect the current layout: domain UI belongs in `src/features/<Feature>/`; cross-cutting code belongs in `src/shared/`; `src/components` currently only contains `ProductCard`.
-- Backend/Strapi knowledge must come from this repo's GraphQL queries, server actions, types, constants, env docs, and user-provided details. Do not clone or shell into an external backend repo.
+- Backend/Strapi knowledge comes first from this repo's GraphQL queries, server actions, types, constants, and env docs. For factual schema/contract questions this repo can't answer, delegate to the `backend-research` subagent (Step 5) instead of guessing or exploring the backend repo directly yourself.
 - Preserve the existing Apollo/Strapi data access pattern unless the story explicitly asks to replace it.
 
-## Step 5 - Ask about scope and complexity
+## Step 5 - Route backend/Strapi questions
+
+As backend/Strapi questions come up during exploration, classify each one before it goes into Open Questions:
+
+- **Factual** (schema shape, field/type existence, required args, relations, pagination metadata, content-type structure) - delegate to the `backend-research` subagent instead of guessing. It runs on Haiku with high reasoning effort, checks the local backend repo at `/home/rafael/projects/tehesa/store-tehesa-api` first, then falls back to a live GraphQL introspection query against `STRAPI_HOST`/`STRAPI_API_TOKEN`. Launch it with the Agent tool (`subagent_type: "backend-research"`), wait for its answer, and record the result in Open Questions as `Status: answered` with the subagent's evidence as `Context:`.
+- **Judgment** (product/business decisions, scope calls, UX tradeoffs, anything needing a human opinion) - do not delegate. Flag it to the user (Step 7/9) as `Status: pending`.
+
+**Claude Code only:** the `backend-research` subagent is a Claude Code custom agent (`.claude/agents/backend-research.md`); the Agent tool and `subagent_type` do not exist in opencode, VS Code/Copilot, or other runners of this command. Outside Claude Code, do not attempt delegation — treat every backend/Strapi question (factual or judgment) as `Status: pending` and flag it to the user, noting that automatic backend delegation is unavailable in this environment.
+
+If the subagent can't resolve a factual question either, leave it `Status: pending` and note what it checked.
+
+## Step 6 - Ask about scope and complexity
 
 Ask answer-selection questions with the execution environment's native question UI:
 
@@ -90,7 +101,7 @@ Resolve at minimum:
 
 Batch all of these into a single question UI call when the environment supports it. Do not invent answers.
 
-## Step 6 - Write the research doc
+## Step 7 - Write the research doc
 
 File path:
 
@@ -153,13 +164,13 @@ Omit this section for backend-only, data-only, tooling-only, or non-visual stori
 
 Focus on **high-level actions** needed to accomplish the task. Do not include implementation code beyond illustrative file references.
 
-## Step 7 - Capture non-obvious findings
+## Step 8 - Capture non-obvious findings
 
 If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
 
 If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
-## Step 8 - Present for review
+## Step 9 - Present for review
 
 End the turn with:
 
@@ -176,5 +187,6 @@ Do **not** start planning or writing code. Wait for human sign-off.
 - Do not propose implementation; that is the planning phase.
 - Do not write or modify source files other than the research doc, except for a verified broadly useful `REPO_CONTEXT.md` note.
 - Do not run tests, builds, `pnpm install`, or package manager changes during research.
-- Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo. Jest and Testing Library are present.
+- Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, or finance domains; those are not present in this repo. Jest and Testing Library are present.
+- Do not read or shell into the backend repo yourself; backend repo access is scoped to the `backend-research` subagent (Step 5).
 - Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work; the develop merge workflow handles release automation.
