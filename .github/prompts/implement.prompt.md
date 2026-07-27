@@ -46,12 +46,12 @@ For each phase in the plan:
 3. Fix failures before moving to the next phase.
 4. Update any implementation checklist in the planning doc if the plan includes one.
 5. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Do not auto-continue across phase boundaries even if the plan does not say to pause. The user must say "continue", "go", or otherwise approve the next phase. While waiting, summarize the completed phase (files touched, what was built, what was verified) and ask for sign-off.
-6. **Plan deviations:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, etc.) that forces a deviation. When that happens:
-   - Stop and surface the deviation in the final report for that phase. Do not silently rewrite the plan.
-   - After the phase is sign-offed, append a `## Plan deviation` section at the bottom of the planning doc under `ai-planning/`, grouped by phase. State the original requirement, the obstacle, the options considered, and the chosen path with a one-line rationale.
-    - The deviation note is the audit trail for "why the implementation differs from the plan"; it is read by the next person who picks up the story. Keep it concise and factual — no prose defending the choice, just the decision.
-    - Do not edit earlier sections of the planning doc to hide the deviation; the original plan text stays as approved and the deviation is appended.
-7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, stop and ask the user what will be changed before implementing it. After the user approves and the change is implemented, append it to the plan's `## Plan deviation` notes with the reason and chosen path.
+6. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
+    - Stop and obtain user approval before making the change. Do not silently expand the scope.
+    - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
+    - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
+    - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
+7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
 
 ## Step 4 - Apply repo conventions while implementing
 
@@ -116,7 +116,8 @@ End the turn with:
 4. Whether `REPO_CONTEXT.md` was updated and why.
 5. Deferred follow-ups.
 6. Epic story status update, when applicable.
-7. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
+7. Out-of-scope implementation changes recorded, when applicable.
+8. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
 ## Don'ts
 
