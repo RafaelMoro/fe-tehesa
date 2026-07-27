@@ -157,7 +157,7 @@ Focus on **high-level actions** needed to accomplish the task. Do not include im
 
 If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
 
-If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so `.github/prompts/research.prompt.md` stays in sync.
+If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 8 - Present for review
 

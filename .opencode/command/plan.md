@@ -135,7 +135,7 @@ The planning doc should include:
 
 If planning reveals a verified, broadly useful, non-obvious repo fact, add it to `REPO_CONTEXT.md`. Skip story-specific details.
 
-If you update `.opencode/command/plan.md`, sync it to `.github/prompts/plan.prompt.md` afterward with the existing sync script.
+If you update `.opencode/command/plan.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 9 - Present for review
 

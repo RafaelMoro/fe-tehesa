@@ -96,7 +96,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
 - When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` after all planned work and verification pass. Add or update `Status: complete` under the matching story heading. Do not mark the epic complete unless every story is complete; do not update the epic for partial or failed implementation.
-- If you update `.opencode/command/implement.md`, sync it to `.github/prompts/implement.prompt.md` afterward with the existing sync script.
+- If you update `.opencode/command/implement.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 7 - Capture follow-ups
 

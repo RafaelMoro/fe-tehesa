@@ -1,24 +1,23 @@
-import { copyFileSync, existsSync, mkdirSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { copyFileSync, mkdirSync, readdirSync } from "node:fs"
+import { basename, dirname, extname, join } from "node:path"
 
 const root = process.cwd()
-const files = [
-  ["research.md", "research.prompt.md"],
-  ["plan.md", "plan.prompt.md"],
-  ["implement.md", "implement.prompt.md"],
-  ["unit-test.md", "unit-test.prompt.md"],
-]
+const commandDirectory = join(root, ".opencode", "command")
+const commands = readdirSync(commandDirectory)
+  .filter((file) => extname(file) === ".md")
+  .sort()
 
-for (const [sourceName, targetName] of files) {
-  const source = join(root, ".opencode", "command", sourceName)
-  const target = join(root, ".github", "prompts", targetName)
+for (const command of commands) {
+  const name = basename(command, ".md")
+  const source = join(commandDirectory, command)
+  const targets = [
+    join(root, ".github", "prompts", `${name}.prompt.md`),
+    join(root, ".claude", "skills", name, "SKILL.md"),
+  ]
 
-  if (!existsSync(source)) {
-    console.warn(`Skipping missing source: ${sourceName}`)
-    continue
+  for (const target of targets) {
+    mkdirSync(dirname(target), { recursive: true })
+    copyFileSync(source, target)
+    console.log(`${command} -> ${target.slice(root.length + 1)}`)
   }
-
-  mkdirSync(dirname(target), { recursive: true })
-  copyFileSync(source, target)
-  console.log(`${sourceName} -> ${targetName}`)
 }
