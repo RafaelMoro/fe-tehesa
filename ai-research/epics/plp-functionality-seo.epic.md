@@ -549,3 +549,87 @@ Explanation: Manual QA uses the live Strapi instance behind the existing config.
 - Current SEO work can improve root metadata and paginated behavior, but crawlable category/brand/product SEO needs routes or URL strategy not present today.
 - Analytics should start as an event contract, not a dependency, because no provider is selected.
 - The primary conversion event in this epic is the `Agregar al carrito` drawer action; the full cart/checkout flow lives in a separate story.
+
+## Epic Completion Status (audited 2026-07-27)
+
+Overall: **~55% complete**. Stories 1, 1a, and 2 are shipped. Story 3 is partially shipped and partly blocked on backend. Stories 4 and 5 have not started and are the remaining work.
+
+### Story 1 - Search And Filtering: DONE
+
+Split during planning into 1a (catalog API), 1b (filter state and feedback), and 1c (catalog-wide search). All three have research and planning docs and are implemented.
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| 1. Active inputs visible and clearable | Done | `src/features/Home/Home.tsx:306-334` renders the active-filter summary; `Limpiar filtros` (local) and `Limpiar búsqueda` (catalog-wide) are separate controls |
+| 2. Spanish empty copy | Done | `src/features/ProductListing/ProductListing.tsx:22-57` |
+| 3. Explicit category/brand model | Done | Local filters stack (`applyLocalFilters`, `Home.tsx:152-179`); catalog-wide search is single-mode via `?mode=` |
+| 4. Loading and failure states | Done | `isBusy` disables controls; `pageFeedback` renders `role="alert"`/`role="status"`; `src/app/loading.tsx` + `src/components/ProductCardSkeleton.tsx`; `src/app/error.tsx` |
+| 5. Filter vs catalog search separated | Done | Inline `SearchInput` + dropdowns for visible results; `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx` for catalog-wide with `BUSCAR POR` mode selector |
+| 6. Input cleansing before Strapi | Done | `SEARCH_TERM_PATTERN` allowlist, `SEARCH_TERM_MAX_LENGTH`, `DIGITS_ONLY` page parsing, `DOCUMENT_ID_PATTERN` in `src/shared/constants/catalog.constants.ts` and `src/features/Pagination/utils.pagination.ts` |
+
+Nice-to-haves: URL sync shipped. Result summary shipped (with a caveat, see below). Per-input helper text was implemented as a popover (`Home.tsx:316-332`) instead of a static helper line — acceptable variant, not a gap.
+
+### Story 1a - Catalog API Route: DONE
+
+All seven routes exist under `src/app/api/catalog/` (`products`, `category`, `brand`, `categories`, `brands`, `variants`, `search`) with shared `_utils.ts` envelope/validation helpers and full test coverage in `__tests__/catalog/`. Server actions in `src/shared/lib/global.lib.ts` are preserved and still serve `page.tsx`; only the variants drawer consumes the HTTP route.
+
+### Story 2 - Pagination, Loading, Navigation: DONE
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| 1. `?page=N` without a 5-page ceiling | Done | `PRODUCT_PAGE_MAX = Math.ceil(333 / 50)` = 7; strict digits-only parsing with redirect-to-base on invalid input |
+| 2. Loading feedback | Done | `useTransition` + `isRoutePending`, `src/app/loading.tsx` skeleton grid |
+| 3. Pagination adapted under filters | Done | Numbered pagination for base mode; Anterior/Página N/Siguiente for `name`/`category`/`brand` (`Home.tsx:362-427`) |
+| 4. Back/forward predictable | Done | All navigation is `router.push` with full URL state |
+| 5. Empty/failed pages not broken | Done | `page.tsx:37-42` redirects empty page >1; `notice=end` shows `No hay más resultados.` |
+
+Next-page inference uses `products.length === 50` as specified (`page.tsx:57`).
+
+**Caveat to resolve:** `Home.tsx:365` renders `Mostrando X-Y de 333 productos` from the hardcoded `KNOWN_PRODUCT_TOTAL`. The epic explicitly said not to claim totals the API does not provide, and this number silently rots when the catalog changes. Either fetch the real count, or soften the copy to `Mostrando X-Y`.
+
+### Story 3 - Product Detail Signals: PARTIAL (~60%)
+
+| AC | Status | Evidence / gap |
+|----|--------|----------------|
+| 1. Card shows all backend signals | Partial | `ProductCard.tsx` shows category, brand, name, `internalId` (as `Modelo`), variant count, min/max price. Image missing — no `next/image` usage anywhere in the catalog |
+| 2. Image and no-image card states | **Not started** | Blocked: Strapi has no product image field yet (open question Strapi III) |
+| 3. Drawer loading/empty/error | Done | `ProductVariantsDrawer.tsx:143-147` |
+| 4. Prices sorted and formatted | Partial | Sorted ascending by numeric price (`:66`). **Currency is still USD**, not MXN — `formatNumberToCurrency` in `src/shared/utils/global.utils.ts:21-25` still uses `currency: "USD"` despite open question UI III answering MXN |
+| 5. Spanish drawer labels | Done | `Cerrar`, `Seleccionar variantes`, `Agregar N al carrito` |
+
+Unblocked remaining work in this story: the USD to MXN currency fix (one-line change plus test updates in `__tests__/product-variants/` and `__tests__/shared/global.utils.test.ts`).
+
+Note: `Agregar al carrito` exists in both the card (`ProductCard.tsx:56-63`, handler commented out) and the drawer footer (`ProductVariantsDrawer.tsx:229-238`, currently just closes). Both are intentionally inert until the separate cart story lands.
+
+### Story 4 - SEO Readiness: NOT STARTED (0%)
+
+Nothing in this story has been implemented. This is the largest remaining gap and it is fully unblocked — every open question in the SEO section is already answered.
+
+| AC | Status | Gap |
+|----|--------|-----|
+| 1. Production Spanish metadata | Not started | `src/app/layout.tsx:18-22` still has `// TODO: Change metadata`, title `Tehesa MVP`, description `Esto es un MVP de Tehesa`. Approved replacement copy is in SEO answer I |
+| 2. Paginated URL SEO strategy | Not started | No `generateMetadata` in `page.tsx`; no per-page titles; no `alternates.canonical` anywhere in the repo |
+| 3. Server-rendered crawlable content | Likely satisfied, unverified | `Home` is a client component but SSRs through the server `page.tsx`, so product names should appear in initial HTML. Not verified against a real `pnpm build` output |
+| 4. Filter/search URL strategy decided | Decided, not implemented for SEO | URL params exist (`?mode=`, `?q=`); indexability policy for those URLs is not expressed anywhere |
+| 5. Structured data | Not started | No JSON-LD, no `application/ld+json`, no `robots.ts`, no `sitemap.ts` in `src/app/` |
+
+### Story 5 - Analytics And Conversion Readiness: NOT STARTED (0%)
+
+No analytics code, no adapter, and no written event contract. Note that ACs 1, 2, and 4 are documentation and restraint deliverables, not code:
+
+- AC1 (which interactions matter) and AC2 (event names and payload fields documented) are directionally answered in the Analytics open questions but have never been written up as an event contract document. That write-up is the actual deliverable.
+- AC3 (vendor-agnostic adapter) is not implemented.
+- AC4 (no analytics package until a provider is selected) is currently satisfied by default — `package.json` has no analytics dependency.
+- The `Agregar al carrito` conversion event stays blocked on the separate cart story.
+
+### Pending Work Summary, Highest Value First
+
+1. **Story 4 - SEO.** Fully unblocked, all decisions made, currently zero implementation. Needs research and planning docs before implementation.
+2. **Currency USD to MXN** (Story 3 AC4). One-line fix in `global.utils.ts` plus test updates. Smallest correctness gap in the epic.
+3. **Product total claim** (Story 2 caveat). Decide between a real count and softened copy.
+4. **Story 5 - Analytics event contract.** Document-only first step; no dependency needed.
+5. **Story 3 image-aware cards.** Stays blocked until Strapi exposes an image field and the Next image host is confirmed.
+
+### Docs Coverage Gap
+
+`ai-research/stories/` and `ai-planning/` contain docs for stories 1, 1a, 1b, 1c, and 2 only. Stories 3, 4, and 5 have no story-level research or planning doc yet; each needs `/research` then `/plan` before implementation.
