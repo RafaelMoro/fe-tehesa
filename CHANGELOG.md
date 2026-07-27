@@ -1,3 +1,9 @@
+## v0.23.1 (2026-07-27)
+
+### Pull Requests
+[#30](https://github.com/RafaelMoro/fe-tehesa/pull/30) | Improve skills and add task effort estimator skill
+
+
 ## v0.23.0 (2026-07-13)
 
 ### Pull Requests
