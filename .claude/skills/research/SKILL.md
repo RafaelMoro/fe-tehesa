@@ -1,5 +1,4 @@
 ---
-name: research
 description: Research a Tehesa catalog feature or bug and write an ai-research note without changing source code.
 ---
 

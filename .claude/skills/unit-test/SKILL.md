@@ -1,5 +1,4 @@
 ---
-name: unit-test
 description: Create or fix Jest unit/component tests for the Tehesa catalog without requiring an approved planning doc.
 ---
 

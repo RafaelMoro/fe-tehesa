@@ -1,5 +1,4 @@
 ---
-name: task-effort-estimator
 description: Estimate story or epic effort from a Tehesa research document in person-days.
 ---
 

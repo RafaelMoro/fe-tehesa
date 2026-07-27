@@ -1,5 +1,4 @@
 ---
-name: implement
 description: Execute an approved Tehesa planning doc phase by phase and report results.
 ---
 
@@ -48,10 +47,10 @@ For each phase in the plan:
 4. Update any implementation checklist in the planning doc if the plan includes one.
 5. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Do not auto-continue across phase boundaries even if the plan does not say to pause. The user must say "continue", "go", or otherwise approve the next phase. While waiting, summarize the completed phase (files touched, what was built, what was verified) and ask for sign-off.
 6. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
-   - Stop and obtain user approval before making the change. Do not silently expand the scope.
-   - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
-   - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
-   - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
+    - Stop and obtain user approval before making the change. Do not silently expand the scope.
+    - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
+    - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
+    - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
 7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
 
 ## Step 4 - Apply repo conventions while implementing
@@ -96,7 +95,12 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm build` when production behavior changed
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
-- When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` after all planned work and verification pass. Add or update `Status: complete` under the matching story heading. Do not mark the epic complete unless every story is complete; do not update the epic for partial or failed implementation.
+- When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` only after all planned work and verification pass. Update the epic's existing completion-status section, or append `## Epic Completion Status` when absent. Include:
+  - The matching story as `Complete`, with concise implementation and verification evidence.
+  - An overview table for every epic story: story, status (`Complete`, `Partial`, `Not started`, or `Blocked`), verified evidence, and remaining work or blocker.
+  - An overall completion percentage calculated as completed acceptance criteria divided by total acceptance criteria across the epic, with the `completed/total` basis shown. Count only verified criteria; do not estimate partial progress.
+  - A short, prioritized `Next Steps` list containing only remaining or blocked work and its prerequisite where applicable.
+  - Do not mark the epic complete unless every acceptance criterion is verified complete. Do not update the epic for partial or failed implementation.
 - If you update `.opencode/command/implement.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 7 - Capture follow-ups
@@ -116,7 +120,7 @@ End the turn with:
 3. Typecheck / build / lint / manual verification status with exact commands run.
 4. Whether `REPO_CONTEXT.md` was updated and why.
 5. Deferred follow-ups.
-6. Epic story status update, when applicable.
+6. Epic completion update, when applicable: percentage, story overview, and next steps.
 7. Out-of-scope implementation changes recorded, when applicable.
 8. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
