@@ -67,10 +67,10 @@ Apply these constraints **before** exploration:
 
 As backend/Strapi questions come up during exploration, classify each one before it goes into Open Questions:
 
-- **Factual** (schema shape, field/type existence, required args, relations, pagination metadata, content-type structure) - delegate to the `backend-research` subagent instead of guessing. It runs on Haiku with high reasoning effort, checks the local backend repo at `/home/rafael/projects/tehesa/store-tehesa-api` first, then falls back to a live GraphQL introspection query against `STRAPI_HOST`/`STRAPI_API_TOKEN`. Launch it with the Agent tool (`subagent_type: "backend-research"`), wait for its answer, and record the result in Open Questions as `Status: answered` with the subagent's evidence as `Context:`.
+- **Factual** (schema shape, field/type existence, required args, relations, pagination metadata, content-type structure) - delegate to the `backend-research` subagent instead of guessing. It checks the local backend repo at `/home/rafael/projects/tehesa/store-tehesa-api` first, then falls back to a live GraphQL introspection query against `STRAPI_HOST`/`STRAPI_API_TOKEN`. Launch it through the runner's subagent mechanism (`subagent_type: "backend-research"`), wait for its answer, and record the result in Open Questions as `Status: answered` with the subagent's evidence as `Context:`.
 - **Judgment** (product/business decisions, scope calls, UX tradeoffs, anything needing a human opinion) - do not delegate. Flag it to the user (Step 7/9) as `Status: pending`.
 
-**Claude Code only:** the `backend-research` subagent is a Claude Code custom agent (`.claude/agents/backend-research.md`); the Agent tool and `subagent_type` do not exist in opencode, VS Code/Copilot, or other runners of this command. Outside Claude Code, do not attempt delegation — treat every backend/Strapi question (factual or judgment) as `Status: pending` and flag it to the user, noting that automatic backend delegation is unavailable in this environment.
+**Claude Code and OpenCode:** the `backend-research` subagent is configured in `.claude/agents/backend-research.md` and `.opencode/agents/backend-research.md`, respectively. In other runners, do not attempt delegation — treat every backend/Strapi question (factual or judgment) as `Status: pending` and flag it to the user, noting that automatic backend delegation is unavailable in this environment.
 
 If the subagent can't resolve a factual question either, leave it `Status: pending` and note what it checked.
 
