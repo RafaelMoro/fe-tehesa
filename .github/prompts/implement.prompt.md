@@ -8,8 +8,8 @@ You are running the **implementation phase** for `fe-tehesa` (Next.js 15 App Rou
 
 ## Inputs the user may provide
 
-- A planning doc path, e.g. `ai-planning/planning-{story-name}.md` - ideal
-- Nothing - list available planning docs under `ai-planning/*.md` and ask which one to implement
+- A planning doc path, e.g. `ai-planning/{story-name}.story.md` or `ai-planning/<epic-name>/<story-name>.story-<story-number>.md` - ideal
+- Nothing - list available planning docs recursively under `ai-planning/` and ask which one to implement
 
 Parse `$ARGUMENTS` and the conversation for the planning doc path.
 
@@ -17,12 +17,12 @@ Parse `$ARGUMENTS` and the conversation for the planning doc path.
 
 Read in order:
 
-1. **The planning document** provided by the user, or selected from `ai-planning/*.md`. This is the source of truth for implementation; do not invent changes that are not in the plan.
+1. **The planning document** provided by the user, or selected recursively from `ai-planning/`. This is the source of truth for implementation; do not invent changes that are not in the plan.
 2. `docs/IMPLEMENTATION_GUIDELINES.md` - project-wide implementation guidelines. Apply them throughout; they override defaults when in conflict.
 3. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
 4. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 5. `package.json` - dependencies and scripts.
-6. The research doc the plan references, usually `ai-research/{story-name}.story.md` or `ai-research/{story-name}.epic.md`, for ACs and assumptions.
+6. The research doc the plan references, usually `ai-research/{story-name}.story.md`, `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, or `ai-research/epics/<epic-name>.epic.md`, for ACs and assumptions.
 7. When the approved plan includes test work, also read `docs/UNIT_TESTING_GUIDELINES.md` for canonical test-authoring rules. Reference the guide instead of duplicating the policy.
 8. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
 
@@ -30,7 +30,7 @@ Read in order:
 
 Before writing code, confirm:
 
-- The plan exists at `ai-planning/planning-{story-name}.md` and all blocking open questions are resolved.
+- The plan exists under `ai-planning/` and all blocking open questions are resolved.
 - The user approved implementation; assume yes if they invoked `/implement` with a planning doc.
 - The plan's affected files still exist or have obvious current equivalents.
 - Strapi/GraphQL contract assumptions are explicit if the plan depends on behavior not verifiable from this repo.
@@ -95,6 +95,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm build` when production behavior changed
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
+- When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` after all planned work and verification pass. Add or update `Status: complete` under the matching story heading. Do not mark the epic complete unless every story is complete; do not update the epic for partial or failed implementation.
 - If you update `.opencode/command/implement.md`, sync it to `.github/prompts/implement.prompt.md` afterward with the existing sync script.
 
 ## Step 7 - Capture follow-ups
@@ -114,7 +115,8 @@ End the turn with:
 3. Typecheck / build / lint / manual verification status with exact commands run.
 4. Whether `REPO_CONTEXT.md` was updated and why.
 5. Deferred follow-ups.
-6. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
+6. Epic story status update, when applicable.
+7. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
 ## Don'ts
 
