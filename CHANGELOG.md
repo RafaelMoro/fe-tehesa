@@ -1,3 +1,9 @@
+## v0.24.0 (2026-07-28)
+
+### Pull Requests
+[#31](https://github.com/RafaelMoro/fe-tehesa/pull/31) | PLP Functionality | Story 3 | Improve product detail signal on cards
+
+
 ## v0.23.1 (2026-07-27)
 
 ### Pull Requests
