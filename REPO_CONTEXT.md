@@ -1,6 +1,6 @@
 # Repository Context - fe-tehesa
 
-**Last Updated:** 2026-07-12
+**Last Updated:** 2026-07-27
 
 A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
 
@@ -145,6 +145,9 @@ Catalog behavior:
 - Empty page 1 can render an empty state. Empty page `>1` redirects to the same mode/value page 1; speculative `notice=end` redirects back to the previous populated page and shows `No hay más resultados.`.
 - `src/app/loading.tsx` provides route loading feedback. `src/app/error.tsx` provides Spanish retry UI for server-rendered catalog failures.
 - `ProductVariantsDrawer` fetches variants when opened, formats prices with `formatNumberToCurrency`, and sorts by numeric price ascending.
+- `formatNumberToCurrency` renders `$1,234.50 MXN` (fixed business format via a plain decimal `Intl.NumberFormat` plus an explicit `$...MXN` template, not a locale currency formatter). Used by both `ProductCard` and `ProductVariantsDrawer`.
+- `Product.hasOneProductVariant` (added to `GET_PRODUCTS`, `GET_PRODUCTS_BY_CATEGORY`, `GET_PRODUCTS_BY_BRAND`, `GET_PRODUCTS_BY_NAME`) gates a single-price `Precio` block on `ProductCard` in place of the `Desde`/`Hasta` range grid when `=== true`. It does not key off `minPrice === maxPrice`. `GET_PRODUCT_VARIANTS` is unchanged.
+- Each variant mapped by `ProductVariantsDrawer` retains `internalId` (via `ProductVariantUI.internalId`) in state for the upcoming cart feature; it is never rendered.
 
 ## API Route Inventory
 

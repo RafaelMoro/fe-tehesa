@@ -29,6 +29,7 @@ export type Product = {
   minPrice?: number
   maxPrice?: number
   variantCount?: number
+  hasOneProductVariant?: boolean
   product_variants?: ProductVariant[]
 }
 
@@ -68,6 +69,7 @@ export type ProductVariant = {
 }
 
 export type ProductVariantUI = {
+  internalId?: string
   diameter: string
   price: number
   priceFormatted: string

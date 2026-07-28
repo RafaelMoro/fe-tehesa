@@ -13,7 +13,6 @@ export const ProductCard = ({
   product,
   handleProductClick,
 }: ProductCardProps) => {
-  const internalId = product.product_variants?.[0]?.internalId
   const productType = [product.category?.name, product.brand?.name]
     .filter(Boolean)
     .join(" / ")
@@ -37,21 +36,27 @@ export const ProductCard = ({
         <Card.Title className="text-xl font-bold sm:text-2xl">
           {product.name}
         </Card.Title>
-        {internalId && <Card.Description>Modelo {internalId}</Card.Description>}
       </Card.Header>
       <Card.Content className="border-t border-default-200 px-5 py-4">
-        {minPriceString && maxPriceString && (
-          <div className="grid grid-cols-2 divide-x divide-default-200">
-            <div className="flex flex-col gap-1 pr-4">
-              <span className="text-xs text-muted uppercase">Desde</span>
+        {minPriceString &&
+          maxPriceString &&
+          (product.hasOneProductVariant === true ? (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted uppercase">Precio</span>
               <span className="text-xl font-bold">{minPriceString}</span>
             </div>
-            <div className="flex flex-col gap-1 pl-4">
-              <span className="text-xs text-muted uppercase">Hasta</span>
-              <span className="text-xl font-bold">{maxPriceString}</span>
+          ) : (
+            <div className="grid grid-cols-2 divide-x divide-default-200">
+              <div className="flex flex-col gap-1 pr-4">
+                <span className="text-xs text-muted uppercase">Desde</span>
+                <span className="text-xl font-bold">{minPriceString}</span>
+              </div>
+              <div className="flex flex-col gap-1 pl-4">
+                <span className="text-xs text-muted uppercase">Hasta</span>
+                <span className="text-xl font-bold">{maxPriceString}</span>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
       </Card.Content>
       <Card.Footer className="flex justify-between gap-3">
         <Button
