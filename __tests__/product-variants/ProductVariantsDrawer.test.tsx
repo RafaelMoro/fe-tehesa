@@ -136,8 +136,8 @@ describe("ProductVariantsDrawer", () => {
       jsonResponse({
         success: true,
         data: [
-          { diameter: "Grande", pricing: { price: 30 } },
-          { diameter: "Pequeña", pricing: { price: 10 } },
+          { internalId: "VAR-002", diameter: "Grande", pricing: { price: 30 } },
+          { internalId: "VAR-001", diameter: "Pequeña", pricing: { price: 10 } },
         ],
       }),
     )
@@ -151,6 +151,8 @@ describe("ProductVariantsDrawer", () => {
     expect(screen.getByText("$10.00 MXN")).toBeInTheDocument()
     expect(screen.getByText("Grande")).toBeInTheDocument()
     expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
+    expect(screen.queryByText("VAR-001")).not.toBeInTheDocument()
+    expect(screen.queryByText("VAR-002")).not.toBeInTheDocument()
   })
 
   it("updates the selected count and total", async () => {

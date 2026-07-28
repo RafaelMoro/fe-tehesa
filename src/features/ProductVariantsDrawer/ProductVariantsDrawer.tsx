@@ -59,6 +59,7 @@ export const ProductVariantsDrawer = ({
         }
         const formattedData = data
           .map((variant) => ({
+            internalId: variant.internalId,
             diameter: variant.diameter,
             price: variant.pricing.price,
             priceFormatted: formatNumberToCurrency(variant.pricing.price),

@@ -552,7 +552,7 @@ Explanation: Manual QA uses the live Strapi instance behind the existing config.
 
 ## Epic Completion Status (audited 2026-07-27)
 
-Overall: **~55% complete**. Stories 1, 1a, and 2 are shipped. Story 3 is partially shipped and partly blocked on backend. Stories 4 and 5 have not started and are the remaining work.
+Overall: **~56% complete** (14/25 verified acceptance criteria: Story 1 6/6, Story 2 5/5, Story 3 3/5, Story 4 0/5, Story 5 0/4; Story 1a has no separately numbered epic-level ACs). Stories 1, 1a, and 2 are shipped. Story 3 shipped its currency, single-price, and `internalId`-retention work on 2026-07-27 and remains partial only on the image sub-scope, which is blocked on backend. Stories 4 and 5 have not started and are the remaining work.
 
 ### Story 1 - Search And Filtering: DONE
 
@@ -587,19 +587,23 @@ Next-page inference uses `products.length === 50` as specified (`page.tsx:57`).
 
 **Caveat to resolve:** `Home.tsx:365` renders `Mostrando X-Y de 333 productos` from the hardcoded `KNOWN_PRODUCT_TOTAL`. The epic explicitly said not to claim totals the API does not provide, and this number silently rots when the catalog changes. Either fetch the real count, or soften the copy to `Mostrando X-Y`.
 
-### Story 3 - Product Detail Signals: PARTIAL (~60%)
+### Story 3 - Product Detail Signals: PARTIAL (~75%), implemented 2026-07-27
 
 | AC | Status | Evidence / gap |
 |----|--------|----------------|
-| 1. Card shows all backend signals | Partial | `ProductCard.tsx` shows category, brand, name, `internalId` (as `Modelo`), variant count, min/max price. Image missing — no `next/image` usage anywhere in the catalog |
-| 2. Image and no-image card states | **Not started** | Blocked: Strapi has no product image field yet (open question Strapi III) |
-| 3. Drawer loading/empty/error | Done | `ProductVariantsDrawer.tsx:143-147` |
-| 4. Prices sorted and formatted | Partial | Sorted ascending by numeric price (`:66`). **Currency is still USD**, not MXN — `formatNumberToCurrency` in `src/shared/utils/global.utils.ts:21-25` still uses `currency: "USD"` despite open question UI III answering MXN |
+| 1. Card shows all backend signals | Partial | `ProductCard.tsx` shows category, brand, name, variant count, and min/max price (single `Precio` when `hasOneProductVariant === true`). The dead `internalId`-as-`Modelo` branch was deleted (it never rendered in production — no list query selected `product_variants`). Image still missing — no `next/image` usage anywhere in the catalog |
+| 2. Image and no-image card states | **Not started** | Still blocked: Strapi has no product image field yet (open question Strapi III) |
+| 3. Drawer loading/empty/error | Done | `ProductVariantsDrawer.tsx:143-147`, unchanged |
+| 4. Prices sorted and formatted | Done | Sorted ascending by numeric price. Currency now renders `$1,234.50 MXN` via `formatNumberToCurrency` in `src/shared/utils/global.utils.ts` |
 | 5. Spanish drawer labels | Done | `Cerrar`, `Seleccionar variantes`, `Agregar N al carrito` |
 
-Unblocked remaining work in this story: the USD to MXN currency fix (one-line change plus test updates in `__tests__/product-variants/` and `__tests__/shared/global.utils.test.ts`).
+Story 3 (`ai-planning/stories/plp-product-detail-signals.story3.md`) implemented Phases 1-3: the MXN currency format, the `hasOneProductVariant`-gated single-price card branch, deletion of the `Modelo` branch, and `internalId` retention (not rendered) on each drawer-mapped variant for the upcoming cart feature. Verified via `pnpm test` (138 tests, 1 pre-existing skip), `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, and `pnpm design:lint`, all clean.
 
-Note: `Agregar al carrito` exists in both the card (`ProductCard.tsx:56-63`, handler commented out) and the drawer footer (`ProductVariantsDrawer.tsx:229-238`, currently just closes). Both are intentionally inert until the separate cart story lands.
+Story 3's AC4 (a repeatable catalog-integrity check) was reassigned to the backend during planning — data integrity for `minPrice`/`maxPrice`/`variantCount`/`hasOneProductVariant` is a Strapi lifecycle-hook concern, not frontend code. See `docs/improvement.md` and `ai-planning/stories/plp-product-detail-signals.story3.md:180-209`. Three known content defects (zero-variant / null-price products) are documented there for correction in Strapi admin.
+
+Remaining gap in this story is entirely the image sub-scope (AC1 partial, AC2 not started), still blocked on Strapi exposing a product image field.
+
+Note: `Agregar al carrito` exists in both the card (`ProductCard.tsx`, handler commented out) and the drawer footer (`ProductVariantsDrawer.tsx:229-238`, currently just closes). Both are intentionally inert until the separate cart story lands.
 
 ### Story 4 - SEO Readiness: NOT STARTED (0%)
 
@@ -625,10 +629,10 @@ No analytics code, no adapter, and no written event contract. Note that ACs 1, 2
 ### Pending Work Summary, Highest Value First
 
 1. **Story 4 - SEO.** Fully unblocked, all decisions made, currently zero implementation. Needs research and planning docs before implementation.
-2. **Currency USD to MXN** (Story 3 AC4). One-line fix in `global.utils.ts` plus test updates. Smallest correctness gap in the epic.
-3. **Product total claim** (Story 2 caveat). Decide between a real count and softened copy.
-4. **Story 5 - Analytics event contract.** Document-only first step; no dependency needed.
-5. **Story 3 image-aware cards.** Stays blocked until Strapi exposes an image field and the Next image host is confirmed.
+2. **Product total claim** (Story 2 caveat). Decide between a real count and softened copy.
+3. **Story 5 - Analytics event contract.** Document-only first step; no dependency needed.
+4. **Story 3 image-aware cards.** Stays blocked until Strapi exposes an image field and the Next image host is confirmed.
+5. **Backend follow-up from Story 3 AC4** (not this repo). A `product-variant` lifecycle hook to keep `minPrice`/`maxPrice`/`variantCount`/`hasOneProductVariant` in sync, plus correcting the three known defective products. Tracked in `docs/improvement.md`.
 
 ### Docs Coverage Gap
 

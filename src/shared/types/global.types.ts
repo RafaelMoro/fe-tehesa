@@ -69,6 +69,7 @@ export type ProductVariant = {
 }
 
 export type ProductVariantUI = {
+  internalId?: string
   diameter: string
   price: number
   priceFormatted: string
