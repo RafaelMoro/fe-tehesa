@@ -129,7 +129,7 @@ describe("ProductVariantsDrawer", () => {
     )
   })
 
-  it("renders sorted selectable variants with USD formatting", async () => {
+  it("renders sorted selectable variants with MXN formatting", async () => {
     const user = userEvent.setup()
     const fetchMock = mockFetch()
     fetchMock.mockResolvedValue(
@@ -148,9 +148,9 @@ describe("ProductVariantsDrawer", () => {
     expect(
       await screen.findByRole("checkbox", { name: /Pequeña/ }),
     ).toBeInTheDocument()
-    expect(screen.getByText("$10.00")).toBeInTheDocument()
+    expect(screen.getByText("$10.00 MXN")).toBeInTheDocument()
     expect(screen.getByText("Grande")).toBeInTheDocument()
-    expect(screen.getByText("$30.00")).toBeInTheDocument()
+    expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
   })
 
   it("updates the selected count and total", async () => {
@@ -182,7 +182,7 @@ describe("ProductVariantsDrawer", () => {
     expect(screen.getByText(/1 variante/)).toHaveTextContent(
       "1 variante · 3 piezas",
     )
-    expect(screen.getByText("$30.00")).toBeInTheDocument()
+    expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
   })
 
   it("clears old rows on close and refetches on reopen", async () => {

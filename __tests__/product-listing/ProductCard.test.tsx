@@ -36,7 +36,11 @@ describe("ProductCard", () => {
       screen.getByRole("button", { name: "Explorar las 0 variantes" }),
     ).toBeInTheDocument()
     expect(screen.getByText("Modelo TIRE-001")).toBeInTheDocument()
-    expect(screen.getByText("Desde").parentElement).toHaveTextContent("$0.00")
-    expect(screen.getByText("Hasta").parentElement).toHaveTextContent("$0.00")
+    expect(screen.getByText("Desde").parentElement).toHaveTextContent(
+      "$0.00 MXN",
+    )
+    expect(screen.getByText("Hasta").parentElement).toHaveTextContent(
+      "$0.00 MXN",
+    )
   })
 })
