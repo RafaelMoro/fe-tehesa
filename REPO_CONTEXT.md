@@ -141,7 +141,9 @@ Catalog behavior:
 - Local visible-results search filters only the current working set in memory by product name. It does not query Strapi and does not reset the page to 1.
 - Catalog-wide name/category/brand modes are URL-backed: `/?mode=name&q=...&page=N`, `/?mode=category&category=...&page=N`, and `/?mode=brand&brand=...&page=N`. Browser reload/back/forward restore the server-selected result set.
 - Category and brand catalog-wide URLs and GraphQL filters use taxonomy names, not `customId`. Local visible filters still use `customId` for dropdown compatibility.
-- Base pagination renders numbered pages 1-7. Filtered modes render Previous/current-page/Next and infer Next from `products.length === 50` until Strapi exposes filtered totals.
+- Base pagination renders numbered pages 1-7. Filtered modes render Previous/current-page/Next and infer Next from `products.length === 50`.
+- **Correction (2026-07-27, verified by live GraphQL introspection):** Strapi *does* expose pagination metadata. `products_connection(pagination: $pagination)` returns `pageInfo { total page pageSize pageCount }` alongside `nodes { ... }`, and it accepts the same `ProductFiltersInput` as `products`. Earlier notes here, in `AGENTS.md`, and in `ai-research/epics/plp-functionality-seo.epic.md:398-402` claim no metadata is available; that is wrong. `KNOWN_PRODUCT_TOTAL = 333`, the derived 7-page ceiling, and the response-length next-page inference are all workarounds for an assumption that no longer holds. Migrating to `products_connection` is a deliberate open decision, not a bug fix — see `ai-research/stories/plp-seo-readiness.story4.md` (Catalog Behavior I).
+- Strapi's Product content-type also has `description` (text) and a unique `customId`; no frontend query selects either. Genuinely absent: image/media, `slug`, product-level SKU, `availability`/`stock`, `currency`. A `shared.seo` component (`metaTitle`, `metaDescription`, `shareImage`) exists in the backend but is attached to no content-type.
 - Empty page 1 can render an empty state. Empty page `>1` redirects to the same mode/value page 1; speculative `notice=end` redirects back to the previous populated page and shows `No hay más resultados.`.
 - `src/app/loading.tsx` provides route loading feedback. `src/app/error.tsx` provides Spanish retry UI for server-rendered catalog failures.
 - `ProductVariantsDrawer` fetches variants when opened, formats prices with `formatNumberToCurrency`, and sorts by numeric price ascending.
@@ -319,7 +321,7 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 
 ## Open Questions
 
-- The Strapi schema and pagination metadata are inferred only from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo.
+- The Strapi schema is inferred from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo. Ground truth is the backend repo at `/home/rafael/projects/tehesa/store-tehesa-api` plus live introspection (see the pagination-metadata correction under Data Flow).
 - The production deployment target is not documented in source beyond generic Next README content and GitHub workflows.
 - Theme defaults differ between `NextThemesProvider` (`dark`) and `getThemePreference()` (`light` when no cookie exists); confirm desired default before changing related UX.
 - Category/brand options are hardcoded; confirm whether they should eventually come from Strapi before replacing them with dynamic fetches.
