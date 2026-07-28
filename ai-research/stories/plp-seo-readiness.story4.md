@@ -335,11 +335,12 @@ detail is a drawer. `Product.url` and `@id` must be omitted.
 
 IV: Question: Do product, category, or brand records expose an updated-at timestamp usable for
 `sitemap.lastModified`?
-Status: pending
-Context: The backend check confirmed the field inventory but did not report on `updatedAt` /
-`createdAt`. Strapi exposes those on entities by convention, but that was not verified here.
-Explanation: No current query selects a timestamp. Until verified, omit `lastModified` from the
-sitemap rather than invent a date. Cheap to confirm during planning.
+Status: answered
+Answer: No. The backend does not expose these fields, confirmed by the user on 2026-07-27.
+Explanation: `sitemap.ts` therefore omits `lastModified` entirely. Do not substitute a build
+timestamp, `new Date()`, or any other stand-in — a fabricated date is worse than an absent one,
+because crawlers act on it. `changeFrequency` and `priority` are also omitted; Google ignores both,
+so they would be noise rather than signal.
 
 V: Question: Which descriptive product fields exist in Strapi but are simply not selected by the
 frontend queries?
@@ -457,7 +458,14 @@ recorded in `REPO_CONTEXT.md` and `docs/improvement.md` so the next planner does
 
 I: Question: Will a Search Console / Bing verification token be needed in metadata, and who owns
 the property?
-Status: pending — clarified 2026-07-27
+Status: answered
+Answer: Yes — Google Search Console will be used. The property gets created and verified once the
+production domain exists. Story 4 still ships **no** verification meta tag: verify by DNS `TXT`,
+which needs no code. If you later prefer the HTML-meta method instead, it is a one-line addition
+(`metadata.verification.google`) to Phase 1.
+Post-deploy checklist this implies, outside the code: create the property, verify ownership, submit
+`/sitemap.xml`, then confirm pages 2-7 are indexed and `?mode=name` URLs are excluded as
+`noindex`.
 Context: Yes, "Search Console" means **Google Search Console** (`search.google.com/search-console`),
 Google's free dashboard for a site you own. Once a domain is verified there it reports which queries
 show the site, which pages are indexed or excluded and why, canonical and duplicate decisions,
@@ -469,11 +477,6 @@ a DNS `TXT` record, an uploaded HTML file, a Google Analytics/Tag Manager link, 
 tag. Only the last one touches this codebase: `metadata.verification.google = "<token>"` in
 `layout.tsx`, one line. DNS is generally preferable — it verifies every subdomain and survives
 frontend rewrites — so this story needs no code for it.
-Recommendation: ship Story 4 with no verification token. Once `NEXT_PUBLIC_SITE_URL` is a real
-domain, create the Search Console property, verify by DNS, and submit `/sitemap.xml`. If you would
-rather verify by meta tag, say so and it becomes a one-line addition to Phase 1.
-Still pending: who creates and monitors the property. Without it the SEO work ships unmeasured —
-no feedback on whether pages 2-7 get indexed or whether the `noindex` on `?mode=name` is respected.
 
 II: Question: Automated tests must not depend on real env vars — confirmed?
 Status: answered
@@ -497,8 +500,10 @@ than a required-var assertion.
 - Textual Open Graph / Twitter metadata ships; no OG image asset (decision SEO VII).
 - The approved meta description ships verbatim including `Cotiza por WhatsApp`; no WhatsApp CTA is
   added anywhere — that lands on the cart with the cart feature (decision SEO VI).
-- No Search Console verification meta tag; verification is expected to happen by DNS after the
-  domain exists (decision Verification I).
+- Google Search Console will be used, but no verification meta tag ships; ownership is verified by
+  DNS after the domain exists (decision Verification I).
+- `sitemap.ts` emits URLs only — no `lastModified` (backend exposes no timestamps), and no
+  `changeFrequency` / `priority` (Google ignores both).
 - Product names are already in the SSR HTML; this is treated as an assumption to be verified during
   implementation, not a fact.
 - Existing catalog URL semantics, redirects, and validation stay unchanged; this story adds SEO
@@ -533,7 +538,7 @@ than a required-var assertion.
 
 ## Research Outcome
 
-All scope questions are resolved. Story 4 is ready to plan as **option I, SEO only**: production root
+Every open question is now answered. Story 4 is ready to plan as **option I, SEO only**: production root
 metadata with an env-driven `metadataBase`, per-URL titles/canonicals/robots directives, crawlable
 anchor pagination, `robots.ts`, `sitemap.ts`, and structured data limited to `WebSite` +
 `SearchAction`, `ItemList`, and `BreadcrumbList`.
@@ -543,4 +548,6 @@ business data — `docs/improvement.md`), `h1` copy changes, any WhatsApp CTA (c
 Search Console verification tags, and every touch to the four product queries.
 
 The only value still needed before deploy is the production domain for `NEXT_PUBLIC_SITE_URL`;
-implementation does not have to wait for it. Ready for `/plan` on sign-off.
+implementation does not have to wait for it. Post-deploy, outside this repo: create the Google
+Search Console property, verify by DNS, submit `/sitemap.xml`, and confirm pages 2-7 are indexed
+while `?mode=name` URLs are excluded. Ready for `/plan` on sign-off.
