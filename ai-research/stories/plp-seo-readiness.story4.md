@@ -393,60 +393,87 @@ Answer: `?mode=category` and `?mode=brand` are indexable, self-canonical, and si
 IV: Question: What business data can we use for `Organization` / `LocalBusiness` JSON-LD — legal
 name, street address, city, postal code, phone, WhatsApp number, opening hours, logo URL, social
 profiles?
-Status: pending
+Status: deferred — tracked, not blocking
+Answer: Leave it pending and track it as an improvement item. Story 4 ships without
+`Organization` / `LocalBusiness` JSON-LD. Recorded in `docs/improvement.md` under
+"Business data for local SEO structured data (pending)".
 Context: Nothing of the sort exists anywhere in the repo. The approved meta description already
 promises `Cotiza por WhatsApp`, so at minimum a WhatsApp URL is implied.
-Explanation: For a Puebla-based distributor this is likely the single highest-value structured-data
-item, and it is blocked only on you providing the data. Without it, this sub-scope is dropped.
+Explanation: For a Puebla-based distributor this remains the single highest-value structured-data
+item, and it is blocked only on the business data, not on code. Adding the node later is additive —
+one more JSON-LD object, no refactor of anything this story builds.
 
 V: Question: Should the `h1` change from `Piezas precisas para trabajo exigente.` to something
 keyword-aligned with the approved title?
-Status: pending
-Context: `src/features/Home/CatalogHero.tsx:24-26`. The `h1` is the strongest on-page signal after
-the title and currently shares no term with it.
-Explanation: This is marketing copy, so it is a product decision, not a technical one. Research
-recommends aligning it (e.g. keeping the brand line as a lead-in and making the `h1` name the
-category and city), but will not change copy without approval.
+Status: answered
+Answer: No, not for now. The `h1` copy stays exactly as it is.
+Context: `src/features/Home/CatalogHero.tsx:24-26`.
+Explanation: `CatalogHero` is therefore untouched by this story. The keyword signal lives in the
+`<title>`, meta description, and per-mode titles only. Noted as a known, accepted gap rather than an
+oversight — revisit if the SERP performance of the catalog page ever needs it.
 
 VI: Question: The approved meta description promises `Cotiza por WhatsApp`, but no WhatsApp entry
 point exists in the app. Ship the copy anyway, or add the CTA?
-Status: pending
-Explanation: Promising a path in the SERP snippet that the landing page does not offer hurts both
-conversion and quality signals. Options: ship as approved and accept the mismatch, soften the copy,
-or add a WhatsApp CTA (a separate story). Research defaults to shipping the approved copy verbatim.
+Status: answered
+Answer: Ship the approved copy verbatim. The WhatsApp quote CTA belongs on the **cart**, and lands
+with the cart feature — not on the PLP and not in this story.
+Explanation: There is a temporary mismatch between the SERP snippet and the landing page until the
+cart ships. That is accepted deliberately. No WhatsApp link, button, or `wa.me` URL is added
+anywhere in Story 4; adding one to the PLP would be scope invention. Cross-referenced in
+`docs/improvement.md` so the cart story picks it up.
 
 VII: Question: Do we want Open Graph / Twitter card images?
-Status: pending
+Status: answered
+Answer: No. No Open Graph or Twitter card image.
 Context: `src/app/` has only `favicon.ico`; no `opengraph-image` asset exists.
-Explanation: OG title/description/type/locale/siteName cost nothing and are in scope. An OG *image*
-needs a designed asset. Default: ship textual OG/Twitter metadata now, no image.
+Explanation: Textual Open Graph / Twitter metadata (title, description, type, locale, siteName) still
+ships, since it is free and comes from the same constants as the page metadata — only the *image* is
+dropped. No image asset is created, requested, or generated. If `shareImage` is ever attached to the
+Strapi `seo` component (see Strapi Contract VI), the image becomes available without frontend design
+work.
 
 ### Catalog Behavior
 
 I: Question: How much of the `products_connection` opportunity belongs in this story — real page
 count for the sitemap, the `de 333 productos` copy fix, and/or `description` in the queries?
-Status: pending
+Status: answered
+Answer: **Option I — SEO only.** The four product queries stay untouched. No `products_connection`
+adoption, no `description` selection, no `Mostrando X-Y de 333` copy change in this story.
 Context: Backend research overturned the epic's "no pagination metadata" assumption
-(Strapi Contract I), and `description` turns out to be available (Strapi Contract V).
-Explanation: Three options, in increasing scope:
-  I. **SEO-only (recommended).** Keep the four product queries untouched. Sitemap derives pages from
-     `PRODUCT_PAGE_MAX`; titles say `Página N` with no total. Smallest diff, ships the SEO story;
-     the stale-total risk stays where it already is.
-  II. **SEO + real total.** Add one `products_connection` count read for the sitemap and, optionally,
-     for `Mostrando X-Y de N`, fixing the Story 2 caveat properly. One new query, one new server
-     action, touches `page.tsx` and `Home.tsx` copy.
-  III. **SEO + total + `description`.** Also select `description` in the four product queries to
-     enrich JSON-LD. Widest diff, touches all product queries and the `Product` type.
-Research recommends I for this story and a separate small story for II and III, so the SEO work is
-not blocked behind a data-layer change. Your call.
+(Strapi Contract I), and `description` turns out to be available (Strapi Contract V). The rejected
+alternatives were: II, add a `products_connection` count read for the sitemap and the result summary;
+III, also select `description` to enrich JSON-LD.
+Explanation: Consequences of option I, accepted deliberately:
+  - `sitemap.ts` derives its page list from `PRODUCT_PAGE_MAX` (7), so it inherits the
+    `KNOWN_PRODUCT_TOTAL = 333` staleness. If the catalog grows past 350 products, the sitemap
+    under-reports pages until the constant is updated.
+  - Titles say `Página N`, never `Página N de 7`.
+  - `Product` JSON-LD carries no `description`.
+  - The Story 2 caveat (`Mostrando X-Y de 333 productos`) stays open.
+Options II and III are now unblocked backend-wise and belong in their own story. The correction is
+recorded in `REPO_CONTEXT.md` and `docs/improvement.md` so the next planner does not re-derive it.
 
 ### Verification
 
 I: Question: Will a Search Console / Bing verification token be needed in metadata, and who owns
 the property?
-Status: pending
-Explanation: `metadata.verification.google` is a one-line addition, but only if a property exists
-and someone will monitor it. Otherwise the SEO work ships unmeasured.
+Status: pending — clarified 2026-07-27
+Context: Yes, "Search Console" means **Google Search Console** (`search.google.com/search-console`),
+Google's free dashboard for a site you own. Once a domain is verified there it reports which queries
+show the site, which pages are indexed or excluded and why, canonical and duplicate decisions,
+sitemap processing status, structured-data validity, and crawl errors. It is the only place to see
+whether the indexability policy in this story actually took effect. "Bing" means the equivalent
+Bing Webmaster Tools; optional, and it can import from Google.
+Explanation: Verification is proving domain ownership to Google, done once, in one of several ways —
+a DNS `TXT` record, an uploaded HTML file, a Google Analytics/Tag Manager link, or an HTML `<meta>`
+tag. Only the last one touches this codebase: `metadata.verification.google = "<token>"` in
+`layout.tsx`, one line. DNS is generally preferable — it verifies every subdomain and survives
+frontend rewrites — so this story needs no code for it.
+Recommendation: ship Story 4 with no verification token. Once `NEXT_PUBLIC_SITE_URL` is a real
+domain, create the Search Console property, verify by DNS, and submit `/sitemap.xml`. If you would
+rather verify by meta tag, say so and it becomes a one-line addition to Phase 1.
+Still pending: who creates and monitors the property. Without it the SEO work ships unmeasured —
+no feedback on whether pages 2-7 get indexed or whether the `noindex` on `?mode=name` is respected.
 
 II: Question: Automated tests must not depend on real env vars — confirmed?
 Status: answered
@@ -465,7 +492,13 @@ than a required-var assertion.
   and never fails a build or a test.
 - Structured data ships as `WebSite` + `SearchAction`, per-page `ItemList` with `Product` +
   `AggregateOffer` (MXN), and `BreadcrumbList` on category/brand URLs. `Organization` /
-  `LocalBusiness` is dropped unless the business data arrives.
+  `LocalBusiness` is out, deferred to `docs/improvement.md`.
+- `CatalogHero` is not touched — the `h1` copy stays as-is (decision SEO V).
+- Textual Open Graph / Twitter metadata ships; no OG image asset (decision SEO VII).
+- The approved meta description ships verbatim including `Cotiza por WhatsApp`; no WhatsApp CTA is
+  added anywhere — that lands on the cart with the cart feature (decision SEO VI).
+- No Search Console verification meta tag; verification is expected to happen by DNS after the
+  domain exists (decision Verification I).
 - Product names are already in the SSR HTML; this is treated as an assumption to be verified during
   implementation, not a fact.
 - Existing catalog URL semantics, redirects, and validation stay unchanged; this story adds SEO
@@ -500,8 +533,14 @@ than a required-var assertion.
 
 ## Research Outcome
 
-Story 4 is fully unblocked for its core deliverables (metadata, canonicals, indexability policy,
-crawlable pagination, robots, sitemap, and verified-field structured data). Three sub-scopes remain
-gated on answers rather than code: `Organization` / `LocalBusiness` markup, the `h1` and WhatsApp
-copy decisions, and the OG image asset. One scope call is open (Catalog Behavior I) now that
-`products_connection` and `description` turn out to be available. Awaiting sign-off before `/plan`.
+All scope questions are resolved. Story 4 is ready to plan as **option I, SEO only**: production root
+metadata with an env-driven `metadataBase`, per-URL titles/canonicals/robots directives, crawlable
+anchor pagination, `robots.ts`, `sitemap.ts`, and structured data limited to `WebSite` +
+`SearchAction`, `ItemList`, and `BreadcrumbList`.
+
+Deliberately excluded, each with a recorded reason: `Organization` / `LocalBusiness` JSON-LD (no
+business data — `docs/improvement.md`), `h1` copy changes, any WhatsApp CTA (cart story), OG images,
+Search Console verification tags, and every touch to the four product queries.
+
+The only value still needed before deploy is the production domain for `NEXT_PUBLIC_SITE_URL`;
+implementation does not have to wait for it. Ready for `/plan` on sign-off.
