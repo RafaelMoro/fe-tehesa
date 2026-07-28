@@ -13,6 +13,7 @@ export const GET_PRODUCTS = gql`
       maxPrice
       minPrice
       variantCount
+      hasOneProductVariant
       documentId
     }
   }
@@ -43,6 +44,7 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
       name
       documentId
       variantCount
+      hasOneProductVariant
       brand {
         name
       }
@@ -70,6 +72,7 @@ export const GET_PRODUCTS_BY_BRAND = gql`
         name
       }
       variantCount
+      hasOneProductVariant
     }
   }
 `
@@ -85,6 +88,7 @@ export const GET_PRODUCTS_BY_NAME = gql`
       maxPrice
       documentId
       variantCount
+      hasOneProductVariant
       category {
         name
       }

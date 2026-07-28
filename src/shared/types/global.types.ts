@@ -29,6 +29,7 @@ export type Product = {
   minPrice?: number
   maxPrice?: number
   variantCount?: number
+  hasOneProductVariant?: boolean
   product_variants?: ProductVariant[]
 }
 

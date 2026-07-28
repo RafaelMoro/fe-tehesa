@@ -25,9 +25,6 @@ describe("ProductCard", () => {
       variantCount: 0,
       minPrice: 0,
       maxPrice: 0,
-      product_variants: [
-        { internalId: "TIRE-001", diameter: "15\"", pricing: { price: 0 } },
-      ],
     }
 
     render(<ProductCard product={product} handleProductClick={jest.fn()} />)
@@ -35,12 +32,52 @@ describe("ProductCard", () => {
     expect(
       screen.getByRole("button", { name: "Explorar las 0 variantes" }),
     ).toBeInTheDocument()
-    expect(screen.getByText("Modelo TIRE-001")).toBeInTheDocument()
     expect(screen.getByText("Desde").parentElement).toHaveTextContent(
       "$0.00 MXN",
     )
     expect(screen.getByText("Hasta").parentElement).toHaveTextContent(
       "$0.00 MXN",
     )
+  })
+
+  it("shows a single price when the product has one variant", () => {
+    const product: Product = {
+      name: "Single Variant Tire",
+      documentId: "single-1",
+      category: { name: "Tubes" },
+      brand: { name: "Acme" },
+      variantCount: 1,
+      minPrice: 704.03,
+      maxPrice: 704.03,
+      hasOneProductVariant: true,
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.getByText("Precio")).toBeInTheDocument()
+    expect(screen.getByText("Precio").parentElement).toHaveTextContent(
+      "$704.03 MXN",
+    )
+    expect(screen.queryByText("Desde")).not.toBeInTheDocument()
+    expect(screen.queryByText("Hasta")).not.toBeInTheDocument()
+  })
+
+  it("hides the price block when the price range is missing", () => {
+    const product: Product = {
+      name: "Incomplete Product",
+      documentId: "incomplete-1",
+      category: { name: "Tubes" },
+      brand: { name: "Acme" },
+      minPrice: undefined,
+      maxPrice: undefined,
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.queryByText("Desde")).not.toBeInTheDocument()
+    expect(screen.queryByText("Precio")).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Ver variantes" }),
+    ).toBeInTheDocument()
   })
 })
