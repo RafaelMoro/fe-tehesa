@@ -8,6 +8,21 @@
 - **Planning decisions taken 2026-07-27 (the two items research left open):**
   - Single-price gate is `hasOneProductVariant === true` **only**. Products where `minPrice === maxPrice` with multiple variants keep the `Desde` / `Hasta` grid.
   - Single-price label is `Precio`.
+- **AC4 moved out of this repo (2026-07-27).** See `Phase 4` below. Data integrity is a Strapi concern and the live catalog was measured directly instead of building a detector for it.
+
+### Live Strapi Verification (2026-07-27)
+
+Queried directly against `STRAPI_HOST` (local Strapi, 333 published products) during planning:
+
+| Probe | Result |
+|-------|--------|
+| Total products | 333 — matches `KNOWN_PRODUCT_TOTAL` |
+| `variantCount === 1` | 35 |
+| `hasOneProductVariant === true` | 35 |
+| `variantCount === 1` **and** flag `false` | 0 |
+| `variantCount > 1` **and** flag `true` | 0 |
+
+`hasOneProductVariant` is consistent with `variantCount` across the whole catalog, so the AC2 branch renders for ~10.5% of products in production — it is not a test-only branch. The research sample happened to contain no single-variant products, which is why it read `false` everywhere.
 - **Assumptions carried from research:** no new dependencies, no backend changes, images stay out of scope, `Agregar al carrito` stays inert, `description` / `subcategory` stay unselected while unpopulated.
 
 ## Acceptance Criteria
@@ -31,11 +46,8 @@
 | tests | `__tests__/shared/global.utils.test.ts` | Modify |
 | tests | `__tests__/product-listing/ProductCard.test.tsx` | Modify — new cases, drop `Modelo` assertion |
 | tests | `__tests__/product-variants/ProductVariantsDrawer.test.tsx` | Modify — MXN assertions, `internalId` not rendered |
-| tooling | `scripts/check-catalog-integrity.mjs` | Create |
-| tooling | `package.json` | Modify — one script entry |
-| docs | `REPO_CONTEXT.md` | Modify — record the check command |
 
-Not touched: `src/app/page.tsx`, `src/shared/lib/global.lib.ts`, any API route. The `Product` and `ProductVariantUI` additions are optional fields, so no caller signature changes.
+Not touched: `src/app/page.tsx`, `src/shared/lib/global.lib.ts`, any API route, `package.json`, `scripts/`. The `Product` and `ProductVariantUI` additions are optional fields, so no caller signature changes. No new files in this repo.
 
 ---
 
@@ -122,7 +134,7 @@ Edge cases:
 ### Success Criteria
 
 - Automated: `pnpm exec tsc --noEmit`, `pnpm test -- __tests__/product-listing/ProductCard.test.tsx`, `pnpm lint`, `pnpm design:lint`.
-- Manual: load `/` in the browser, confirm cards still show the `Desde` / `Hasta` grid with ` MXN` and that no card shows a `Modelo` line. Live data has `hasOneProductVariant: false` on every sampled product, so the single-price branch is expected to be test-only until the backend has a single-variant product.
+- Manual: load `/` in the browser, confirm multi-variant cards show the `Desde` / `Hasta` grid with ` MXN` and that no card shows a `Modelo` line. Then confirm a real single-variant product renders the `Precio` block — `1/2" Punta Bristol Cromado` (`bs809fzv1usmxcutqqun2a9o`, `$704.03 MXN`) is one of the 35; search for it from the catalog search drawer.
 
 ### Verification Coverage
 
@@ -165,47 +177,33 @@ Existing drawer loading / empty / error tests and the ascending price sort test 
 
 ---
 
-## Phase 4 — Catalog integrity check (AC4)
+## Phase 4 — AC4: no frontend code (moved to backend / content)
 
-### Changes Required
+**No changes in this repository.** The planned `scripts/check-catalog-integrity.mjs` and its `package.json` entry are dropped.
 
-**`scripts/check-catalog-integrity.mjs`** — Create. Roughly 40 lines, plain Node ESM alongside `scripts/sync-opencode-commands.mjs`.
+### Why
 
-Structure:
+`minPrice`, `maxPrice`, `variantCount`, and `hasOneProductVariant` are **stored scalar columns** on the Strapi Product content type (`store-tehesa-api/src/api/product/content-types/product/schema.json`), not computed resolvers. `find src -name "lifecycles*"` in that repo returns nothing and both services are default `createCoreService` scaffolds, so the four fields are denormalized snapshots of the `product_variants` relation that nothing keeps in sync. A frontend sweep can only observe drift after it ships; the write side is where it can be prevented, and that is a different repository.
 
-- Read `STRAPI_HOST` and `STRAPI_API_TOKEN` from `process.env`; exit `1` with a clear message if either is missing.
-- Inline the GraphQL document as a template string — do **not** import from `src/`. `global.queries.ts` pulls in `@apollo/client`, and `global.lib.ts` is a `"use server"` module; neither belongs in a standalone script. Selection set: `name`, `documentId`, `variantCount`, `minPrice`, `maxPrice`.
-- Loop pages `1..7` (`PRODUCT_PAGE_SIZE = 50`, `KNOWN_PRODUCT_TOTAL = 333`; hardcode both here rather than importing the constants module).
-- Global `fetch`, single POST per page, `Authorization: Bearer ${token}`, `Content-Type: application/json`.
-- Flag any product where `!variantCount` or `minPrice == null` or `maxPrice == null`. Print `name`, `documentId`, and which check failed.
-- Exit `1` when any defect is found, `0` when clean, so it can be promoted to CI later without a rewrite. Also exit non-zero on a non-200 response or a GraphQL `errors` array.
+The live measurement above also settles the volume question: the whole catalog holds **3 defective products out of 333**. Writing a 40-line detector to rediscover three known rows is not worth the file.
 
-**`package.json`** — Modify, `scripts`. Add:
+### The three defects (content fixes, Strapi admin)
 
-```json
-"check:catalog": "node --env-file=.env.local scripts/check-catalog-integrity.mjs"
-```
+| Product | `documentId` | Defect | Current card behavior |
+|---------|--------------|--------|------------------------|
+| Broca Larga Acero A.V. | `w7jb86625axak2ux4hg1crfs` | `variantCount`, `minPrice`, `maxPrice` all null | No price block; primary action falls back to `Ver variantes` |
+| Llave Hexagonal MM Punta de Bola Bondhus | `rcwaiqdmd7bag2ihg5nvrxfm` | `variantCount: 0`, prices `0` | `Explorar las 0 variantes`; `$0.00 MXN` range |
+| Broquero jacobs | `nk159rp5neguu1lne6c7ihgc` | `variantCount: 1`, prices `0` | After Phase 2: single `Precio` of `$0.00 MXN` |
 
-`--env-file` is native to Node 20.6+ (CI runs Node 22), so no `dotenv` dependency is needed.
+The two zero-price products need a call from whoever owns the catalog data — `$0.00` may be a missing price or a legitimately free item. Not a frontend decision.
 
-**`REPO_CONTEXT.md`** — Modify, the Commands table. One row: `pnpm check:catalog` — flag catalog products with zero variants or a missing price range; run manually before release.
+### Recommended backend follow-up (separate ticket, `store-tehesa-api`)
 
-Edge cases:
-- Not part of `pnpm test` and not wired into CI. CI has no Strapi secrets; this runs locally against `.env.local`.
-- Jest only discovers `__tests__/**`, so the script needs no test exclusion.
-- This is a developer tool, not application code — it is intentionally not covered by unit tests.
+A lifecycle hook on `product-variant` (`afterCreate` / `afterUpdate` / `afterDelete`) recomputing the parent product's `variantCount`, `minPrice`, `maxPrice`, and `hasOneProductVariant` from the relation. That makes the defect class unrepresentable instead of merely detectable, and removes the need for any pre-release sweep in any repo.
 
-### Success Criteria
+### Consequence for this story
 
-- Automated: `pnpm lint` (the script is in the ESLint scope).
-- Manual: run `pnpm check:catalog` with a populated `.env.local`. It must print a per-defect list or a clean message, and `echo $?` must reflect the outcome. Verify the failure path by temporarily unsetting `STRAPI_HOST`.
-
-### Verification Coverage
-
-| Area | Check | Reference |
-|------|-------|-----------|
-| `scripts/check-catalog-integrity.mjs` | Covers all 7 pages, flags zero-variant and missing-price products, non-zero exit on defects and on env/GraphQL failure | manual run against live Strapi |
-| `package.json` | `pnpm check:catalog` resolves and loads `.env.local` | manual run |
+**AC4 is not satisfied by this plan.** It is reassigned, not silently dropped. If a repeatable automated check is still wanted in `fe-tehesa` after the three records are fixed, say so and Phase 4 comes back as originally written.
 
 ---
 
@@ -220,7 +218,8 @@ Edge cases:
 
 ## Cross-Cutting Concerns
 
-- **GraphQL contract:** `hasOneProductVariant` is confirmed selectable on all four list queries (playground capture, 2026-07-27). It returns `false` on every sampled product, so the single-price branch is exercised by tests only.
+- **GraphQL contract:** `hasOneProductVariant` is confirmed selectable on all four list queries (playground capture, 2026-07-27) and verified consistent with `variantCount` across all 333 products (see `Live Strapi Verification`). 35 products will render the single-price branch.
+- **Denormalized product fields:** `minPrice`, `maxPrice`, `variantCount`, and `hasOneProductVariant` are stored Strapi columns with no lifecycle maintenance. They are currently accurate, but nothing guarantees they stay in sync with `product_variants`. Relevant to any future frontend work that trusts them.
 - **Server/client boundary:** unchanged. `src/app/page.tsx` still fetches through `global.lib.ts`; the added field flows through the existing `Product` type with no signature changes.
 - **Env vars:** the integrity script is the only new consumer of `STRAPI_HOST` / `STRAPI_API_TOKEN`, and it reads them from `.env.local` via `--env-file`.
 - **Responsive:** no layout mode changes. The grid stays 1-column / 3-column at `lg`; the drawer stays right-placed and full width.
@@ -234,8 +233,13 @@ Edge cases:
 - Converting the drawer's index-keyed selection state to `internalId`-keyed — the cart story's decision.
 - `ProductCardSkeleton` two-column mirror — deliberate accepted mismatch.
 - Passing `$status: PublicationStatus` to the product queries — recorded for the epic's availability work.
-- Any fallback UI for zero-variant or missing-price products. Both are data defects, caught by Phase 4.
+- Any fallback UI for zero-variant or missing-price products. Three products are affected; they are content fixes (Phase 4).
+- The catalog integrity script and its `package.json` entry — dropped, see Phase 4.
+- The `store-tehesa-api` lifecycle hook — different repository, separate ticket.
 
 ## Open Questions
 
-None. The two items research left for planning were decided at the top of this doc.
+1. **AC4 reassignment needs sign-off.** This plan no longer delivers a repeatable check in `fe-tehesa`. Confirm that fixing the three records plus a backend lifecycle-hook ticket closes AC4, or say the word and Phase 4 returns as originally specified.
+2. **Are `$0.00` products legitimate?** `Broquero jacobs` and `Llave Hexagonal MM Punta de Bola Bondhus` both price at zero. Needs an answer from whoever owns catalog data; it does not block any phase.
+
+The two items research left for planning were decided at the top of this doc.
