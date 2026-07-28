@@ -195,15 +195,18 @@ The live measurement above also settles the volume question: the whole catalog h
 | Llave Hexagonal MM Punta de Bola Bondhus | `rcwaiqdmd7bag2ihg5nvrxfm` | `variantCount: 0`, prices `0` | `Explorar las 0 variantes`; `$0.00 MXN` range |
 | Broquero jacobs | `nk159rp5neguu1lne6c7ihgc` | `variantCount: 1`, prices `0` | After Phase 2: single `Precio` of `$0.00 MXN` |
 
-The two zero-price products need a call from whoever owns the catalog data — `$0.00` may be a missing price or a legitimately free item. Not a frontend decision.
+Confirmed with the user on 2026-07-27: the zero prices are **not** legitimate. All three rows are missing data, not free items.
 
-### Recommended backend follow-up (separate ticket, `store-tehesa-api`)
+### Recommended backend follow-up
 
-A lifecycle hook on `product-variant` (`afterCreate` / `afterUpdate` / `afterDelete`) recomputing the parent product's `variantCount`, `minPrice`, `maxPrice`, and `hasOneProductVariant` from the relation. That makes the defect class unrepresentable instead of merely detectable, and removes the need for any pre-release sweep in any repo.
+Tracked in `docs/improvement.md` under `Product aggregate fields are unmaintained` and `Catalog data defects to correct`:
+
+- A lifecycle hook on `product-variant` (`afterCreate` / `afterUpdate` / `afterDelete`) recomputing the parent product's four aggregate fields from the relation, so the defect class becomes unrepresentable rather than merely detectable.
+- Correcting the three records, plus positive-value validation on prices and a publish guard for zero-variant products.
 
 ### Consequence for this story
 
-**AC4 is not satisfied by this plan.** It is reassigned, not silently dropped. If a repeatable automated check is still wanted in `fe-tehesa` after the three records are fixed, say so and Phase 4 comes back as originally written.
+**AC4 is not satisfied by frontend code.** It is reassigned to the backend, recorded in `docs/improvement.md`, and accepted by the user on 2026-07-27 — not silently dropped.
 
 ---
 
@@ -239,7 +242,10 @@ A lifecycle hook on `product-variant` (`afterCreate` / `afterUpdate` / `afterDel
 
 ## Open Questions
 
-1. **AC4 reassignment needs sign-off.** This plan no longer delivers a repeatable check in `fe-tehesa`. Confirm that fixing the three records plus a backend lifecycle-hook ticket closes AC4, or say the word and Phase 4 returns as originally specified.
-2. **Are `$0.00` products legitimate?** `Broquero jacobs` and `Llave Hexagonal MM Punta de Bola Bondhus` both price at zero. Needs an answer from whoever owns catalog data; it does not block any phase.
+None. Everything raised during planning was resolved on 2026-07-27:
 
-The two items research left for planning were decided at the top of this doc.
+- The two items research left open — the single-price gate and its label — are decided at the top of this doc.
+- AC4 is reassigned to the backend and recorded in `docs/improvement.md`.
+- The `$0.00` products are confirmed defects, not free items, and are listed in the same doc for correction.
+
+Phases 1-3 are ready to implement.

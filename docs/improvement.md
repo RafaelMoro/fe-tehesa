@@ -15,6 +15,31 @@ Suggested BE contract shape:
 - If changing the product list response is too large, expose a lightweight count query that accepts the same `ProductFiltersInput`.
 - Keep count semantics clear around published/draft state so frontend counts match visible products.
 
+## Product aggregate fields are unmaintained
+
+Raised during Story 3 planning (`ai-planning/stories/plp-product-detail-signals.story3.md`, Phase 4). This is the backend half of that story's AC4.
+
+- `minPrice`, `maxPrice`, `variantCount`, and `hasOneProductVariant` are **stored scalar columns** on the Product content type (`store-tehesa-api/src/api/product/content-types/product/schema.json`), not computed resolvers.
+- There are no lifecycle hooks anywhere in the backend repo (`find src -name "lifecycles*"` returns nothing) and both product services are default `createCoreService` scaffolds. Nothing recomputes these four fields when a `product_variant` is added, edited, or removed.
+- They are therefore import-time snapshots that can silently drift from the `product_variants` relation. Add a variant in the admin today and `variantCount` is immediately stale.
+- Measured against the live catalog on 2026-07-27: 333 products, **zero drift** between `variantCount` and `hasOneProductVariant`, and 35 genuine single-variant products. The data is currently accurate — it is just structurally unguarded.
+- Recommended fix: a lifecycle hook on `product-variant` (`afterCreate` / `afterUpdate` / `afterDelete`) that recomputes the parent product's four aggregate fields from the relation. That makes the defect class unrepresentable rather than merely detectable.
+- Story 3 deliberately did **not** add a frontend sweep script for this. A frontend check can only observe drift after it ships; the write side is where it can be prevented, and that is this repository's concern.
+
+## Catalog data defects to correct
+
+Found during Story 3 planning by querying live Strapi. Three products out of 333. Confirmed with the user on 2026-07-27 that the zero prices are **not** legitimate — these are missing prices, not free items.
+
+| Product | `documentId` | Defect |
+|---------|--------------|--------|
+| Broca Larga Acero A.V. | `w7jb86625axak2ux4hg1crfs` | `variantCount`, `minPrice`, `maxPrice` all null |
+| Llave Hexagonal MM Punta de Bola Bondhus | `rcwaiqdmd7bag2ihg5nvrxfm` | `variantCount: 0`, `minPrice`/`maxPrice` of `0` |
+| Broquero jacobs | `nk159rp5neguu1lne6c7ihgc` | `variantCount: 1`, `minPrice`/`maxPrice` of `0` |
+
+- Correct the three records, then prevent recurrence. `$0.00` is never a valid catalog price, so the backend should reject or flag it rather than relying on anyone to notice.
+- Suggested guards, alongside the lifecycle hook above: a positive-value validation on `minPrice`/`maxPrice`, and blocking publish for a product with zero variants.
+- Frontend context: Story 3 deliberately ships no fallback UI for these. Today they render as a card with no price block, a `Explorar las 0 variantes` action, or a `$0.00 MXN` price — all of which read as broken to a buyer. The agreed handling is to fix the data, so these products stay visibly wrong until the records are corrected.
+
 # FE
 
 - Investigate graphql on the server using api from next js
