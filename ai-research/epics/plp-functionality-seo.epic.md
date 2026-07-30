@@ -552,7 +552,7 @@ Explanation: Manual QA uses the live Strapi instance behind the existing config.
 
 ## Epic Completion Status (audited 2026-07-30)
 
-Overall: **72% complete** (18/25 verified acceptance criteria: Story 1 6/6, Story 2 5/5, Story 3 3/5, Story 4 4/5, Story 5 0/4; Story 1a has no separately numbered epic-level ACs). Stories 1, 1a, and 2 are shipped. Story 3 remains partial only on the image sub-scope, blocked on backend. Story 4 (SEO Readiness) implemented all 6 phases on 2026-07-30; 4 of its 5 ACs are code-verified (automated tests, `pnpm build`, `pnpm design:lint`), AC3's manual SSR curl verification against a real `pnpm build && pnpm start` is the one item still pending user confirmation — see the story's status below. Story 5 has not started and is the remaining unstarted work.
+Overall: **88% complete** (22/25 verified acceptance criteria: Story 1 6/6, Story 2 5/5, Story 3 3/5, Story 4 4/5, Story 5 4/4; Story 1a has no separately numbered epic-level ACs). Stories 1, 1a, 2, and 5 are shipped. Story 3 remains partial only on the image sub-scope, blocked on backend. Story 4 (SEO Readiness) implemented all 6 phases on 2026-07-30; 4 of its 5 ACs are code-verified (automated tests, `pnpm build`, `pnpm design:lint`), AC3's manual SSR curl verification against a real `pnpm build && pnpm start` is the one item still pending user confirmation — see the story's status below. Story 5 (Analytics And Conversion Readiness) shipped its documentation-only deliverable on 2026-07-30 — a committed event contract with no code, dependency, or provider script, as scoped.
 
 | Story | Status | Verified evidence | Remaining / blocker |
 |-------|--------|--------------------|----------------------|
@@ -561,7 +561,7 @@ Overall: **72% complete** (18/25 verified acceptance criteria: Story 1 6/6, Stor
 | 2 - Pagination, loading, navigation | Complete | `src/app/page.tsx`, `src/app/loading.tsx` | `Mostrando X-Y de 333 productos` still claims a hardcoded total (known caveat) |
 | 3 - Product detail signals | Partial (3/5) | `ProductCard.tsx`, `ProductVariantsDrawer.tsx`, `formatNumberToCurrency` | Image sub-scope blocked — no image field in Strapi |
 | 4 - SEO readiness | Complete (4/5 code-verified; AC3 manual SSR check pending) | `src/app/layout.tsx`, `src/app/page.tsx` (`generateMetadata`, JSON-LD), `src/app/robots.ts`, `src/app/sitemap.ts`, `src/shared/utils/seo.utils.ts`, `src/features/Home/Home.tsx` anchor pagination; `pnpm test` (178 tests, 1 pre-existing skip), `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm design:lint` all clean | AC3's `curl` checks against a real `pnpm build && pnpm start` (product names in initial HTML, crawlable `<a href>` links, canonical present, robots directive, JSON-LD block) — plan requires this to be run for real, not inferred; not yet confirmed by the user |
-| 5 - Analytics and conversion readiness | Not started | — | No research/planning doc yet |
+| 5 - Analytics and conversion readiness | Complete | `docs/ANALYTICS_EVENT_CONTRACT.md`, `CLAUDE.md`/`REPO_CONTEXT.md` index entries; `git diff package.json` empty, `grep -rn "gtag\|dataLayer" src/` empty | Contract requires product/marketing sign-off before an instrumentation story starts (not a code gap) |
 
 ### Story 1 - Search And Filtering: DONE
 
@@ -628,24 +628,28 @@ Note: `Agregar al carrito` exists in both the card (`ProductCard.tsx`, handler c
 
 Deliberately out of scope, each recorded in `docs/improvement.md`: `Organization`/`LocalBusiness` JSON-LD (no business data), OG/Twitter images (no asset), a WhatsApp CTA (lands with the cart feature), Search Console verification meta tag (verified by DNS instead), and `products_connection` adoption for a live sitemap page count / the `de 333` copy fix (Catalog Behavior I, option I — SEO only, deliberately deferred).
 
-### Story 5 - Analytics And Conversion Readiness: NOT STARTED (0%)
+### Story 5 - Analytics And Conversion Readiness: COMPLETE (4/4), implemented 2026-07-30
 
-No analytics code, no adapter, and no written event contract. Note that ACs 1, 2, and 4 are documentation and restraint deliverables, not code:
+`ai-planning/stories/plp-analytics-conversion-readiness.story5.md` implemented both phases: `docs/ANALYTICS_EVENT_CONTRACT.md` (event catalogue, reliability caveats, adapter contract, disclosure/PII-guard model, `page_view` gap, edge cases, recommendations, decisions log) and one-line index entries in `CLAUDE.md` ("See Also") and `REPO_CONTEXT.md` ("Key Files"). As scoped, this story ships **no code** — `src/**` and `package.json` are untouched.
 
-- AC1 (which interactions matter) and AC2 (event names and payload fields documented) are directionally answered in the Analytics open questions but have never been written up as an event contract document. That write-up is the actual deliverable.
-- AC3 (vendor-agnostic adapter) is not implemented.
-- AC4 (no analytics package until a provider is selected) is currently satisfied by default — `package.json` has no analytics dependency.
-- The `Agregar al carrito` conversion event stays blocked on the separate cart story.
+| AC | Status | Evidence |
+|----|--------|----------|
+| 1. Product defines which PLP interactions matter | Done | Event catalogue (Primary/Secondary/Conversion tables) in `docs/ANALYTICS_EVENT_CONTRACT.md`, each row citing its `file:line` trigger |
+| 2. Event names and payloads documented before any dependency | Done | Naming convention + payload tables + "Reliability caveats" section |
+| 3. Adapter addable later without vendor coupling | Done | "Adapter contract" section: single `track()` entry point, discriminated union, provider registry, PII redaction choke point, disclosure model, client-only guard |
+| 4. No new analytics package until a provider is selected | Done | `git diff package.json` empty; `grep -rn "gtag\|dataLayer" src/` empty |
+
+The `Agregar al carrito` conversion event is specified and explicitly marked blocked on the separate cart story (plan AC5, folded into the epic's AC1 scope). Second analytics provider and `catalog_search_mode_changed` remain open, deferred to product/marketing sign-off — tracked in the doc's "Decisions log," not a gap in this story's scope.
 
 ### Pending Work Summary, Highest Value First
 
 1. **Story 4 AC3 manual SSR verification.** Code is implemented and automated-test-verified; run the plan's `curl` checks against a real `pnpm build && pnpm start` to close out AC3 (see `ai-planning/stories/plp-seo-readiness.story4.md`, Phase 6 verification table).
 2. **Story 4 post-deploy checklist (outside this repo).** Once `NEXT_PUBLIC_SITE_URL` is set to the real domain: create the Google Search Console property, verify by DNS `TXT`, submit `/sitemap.xml`, confirm pages 2-7 are indexed and `?mode=name` URLs are excluded as `noindex`.
 3. **Product total claim** (Story 2 caveat). Decide between a real count and softened copy.
-4. **Story 5 - Analytics event contract.** Document-only first step; no dependency needed.
+4. **Story 5 sign-off.** Get product/marketing sign-off on `docs/ANALYTICS_EVENT_CONTRACT.md` before starting the instrumentation story; resolve the second-provider and `catalog_search_mode_changed` open items at the same time.
 5. **Story 3 image-aware cards.** Stays blocked until Strapi exposes an image field and the Next image host is confirmed.
 6. **Backend follow-up from Story 3 AC4** (not this repo). A `product-variant` lifecycle hook to keep `minPrice`/`maxPrice`/`variantCount`/`hasOneProductVariant` in sync, plus correcting the three known defective products. Tracked in `docs/improvement.md`.
 
 ### Docs Coverage Gap
 
-`ai-research/stories/` and `ai-planning/` contain docs for stories 1, 1a, 1b, 1c, 2, 3, and 4. Only Story 5 has no story-level research or planning doc yet; it needs `/research` then `/plan` before implementation.
+`ai-research/stories/` and `ai-planning/` contain docs for stories 1, 1a, 1b, 1c, 2, 3, 4, and 5.
