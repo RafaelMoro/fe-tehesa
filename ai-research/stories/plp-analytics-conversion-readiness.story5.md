@@ -182,8 +182,9 @@ Explanation: Waiting would block a documentation-only deliverable on a backend a
 ### Verification
 
 I: Question: Does the contract document need review sign-off from anyone outside this repo (marketing/product) before the implementation story starts?
-Status: pending
-Explanation: The whole point of AC1/AC2 is that product defines what matters. If the doc lands without a product review, the implementation story will re-litigate it.
+Status: answered
+Answer: Yes. The contract doc requires product/marketing sign-off before any implementation story starts.
+Explanation: The whole point of AC1/AC2 is that product defines what matters. The doc therefore ships as a review artifact: merging it is not approval, and the follow-up instrumentation story stays blocked until sign-off lands. Sign-off is also the natural moment to close the still-pending questions this doc cannot answer alone — the second provider (Analytics Contract I) and the PII/retention stance for `search_term` (Analytics Contract II).
 
 ## Recommendations For The Contract Doc
 
