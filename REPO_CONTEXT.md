@@ -248,6 +248,7 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 - `darkMode: "class"` is required for next-themes/HeroUI dark mode behavior.
 - Existing UI copy is Spanish (`Catalogo de productos`, `Limpiar filtros`, `Ver detalles`, etc.). Preserve language consistency unless the task is localization-related.
 - `ProductCard` uses `useMediaQuery()` for mobile-aware card header/title layout.
+- HeroUI v3 `Pagination.Link` / `Pagination.Previous` / `Pagination.Next` render a `react-aria-components/Button` and accept no `href`; only `Pagination.Root` / `Content` / `Item` are polymorphic (`nav` / `ul` / `li`). Their styling comes from element-agnostic CSS classes (`.pagination__link` in `@heroui/styles/dist/components/pagination.css`, with `[data-active="true"]`, `[aria-disabled="true"]`, and `:focus-visible` rules), so an `<a className="pagination__link">` renders identically. That is the supported way to build crawlable pagination without leaving HeroUI's visual language.
 
 ## Conventions And Gotchas
 
