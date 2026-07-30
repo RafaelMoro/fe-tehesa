@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
@@ -18,6 +19,13 @@ import {
 } from "@/features/Pagination/utils.pagination"
 import type { MainPageSearchParams } from "@/features/Pagination/types.pagination"
 import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
+import { buildCatalogMetadata } from "@/shared/utils/seo.utils"
+
+export const generateMetadata = async ({
+  searchParams,
+}: {
+  searchParams: Promise<MainPageSearchParams>
+}): Promise<Metadata> => buildCatalogMetadata(await searchParams)
 
 export default async function MainPage({
   searchParams,
