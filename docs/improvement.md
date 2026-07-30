@@ -56,7 +56,7 @@ Found during Story 4 (SEO) research on 2026-07-27.
 
 - Investigate graphql on the server using api from next js
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
-- Analytics, other than GA4, we can do our own analytics or search analytics tools
+- Analytics: Story 5 defines the vendor-neutral event contract in `docs/ANALYTICS_EVENT_CONTRACT.md` (planned, not yet implemented). GA4 is the recommended first provider; choose any second provider during contract sign-off, then implement instrumentation in a separate story without adding a provider dependency prematurely.
 - Show a notification error when the theme is changed but the cookie persistance failed
 
 ## Business data for local SEO structured data (pending)
