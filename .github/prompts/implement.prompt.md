@@ -25,6 +25,7 @@ Read in order:
 6. The research doc the plan references, usually `ai-research/{story-name}.story.md`, `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, or `ai-research/epics/<epic-name>.epic.md`, for ACs and assumptions.
 7. When the approved plan includes test work, also read `docs/UNIT_TESTING_GUIDELINES.md` for canonical test-authoring rules. Reference the guide instead of duplicating the policy.
 8. For React/Next.js changes, load the `vercel-react-best-practices` skill from `.agents/skills/vercel-react-best-practices/` before writing code.
+9. `docs/improvement.md` when the plan resolves, defers, or exposes a frontend/backend improvement. Update it only when the completed work changes the status or detail of an existing entry, or records a newly discovered cross-story follow-up.
 
 ## Step 2 - Confirm plan-ready
 
@@ -94,6 +95,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm test` when the change touched tests
   - `pnpm build` when production behavior changed
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
+- Review `docs/improvement.md` against the completed plan. Update it when Step 1 identified an applicable entry; otherwise state that no update was needed in the final report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
 - When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` only after all planned work and verification pass. Update the epic's existing completion-status section, or append `## Epic Completion Status` when absent. Include:
   - The matching story as `Complete`, with concise implementation and verification evidence.
@@ -122,7 +124,8 @@ End the turn with:
 5. Deferred follow-ups.
 6. Epic completion update, when applicable: percentage, story overview, and next steps.
 7. Out-of-scope implementation changes recorded, when applicable.
-8. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
+8. Whether `docs/improvement.md` was updated and why.
+9. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
 ## Don'ts
 
