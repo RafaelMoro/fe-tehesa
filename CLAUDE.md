@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Required env vars for local development:** `STRAPI_HOST` and `STRAPI_API_TOKEN` in `.env.local`. Without them, Apollo queries silently fail.
 
+**Optional env var:** `NEXT_PUBLIC_SITE_URL` — absolute production origin used by `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000` when unset; never throws.
+
 ## High-Level Architecture
 
 **fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog. It fetches paginated products from Strapi via GraphQL, supports client-side search/filtering, and opens a drawer for variant pricing.
@@ -68,13 +70,15 @@ Next.js App Router (src/app)
 | `src/app/page.tsx` | Catalog page — parses URL, fetches server data, renders Home |
 | `src/app/api/catalog/*` | HTTP route handlers (thin wrappers over server actions) |
 | `src/app/api/preferences/` | POST endpoint for theme cookie persistence |
+| `src/app/robots.ts` | `GET /robots.txt` — disallows `/api/`, points to the sitemap |
+| `src/app/sitemap.ts` | `GET /sitemap.xml` — base pages + live category/brand URLs; degrades to base pages if Strapi is unreachable |
 | `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination |
 | `src/components/` | Shared ProductCard (only) |
 | `src/shared/lib/global.lib.ts` | Server actions for Strapi reads + theme cookie (the "use server" seam) |
 | `src/shared/queries/` | GraphQL operations |
 | `src/shared/types/` | Domain types (Product, Variant, Theme, pagination, taxonomy) |
-| `src/shared/constants/` | Catalog error codes, theme cookie key, validation rules, pagination bounds |
-| `src/shared/utils/` | Pure helpers (currency format, catalog API client envelope wrapper) |
+| `src/shared/constants/` | Catalog error codes, theme cookie key, validation rules, pagination bounds, SEO copy/origin (`seo.constants.ts`) |
+| `src/shared/utils/` | Pure helpers (currency format, catalog API client envelope wrapper, SEO metadata/JSON-LD builders in `seo.utils.ts`) |
 | `src/shared/ui/atoms` | Atomic UI (ToggleDarkMode, etc.) |
 | `src/shared/ui/organisms` | Composed UI (Header) |
 | `src/zustand/store/` | Vanilla Zustand theme store |
@@ -121,6 +125,14 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 | `/api/catalog/search` | GET | `?q=<term>` (trimmed, allowlisted, 100 chars max; returns first page only) |
 
 **Validation:** All numeric params (page, pageSize) are strict digits-only — no decimals, signs, padding, or mixed content. Document IDs follow `/^[A-Za-z0-9_-]+$/` and max 30 characters. Search terms are trimmed, required, max 100 chars, and constrained by a Unicode/punctuation allowlist.
+
+## SEO Surface
+
+- `generateMetadata` in `src/app/page.tsx` derives title/description/canonical/robots per URL from `buildCatalogMetadata` (`src/shared/utils/seo.utils.ts`), which parses `searchParams` via the pure `parseCatalogParams` in `src/features/Pagination/utils.pagination.ts` — it never fetches products (Apollo clients are per-call with no dedupe).
+- Canonicals fold `/` and `/?page=1` together and never carry the transient `notice=end` param. `?mode=name&q=` URLs are `noindex, follow`; base/category/brand URLs are `index, follow`.
+- JSON-LD (`WebSite`+`SearchAction`, per-page `ItemList`, category/brand `BreadcrumbList`) is built by `buildCatalogJsonLd` and injected in the page body (needs product data, so it can't live in `generateMetadata`); `toJsonLdHtml` escapes `<` before writing into `<script type="application/ld+json">` — this is a trust boundary since product/taxonomy strings come from Strapi.
+- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes serving `/robots.txt` and `/sitemap.xml`. The sitemap's page list derives from `PRODUCT_PAGE_MAX` (inherits the `KNOWN_PRODUCT_TOTAL` staleness) and lists one URL per live category/brand; it never emits `lastModified` (no timestamp field exists) and degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`.
+- Base-mode and filtered-mode pagination controls in `src/features/Home/Home.tsx` render as real `next/link` anchors (crawlable) when a target exists, or a non-focusable `<span aria-disabled="true">` otherwise — never `href="#"`.
 
 ## Conventions And Gotchas
 

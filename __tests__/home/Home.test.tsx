@@ -203,28 +203,37 @@ describe("Home - URL-backed catalog modes", () => {
 })
 
 describe("Home - pagination", () => {
-  it("renders pages 1-7 and pushes page 6 and 7 URLs", async () => {
-    const user = userEvent.setup()
+  it("renders page 2 as a real link and the current page as a non-link", () => {
     renderHome()
 
-    expect(screen.getByRole("button", { name: "7" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "2" })).toHaveAttribute(
+      "href",
+      "/?page=2",
+    )
     expect(screen.getByText(/Mostrando/)).toHaveTextContent(
       "Mostrando 1-3 de 333 productos",
     )
 
-    await user.click(screen.getByRole("button", { name: "6" }))
-    expect(pushMock).toHaveBeenLastCalledWith("/?page=6")
-
-    await user.click(screen.getByRole("button", { name: "7" }))
-    expect(pushMock).toHaveBeenLastCalledWith("/?page=7")
-    expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 0,
-      behavior: "smooth",
-    })
+    expect(screen.queryByRole("link", { name: "1" })).not.toBeInTheDocument()
+    expect(screen.getByText("1")).toHaveAttribute("aria-current", "page")
   })
 
-  it("uses canonical wide Previous and Next URLs", async () => {
-    const user = userEvent.setup()
+  it("renders base prev/next as links, disabled (not a link) at the edges", () => {
+    renderHome()
+
+    expect(
+      screen.queryByRole("link", { name: "Página anterior" }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Página anterior")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    )
+    expect(
+      screen.getByRole("link", { name: "Página siguiente" }),
+    ).toHaveAttribute("href", "/?page=2")
+  })
+
+  it("uses canonical wide Anterior/Siguiente URLs", () => {
     renderHome({
       catalogMode: "category",
       catalogValue: "Tubos PVC",
@@ -233,18 +242,17 @@ describe("Home - pagination", () => {
       hasNextCatalogPage: true,
     })
 
-    await user.click(screen.getByRole("button", { name: "Anterior" }))
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?mode=category&category=Tubos%20PVC&page=1",
+    expect(screen.getByRole("link", { name: "Anterior" })).toHaveAttribute(
+      "href",
+      "/?mode=category&category=Tubos+PVC&page=1",
     )
-
-    await user.click(screen.getByRole("button", { name: "Siguiente" }))
-    expect(pushMock).toHaveBeenLastCalledWith(
-      "/?mode=category&category=Tubos%20PVC&page=3",
+    expect(screen.getByRole("link", { name: "Siguiente" })).toHaveAttribute(
+      "href",
+      "/?mode=category&category=Tubos+PVC&page=3",
     )
   })
 
-  it("shows notice=end feedback and disables Next", () => {
+  it("shows notice=end feedback and renders Siguiente as disabled, not a link", () => {
     renderHome({
       catalogMode: "brand",
       catalogValue: "Acme",
@@ -260,7 +268,21 @@ describe("Home - pagination", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "No hay más resultados.",
     )
-    expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled()
+    expect(
+      screen.queryByRole("link", { name: "Siguiente" }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText("Siguiente")).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    )
+  })
+
+  it("never renders a pagination control with href=\"#\"", () => {
+    renderHome()
+
+    screen.getAllByRole("link").forEach((link) => {
+      expect(link.getAttribute("href")).not.toBe("#")
+    })
   })
 })
 
