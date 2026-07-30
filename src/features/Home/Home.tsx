@@ -1,7 +1,9 @@
 "use client"
 import { useState, useRef, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
+import { buttonVariants } from "@heroui/styles"
 import { RiArrowLeftLine, RiArrowRightLine, RiInformationLine } from "@remixicon/react"
 
 import {
@@ -14,6 +16,10 @@ import {
   KNOWN_PRODUCT_TOTAL,
   PRODUCT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
+import {
+  buildBasePagePath,
+  buildModeUrl,
+} from "@/features/Pagination/utils.pagination"
 import { ProductListing } from "../ProductListing/ProductListing"
 import { SearchInput } from "../ProductListing/SearchInput"
 import { ProductVariantsDrawer } from "../ProductVariantsDrawer/ProductVariantsDrawer"
@@ -27,6 +33,17 @@ type PageFeedback = { message: string; kind: "status" | "error" } | null
 
 const DRAWER_CLOSE_DELAY_MS = 500
 const DROPDOWN_CLOSE_DELAY_MS = 250
+
+// ponytail: pagination__link is HeroUI's own slot class (pagination.css); an <a>/<span>
+// gets identical styling. Revisit if HeroUI renames it.
+const ICON_BUTTON_CLASSES = buttonVariants({
+  isIconOnly: true,
+  size: "sm",
+  variant: "tertiary",
+})
+const FILTERED_PAGINATION_BUTTON_CLASSES = buttonVariants({
+  variant: "secondary",
+})
 
 interface HomeProps {
   products: Product[]
@@ -142,13 +159,6 @@ export const Home = ({
     )
   }
 
-  const handlePageChange = (page: number) => {
-    if (page === currentPage || isRoutePending) {
-      return
-    }
-    navigateTo(`/?page=${page}`)
-  }
-
   // ponytail: stacked local filter; single source of truth = next.{searchTerm,category,brand}.
   const applyLocalFilters = (next: {
     searchTerm: string
@@ -244,28 +254,6 @@ export const Home = ({
     setPageFeedback(null)
     clearAllCatalogState()
     navigateTo("/?page=1")
-  }
-
-  const handleCatalogPageChange = (page: number) => {
-    if (!activeCatalogMode || !catalogValue || isRoutePending) {
-      return
-    }
-    setPageFeedback(null)
-    if (activeCatalogMode === "name") {
-      navigateTo(
-        `/?mode=name&q=${encodeURIComponent(catalogValue)}&page=${page}`,
-      )
-    }
-    if (activeCatalogMode === "category") {
-      navigateTo(
-        `/?mode=category&category=${encodeURIComponent(catalogValue)}&page=${page}`,
-      )
-    }
-    if (activeCatalogMode === "brand") {
-      navigateTo(
-        `/?mode=brand&brand=${encodeURIComponent(catalogValue)}&page=${page}`,
-      )
-    }
   }
 
   const handleProductClick = (product: Product) => {
@@ -365,64 +353,119 @@ export const Home = ({
             Mostrando <span className="font-medium text-foreground">{visibleProductStart}-{visibleProductEnd}</span> de {KNOWN_PRODUCT_TOTAL} productos
           </p>
           <div className="flex items-center justify-center gap-2">
-            <Button
-              isIconOnly
-              size="sm"
-              variant="tertiary"
-              aria-label="Página anterior"
-              onPress={() => handlePageChange(currentPage - 1)}
-              isDisabled={currentPage === 1 || isRoutePending}
-            >
-              <RiArrowLeftLine />
-            </Button>
+            {currentPage > 1 && !isRoutePending ? (
+              <Link
+                href={buildBasePagePath(currentPage - 1)}
+                aria-label="Página anterior"
+                className={ICON_BUTTON_CLASSES}
+              >
+                <RiArrowLeftLine />
+              </Link>
+            ) : (
+              <span
+                aria-label="Página anterior"
+                aria-disabled="true"
+                className={ICON_BUTTON_CLASSES}
+              >
+                <RiArrowLeftLine />
+              </span>
+            )}
             <Pagination size="sm">
               <Pagination.Content>
                 {Array.from({ length: totalPages }, (_, index) => {
                   const page = index + 1
+                  const isActive = page === currentPage
+                  const isDisabled = isActive || isRoutePending
 
                   return (
                     <Pagination.Item key={page}>
-                      <Pagination.Link
-                        isActive={page === currentPage}
-                        onPress={() => handlePageChange(page)}
-                        isDisabled={page === currentPage || isRoutePending}
-                      >
-                        {page}
-                      </Pagination.Link>
+                      {isDisabled ? (
+                        <span
+                          className="pagination__link"
+                          data-slot="pagination-link"
+                          data-active={isActive ? "true" : undefined}
+                          aria-current={isActive ? "page" : undefined}
+                          aria-disabled="true"
+                        >
+                          {page}
+                        </span>
+                      ) : (
+                        <Link
+                          href={buildBasePagePath(page)}
+                          className="pagination__link"
+                          data-slot="pagination-link"
+                        >
+                          {page}
+                        </Link>
+                      )}
                     </Pagination.Item>
                   )
                 })}
               </Pagination.Content>
             </Pagination>
-            <Button
-              isIconOnly
-              size="sm"
-              variant="tertiary"
-              aria-label="Página siguiente"
-              onPress={() => handlePageChange(currentPage + 1)}
-              isDisabled={currentPage === totalPages || isRoutePending}
-            >
-              <RiArrowRightLine />
-            </Button>
+            {currentPage < totalPages && !isRoutePending ? (
+              <Link
+                href={buildBasePagePath(currentPage + 1)}
+                aria-label="Página siguiente"
+                className={ICON_BUTTON_CLASSES}
+              >
+                <RiArrowRightLine />
+              </Link>
+            ) : (
+              <span
+                aria-label="Página siguiente"
+                aria-disabled="true"
+                className={ICON_BUTTON_CLASSES}
+              >
+                <RiArrowRightLine />
+              </span>
+            )}
           </div>
         </div>
       ) : (
         <div className="w-full flex items-center justify-center gap-3">
-          <Button
-            variant="secondary"
-            onPress={() => handleCatalogPageChange(initialCatalogPage - 1)}
-            isDisabled={!initialHasPreviousCatalogPage || isBusy}
-          >
-            Anterior
-          </Button>
+          {activeCatalogMode && initialHasPreviousCatalogPage && !isBusy ? (
+            <Link
+              href={buildModeUrl(
+                activeCatalogMode,
+                catalogValue ?? "",
+                initialCatalogPage - 1,
+              )}
+              className={FILTERED_PAGINATION_BUTTON_CLASSES}
+            >
+              Anterior
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              className={FILTERED_PAGINATION_BUTTON_CLASSES}
+            >
+              Anterior
+            </span>
+          )}
           <span className="text-sm">Página {initialCatalogPage}</span>
-          <Button
-            variant="secondary"
-            onPress={() => handleCatalogPageChange(initialCatalogPage + 1)}
-            isDisabled={!initialHasNextCatalogPage || isEndNotice || isBusy}
-          >
-            Siguiente
-          </Button>
+          {activeCatalogMode &&
+          initialHasNextCatalogPage &&
+          !isEndNotice &&
+          !isBusy ? (
+            <Link
+              href={buildModeUrl(
+                activeCatalogMode,
+                catalogValue ?? "",
+                initialCatalogPage + 1,
+              )}
+              className={FILTERED_PAGINATION_BUTTON_CLASSES}
+            >
+              Siguiente
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              className={FILTERED_PAGINATION_BUTTON_CLASSES}
+            >
+              Siguiente
+            </span>
+          )}
         </div>
       )}
       {productDetails && (
