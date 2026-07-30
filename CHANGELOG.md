@@ -1,3 +1,9 @@
+## v0.26.0 (2026-07-30)
+
+### Pull Requests
+[#33](https://github.com/RafaelMoro/fe-tehesa/pull/33) | PLP functionality | Story 5 | Analytics and conversion readiness
+
+
 ## v0.25.0 (2026-07-30)
 
 ### Pull Requests
