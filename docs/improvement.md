@@ -2,6 +2,8 @@
 
 Reliable product counts:
 
+> **Resolved on the backend already — verified 2026-07-27 by live GraphQL introspection during Story 4 research.** `products_connection(pagination: $pagination)` returns `pageInfo { total page pageSize pageCount }` alongside `nodes { ... }` and accepts the same `ProductFiltersInput` as `products`. The contract asked for below already exists; the gap is purely frontend adoption. Tracked as a frontend scope decision in `ai-research/stories/plp-seo-readiness.story4.md` (Catalog Behavior I) — deliberately **not** part of Story 4. The notes below are kept for history.
+
 - Current frontend cannot know a reliable total product count from GraphQL responses.
 - Current workaround is response-length inference: 50 results means another page may exist; fewer than 50 means last page.
 - This is enough for next/previous navigation but not enough for accurate `333 productos`, `pagina 2 de 7`, filtered result totals, analytics result counts, or SEO summaries.
@@ -40,12 +42,32 @@ Found during Story 3 planning by querying live Strapi. Three products out of 333
 - Suggested guards, alongside the lifecycle hook above: a positive-value validation on `minPrice`/`maxPrice`, and blocking publish for a product with zero variants.
 - Frontend context: Story 3 deliberately ships no fallback UI for these. Today they render as a card with no price block, a `Explorar las 0 variantes` action, or a `$0.00 MXN` price — all of which read as broken to a buyer. The agreed handling is to fix the data, so these products stay visibly wrong until the records are corrected.
 
+## SEO component is defined but attached to nothing
+
+Found during Story 4 (SEO) research on 2026-07-27.
+
+- `store-tehesa-api/src/components/shared/seo.json` defines `metaTitle` (required), `metaDescription` (required), and `shareImage` (media, images only).
+- It is not attached to Product, Category, or Brand. No content-type has an `seo` field, so the frontend has nothing to consume and hardcodes all SEO copy in `src/shared/constants/`.
+- Attaching it to Category and Brand would let editors author real titles/descriptions for the `?mode=category` / `?mode=brand` landing URLs instead of the frontend templating them from a taxonomy name.
+- `shareImage` would also unblock Open Graph / social share images, which Story 4 drops for lack of any image asset.
+- Related: products still have no image field at all (epic Strapi answer III), which is the older and larger blocker — it also blocks Story 3 AC2 and any `Product` rich-result eligibility.
+
 # FE
 
 - Investigate graphql on the server using api from next js
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
 - Analytics, other than GA4, we can do our own analytics or search analytics tools
 - Show a notification error when the theme is changed but the cookie persistance failed
+
+## Business data for local SEO structured data (pending)
+
+Deferred from Story 4 (`ai-research/stories/plp-seo-readiness.story4.md`, open question SEO IV) on the user's call: keep it pending here rather than blocking the SEO story.
+
+- `Organization` / `LocalBusiness` JSON-LD is the highest-value structured-data item for a Puebla-based distributor, and it is blocked only on business data — no code is missing.
+- Nothing in the repo carries any of it: no legal name, street address, city, postal code, phone, WhatsApp number, opening hours, logo URL, or social profile URLs (grep over `src/` and `DESIGN.md` finds no `whatsapp`, no `puebla`, no domain).
+- Story 4 therefore ships `WebSite` + `SearchAction`, `ItemList`, and `BreadcrumbList` only. Adding `LocalBusiness` later is additive — one more JSON-LD node, no refactor.
+- The production domain (`NEXT_PUBLIC_SITE_URL`) is the other pending value; `LocalBusiness.url` and `logo` need it too.
+- Related: the approved meta description promises `Cotiza por WhatsApp`. The copy ships as approved, and the WhatsApp quote CTA lands with the cart feature, not on the PLP.
 
 ## Catalog API follow-up
 

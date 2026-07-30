@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
@@ -18,6 +19,17 @@ import {
 } from "@/features/Pagination/utils.pagination"
 import type { MainPageSearchParams } from "@/features/Pagination/types.pagination"
 import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
+import {
+  buildCatalogJsonLd,
+  buildCatalogMetadata,
+  toJsonLdHtml,
+} from "@/shared/utils/seo.utils"
+
+export const generateMetadata = async ({
+  searchParams,
+}: {
+  searchParams: Promise<MainPageSearchParams>
+}): Promise<Metadata> => buildCatalogMetadata(await searchParams)
 
 export default async function MainPage({
   searchParams,
@@ -43,6 +55,12 @@ export default async function MainPage({
 
   return (
     <ChangeThemeStoreProvider>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: toJsonLdHtml(buildCatalogJsonLd(selection, products)),
+        }}
+      />
       <CatalogPageLayout themeFetched={themeFetched}>
         <Home
           products={products}

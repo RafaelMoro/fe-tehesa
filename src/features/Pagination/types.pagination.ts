@@ -21,3 +21,9 @@ export type CatalogSelection = {
   hasPrevious: boolean
   feedback: InitialCatalogFeedback
 }
+
+export type CatalogUrlState = {
+  mode: CatalogMode
+  value: string | null
+  page: number
+}

@@ -81,7 +81,7 @@ Follow the planning doc's verification section and use only real commands:
 - `pnpm lint` for lint verification.
 - `pnpm build` for full production verification when server/client integration, routing, or data fetching changed.
 - `pnpm test -- <relative test path>` for targeted test work, then `pnpm test` for the full suite, when the plan includes tests. No coverage threshold is enforced.
-- Manual browser/API checks when UI behavior, theme persistence, or route-handler behavior changed.
+- When UI behavior, theme persistence, or route-handler behavior changed, check whether the dev server is already running. Never start it yourself. If it is running, ask the user to manually validate the affected behavior; otherwise ask them to start it and validate it manually.
 
 If verification fails, fix the implementation or adjust the plan only with user approval. Do not weaken checks, ignore failures, or claim unrun verification passed.
 
@@ -134,3 +134,4 @@ End the turn with:
 - Do not edit `CHANGELOG.md` or package version unless explicitly asked.
 - Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo. Jest and Testing Library are present.
 - Do not run `pnpm install` or package manager changes unless the plan intentionally changes dependencies.
+- Do not launch the dev server. Ask the user to perform manual validation when it is needed.

@@ -1,6 +1,6 @@
 # Repository Context - fe-tehesa
 
-**Last Updated:** 2026-07-27
+**Last Updated:** 2026-07-30
 
 A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
 
@@ -64,6 +64,8 @@ Key invariants:
 | `error.tsx`                       | Client error boundary with Spanish catalog recovery copy and retry.                                                                                                     |
 | `providers.tsx`                   | Client provider for HeroUI.                                                                                                                                            |
 | `apollo-client.ts`                | Apollo Client factory for Strapi GraphQL.                                                                                                                              |
+| `robots.ts`                       | `GET /robots.txt` — disallows `/api/`, points to `/sitemap.xml`. Never disallows `?mode=name` (its `noindex` must still be crawled to be read).                        |
+| `sitemap.ts`                      | `GET /sitemap.xml` — base pages `/` + `/?page=2..7` plus one URL per live category/brand. No `lastModified`/`changeFrequency`/`priority`. Degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`. |
 | `api/preferences/route.ts`        | Saves theme preference cookie via `POST /api/preferences`.                                                                                                             |
 | `api/catalog/_utils.ts`           | Shared catalog route helpers: `validateCatalogEnv`, envelope `success`/`failure`, and `readValidatedParams` for `page`/`pageSize`/category name/brand name/`documentId`. |
 | `api/catalog/products/route.ts`   | `GET /api/catalog/products?page=&pageSize=` -> paged products.                                                                                                         |
@@ -84,20 +86,20 @@ Key invariants:
 | `ProductListing/`        | Product grid plus `SearchInput`, `DropdownCategories`, and `DropdownBrands`.                                                                                   |
 | `ProductVariantsDrawer/` | HeroUI drawer that fetches, sorts, and displays product variants/prices.                                                                                       |
 | `CatalogSearchDrawer/`   | HeroUI drawer (right placement) with name-search form plus the catalog-wide category/brand dropdowns.                                                          |
-| `Pagination/`            | Feature-local URL parsing/building helpers and catalog pagination types used by `src/app/page.tsx`.                                                             |
+| `Pagination/`            | Feature-local URL parsing/building helpers and catalog pagination types used by `src/app/page.tsx`. `utils.pagination.ts` also exports the pure `parseCatalogParams` (no redirect side effect) and the canonical-URL builders `buildCanonicalPath`/`buildBasePagePath`/`buildModeUrl` consumed by `seo.utils.ts`, `sitemap.ts`, and `Home.tsx`'s anchor pagination. |
 
 ### `src/shared/`
 
 | Subdir         | Purpose                                                                                                        |
 | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `constants`    | Cross-cutting constants such as the theme cookie key and `CAT_*`/`MSG_CAT_*` catalog error codes.              |
+| `constants`    | Cross-cutting constants such as the theme cookie key, `CAT_*`/`MSG_CAT_*` catalog error codes, and SEO copy/origin (`seo.constants.ts`). |
 | `hooks`        | Reusable client hooks; currently `useMediaQuery`.                                                              |
 | `lib`          | Server actions for Strapi reads and theme cookie persistence.                                                  |
 | `queries`      | GraphQL operations for products, filtered products, variants, categories, and brands.                          |
 | `types`        | Product, variant, app theme, error, pagination, category, brand, and dynamic `TaxonomyItem` types.             |
 | `ui/atoms`     | Reusable atomic UI such as `ToggleDarkMode`.                                                                   |
 | `ui/organisms` | Reusable composed UI such as `Header`.                                                                         |
-| `utils`        | Pure helpers such as currency formatting and the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`). |
+| `utils`        | Pure helpers such as currency formatting, the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`), and SEO metadata/JSON-LD builders (`seo.utils.ts`: `buildCatalogMetadata`, `buildCatalogJsonLd`, `toJsonLdHtml`). |
 
 ### `src/zustand/`
 
@@ -141,7 +143,9 @@ Catalog behavior:
 - Local visible-results search filters only the current working set in memory by product name. It does not query Strapi and does not reset the page to 1.
 - Catalog-wide name/category/brand modes are URL-backed: `/?mode=name&q=...&page=N`, `/?mode=category&category=...&page=N`, and `/?mode=brand&brand=...&page=N`. Browser reload/back/forward restore the server-selected result set.
 - Category and brand catalog-wide URLs and GraphQL filters use taxonomy names, not `customId`. Local visible filters still use `customId` for dropdown compatibility.
-- Base pagination renders numbered pages 1-7. Filtered modes render Previous/current-page/Next and infer Next from `products.length === 50` until Strapi exposes filtered totals.
+- Base pagination renders numbered pages 1-7. Filtered modes render Previous/current-page/Next and infer Next from `products.length === 50`.
+- **Correction (2026-07-27, verified by live GraphQL introspection):** Strapi *does* expose pagination metadata. `products_connection(pagination: $pagination)` returns `pageInfo { total page pageSize pageCount }` alongside `nodes { ... }`, and it accepts the same `ProductFiltersInput` as `products`. Earlier notes here, in `AGENTS.md`, and in `ai-research/epics/plp-functionality-seo.epic.md:398-402` claim no metadata is available; that is wrong. `KNOWN_PRODUCT_TOTAL = 333`, the derived 7-page ceiling, and the response-length next-page inference are all workarounds for an assumption that no longer holds. Migrating to `products_connection` is a deliberate open decision, not a bug fix — see `ai-research/stories/plp-seo-readiness.story4.md` (Catalog Behavior I).
+- Strapi's Product content-type also has `description` (text) and a unique `customId`; no frontend query selects either. Genuinely absent: image/media, `slug`, product-level SKU, `availability`/`stock`, `currency`. A `shared.seo` component (`metaTitle`, `metaDescription`, `shareImage`) exists in the backend but is attached to no content-type.
 - Empty page 1 can render an empty state. Empty page `>1` redirects to the same mode/value page 1; speculative `notice=end` redirects back to the previous populated page and shows `No hay más resultados.`.
 - `src/app/loading.tsx` provides route loading feedback. `src/app/error.tsx` provides Spanish retry UI for server-rendered catalog failures.
 - `ProductVariantsDrawer` fetches variants when opened, formats prices with `formatNumberToCurrency`, and sorts by numeric price ascending.
@@ -188,12 +192,26 @@ There are no auth, checkout, order, or backend proxy route handlers in this repo
 - `fetchProductsByCategory` and `fetchProductsByBrand` have explicit `Promise<Product[]>` return types and no local try/catch. Rejected Apollo work propagates to the route's edge handler and becomes `CAT_ERR_001` (HTTP 400); a successful GraphQL response with a missing/null `products` field still returns `[]`.
 - The five other Apollo-backed helpers (`fetchProducts`, `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`) follow the same "throw at the boundary, catch at the edge" contract. The shared contract is documented in a JSDoc block at the top of `src/shared/lib/global.lib.ts`.
 
+## SEO And Metadata
+
+- `src/app/layout.tsx` sets production root metadata (`metadataBase`, title, description, OG/Twitter — no OG image, no verification meta tag) from `src/shared/constants/seo.constants.ts`.
+- `src/app/page.tsx` exports `generateMetadata`, which calls the pure `buildCatalogMetadata` (`src/shared/utils/seo.utils.ts`). It parses `searchParams` via `parseCatalogParams` only — it never fetches products and never calls `getCatalogSelection` (which can `redirect()`), because Apollo clients are per-call with no request-level dedupe and a fetch here would double every catalog query.
+- Per-URL policy: `/` and `/?page=1` canonicalize to `/` (duplicates by construction); base/category/brand pages are `index, follow`; `?mode=name&q=` is `noindex, follow`. Canonicals never carry the transient `notice=end` param. Titles never claim `de 7`/a total page count, since `PRODUCT_PAGE_MAX` is derived from the stale `KNOWN_PRODUCT_TOTAL`.
+- JSON-LD (`WebSite`+`SearchAction` on base mode, per-page `ItemList` of products, `BreadcrumbList` on category/brand modes) is built by `buildCatalogJsonLd` and rendered as a `<script type="application/ld+json">` in the page body (it needs product data, so it can't live in `generateMetadata`). `toJsonLdHtml` escapes `<` before serializing — the trust boundary for Strapi-sourced product/taxonomy strings. `Product` nodes carry no `image`, `url`, `@id`, `sku`, `availability`, or `description` (none exist in the Strapi contract selected today); `offers` is omitted entirely when `minPrice`/`maxPrice` is null.
+- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes (`/robots.txt`, `/sitemap.xml`). The sitemap lists base pages plus one URL per live category/brand (from `fetchCategories`/`fetchBrands`), never `?mode=name` URLs, and never a fabricated `lastModified`/`changeFrequency`/`priority`. Its taxonomy fetch degrades to base-pages-only on failure so a Strapi outage never fails `pnpm build`.
+- Pagination controls in `src/features/Home/Home.tsx` (numbered pages, base prev/next, filtered Anterior/Siguiente) are real `next/link` anchors when a target exists, or a non-focusable `<span aria-disabled="true">` otherwise — never `href="#"`. Styled via HeroUI's own `buttonVariants()`/`pagination__link` CSS classes so the visual language is unchanged.
+- Deliberately out of scope (tracked in `docs/improvement.md`): `Organization`/`LocalBusiness` JSON-LD (no business data in the repo), OG/Twitter images (no asset), a WhatsApp CTA (lands with the cart feature), Search Console verification meta tag (verified by DNS instead), and `products_connection` adoption for a live sitemap page count.
+
 ## Environment Variables
 
 Required for Strapi-backed catalog data:
 
 - `STRAPI_HOST` - Strapi GraphQL endpoint.
 - `STRAPI_API_TOKEN` - bearer token sent by Apollo Client.
+
+Optional:
+
+- `NEXT_PUBLIC_SITE_URL` - absolute production origin for `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000` when unset; never throws. First `NEXT_PUBLIC_*` variable in the repo.
 
 Values are expected in `.env.local` for local development. Without them, Apollo queries from server components/actions can fail or return empty data.
 
@@ -246,6 +264,7 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 - `darkMode: "class"` is required for next-themes/HeroUI dark mode behavior.
 - Existing UI copy is Spanish (`Catalogo de productos`, `Limpiar filtros`, `Ver detalles`, etc.). Preserve language consistency unless the task is localization-related.
 - `ProductCard` uses `useMediaQuery()` for mobile-aware card header/title layout.
+- HeroUI v3 `Pagination.Link` / `Pagination.Previous` / `Pagination.Next` render a `react-aria-components/Button` and accept no `href`; only `Pagination.Root` / `Content` / `Item` are polymorphic (`nav` / `ul` / `li`). Their styling comes from element-agnostic CSS classes (`.pagination__link` in `@heroui/styles/dist/components/pagination.css`, with `[data-active="true"]`, `[aria-disabled="true"]`, and `:focus-visible` rules), so an `<a className="pagination__link">` renders identically. That is the supported way to build crawlable pagination without leaving HeroUI's visual language.
 
 ## Conventions And Gotchas
 
@@ -285,14 +304,18 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 | `src/app/loading.tsx`                                                                      | Accessible catalog route loading fallback.                                                                                                                                                          |
 | `src/app/error.tsx`                                                                        | Catalog route error boundary with Spanish retry UI.                                                                                                                                                 |
 | `src/app/apollo-client.ts`                                                                 | Apollo Client factory using Strapi env vars.                                                                                                                                                        |
+| `src/app/robots.ts`                                                                        | `/robots.txt` — disallows `/api/`, points to the sitemap.                                                                                                                                           |
+| `src/app/sitemap.ts`                                                                       | `/sitemap.xml` — base pages + live category/brand URLs; degrades to base pages if Strapi is unreachable.                                                                                           |
 | `src/app/api/preferences/route.ts`                                                         | Theme cookie API route.                                                                                                                                                                             |
 | `src/app/api/catalog/_utils.ts`                                                            | Shared catalog route helpers: env validation, success/error envelopes, param parsing.                                                                                                               |
 | `src/app/api/catalog/{products,category,brand,categories,brands,variants,search}/route.ts` | Catalog API route handlers (thin wrappers over server actions).                                                                                                                                     |
 | `src/shared/constants/catalog.constants.ts`                                                | `CAT_*` error codes, `MSG_CAT_*` internal messages, and validation constants (page bounds, page sizes, documentId pattern/length, `SEARCH_TERM_MAX_LENGTH = 100`, `SEARCH_TERM_PATTERN` allowlist). |
 | `src/shared/utils/catalog-api.utils.ts`                                                    | Client-side `fetchCatalog<T>()` envelope wrapper, `CatalogApiError` with `code`, and `catalogErrorToSpanish` code-to-Spanish-copy map.                                                              |
-| `src/features/Home/Home.tsx`                                                               | Client catalog controller.                                                                                                                                                                          |
+| `src/shared/constants/seo.constants.ts`                                                    | `SITE_URL` (from `NEXT_PUBLIC_SITE_URL`), `SITE_NAME`, `SITE_TITLE`, `SITE_DESCRIPTION`, `SITE_LOCALE`, and the title-fragment constants used by the per-mode builders.                             |
+| `src/shared/utils/seo.utils.ts`                                                            | `buildCatalogMetadata` (per-URL title/description/canonical/robots), `buildCatalogJsonLd` (`WebSite`+`SearchAction`, `ItemList`, `BreadcrumbList`), `toJsonLdHtml` (escapes `<` before `<script>`). |
+| `src/features/Home/Home.tsx`                                                               | Client catalog controller; pagination controls render as `next/link` anchors or disabled `<span>`s.                                                                                                |
 | `src/features/Home/useCatalogSearch.ts`                                                    | Hook owning catalog-wide name-search state, drawer state, and mode coordination.                                                                                                                    |
-| `src/features/Pagination/{types.pagination,utils.pagination}.ts`                           | Feature-local catalog URL parsing/building helpers and types for server URL orchestration.                                                                                                           |
+| `src/features/Pagination/{types.pagination,utils.pagination}.ts`                           | Feature-local catalog URL parsing/building helpers and types for server URL orchestration, plus the pure `parseCatalogParams` and canonical-URL builders (`buildCanonicalPath`, `buildBasePagePath`, `buildModeUrl`) shared with SEO metadata/sitemap/anchor pagination.                          |
 | `src/features/ProductListing/*.tsx`                                                        | Listing grid, search input, category and brand dropdowns.                                                                                                                                           |
 | `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx`                                 | HeroUI right-side drawer with name-search form plus the catalog-wide category/brand dropdowns.                                                                                                      |
 | `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`                             | Variant drawer and price display.                                                                                                                                                                   |
@@ -319,7 +342,7 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 
 ## Open Questions
 
-- The Strapi schema and pagination metadata are inferred only from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo.
+- The Strapi schema is inferred from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo. Ground truth is the backend repo at `/home/rafael/projects/tehesa/store-tehesa-api` plus live introspection (see the pagination-metadata correction under Data Flow).
 - The production deployment target is not documented in source beyond generic Next README content and GitHub workflows.
 - Theme defaults differ between `NextThemesProvider` (`dark`) and `getThemePreference()` (`light` when no cookie exists); confirm desired default before changing related UX.
 - Category/brand options are hardcoded; confirm whether they should eventually come from Strapi before replacing them with dynamic fetches.
