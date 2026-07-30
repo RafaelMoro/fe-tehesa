@@ -19,7 +19,11 @@ import {
 } from "@/features/Pagination/utils.pagination"
 import type { MainPageSearchParams } from "@/features/Pagination/types.pagination"
 import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
-import { buildCatalogMetadata } from "@/shared/utils/seo.utils"
+import {
+  buildCatalogJsonLd,
+  buildCatalogMetadata,
+  toJsonLdHtml,
+} from "@/shared/utils/seo.utils"
 
 export const generateMetadata = async ({
   searchParams,
@@ -51,6 +55,12 @@ export default async function MainPage({
 
   return (
     <ChangeThemeStoreProvider>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: toJsonLdHtml(buildCatalogJsonLd(selection, products)),
+        }}
+      />
       <CatalogPageLayout themeFetched={themeFetched}>
         <Home
           products={products}
