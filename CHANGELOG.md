@@ -1,3 +1,9 @@
+## v0.25.0 (2026-07-30)
+
+### Pull Requests
+[#32](https://github.com/RafaelMoro/fe-tehesa/pull/32) | PLP Functionality | Story 4 | PLP SEO Readiness
+
+
 ## v0.24.0 (2026-07-28)
 
 ### Pull Requests
