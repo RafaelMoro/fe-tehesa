@@ -6,16 +6,24 @@ Sign-off: research scope confirmed with the user during research (deliverable = 
 
 **Deliverable: one markdown document plus two index lines. No `src/**` change, no dependency, no provider script.**
 
-## Assumptions (from research open questions left pending)
+## Decisions (user, at plan time)
 
-1. **Second provider undecided** (Analytics Contract I) — the contract stays vendor-neutral; a recommendation section names the tradeoffs. Not a blocker.
-2. **PII/retention stance for `search_term` undecided** (Analytics Contract II) — documented as an open decision the doc surfaces for sign-off, not resolved here.
-3. **`product_ids` cap = 10 IDs** in the neutral payload, GA4 adapter expands into `items` (Analytics Contract III recommendation). Written as the proposal; sign-off can change the number without touching anything else.
-4. **`catalog_search_mode_changed` is named but deferred** (Analytics Contract IV) — the doc records it plus its cost (lifting `searchMode` out of `CatalogSearchDrawer`).
+1. **Second provider undecided** (Analytics Contract I) — decided later. The contract stays vendor-neutral; a recommendation section names the tradeoffs. Not a blocker.
+2. **Notification model, not a consent gate** (Analytics Contract II) — the user is *informed* that analytics runs; there is no grant/deny choice, so `track()` is always pass-through. See "Disclosure model" below for what this does and does not resolve.
+3. **`product_ids` = capped flat string, cap 10** (Analytics Contract III) — decided. Cap lives in one constant in `src/shared/constants/`; the GA4 adapter expands the 10 into `items`.
+4. **`catalog_search_mode_changed`: deferred to sign-off** (Analytics Contract IV) — named in the contract, marked deferred, no cost analysis beyond one line. `searchMode` stays private to `CatalogSearchDrawer`; revisit after marketing/business sign-off.
 5. **`page_result_count` defined now**, `total_result_count` added additively when `products_connection` lands (Catalog Behavior I, answered).
 6. **`product_id = customId`, `product_doc_id = documentId`** (Strapi Contract I, answered). `customId` is not currently selected by the product queries — adding it is the future implementation story's one-field change, noted in the doc, **not done here**.
 
 All research file:line citations were re-verified against `src/features/Home/Home.tsx` at plan time and still match.
+
+### Disclosure model (replaces the consent gate)
+
+Per decision 2, the contract specifies a **disclosure**, not a gate: the user is told analytics is in use (aviso de privacidad / notice link), and `track()` sends unconditionally. The doc must state three things plainly so this is a recorded choice, not an oversight:
+
+- **What still holds.** Mexico's LFPDPPP works on a privacy-notice basis with tacit consent for non-sensitive data, so notice-plus-opportunity-to-object is the normal shape for a MX-only storefront. The contract records that this is the assumed jurisdiction.
+- **What this does not resolve.** GA4 forbids PII in event parameters **regardless of consent**. `search_term` is unrestricted free text, so removing the gate removes the mitigation without removing the exposure. The contract therefore keeps `search_term` handling as its own decision — send verbatim, omit, or truncate/sanitize — and flags it for the same sign-off. It is no longer a consent question.
+- **What a future opt-out would need.** The adapter keeps a single boolean choke point in `track()` (default `true`), so a kill switch or an EU-facing opt-out is a one-line change later. No buffer, no flush, no banner, no cookie, no route is designed by this story.
 
 ## Acceptance Criteria
 
@@ -49,14 +57,14 @@ All research file:line citations were re-verified against `src/features/Home/Hom
    - Primary: `catalog_search_submitted` (`Home.tsx:232` `handleCatalogNameSearchSubmit`), `catalog_search_results_viewed` (`Home.tsx:130` results effect), `catalog_filter_selected` (`Home.tsx:218`/`:225`).
    - Secondary: `catalog_local_filter_applied` (`Home.tsx:191`/`:200`/`:209`), `catalog_filters_cleared` (`Home.tsx:243`/`:250`), `catalog_page_changed` (pagination anchors, `Home.tsx:350-470`), `product_detail_opened` (`Home.tsx:259` `handleProductClick`), `product_variants_selected` (`ProductVariantsDrawer.tsx`).
    - Conversion: `add_to_cart` — **blocked on the cart story**, GA4 reserved name kept deliberately, two future origins (`variants_drawer`, `product_card` — the latter's handler is currently commented out). Satisfies AC5.
-   - Deferred and named only: `catalog_search_mode_changed`, with its prerequisite (lift `searchMode` out of `CatalogSearchDrawer.tsx:99-112`).
+   - Deferred and named only: `catalog_search_mode_changed` — one line noting `searchMode` is local state in `CatalogSearchDrawer.tsx:99-112` and the event is deferred pending sign-off. No cost analysis.
 4. **Why submit and results-viewed are split** — the submit handler navigates to a server-rendered URL, so neither count nor IDs exist at submit time; the split also makes zero-result searches (`is_empty`) and abandoned searches measurable.
 5. **Reliability caveats (AC2)** — one subsection per caveat, verbatim intent from research: page-level `page_result_count` (50 means "at least 50", never sum it), `visible_result_count` = current page only, hardcoded `KNOWN_PRODUCT_TOTAL = 333` / 7-page ceiling must never be emitted, `product_ids` 100-char cap, denormalized `min_price`/`max_price`/`variant_count` are indicative not authoritative, `search_type` on submit is always `"name"` today, and the 500 ms / 250 ms close delays mean events fire **at the handler**, never after the delay.
-6. **Adapter contract (AC3)** — `track(event: AnalyticsEvent): void` from `src/shared/analytics/`; discriminated-union event type; provider registry array of `{ name, send(event) }`; consent gate buffering in the adapter (theme cookie flow in `src/shared/lib/global.lib.ts` + `/api/preferences` is the precedent to reuse); client-only with a `typeof window` guard so SSR imports are safe; no dependency. Name the GA4 limits it must satisfy: 40-char event/param names, 100-char text param values, 25 params per event.
+6. **Adapter contract (AC3)** — `track(event: AnalyticsEvent): void` from `src/shared/analytics/`; discriminated-union event type; provider registry array of `{ name, send(event) }`; **disclosure model with a single boolean choke point in `track()`** per the section above (satisfies AC3's gate requirement without designing consent UI — say explicitly that no banner, cookie, or route is in scope, and that the theme cookie flow in `src/shared/lib/global.lib.ts` + `/api/preferences` is the precedent if an opt-out is ever needed); client-only with a `typeof window` guard so SSR imports are safe; no dependency. Name the GA4 limits it must satisfy: 40-char event/param names, 100-char text param values, 25 params per event.
 7. **App Router `page_view` gap** — client navigations (`router.push`, `next/link`) do not fire GA4 `page_view`; the provider adapter owns a manual `page_view` on `pathname`+`searchParams` change or pages 2-7 are invisible. Keep this in its own adapter-concern section, separate from the PLP event catalogue.
 8. **Edge cases** — strip `?notice=end` from any captured URL; fire results-viewed only from the render effect so the page-1 redirect (`src/app/page.tsx:48-53`) is not reported as an empty page; use the trimmed/allowlisted search term and truncate to 100 chars; omit `min_price`/`max_price` when null rather than sending `0` (mirrors the SEO `ItemList` omitting `offers`).
 9. **Recommendations** — GA4 first; second-provider criteria (session-replay accepts this as-is; product-analytics needs no compromise; Meta Pixel needs a name mapping in its adapter); ship only the primary three events in the first instrumentation story.
-10. **Open decisions for sign-off** — second provider, `search_term` PII/retention stance, `product_ids` cap size, whether `catalog_search_mode_changed` is wanted. Each with the recommendation already stated so sign-off is a yes/no.
+10. **Open decisions for sign-off** — second provider (deferred), `search_term` PII/retention handling (now standalone, no longer a consent question), and whether `catalog_search_mode_changed` is wanted. Record the settled decisions too: disclosure-not-consent, `product_ids` cap 10. Each open item states the recommendation so sign-off is a yes/no.
 
 ### Success Criteria
 
@@ -98,11 +106,17 @@ No Jest work: nothing under `src/` changes, so there is nothing to test. The pur
 ## Out Of Scope
 
 - Any `track()` implementation, `src/shared/analytics/` module, event constants, or types.
-- GA4 or any provider script, `@next/third-parties`, consent banner, consent cookie, or `/api/consent` route.
+- GA4 or any provider script, `@next/third-parties`, the disclosure notice UI/copy, any consent banner or cookie, or an `/api/consent` route.
 - Adding `customId` to the product GraphQL queries.
 - Lifting `searchMode` out of `CatalogSearchDrawer`.
 - Wiring `add_to_cart` (blocked on the cart story) or un-commenting the `ProductCard` CTA.
 
 ## Open Questions
 
-Carried into the doc's sign-off section, not resolved by this plan: second provider (Analytics Contract I), `search_term` PII/retention stance (II), `product_ids` cap size (III, proposal 10), whether `catalog_search_mode_changed` is wanted (IV).
+Carried into the doc's sign-off section, not resolved by this plan:
+
+- **Second provider** (Analytics Contract I) — deferred by the user; contract stays neutral.
+- **`search_term` PII handling** — now independent of consent (see Disclosure model). GA4's no-PII rule applies regardless, so send-verbatim vs. omit vs. sanitize still needs a product/legal call before the instrumentation story.
+- **`catalog_search_mode_changed`** (IV) — deferred to marketing/business sign-off.
+
+Settled, no longer open: disclosure-not-consent (II), `product_ids` capped flat string at 10 (III).
