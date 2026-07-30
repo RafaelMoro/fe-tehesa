@@ -185,3 +185,4 @@ Use `/research` to kick off a feature or bug investigation. It reads `REPO_CONTE
 - `docs/IMPLEMENTATION_GUIDELINES.md` — control flow, object literals, error messages (must read before implementing)
 - `docs/UNIT_TESTING_GUIDELINES.md` — Jest/Testing Library rules (canonical, not duplicated elsewhere)
 - `DESIGN.md` — visual design tokens + Tailwind config (validate with `pnpm design:lint`)
+- `docs/ANALYTICS_EVENT_CONTRACT.md` — PLP analytics event contract (spec only; no analytics code ships yet)
