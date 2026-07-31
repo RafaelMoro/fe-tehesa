@@ -595,6 +595,16 @@ Status: **answered by the user, 2026-07-31 — no.** It stays out of the `/cotiz
 Context: Story 3 decided it is not user-facing anywhere (`plp-product-detail-signals.story3.md`, UI V). This keeps that decision intact for the buyer-facing surface and changes it only for the seller-facing channel.
 Explanation: The `Sin clave interna` fallback is therefore needed only in the message builder, not in any component. One fewer missing-value state to design.
 
+V: Question: Is `Restaurar lista` in Story 4's scope, or does it stay deferred?
+Status: pending — **the only open scope decision left in the epic.**
+Context: UI III decided the list clears after the hand-off, with durable recovery deferred to `docs/improvement.md` and v1 shipping an acknowledgement or an immediate undo. The Brief 4 comps then designed the deferred version: the cleared list is kept as a copy and restorable after a round trip through WhatsApp (`comps/brief-4/desktop-check-quote-flow-2-brief-4.png`).
+Explanation: The comps are the better product. Recommendation is to **pull it into Story 4**, because the alternative is shipping a weaker version of a screen that is already designed, then rebuilding it. The cost is small — the cleared list is written to a second persisted slot instead of discarded, and one button reads it back. If it stays deferred, Story 4 ships the acknowledgement-only variant and the comp waits.
+
+VI: Question: When exactly does the list clear in a multi-part send?
+Status: pending — not determinable from the comps.
+Context: State 4 (`Abriste las 3 partes en WhatsApp`) still shows the list and offers `Empezar una nueva cotización`; state 5 is the return with the list already cleared.
+Explanation: Two candidate moments, and they behave differently for a buyer who opens the last part and closes the tab: clearing **on the last part opening** means they return to a restore prompt; clearing **on pressing `Empezar una nueva cotización`** means they return to their list intact. Recommendation is the second — it keeps the clear tied to an explicit user action, which is what "never silent" was asking for, and it makes `Restaurar lista` the safety net rather than the primary path.
+
 ### Persistence
 
 I: Question: `localStorage`, a Next.js cookie, or something else?

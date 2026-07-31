@@ -357,12 +357,15 @@ Explanation: The rule, and the answer to "where would `Solicitar cotización` ap
 ### Persistence
 
 I: Question: What is the `localStorage` key?
-Status: pending
-Explanation: Recommendation is `tehesa-cart`, matching the existing `tehesa-theme` cookie convention (`global.constants.ts:1`). Namespaced so a future second store does not collide.
+Status: **answered 2026-07-31 — `tehesa-cart`.** Matches the existing `tehesa-theme` cookie convention (`global.constants.ts:1`), namespaced so a future second store does not collide.
+Explanation: The contact slice needs a decision alongside it. Two options, both fine: one key holding both slices with independent clearing in the store, or `tehesa-cart` plus `tehesa-contact` as separate `persist` instances. Recommend **one key** — the slices are cleared independently in state, not in storage, and two keys means two version numbers and two migrations. Constant lives in the new cart constants file, never inlined.
 
 II: Question: What happens to a cart written by a previous schema version?
-Status: pending
-Explanation: Recommendation is drop it. Writing migrations for a cart that has never shipped is speculative work; a buyer losing an unsent quote across a deploy is a cost the business can absorb, and a crash is not. Revisit once the shape has stabilised.
+Status: **answered 2026-07-31 — drop it.**
+Explanation: `migrate` returns empty state on any version mismatch. Writing migrations for a shape that has never shipped is speculative; a buyer losing an unsent list across a deploy is a cost the business absorbs, a crash is not. Two things this obliges:
+
+- **Bump `version` whenever the line shape changes**, including additive changes. A field added without a bump means an old blob passes validation while missing the field, which is exactly the silent case `migrate` exists to prevent.
+- **Dropping is silent by design.** The buyer sees an empty list, not an error — there is nothing actionable to tell them, and "your saved list was discarded" invites a support question with no remedy. Worth one comment in the code so the next reader does not mistake it for a bug.
 
 ### Strapi Contract
 
@@ -385,8 +388,8 @@ Status: **answered 2026-07-31 — jsdom's `localStorage`**, unit tests plus manu
 Explanation: jsdom provides `localStorage`, so this is directly testable and should be. The cases that matter are the adversarial ones, not the happy path: truncated JSON, valid JSON with the wrong shape, a negative quantity, a non-integer quantity, a `null` unit price, a `documentId` failing `DOCUMENT_ID_PATTERN`, and an oversized line array. Each must drop the offending line, keep the rest, and not throw.
 
 II: Question: Does the drawer's selection re-key break existing tests?
-Status: pending
-Explanation: `__tests__/product-variants/ProductVariantsDrawer.test.tsx` exercises selection and quantity behaviour. Whether its assertions are index-coupled has to be checked during planning — if they interact through `aria-label`s (`Seleccionar ${diameter}`, `Cantidad de ${diameter}`) they survive the re-key untouched, which would be the good outcome.
+Status: **deferred to planning by the user, 2026-07-31 — answer it by reading the file, not by guessing here.**
+Explanation: `__tests__/product-variants/ProductVariantsDrawer.test.tsx` exercises selection and quantity behaviour, and this story changes both — the re-key from array index to `documentId`, *and* the swap from a number input to the stepper. The second is the bigger risk: tests that type a value into the input have no equivalent once the input is gone, while tests driving the UI through `aria-label`s (`Seleccionar ${diameter}`, `Cantidad de ${diameter}`) survive both changes untouched. **Read that file in the first planning phase**, before the drawer work is scheduled — it decides whether this is a re-wire or a rewrite of the drawer's test file.
 
 ## Assumptions Made
 
