@@ -25,8 +25,11 @@ This story ships **no new route**. `/cotizar` is Story 2. The badge links to it,
 5. Single-variant products (`variantCount === 1`) render a different card with **one primary CTA, `Agregar 1 pieza`**, which fetches the product's only variant through the existing `/api/catalog/variants` route and adds a complete, priced line at quantity 1. Pending holds the label unchanged and shows a spinner; failure returns the button to default and surfaces `No se pudo agregar. Intenta de nuevo.` in a `role="alert"` beneath it, recoverable in place. The branch is on `variantCount === 1` exactly — `variantCount` of null or `0` (three known records, `docs/improvement.md`) is *not* this case and keeps the standard card.
 5b. A single-variant card shows one `PRECIO` value rather than the `DESDE` / `HASTA` pair, since `minPrice === maxPrice` for these products. Small change to the card's price block, introduced by the Brief 1 comps.
 6. Adding a variant already in the cart increments that line's quantity rather than appending a duplicate, keyed by the variant's `documentId`.
-7. A header cart badge shows the number of lines, always visible including at `0`, positioned bottom-right of the cart control, in a control that **reserves 44×44px from the first render** so only the counter's content changes after mount. `0` is styled neutrally and `1`+ uses the primary accent, so `0` reads as empty rather than as an unread notification. `99+` grows inside the same button without changing header width at 390px. The control links to `/cotizar` — no popover, no mini-cart — and carries an accessible name including the count (`Ver cotización, 3 artículos`).
+7. A header cart control shows the number of lines, always visible including at `0`, count positioned bottom-right, in a control that **reserves 44×44px from the first render** so only the counter's content changes after mount. `0` is styled neutrally and `1`+ uses the primary accent, so `0` reads as empty rather than as an unread notification. `99+` grows inside the same button without changing header width at 390px. **Icon-only at every breakpoint** (Brief 2's design; Brief 3's labelled `Mi solicitud` pill is discarded). Accessible name carries the count: `Ver mi lista, 3 artículos`.
+7b. **In this story the control is not a link** — it is a count, not navigation, because `/cotizar` does not exist until Story 2. Story 2 turns it into a link. It is never a popover or a mini-cart. Note the Brief 2 and Brief 3 comps both draw it as a link, so this is a deliberate one-story divergence from the comps, not an oversight.
 8. The persisted state has two independently clearable slices, cart lines and buyer contact details, both validated on rehydrate. The contact form itself lands in Story 4; only the store shape belongs here.
+9. **The cart holds at most 100 lines.** Enforced on add (with a message naming the limit) and on rehydrate (a longer persisted array is rejected rather than rendered). This is a trust-boundary guard, not a message-length rule — batching removed the length constraint.
+10. **The drawer adopts the `− n +` quantity stepper** designed in Brief 3, replacing the bare `<input type="number">` at `ProductVariantsDrawer.tsx:204`. The stepper cannot produce an empty value, which resolves the `""` quantity case this story has to handle regardless. Quantity is bounded `1..100` per line.
 
 ### Task Breakdown
 
@@ -35,10 +38,11 @@ This story ships **no new route**. `/cotizar` is Story 2. The badge links to it,
 3. Add cart constants: storage key, schema version, quantity bounds, line cap.
 4. Build the vanilla store with `persist`, `version`, `migrate`, and a rehydrate-time validator.
 5. Build the provider following `change-theme.provider.tsx`, and mount it in `src/app/providers.tsx`.
-6. Re-key the drawer's `selectedVariantIndexes` / `quantities` from array index to variant `documentId`; resolve the empty-string quantity case; wire the footer CTA.
-7. Wire `ProductCard`'s secondary CTA to add a variant-less line.
-8. Decide `Header` placement, add the badge with a mounted guard and an accessible name.
-9. Tests: store actions, dedup/increment, rehydration of hostile payloads, drawer add, card add, badge count.
+6. Re-key the drawer's `selectedVariantIndexes` / `quantities` from array index to variant `documentId`; replace the bare number input with the `− n +` stepper (which removes the empty-string case); wire the footer CTA.
+7. Build the quantity stepper as a shared component — Story 2 needs the identical control on `/cotizar`, so it belongs in `src/shared/ui/` rather than inside the drawer.
+8. Wire `ProductCard`'s tertiary CTA to add a variant-less line; branch the card on `variantCount === 1` for the `Agregar 1 pieza` variant.
+9. Decide `Header` placement, add the icon-only control with a mounted guard, a count, and an accessible name. Not a link in this story.
+10. Tests: store actions, dedup/increment, the 100-line cap on add and on rehydrate, rehydration of hostile payloads, drawer add, card add, single-variant add with its pending and failure paths, count display.
 
 ### Scope Assessment
 
@@ -96,11 +100,11 @@ What the comps settle:
 - **The whole control is a link to `/cotizar`.** No popover, no mini-cart — explicitly annotated as such.
 - **Toast is HeroUI v3's**, which answers the open sub-question about whether one had to be written. Anatomy: confirmation icon, explicit text, optional close. Meaning does not depend on the green — the icon and the wording carry it, so the colour-alone concern is closed.
 
-**Not delivered — three behaviours the prompt asked for and the comps do not show.** They are not blocking, so the recommendations below stand unless the designer supplies otherwise:
+**Confirmed 2026-07-31: `comps/brief-2/share-toast-brief-2.png` is the toast design.** It fixes anatomy and copy. It does not depict placement, timing, or concurrency, so these three are now the specification rather than recommendations:
 
-1. **Placement.** Recommendation: bottom on phone, bottom-right on desktop. It must **not** cover the header, because the badge count updating is the second half of the confirmation — the two signals should be visible together.
-2. **Duration.** Recommendation: ~4 seconds. Long enough to read `Producto agregado, elige la medida después`, short enough not to linger. Auto-dismissing, with the close button as an override rather than the only way out.
-3. **Stacking.** Recommendation: **do not stack.** One toast at a time; a new add replaces the message and resets the timer. The badge already carries the cumulative count, so a stack would restate what the header shows while covering more of the screen. Simplest to build and the better behaviour.
+1. **Placement.** Bottom on phone, bottom-right on desktop. It must **not** cover the header, because the badge count updating is the second half of the confirmation — the two signals should be visible together.
+2. **Duration.** ~4 seconds. Long enough to read `Producto agregado, elige la medida después`, short enough not to linger. Auto-dismissing, with the close button as an override rather than the only way out.
+3. **Concurrency — do not stack.** One toast at a time; a new add replaces the message and resets the timer. The badge already carries the cumulative count, so a stack would restate what the header shows while covering more of the screen. The four messages appear together in the comp as an inventory of every origin, not as a stack — they come from mutually exclusive trigger sites and cannot co-occur.
 
 Two implementation notes the comps imply but cannot state:
 
@@ -309,31 +313,46 @@ II: Question: Does the drawer still close after adding?
 Status: **answered 2026-07-31 — yes.** The confirmation lives outside the drawer and focus returns to the card's trigger button.
 
 III: Question: Where does the badge link, given `/cotizar` does not exist until Story 2?
-Status: pending — **the one sequencing decision this story cannot make for itself.**
-Explanation: Three options: ship Stories 1 and 2 together; ship the badge as a non-link count in Story 1 and make it a link in Story 2; or ship the link and accept a 404. Recommendation is the second — it keeps the stories independently deliverable, which is the point of the split. Note that the Brief 2 and Brief 3 comps both draw the control as a link, so option two means shipping something the comps do not show for one story's duration.
+Status: **answered 2026-07-31 — ship it as a non-link count in Story 1; Story 2 makes it a link.** Keeps both stories independently deliverable.
+Explanation: Consequences to carry into planning:
+
+- Story 1 ships a control that is **not interactive**. It should therefore not be a `<button>` or an `<a>` at all — a focusable control that does nothing is worse than a non-focusable one. Render it as a labelled status element, and let Story 2 promote it to a link.
+- Its accessible name changes with it: `Mi lista, 3 artículos` in Story 1 (a statement), `Ver mi lista, 3 artículos` in Story 2 (an action).
+- **Deliberate divergence from the comps for one story.** Brief 2 and Brief 3 both draw the control as a link. Note it in the PR so a reviewer comparing against the comps does not file it as a defect.
 
 IV: Question: Is there a maximum cart size, and what does hitting it look like?
-Status: **partly obsolete, needs re-answering.** The original rationale no longer holds.
-Context: The cap was proposed because the WhatsApp message had a hard ~8-12 line budget and would otherwise truncate silently. **The epic has since decided to batch instead of truncate** (Decision 3 → Overflow, 2026-07-31), so message length no longer forces a product-facing cap.
-Explanation: This now splits into two separate things, and only the first is required:
+Status: **answered 2026-07-31 — 100 lines.**
+Context: The original rationale (the WhatsApp ~8-12 line budget) was removed when the epic decided to batch instead of truncate. 100 is a trust-boundary guard, not a message-length rule.
+Explanation: It has to be enforced in **two** places, and they behave differently:
 
-- **A validation line cap is still needed** — `localStorage` is user-writable, so a rehydrated array of 10,000 lines must be rejected rather than rendered. This is a trust-boundary guard, not a product rule. Something generous like 100 is defensible; it is invisible in normal use.
-- **A product-facing "you have reached the limit" cap is no longer justified by message length.** A 30-line quote now sends as three messages rather than being truncated. Recommend dropping it unless product wants one for a different reason.
+- **On add** — refuse and say why, naming the limit. `docs/IMPLEMENTATION_GUIDELINES.md` requires the message to name the input and the rule, so something in the shape of `Tu lista llegó al máximo de 100 productos.` Never fail silently: a buyer whose add does nothing assumes the app is broken.
+- **On rehydrate** — a persisted array longer than 100 is user-tampered data, not a user action. Truncate to the first 100 valid lines or reject the blob; either is defensible, but it must not throw and must not render 10,000 rows.
+
+100 lines also implies roughly 10-13 WhatsApp parts at the 1800-character cap. That is a lot of sequential sends. Not a blocker — nobody will build a 100-line quote — but worth knowing the cap and the batching interact.
 
 V: Question: Which header control ships — Brief 2's or Brief 3's?
-Status: pending — **blocks AC 7.**
-Context: Brief 2 designed an icon-only 44×44 control with a count capsule (`comps/brief-2/*header-brief-2*`). Brief 3 re-drew it on desktop as a labelled pill, `☰ Mi solicitud (3)`, and icon-only on mobile (`comps/brief-3/*brief-3*`). Brief 3 was not asked to touch the header; it did so because the header appears on the page it was designing.
-Explanation: Both cannot ship. The labelled desktop form names its destination, which is better, but it changes the 44×44 reservation that closed the layout-shift problem — so the mounted-guard approach has to be re-derived for a variable-width control. AC 7 is written against Brief 2's version and needs updating if Brief 3's wins.
+Status: **answered 2026-07-31 — Brief 2's, icon-only, at every breakpoint.** Brief 3's labelled `Mi solicitud` pill is discarded.
+Context: `comps/brief-2/desktop-header-brief-2.png` and `comps/brief-2/mobile-header-brief-2.png` are the reference.
+Explanation: This keeps the fixed 44×44 reservation that closed the layout-shift problem — the mounted guard swaps `0` for the real count inside a box whose size never changes. It also means one control at both breakpoints rather than a responsive label, which is less to build and less to keep in sync. The trade accepted: the control does not name its destination, so the accessible name carries that job entirely.
 
 VI: Question: Does the drawer adopt the `− n +` quantity stepper from the Brief 3 comps?
-Status: pending — affects this story's scope.
-Context: `/cotizar` uses a stepper; `ProductVariantsDrawer.tsx:204` uses a bare `<input type="number">`. Two quantity controls in one flow is a real inconsistency, and this story already edits the drawer's quantity handling.
-Explanation: Recommendation is yes, adopt it in both. It is a small addition to work already happening here, it removes the empty-string edge case (`quantities[index]` can be `""`, coerced by `|| 1`) that this story has to resolve anyway, and doing it later means touching the drawer twice. If deferred, record the divergence deliberately rather than letting it look accidental.
+Status: **answered 2026-07-31 — yes, both surfaces use the stepper.**
+Context: `/cotizar` uses it (Brief 3); `ProductVariantsDrawer.tsx:204` currently uses a bare `<input type="number">`.
+Explanation: Consequences:
+
+- **Build it once, in `src/shared/ui/`.** Story 2 needs the identical control; a stepper written inside the drawer would be copied a week later.
+- **It resolves the empty-quantity problem by construction.** A stepper cannot hold `""`, so the `|| 1` coercion at `ProductVariantsDrawer.tsx:108` stops being a decision this story has to make — the input simply cannot reach that state. This is the rare case where the larger change is also the simpler one.
+- It bounds quantity at the control (`1..100`) rather than relying on validation after the fact.
+- **Check `__tests__/product-variants/ProductVariantsDrawer.test.tsx` early.** Tests that type into a number input will break; tests that drive it through `aria-label`s (`Cantidad de ${diameter}`) mostly survive. This is the largest test-breakage risk in the story.
 
 VII: Question: What is the noun for the collection — `lista`, `solicitud`, or `cotización`?
-Status: pending — copy, not blocking, but it touches four surfaces.
-Context: The comps use `Mi solicitud` (header), `Tu lista está vacía` (empty state), and `Solicitar cotización` (page heading).
-Explanation: The split is defensible — *lista* for the thing, *solicitud/cotización* for the act — but it should be a stated rule, because the toast, the badge's accessible name, the page, and the WhatsApp message all have to agree.
+Status: **answered 2026-07-31 — `lista` is the collection.** `solicitud` is dropped as a name for it.
+Explanation: The rule, and the answer to "where would `Solicitar cotización` appear":
+
+- **`lista`** names the thing the buyer builds. `Tu lista está vacía`, `Restaurar lista`, `Mi lista, 3 artículos`.
+- **`cotización`** names the artifact and the act. `Solicitar cotización` (the `/cotizar` page heading, from the Brief 3 comps), `Cotizar` (the CTA), `Esta cotización necesita 3 partes`, `Empezar una nueva cotización`.
+- **`Solicitar cotización` survives**, because it is a verb plus the artifact — it names the *act*, not the collection. Only `Mi solicitud` broke the rule by using *solicitud* as the collection's name, and answer V already removes it.
+- **One judgement call to confirm:** the WhatsApp message header is `*Solicitud de cotización* · TH-…` (epic Decision 3, Option A). That is seller-facing and is the standard commercial Spanish for the document, so it is kept. If you want *solicitud* gone from every surface, the substitute is `*Cotización Tehesa* · TH-…`, which was the original draft.
 
 ### Persistence
 
@@ -400,14 +419,18 @@ The work is one new store, one new provider, one query field, one type file, fou
 
 Design is delivered for every surface this story touches (Briefs 1 and 2, `comps/brief-1/` and `comps/brief-2/`). All four epic briefs are complete.
 
-**Readiness for planning, as of 2026-07-31: three decisions short.** Everything else has a recommendation attached, so sign-off is a yes/no rather than a re-analysis.
+**Ready for planning as of 2026-07-31.** Every blocking question is answered:
 
-| # | Decision | Why it blocks |
-|---|---|---|
-| UI V | Brief 2's icon-only header control, or Brief 3's labelled pill? | AC 7 is written against Brief 2's. The two comps disagree, and the labelled form changes the fixed-44×44 reservation that solved the layout shift. |
-| UI III | Where the badge links, given `/cotizar` lands in Story 2 | Ship 1+2 together, ship a non-link count first, or ship a link to a 404. Changes what "done" means for this story. |
-| UI VI | Does the drawer adopt the `− n +` stepper from Brief 3? | Grows or does not grow this story's drawer work. Deferring means editing the drawer twice. |
+| # | Decision |
+|---|---|
+| UI III | The control ships as a **non-link count**; Story 2 promotes it to a link. Stories stay independently deliverable. |
+| UI IV | **100-line cap**, enforced on add (with a message naming the limit) and on rehydrate. |
+| UI V | **Brief 2's icon-only control** at every breakpoint. Brief 3's `Mi solicitud` pill discarded. |
+| UI VI | **Stepper adopted on both surfaces**, built once in `src/shared/ui/`. Removes the empty-quantity problem by construction. |
+| UI VII | **`lista`** for the collection, **`cotización`** for the artifact and the act. `solicitud` dropped as a collection name. |
 
-Non-blocking but worth answering in the same pass: the storage key (`tehesa-cart` recommended), drop-on-version-mismatch as the `migrate`, the validation line cap number, toast placement/duration/stacking, and the `lista` / `solicitud` / `cotización` noun.
+Two things that grew the story, both deliberately: the shared quantity stepper (task 7) and the single-variant card branch with its pending and failure paths (AC 5). The stepper also carries the story's main test-breakage risk — `__tests__/product-variants/ProductVariantsDrawer.test.tsx` exercises the input it replaces.
+
+Remaining calls are defaults a plan can absorb without another round: the storage key (`tehesa-cart`), drop-on-version-mismatch as the `migrate`, and `Header` placement (root layout recommended).
 
 Awaiting human sign-off. No source files were modified during this research.

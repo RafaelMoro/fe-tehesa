@@ -159,7 +159,9 @@ Completes Story 1. Two small surfaces, one brief, because they are the same feed
 
 **Output:** `comps/brief-2/desktop-header-brief-2.png`, `comps/brief-2/mobile-header-brief-2.png`, `comps/brief-2/share-toast-brief-2.png`. All four rejection criteria passed.
 
-**Gap:** the prompt asked for toast placement, duration, stacking behaviour, and the interaction with the drawer closing underneath. The comps show the four messages only. Recommendations were recorded in `cart-state-persistence.story-1.md` → "Brief 2" rather than re-running the brief; re-ask only if the designer disagrees. Lesson for future briefs: behavioural questions buried in a paragraph get answered less reliably than states listed as items — put them in their own numbered block.
+**Gap, now closed.** The prompt asked for toast placement, duration, stacking, and the interaction with the drawer closing underneath; the comps show the four messages only. **Confirmed 2026-07-31 that `share-toast-brief-2.png` is the toast design**, so the recommendations in `cart-state-persistence.story-1.md` → "Brief 2" became the specification for the four behaviours the comp does not depict. No re-run.
+
+**Lesson for future briefs:** behavioural questions buried in a paragraph get answered less reliably than states listed as items. Put them in their own numbered block — a visual agent produces what it can draw, and "how long does it stay" is not drawable.
 
 ### Attach
 

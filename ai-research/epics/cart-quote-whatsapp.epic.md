@@ -354,9 +354,20 @@ Outstanding design work, in full:
 
 | # | Item | Kind | Blocks |
 |---|---|---|---|
-| D1 | Toast **placement, duration, stacking**, and its behaviour as the drawer closes beneath it | Never delivered — Brief 2 asked, comps show only the four messages | Story 1. Recommendations stand in their place (bottom / bottom-right, ~4s, no stacking); build against those unless re-asked. |
-| D2 | Drawer footer **with the `− n +` stepper** | Conditional — only exists if the stepper is adopted (Story 1, UI VI). No comp shows a modified drawer. | Story 1, only if adopted |
+| ~~D1~~ | ~~Toast placement, duration, stacking~~ | **Closed 2026-07-31.** `comps/brief-2/share-toast-brief-2.png` is confirmed as the toast design. | — |
+| D2 | Drawer footer **with the `− n +` stepper** | **Resolved 2026-07-31** — the stepper *is* adopted, and it is Brief 3's existing design applied to a second surface. Build it once in `src/shared/ui/`. No new comp needed. | — |
 | D3 | The drawer opened **from `/cotizar`** by `Elegir medida`, and what the buyer sees when the line upgrades in place | Behaviour, not a new surface — the drawer is existing UI | Story 2 |
+
+**Vocabulary rule (decided 2026-07-31).** `lista` names the collection the buyer builds — `Tu lista está vacía`, `Restaurar lista`, `Mi lista, N artículos`. `cotización` names the artifact and the act — `Solicitar cotización`, `Cotizar`, `Esta cotización necesita 3 partes`, `Empezar una nueva cotización`. **`solicitud` is dropped as a name for the collection**, which removes Brief 3's `Mi solicitud` header label; `Solicitar cotización` survives because it names the act, not the collection. The one surviving use is the WhatsApp message header `*Solicitud de cotización*`, kept as standard seller-facing commercial Spanish.
+
+**Header control (decided 2026-07-31).** Brief 2's icon-only 44×44 control ships at every breakpoint. Brief 3's labelled pill is discarded, keeping the fixed-size reservation that solved the layout shift.
+
+**D1, as closed:** the comp fixes the toast's anatomy and copy — HeroUI v3 toast, confirmation icon, explicit text, optional close, meaning carried by icon and wording rather than by the green. It does not depict placement, timing, or concurrency, so the recorded recommendations become the specification rather than placeholders:
+
+- **Placement** — bottom on phone, bottom-right on desktop. It must not cover the header, because the badge incrementing is the other half of the confirmation.
+- **Duration** — ~4 seconds, auto-dismissing; the close control is an override, not the only exit.
+- **Concurrency** — one toast at a time. A new add replaces the message and resets the timer. The four messages appear together in the comp as an inventory of *all origins*, not as a stack; they come from mutually exclusive trigger sites and would not co-occur.
+- **Mounting** — portalled outside the drawer's tree at the layout or provider level, with a z-index above the drawer overlay, since the drawer unmounts on add and may still be animating out.
 
 Everything else outstanding is a **decision, not design** — both options already exist as comps, or the answer is one word:
 
@@ -402,9 +413,9 @@ All four rejection criteria passed. Build against the comps rather than re-deriv
 
 Three things to resolve before implementing, none of which is a comp defect:
 
-1. **The header control diverges between Brief 2 and Brief 3.** Brief 2 designed an icon-only 44×44 cart control with a count capsule; Brief 3 renders it on desktop as a labelled pill, `☰ Mi solicitud (3)`, and icon-only on mobile. Both cannot ship. The labelled desktop form is arguably better — it names the destination — but it changes the 44×44 reservation that closed the layout-shift problem. Pick one and apply it to `Header.tsx` once.
-2. **The quantity control diverges from the drawer.** `/cotizar` uses a `−  n  +` stepper; `ProductVariantsDrawer.tsx:204` uses a bare `<input type="number">`. Two quantity controls in one flow is a real inconsistency. Cheapest resolution is to adopt the stepper in both, which also removes the drawer's empty-string edge case.
-3. **Settle the noun.** The comps use `Mi solicitud`, `Tu lista`, and `cotización` for what is arguably one thing. The split is defensible — *lista* for the collection, *solicitud/cotización* for the act — but it should be a stated rule rather than an accident, because the toast, the header, the page, and the WhatsApp message all have to agree.
+1. ~~The header control diverges between Brief 2 and Brief 3.~~ **Resolved 2026-07-31: Brief 2's icon-only control ships at every breakpoint.** Brief 3's `☰ Mi solicitud (3)` pill is discarded — it would have broken the fixed 44×44 reservation that closed the layout-shift problem.
+2. ~~The quantity control diverges from the drawer.~~ **Resolved 2026-07-31: the `− n +` stepper is adopted on both surfaces**, built once in `src/shared/ui/`. It also removes the drawer's empty-string quantity case by construction.
+3. ~~Settle the noun.~~ **Resolved 2026-07-31: `lista` for the collection, `cotización` for the artifact and the act, `solicitud` dropped.** See the vocabulary rule above.
 
 Not showable in a comp, required at build time: accessible names on every stepper button and `Quitar` naming their line; `Comprobando precios…` as `role="status"`; `No pudimos comprobar los precios.` as `role="alert"`.
 
