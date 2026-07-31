@@ -326,171 +326,33 @@ Acceptance criteria:
 
 ## Design Agent Handoff
 
-### How To Use This Brief
+### How To Run This
 
-**If you are handing this to an external design agent** (one with no repository access, fed screenshots and `DESIGN.md` by hand), use **`ai-research/cart-quote-whatsapp/design-agent-briefs.md`** instead. It turns this section into four copy-pasteable prompts plus a list of exactly which screenshots to capture. This section remains the source of truth those prompts were written from.
+**The operational version of this handoff is `ai-research/cart-quote-whatsapp/design-agent-briefs.md`** — four copy-pasteable prompts, the exact screenshots to capture for each, and what to reject in the output. Use that file to actually run the design work.
 
-Nine steps, in order. Each one names what to produce and what "done" means. Steps 1-3 fully specify Story 1 and can start immediately — **that is a legitimate stopping point**; hand back and let implementation begin rather than waiting for the whole epic to be designed. Steps 4-7 track Stories 2, 3, and 4 and can follow later.
+This section keeps only what those prompts do not carry: the surface index, and the constraints and decisions that are implementation-facing rather than design-facing. `R1`-`R6` below are the record; the briefs inline whatever a repo-blind agent needs.
 
-The reference sections at the end (**R1**-**R5**) are constraints that apply to every step. Read them once at Step 0 and consult them throughout; they are not a final checklist.
+### What Is Being Designed
 
-Nothing marked *decided* is open for redesign. Where a decision looks wrong, say so in the Step 9 return rather than designing around it.
+A buyer — most likely a purchasing contact at a workshop or industrial supplier, often on a phone, often mid-conversation with their own customer — assembles a list of tools and hardware with the sizes and quantities they need, and hands it to a Tehesa seller on WhatsApp without retyping it. **Nothing here is a purchase.** No payment, no order, no inventory.
 
----
+| Surface | File | States | Story | Brief |
+|---|---|---|---|---|
+| Product card footer | `src/components/ProductCard.tsx` | Multi-variant, single-variant (one CTA, with pending + failure), broken-data | 1 | 1 |
+| Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | 2 |
+| Add-confirmation toast | new, shared | 4 messages incl. the increment case | 1 | 2 |
+| Variants drawer footer | `src/features/ProductVariantsDrawer/` | Unchanged visually; CTA works, drawer still closes, focus returns | 1 | 2 |
+| `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | 3 |
+| `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | 3 |
+| `/cotizar` contact block | new route | No saved details, saved (no form), editing | 4 | 4 |
+| `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | 4 |
+| `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | 4 |
 
-### Step 0 — Understand who this is for, and what is already settled
-
-**Read before designing anything.**
-
-A buyer — most likely a purchasing contact at a workshop or industrial supplier, often on a phone, often mid-conversation with their own customer — assembles a list of tools and hardware with the sizes and quantities they need, and hands it to a Tehesa seller on WhatsApp without retyping it. **Nothing here is a purchase.** No payment, no order, no inventory. The deliverable is a message a seller can act on without a follow-up round of questions.
-
-Four surfaces: the PLP grid card (`src/components/ProductCard.tsx`), the variants drawer (`src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`), the app header (`src/shared/ui/organisms/Header.tsx`), and a new `/cotizar` route.
-
-Five rules that override any design instinct to the contrary:
+Three rules that override any design instinct to the contrary, repeated here because every story touches at least one:
 
 1. **Never present a total as a price the buyer will pay.** It is a subtotal on a quote request, and some lines are excluded from it.
 2. **Never claim a message was sent.** The browser cannot observe WhatsApp delivery. *Opened* is the strongest true statement available.
 3. **Never invent stock, availability, delivery, shipping, tax, or discounts.** None of them exist in Strapi.
-4. **No product images exist.** Do not reserve image space anywhere.
-5. **Spanish throughout**, matching existing copy.
-
-Done when: you can state in one sentence why the `Cotizar` CTA is not a checkout button.
-
----
-
-### Step 1 — Orient in what already exists
-
-Most of this epic's UI is already built; the work is mostly wiring, plus three genuinely new surfaces. Designing before seeing the current components produces a redesign nobody asked for.
-
-Look at, in this order:
-
-- `src/components/ProductCard.tsx` — the footer's two CTAs, both currently inert.
-- `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` — **the add-to-cart UI already exists here**: multi-select checkboxes, per-variant quantity inputs, live selection count / piece count / running total in the footer (lines 220-229). Note the existing `role="status"` usage at lines 144-145 and the quantity `aria-label` pattern (`Cantidad de ${variant.diameter}`).
-- `src/shared/ui/organisms/Header.tsx` — a flex row with a logo and the theme toggle; note the mounted-guard pattern at lines 15-21, which the badge will reuse.
-- `DESIGN.md`, then run `pnpm design:lint`.
-
-Done when: you can name which parts of this epic are new surfaces and which are existing components gaining behaviour. Deliverable is that list, not a mockup.
-
----
-
-### Step 2 — The product card: three variants of one component
-
-The single highest-value step, because it is the same card 333 times and it is where a buyer's quote gets silently degraded.
-
-Produce three card footers:
-
-| Case | Condition | Footer |
-|---|---|---|
-| **Multi-variant** | `variantCount > 1` | `Explorar las N variantes` (visual primary) + `Agregar y elegir después` (tertiary) |
-| **Single-variant** | `variantCount === 1` | One primary CTA: `Agregar 1 pieza`. Nothing else. |
-| **Broken data** | `variantCount` null or `0` | Standard multi-variant footer. Three such records exist today (`docs/improvement.md`); the fix is the data, not the design. |
-
-The problem to solve, and the reason the labels were changed: `Explorar las N variantes` yields a **priced** line, while `Agregar y elegir después` commits an **unpriced** line the seller has to chase. Convention says the second one is the main action; here it is the degraded one. The visual hierarchy has to say what the convention does not, without making the tertiary action feel punitive — it is a legitimate choice for a buyer who does not know their size.
-
-`Agregar 1 pieza` **fetches on click**, so it needs a pending state and a failure state. It is the only card CTA that can fail.
-
-Done when: a buyer glancing at a multi-variant card can tell the two buttons do different things without reading both labels.
-
----
-
-### Step 3 — Add feedback: the toast and the header badge
-
-**Toast** — one shared component for all add actions, `role="status"`. It has to be shared because the drawer closes on add (anything inside it is destroyed at the moment it would be read) and the card has no host surface at all. Check the HeroUI MCP for a v3 toast before designing a bespoke one.
-
-Copy names what happened, never just that something did:
-
-- `3 variantes agregadas`
-- `Producto agregado, elige la medida después`
-- `1 pieza agregada`
-- `Cantidad actualizada` — the increment case, where an existing line's quantity rises instead of a new line appearing. Without this the buyer assumes their second add was dropped.
-
-**Header badge** — always visible, including at `0`, count positioned bottom-right of the cart control, linking to `/cotizar`. Because it never appears or disappears there is no layout shift; the mounted guard swaps `0` for the real count in place. Two traps: `0` must read as *empty*, not as a notification (a filled accent pill at zero looks like an alert), and the count needs a text equivalent — a number in a circle is not self-describing.
-
-**Drawer footer** — unchanged except that the CTA now works and the drawer still closes on add. Focus must be returned deliberately to the card's trigger button, never left on `<body>`.
-
-Done when: every add path has feedback that survives the drawer closing. **Story 1 is now fully specified — a valid place to stop and hand back.**
-
----
-
-### Step 4 — `/cotizar`: the line list and the subtotal
-
-A new route, and the first surface where the buyer sees their whole quote. Single column on a phone; the subtotal and CTA must be reachable without hunting.
-
-Line states:
-
-- **Priced line** — product name, variant, quantity control, unit price, line total.
-- **Variant-less line** — product name, explicit `Sin variante seleccionada`, quantity control, no price, and a visible reason it has none. It also carries an **`Elegir medida`** action that opens the variants drawer and upgrades the line in place. That action is what makes the card's `Agregar y elegir después` promise true, so it cannot be a footnote.
-- **Empty cart** — Spanish copy and a route back to the catalog. Never a bare `$0.00`.
-
-Subtotal:
-
-- Labelled `Subtotal estimado (líneas con precio)` — it excludes variant-less and unavailable lines, and an unqualified number will be read as the quote total.
-- One line of supporting copy: *"Precios de referencia. El vendedor confirma disponibilidad y precio final."* This is the **entire** "quote, not order" treatment. No banner, no callout, no confirm dialog. The page heading is `Solicitar cotización`, not `Carrito`.
-- Piece and product counts alongside, mirroring the drawer's existing `N variantes · N piezas` phrasing.
-
-Done when: a buyer with one priced and one variant-less line understands why the subtotal is smaller than they expected, and knows how to fix it.
-
----
-
-### Step 5 — `/cotizar`: revalidation states
-
-Prices and availability are refetched when the page loads, so the buyer never sends a stale number. Four states, none of which may block the flow:
-
-- **In progress** — brief, non-blocking.
-- **Price changed** — previous value struck or de-emphasised beside the current one, with a short explanation. The subtotal uses the current price.
-- **Variant or product no longer exists** — a distinct state per case, excluded from the subtotal, with a clear removal or replacement action. **Not an edge case**: carts never expire, so a months-old cart hitting this is the normal outcome.
-- **Revalidation failed** — snapshot prices shown with a warning, flow continues.
-
-Done when: none of the four states can leave the buyer unable to send their quote.
-
----
-
-### Step 6 — `/cotizar`: the contact block and the `Cotizar` CTA
-
-The form is **hidden** when valid details are saved. This is the point of the design, not a detail — a returning buyer should reach `Cotizar` in two taps.
-
-- **No saved details** — form shown expanded, the only way forward. Default, per-field invalid, and form-incomplete states live here.
-- **Saved details** — *no form*. A read-only summary of name, last name, and email, a *usar otros datos* control, an *olvidar mis datos* control, and `Cotizar` immediately available. The hard part is three controls above the primary CTA without any of them competing with it. This is the only PII-bearing surface in the app.
-- **Saved details, editing** — form revealed and prefilled; focus moves into it on reveal.
-- **CTA disabled, form incomplete** — visibly inert, non-focusable, with the reason stated. Not a mystery grey button.
-- **CTA disabled, WhatsApp not configured** — distinct copy. This is our failure, not the buyer's.
-- **CTA ready** — the primary action of the page.
-- **Post-tap** — WhatsApp opens elsewhere and the cart clears on return. The clear may not be silent: an acknowledgement step or an immediately available undo, because a buyer who backed out of WhatsApp will otherwise return to an empty cart with no idea why.
-
-Done when: a returning buyer's path from `/cotizar` to WhatsApp is two taps, and a buyer who backed out can recover their cart.
-
----
-
-### Step 7 — `/cotizar`: the batched send
-
-**The hardest state in the epic and the easiest to design dishonestly.** A quote too long for one WhatsApp message is split into parts; the buyer sends part 1, leaves WhatsApp, comes back, and sends part 2. WhatsApp cannot queue prefilled messages, so this cannot be automated away.
-
-- **Single part** — the common case. One CTA, no stepper, no hint that batching exists.
-- **Multi-part, before the first send** — the buyer must understand *before* tapping that this takes several sends, or they will assume the first tap finished the job. State the part count up front.
-- **Multi-part, in progress** — the next part is the page's primary action. Earlier parts stay visible and re-sendable.
-- **Part state is *opened*, not *sent*.** No green check, no "enviado". Closer to *"abierto — vuelve a abrir si no se envió"*.
-- **All parts opened** — still not a success state. Offer "empezar una nueva cotización" and nothing claiming the seller received anything.
-- **Returning mid-sequence** — the normal path on mobile. Must not lose progress or reset to part 1.
-
-Done when: no state on the page asserts something the browser cannot know.
-
----
-
-### Step 8 — Cross-cutting pass
-
-Run every screen produced above against **R1-R5** below. Specifically check: dark mode on all of it; the keyboard on a phone not burying the CTA on `/cotizar` (the form sits above it); focus order through drawer-close, form-reveal, and multi-part send; and every piece of copy in Spanish and consistent with the toast and message wording.
-
-Done when: `pnpm design:lint` passes and no screen has an unhandled dark-mode, focus, or empty state.
-
----
-
-### Step 9 — Package and return
-
-Deliver: the screens per step, the state matrix, and the copy in Spanish as final strings rather than placeholders.
-
-Return with: the **open questions** listed at the end of this section that you resolved, any you could not, and anything marked *decided* that you believe is wrong — with the reasoning. The decisions were made without a designer in the room; disagreement is useful, silent redesign is not.
-
----
 
 ### R1 — Mobile and desktop
 
@@ -526,9 +388,9 @@ Mobile-first. The catalog grid is one column by default and three at `lg` (`Prod
 
 Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved carts across devices, order history, a mini-cart drawer, a separate `/carrito` page, product images, and a quantity field on the single-variant card (deferred, `docs/improvement.md`).
 
-### R6 — Open design questions (the ones Step 9 asks you to return on)
+### R6 — Design decisions and open questions
 
-Struck-through entries are settled and listed only so a decision is not reopened by accident.
+The record of what was decided and why. Struck-through entries are settled, kept so a decision is not reopened by accident; the rest are genuinely open. After running the briefs, bring back anything the designer argued against — these were decided without a designer in the room.
 
 1. ~~Does `internalId` appear in the `/cotizar` line?~~ **Answered 2026-07-31: no.** Message only. Nothing to design.
 

@@ -2,7 +2,7 @@
 
 **For:** an external design agent with no repository access. Everything it needs must arrive as an attachment or as text in the prompt.
 
-**Companion to:** `ai-research/epics/cart-quote-whatsapp.epic.md` (Design Agent Handoff). That section is the source of truth; this file is the operational version — what to attach, and what to paste.
+**Companion to:** `ai-research/epics/cart-quote-whatsapp.epic.md` (Design Agent Handoff). That section holds the surface index, the implementation-facing constraints (`R1`-`R5`), and the decision record (`R6`). This file is how the work actually gets run — what to attach, and what to paste.
 
 ## How To Use This File
 
@@ -490,6 +490,6 @@ comp.
 
 ## After All Four
 
-Bring back to the epic doc: anything the designer flagged as dishonest or unworkable, and any decision in `ai-research/epics/cart-quote-whatsapp.epic.md` (design questions R6) they argued against. Those decisions were made without a designer in the room, so disagreement is signal.
+Bring back to the epic doc: anything the designer flagged as dishonest or unworkable, and any decision in `ai-research/epics/cart-quote-whatsapp.epic.md` (`R6`) they argued against. Those decisions were made without a designer in the room, so disagreement is signal.
 
 Do not start implementation from the designs alone — the acceptance criteria in the epic are the contract, and several of them (validation on rehydrate, the escaping rules, the length cap) have no visual expression at all.
