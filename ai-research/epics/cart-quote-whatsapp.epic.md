@@ -174,6 +174,7 @@ Acceptance criteria:
 
 1. `/cotizar` renders each line with product name, variant (or `Sin variante seleccionada`), quantity, unit price, and line total.
 2. Quantity can be changed and a line removed; both update the store and the persisted state immediately.
+2b. A variant-less line carries an `Elegir medida` action that opens the variants drawer for that product and replaces the line in place with the priced variant line the buyer selects. This is what makes the card's `Agregar y elegir después` label true — without it the promise is never kept and the line reaches the seller unpriced. Removing and re-adding is not an acceptable substitute; the line's position and quantity must survive the upgrade.
 3. The subtotal sums only priced lines, is computed in integer cents, is formatted with `formatNumberToCurrency`, and is labelled so a buyer understands variant-less lines are excluded.
 4. An empty cart shows a Spanish empty state with a route back to the catalog, never a bare `$0.00`.
 5. `generateMetadata` marks the route `noindex, follow`; the route is absent from `sitemap.ts` and is **not** added to `robots.ts` disallow (a `noindex` page must stay crawlable to be read — same reasoning as `?mode=name` in `REPO_CONTEXT.md:67`).
@@ -340,12 +341,12 @@ Surfaces: the PLP grid card (`src/components/ProductCard.tsx`), the variants dra
 
 **Add-to-cart confirmation** — a **shared toast** (recommended), because the drawer closes on add and the card has no host surface. `role="status"`.
 
-- Success — names what was added ("3 variantes agregadas", "Producto agregado sin medida"). Must be reachable by a screen reader, so a live region, not a purely visual flash.
+- Success — names what was added (`3 variantes agregadas`, `Producto agregado, elige la medida después`, `1 pieza agregada` for a single-variant quick add). Must be reachable by a screen reader, so a live region, not a purely visual flash.
 - Already-in-cart — the quantity increments rather than a duplicate line appearing; the confirmation should say so ("Cantidad actualizada").
 
 **Variants drawer footer** — the existing selection count, piece count, and total stay. The CTA becomes functional and **the drawer still closes on add**, so focus must be returned deliberately (the card's trigger button) rather than left on `<body>`. The drawer's own subtotal already exists and should not diverge from the cart's.
 
-**Product card** — two CTAs currently sit side by side with near-identical weight. Once both work they do different things: one opens variant selection and yields a priced line, the other commits an unpriced line the seller must follow up on. Recommendation is to keep `Explorar las N variantes` as the visual primary and demote the other to tertiary with a label naming what it does (`Agregar sin elegir medida` in shape, final copy the designer's). See design question 7 for the full reasoning.
+**Product card** — two CTAs currently sit side by side with near-identical weight. Once both work they do different things: one opens variant selection and yields a priced line, the other commits an unpriced line. Decided 2026-07-31: `Explorar las N variantes` stays the visual primary, the other is demoted to tertiary and labelled **`Agregar y elegir después`**. Single-variant products (`variantCount === 1`) get a different card: **one button, `Elegir cantidad`** — neither of the standard labels makes sense when there is nothing to explore and nothing to elect. See design question 7.
 
 **`/cotizar` — line list**
 
@@ -424,7 +425,7 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 
    **Decided 2026-07-31: one shared toast, plus the badge count as the persistent signal.** Reasons, in order of weight: the drawer **closes on add** (Q7, answered yes), so anything rendered inside it is destroyed at the moment it would be read; the product card has no host surface for an inline message at all; and a toast is one component serving both sites rather than two separate feedback mechanisms. Give it `role="status"` — the drawer already uses that pattern at `ProductVariantsDrawer.tsx:144-145`.
 
-   Copy must name what happened, not just that something did: `3 variantes agregadas`, `Producto agregado sin medida`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before building one — the app has no toast pattern today, and a minimal own component is the fallback, not the first choice.
+   Copy must name what happened, not just that something did: `3 variantes agregadas`, `Producto agregado, elige la medida después`, `1 pieza agregada`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before building one — the app has no toast pattern today, and a minimal own component is the fallback, not the first choice.
 
 4. ~~Does the cart clear after the WhatsApp hand-off?~~ **Answered 2026-07-31: yes.** What still needs designing is *how*: the clear cannot be silent (delivery is unobservable), and in a multi-part quote it may only happen after the last part. An acknowledgement step or a visible undo — pick one and design it.
 
@@ -464,12 +465,33 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
    | `Consultar medidas` | no | no | 17 | **Reject.** Reads as "show me the sizes", which is what the *other* button does. |
    | `Cotizar sin medida` | yes | yes | 18 | **Reject.** `Cotizar` is the final send action on `/cotizar`; reusing the verb here suggests this button sends the quote. |
 
-   **Pick: `Agregar sin medida`.** It matches the toast copy already recommended (`Producto agregado sin medida`) and the message copy (`Sin variante seleccionada`) closely enough that the three read as one flow, which is worth more than any individual phrasing. If accidental taps turn out to be the real problem, `No sé la medida` as a tertiary text link is the stronger deterrent — swap then, on evidence.
+   **Chosen by the user, 2026-07-31: `Agregar y elegir después`.**
+
+   That label makes a promise — that the buyer gets to choose the medida later — and as designed the flow never asks again: the line sits unpriced in `/cotizar` and the seller has to chase it. **Make the product keep the promise instead of softening the label.** A variant-less line on `/cotizar` gets an `Elegir medida` action that opens the variants drawer for that product and upgrades the line in place to a priced one. That is a small addition to Story 2, it turns the weakest lines in the quote into complete ones before the message is ever built, and it makes the card's wording literally true. Recorded as a Story 2 acceptance criterion.
+
+   Toast copy should echo the label rather than the rejected one: `Producto agregado, elige la medida después`. The WhatsApp message keeps `Sin variante seleccionada`, which is the seller's view and should stay blunt.
 
    Two edge cases the label has to survive:
 
-   - **Single-variant products.** 35 of 333 have `hasOneProductVariant`, where the card reads `Explorar la variante`. Offering `Agregar sin medida` beside it is close to nonsense — there is only one medida. Worth considering hiding the degraded CTA entirely when `variantCount === 1`, which also removes the worst accidental-tap case.
-   - **Products with no usable variant data.** Three records currently have `variantCount` null or `0` (`docs/improvement.md:35-39`). There the degraded CTA is the *only* working path, so it cannot be hidden unconditionally on a falsy `variantCount` — distinguish "one variant" from "no variant data".
+   - **Single-variant products** — 35 of 333 have `hasOneProductVariant`. Both current labels break here; see the copy set below.
+   - **Products with no usable variant data.** Three records currently have `variantCount` null or `0` (`docs/improvement.md:35-39`). There `Agregar y elegir después` is the *only* working path, and the promise it makes cannot be kept at all — the drawer has nothing to show. So the CTA cannot be hidden on a falsy `variantCount`, and "one variant" must be distinguished from "no variant data". The real fix is the data (`docs/improvement.md` "Catalog data defects"), not the copy.
+
+   **Single-variant product cards (`hasOneProductVariant`, `variantCount === 1`)**
+
+   Both labels are wrong here, in different ways. `Explorar la variante` invites exploration of a set of one. `Agregar y elegir después` promises a choice that does not exist. And the drawer, for these products, is not a variant picker at all — its only remaining job is **quantity**.
+
+   **Recommendation: one button, `Elegir cantidad`.** Drop the second CTA entirely. There is no degraded path to offer when there is nothing to degrade, and a single primary action on these 35 cards is both simpler to build and impossible to mis-tap.
+
+   If a quick-add path is wanted, the two-button form is:
+
+   | Slot | Copy | Behaviour |
+   |---|---|---|
+   | Primary | `Elegir cantidad` | Opens the drawer, which here is a quantity picker with one row. |
+   | Secondary | `Agregar 1 pieza` | Adds the single variant at quantity 1 — a **complete, priced** line. |
+
+   Note what changes: on a single-variant product the quick action produces a *priced* line, the exact opposite of the multi-variant secondary CTA. The two cards look similar and their second buttons mean opposite things, which is an argument for the one-button version.
+
+   Rejected for this case: `Explorar la variante` (nothing to explore), `Agregar y elegir después` (nothing to elect), `Ver detalle` (no detail page exists), `Agregar al carrito` (the generic label this epic is trying to move away from).
 
 8. ~~Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)?~~ **Answered 2026-07-31: yes, it still closes.** Two consequences: the confirmation must live outside the drawer (see Q3), and **focus must be moved deliberately on close** — back to the card's trigger button is the obvious target. A drawer that closes leaving focus on `<body>` strands keyboard and screen-reader users mid-flow.
 

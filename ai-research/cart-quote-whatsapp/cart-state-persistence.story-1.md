@@ -73,7 +73,7 @@ Surfaces: `src/components/ProductCard.tsx` (footer, two CTAs), `src/features/Pro
 
 - The card has no drawer to host a message. This is the surface with no existing feedback pattern at all, and it needs one.
 
-**Recommended shape for both: one shared toast** with `role="status"`, plus the badge count as the persistent signal. It is the only pattern that serves a closing drawer and a host-less card with a single component. Copy names what happened — `3 variantes agregadas`, `Producto agregado sin medida`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before writing one; a minimal own component is the fallback, not the first choice.
+**Recommended shape for both: one shared toast** with `role="status"`, plus the badge count as the persistent signal. It is the only pattern that serves a closing drawer and a host-less card with a single component. Copy names what happened — `3 variantes agregadas`, `Producto agregado, elige la medida después`, `1 pieza agregada`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before writing one; a minimal own component is the fallback, not the first choice.
 
 **Product card, two CTAs**
 
@@ -116,7 +116,7 @@ The `/cotizar` route, the line list, the subtotal, quantity editing outside the 
 
 1. ~~How is the "added" confirmation presented?~~ **Answered 2026-07-31: one shared toast** with `role="status"`, serving both trigger sites. The only open part is whether HeroUI v3 supplies one or we write a minimal component — check the HeroUI MCP before building.
 2. ~~Does the badge show at zero?~~ **Answered 2026-07-31: yes, showing `0`, bottom-right of the cart control.**
-3. Do the two card CTAs need relabelling or re-weighting now that they diverge? Recommendation: keep `Explorar las N variantes` primary, demote the other to tertiary, label it **`Agregar sin medida`** — it matches the toast (`Producto agregado sin medida`) and the message (`Sin variante seleccionada`) so the three read as one flow. Full copy comparison and two edge cases (single-variant products, products with broken variant data) in epic design question 7.
+3. ~~Do the two card CTAs need relabelling or re-weighting?~~ **Answered 2026-07-31.** `Explorar las N variantes` stays primary; the other is demoted to tertiary and labelled **`Agregar y elegir después`**. **Single-variant products get a different card entirely: one button, `Elegir cantidad`** — this story must branch the card on `variantCount === 1`, and must not confuse that with the three records whose `variantCount` is null or `0`. Full reasoning and the rejected copy in epic design question 7.
 4. ~~Does the drawer still close on add?~~ **Answered 2026-07-31: yes.** Confirmation lives outside the drawer; focus returns to the card's trigger button.
 
 ## Technical Research
