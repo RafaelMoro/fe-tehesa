@@ -59,19 +59,21 @@ Surfaces: `src/components/ProductCard.tsx` (footer, two CTAs), `src/features/Pro
 
 **Header cart badge**
 
-- **Zero / not yet mounted.** The badge is client-state-backed, so it cannot render its count during SSR. It must not cause layout shift when the count appears — reserve the space, or render the control at zero and only the number late.
+- **Zero / not yet mounted.** The badge is client-state-backed, so it cannot render its count during SSR. **Decided 2026-07-31: the badge is always visible, showing `0`, positioned bottom-right of the cart control.** Because it never appears or disappears, layout shift is a non-issue — reserve the space once and let the mounted guard swap `0` for the real count in place.
 - **With count.** A number. Needs a text equivalent — "3" in a circle is not self-describing to a screen reader.
-- **Whether the control is visible at zero is an open question.** Recommendation: yes, so the affordance is discoverable before the first add.
+- `0` must read as *empty*, not as a notification. A filled accent pill at zero looks like an alert.
 
 **Add confirmation (drawer)**
 
 - **Success.** Names what happened: "3 variantes agregadas al carrito". Must be in a live region (`role="status"`), not a purely visual flash.
 - **Increment of an existing line.** The quantity went up rather than a new line appearing. If the copy does not say so, a buyer who adds the same size twice will assume the second add was dropped.
-- The drawer currently closes on this action (`handleClose` at `ProductVariantsDrawer.tsx:230`). Whether it still should is a design decision: closing returns the buyer to the grid to keep shopping; staying open lets them see the confirmation. Recommendation: close, and put the confirmation where it survives the close.
+- **Decided 2026-07-31: the drawer still closes on add** (`handleClose` at `ProductVariantsDrawer.tsx:230`). So the confirmation must live outside it — anything rendered inside is destroyed at the moment it would be read — and focus must be returned deliberately to the card's trigger button, never left on `<body>`.
 
 **Add confirmation (card)**
 
 - The card has no drawer to host a message. This is the surface with no existing feedback pattern at all, and it needs one.
+
+**Recommended shape for both: one shared toast** with `role="status"`, plus the badge count as the persistent signal. It is the only pattern that serves a closing drawer and a host-less card with a single component. Copy names what happened — `3 variantes agregadas`, `Producto agregado sin medida`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before writing one; a minimal own component is the fallback, not the first choice.
 
 **Product card, two CTAs**
 
@@ -112,10 +114,10 @@ The `/cotizar` route, the line list, the subtotal, quantity editing outside the 
 
 ### Unanswered Design Questions
 
-1. How is the "added" confirmation presented, given the app has no toast pattern? The card CTA has no host surface for an inline message.
-2. Does the badge show at zero?
-3. Do the two card CTAs need relabelling or re-weighting now that they diverge?
-4. Does the drawer still close on add?
+1. How is the "added" confirmation presented, given the app has no toast pattern? Recommendation above is one shared toast; the open part is whether HeroUI v3 supplies one or we write a minimal component.
+2. ~~Does the badge show at zero?~~ **Answered 2026-07-31: yes, showing `0`, bottom-right of the cart control.**
+3. Do the two card CTAs need relabelling or re-weighting now that they diverge? Recommendation is to keep `Explorar las N variantes` primary and demote the other to tertiary with a label naming what it does (`Agregar sin elegir medida` in shape). Final copy is open — see epic design question 7 for the reasoning.
+4. ~~Does the drawer still close on add?~~ **Answered 2026-07-31: yes.** Confirmation lives outside the drawer; focus returns to the card's trigger button.
 
 ## Technical Research
 

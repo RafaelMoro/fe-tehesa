@@ -334,17 +334,18 @@ Surfaces: the PLP grid card (`src/components/ProductCard.tsx`), the variants dra
 
 **Header cart badge**
 
-- Empty (no lines) — decide whether the control is hidden or shown at zero. Recommendation: show it, so the affordance is discoverable before the first add.
-- With count — a numeric badge. It renders only after mount, so it must not cause layout shift when it appears.
+- Empty (no lines) — **visible, showing `0`** (decided 2026-07-31). The control is always present, so the affordance is discoverable before the first add.
+- With count — the same badge, different number, positioned bottom-right of the cart control. Because it never appears or disappears there is no layout shift; the mounted guard swaps `0` for the real count in place.
+- `0` must read as empty rather than as a notification — a filled accent pill at zero looks like an alert. The count needs a text equivalent either way.
 
-**Add-to-cart confirmation**
+**Add-to-cart confirmation** — a **shared toast** (recommended), because the drawer closes on add and the card has no host surface. `role="status"`.
 
-- Success — names what was added ("3 variantes agregadas", "Producto agregado sin variante"). Must be reachable by a screen reader, so a live region, not a purely visual flash.
-- Already-in-cart — the quantity increments rather than a duplicate line appearing; the confirmation should say so.
+- Success — names what was added ("3 variantes agregadas", "Producto agregado sin medida"). Must be reachable by a screen reader, so a live region, not a purely visual flash.
+- Already-in-cart — the quantity increments rather than a duplicate line appearing; the confirmation should say so ("Cantidad actualizada").
 
-**Variants drawer footer** — the existing selection count, piece count, and total stay. The CTA becomes functional; the drawer's own subtotal already exists and should not diverge from the cart's.
+**Variants drawer footer** — the existing selection count, piece count, and total stay. The CTA becomes functional and **the drawer still closes on add**, so focus must be returned deliberately (the card's trigger button) rather than left on `<body>`. The drawer's own subtotal already exists and should not diverge from the cart's.
 
-**Product card** — two CTAs currently sit side by side with near-identical weight. Once both work they do different things: one opens variant selection, one adds a variant-less line the seller has to follow up on. The design needs to make that difference legible; today the labels do not.
+**Product card** — two CTAs currently sit side by side with near-identical weight. Once both work they do different things: one opens variant selection and yields a priced line, the other commits an unpriced line the seller must follow up on. Recommendation is to keep `Explorar las N variantes` as the visual primary and demote the other to tertiary with a label naming what it does (`Agregar sin elegir medida` in shape, final copy the designer's). See design question 7 for the full reasoning.
 
 **`/cotizar` — line list**
 
@@ -416,14 +417,43 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 ### Unanswered Design Questions
 
 1. ~~Does `internalId` appear in the `/cotizar` line?~~ **Answered 2026-07-31: no.** Message only. Nothing to design.
-2. Header badge at zero: visible or hidden?
-3. Add confirmation: inline in the drawer, a toast, or a badge animation? HeroUI v3's available surfaces should decide this — the app has no toast pattern today.
+
+2. ~~Header badge at zero: visible or hidden?~~ **Answered 2026-07-31: visible, showing `0`.** The count sits at the bottom-right of the cart control. So the affordance is discoverable before the first add, and the badge never appears or disappears — it only changes number. That removes the layout-shift concern entirely: reserve the space once and the mounted-guard swaps `0` for the real count with nothing moving. Design note: `0` must read as *empty*, not as a notification — a filled accent pill at zero looks like an alert. Also needs a text equivalent, since "0" in a circle is not self-describing.
+
+3. Add confirmation: inline in the drawer, a toast, or a badge animation? **Clarification (asked 2026-07-31): confirmation of the add-to-cart action itself** — the feedback shown after the buyer presses `Agregar al carrito`, from either surface. Two trigger sites: the drawer (one or more variants, with quantities) and the product card (a single variant-less line). It also has to cover the increment case, where an existing line's quantity goes up rather than a new line appearing.
+
+   **Recommendation: one shared toast, plus the badge count as the persistent signal.** Reasons, in order of weight: the drawer **closes on add** (Q7, answered yes), so anything rendered inside it is destroyed at the moment it would be read; the product card has no host surface for an inline message at all; and a toast is one component serving both sites rather than two separate feedback mechanisms. Give it `role="status"` — the drawer already uses that pattern at `ProductVariantsDrawer.tsx:144-145`.
+
+   Copy must name what happened, not just that something did: `3 variantes agregadas`, `Producto agregado sin medida`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before building one — the app has no toast pattern today, and a minimal own component is the fallback, not the first choice.
+
 4. ~~Does the cart clear after the WhatsApp hand-off?~~ **Answered 2026-07-31: yes.** What still needs designing is *how*: the clear cannot be silent (delivery is unobservable), and in a multi-part quote it may only happen after the last part. An acknowledgement step or a visible undo — pick one and design it.
-4b. How does the saved-details summary read? The form is hidden once details are saved (Persistence II), so this summary is what a returning buyer sees instead — it has to make clear *which* details will be sent, offer *usar otros datos*, and offer *olvidar mis datos*, without turning into three competing controls above the primary CTA. This is the only PII-bearing surface in the app.
-5. How prominent should the "this is a quote, not an order" framing be, and where does it live? Note the card's `Agregar al carrito` label already implies an order on a surface that has nothing to do with `/cotizar`.
-6. Do the two product-card CTAs need relabelling or re-weighting now that they diverge? (Carried up from the Story 1 handoff, where it is the main visual problem.)
-7. Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)? Closing returns the buyer to the grid; staying open lets them see the confirmation. (Carried up from the Story 1 handoff.)
-6. ~~Where do `measurementUnit` and `packageQuantity` sit in a cart line?~~ **Answered 2026-07-31: they are not used.** Quantities are pieces throughout, matching the drawer's existing `N piezas`. Nothing to design.
+
+5. How does the saved-details summary read? The form is hidden once details are saved (Persistence II), so this summary is what a returning buyer sees instead — it has to make clear *which* details will be sent, offer *usar otros datos*, and offer *olvidar mis datos*, without turning into three competing controls above the primary CTA. This is the only PII-bearing surface in the app.
+
+6. How prominent should the "this is a quote, not an order" framing be, and where does it live?
+
+   **Recommendation: minimal, and anchored to the money rather than to the page.** The framing is already carried by the vocabulary — the route is `/cotizar`, the primary CTA says `Cotizar`, the message header says `Solicitud de cotización`. Adding a banner on top of that is belt-and-braces for a buyer who was never confused.
+
+   Where it genuinely matters is **beside the subtotal**, because `$1,234.50 MXN` is the one element on the page that reads as a price to pay regardless of surrounding copy. Two things there, both already required for other reasons: the label says `Subtotal estimado (líneas con precio)`, and one line of supporting text — *"Precios de referencia. El vendedor confirma disponibilidad y precio final."* That single line does the whole job.
+
+   Second place, free: the `/cotizar` heading is `Solicitar cotización`, not `Carrito` or `Checkout`.
+
+   Explicitly **not** recommended: a callout banner at the top of `/cotizar`, any framing on the PLP grid or cards (noise across 50 cards, and the buyer has committed to nothing yet), and a confirmation dialog before `Cotizar`.
+
+7. Do the two product-card CTAs need relabelling or re-weighting now that they diverge? **Asked 2026-07-31: why would they?** Because convention now points at the wrong button.
+
+   Today the card footer holds `Agregar al carrito` (secondary) and `Explorar las N variantes` (primary), side by side at near-equal weight. Once both are wired they do materially different things:
+
+   - `Explorar las N variantes` → the buyer picks a size and a quantity and gets a **priced** line the seller can quote directly.
+   - `Agregar al carrito` → commits a line with **no variant and no price**, which the message marks `Sin variante seleccionada` and which is excluded from the subtotal. It guarantees a follow-up round of questions — the exact thing this epic exists to eliminate.
+
+   The problem is not that `Agregar al carrito` is a poor label in isolation. It is that it is the *conventional* label for the main path in every store the buyer has ever used, and here it is the degraded path. A buyer who taps it expecting normal add-to-cart behaviour produces a worse quote and gets no signal that they did.
+
+   **Recommendation: re-weight, and relabel only the degraded action.** Keep `Explorar las N variantes` as the visual primary; demote the other to tertiary and label it for what it actually does — something in the shape of `Agregar sin elegir medida`. Final copy is the designer's call; the constraint to hand them is that the label must not read as the default action.
+
+8. ~~Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)?~~ **Answered 2026-07-31: yes, it still closes.** Two consequences: the confirmation must live outside the drawer (see Q3), and **focus must be moved deliberately on close** — back to the card's trigger button is the obvious target. A drawer that closes leaving focus on `<body>` strands keyboard and screen-reader users mid-flow.
+
+9. ~~Where do `measurementUnit` and `packageQuantity` sit in a cart line?~~ **Answered 2026-07-31: they are not used.** Quantities are pieces throughout, matching the drawer's existing `N piezas`. Nothing to design.
 
 ## Open Questions
 
