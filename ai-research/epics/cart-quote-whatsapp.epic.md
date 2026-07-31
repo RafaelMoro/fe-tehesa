@@ -328,6 +328,8 @@ Acceptance criteria:
 
 ### How To Use This Brief
 
+**If you are handing this to an external design agent** (one with no repository access, fed screenshots and `DESIGN.md` by hand), use **`ai-research/cart-quote-whatsapp/design-agent-briefs.md`** instead. It turns this section into four copy-pasteable prompts plus a list of exactly which screenshots to capture. This section remains the source of truth those prompts were written from.
+
 Nine steps, in order. Each one names what to produce and what "done" means. Steps 1-3 fully specify Story 1 and can start immediately — **that is a legitimate stopping point**; hand back and let implementation begin rather than waiting for the whole epic to be designed. Steps 4-7 track Stories 2, 3, and 4 and can follow later.
 
 The reference sections at the end (**R1**-**R5**) are constraints that apply to every step. Read them once at Step 0 and consult them throughout; they are not a final checklist.
