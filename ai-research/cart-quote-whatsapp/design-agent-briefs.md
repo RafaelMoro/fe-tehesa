@@ -256,9 +256,13 @@ themes, plus your recommendation on toast duration and stacking behaviour.
 
 ---
 
-## Brief 3 — The Quote Page: Line List, Subtotal, And Line States
+## Brief 3 — The Quote Page: Line List, Subtotal, And Line States ✅ DONE (2026-07-31)
 
 Covers Stories 2 and 3. The largest brief, and the first entirely new screen.
+
+**Output:** `comps/*brief-3*` — normal state and all seven line states, desktop and mobile, light and dark. All four rejection criteria passed. What the comps settle, and three cross-brief inconsistencies to resolve before implementing, are recorded in `ai-research/epics/cart-quote-whatsapp.epic.md` → "What The Brief 3 Comps Settle".
+
+**Lesson for Brief 4:** Brief 3 re-rendered the header, which Brief 2 had already designed differently. When a brief's screen contains a surface an earlier brief owns, attach that brief's output and say explicitly that it is fixed and must be reproduced, not redesigned.
 
 ### Attach
 
@@ -376,7 +380,8 @@ Covers Story 4. The hardest brief, because it contains the one state that is eas
 ### Attach
 
 - `DESIGN.md`
-- **Brief 3's output** (the quote page design — this brief sits below it)
+- **Brief 3's output** (`comps/*brief-3*` — the quote page design; this brief sits below it)
+- **Brief 2's header comps** (`comps/*header-brief-2*`) — state in the prompt that the header is already designed, is fixed, and must be reproduced rather than reinterpreted. Brief 3 redesigned it by accident.
 - S2 (phone-width catalog, for scale reference)
 
 ### Prompt

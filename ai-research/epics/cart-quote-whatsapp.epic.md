@@ -342,8 +342,8 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | **2 — designed, comps in `comps/`** |
 | Add-confirmation toast | new, shared | 4 messages incl. the increment case | 1 | **2 — messages designed; placement, duration, stacking still open** |
 | Variants drawer footer | `src/features/ProductVariantsDrawer/` | Unchanged visually; CTA works, drawer still closes, focus returns | 1 | 2 |
-| `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | 3 |
-| `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | 3 |
+| `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | **3 — designed, comps in `comps/`** |
+| `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | **3 — designed, comps in `comps/`** |
 | `/cotizar` contact block | new route | No saved details, saved (no form), editing | 4 | 4 |
 | `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | 4 |
 | `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | 4 |
@@ -359,6 +359,31 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | `comps/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
 | `comps/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
 | `comps/share-toast-brief-2.png` | The four toast messages, light and dark |
+| `comps/desktop-{light,dark}-normal-state-brief-3.png` | `/cotizar` in its normal state at 1440px |
+| `comps/desktop-seven-state-{1,2}-brief-3.png`, `comps/desktop-seven-state-dark-1-brief-3.png` | The seven line states at 1440px, light and dark |
+| `comps/mobile-brief-3.png` | `/cotizar` normal state at 390px, light and dark |
+| `comps/mobile-seven-state-{1,2,3}-brief-3.png` | The seven line states at 390px |
+
+### What The Brief 3 Comps Settle (Stories 2 and 3)
+
+All four rejection criteria passed. Build against the comps rather than re-deriving from prose.
+
+- **Heading `Solicitar cotización`**, subtitle `Revisa productos, medidas y cantidades.`, with `N productos · N piezas` repeated at the top and beside the subtotal.
+- **Subtotal** is `Subtotal estimado (líneas con precio)` with `Precios de referencia. El vendedor confirma disponibilidad y precio final.` directly beneath. No banner anywhere — the framing is carried entirely by the heading, this label, and the CTA wording, as decided.
+- **The no-size line is tinted** and carries `Sin variante seleccionada`, `Sin precio por ahora` / `El precio depende de la medida.`, a **filled primary `Elegir medida`**, and a text `Quitar`. Making it the only tinted row is what stops it being overlooked, and giving `Elegir medida` primary weight is what makes the card's `Agregar y elegir después` promise land.
+- **Every state block is annotated with its subtotal contract** — `incluida`, `excluida`, `cuenta el actual`, `no bloquea`, `precios guardados`, `sin subtotal`. That annotation set is the acceptance criteria written in the design; keep it as the test matrix.
+- **State 4 is split into two causes** with different actions: variant gone → `Elegir otra medida`; product gone → `Buscar alternativa`. The brief asked for distinct treatment and this is the right resolution of it.
+- **State 6 gained a `Reintentar` action** that the brief did not request. Keep it — a transient Strapi failure otherwise forces a page reload.
+- **Price-changed** shows the old value struck beside the new one and relabels the column `TOTAL ACTUAL`. The comp's arithmetic is internally consistent throughout, including the piece and product counts.
+- **Empty state** is `Tu lista está vacía` plus `Volver al catálogo`. No `$0.00` anywhere.
+
+Three things to resolve before implementing, none of which is a comp defect:
+
+1. **The header control diverges between Brief 2 and Brief 3.** Brief 2 designed an icon-only 44×44 cart control with a count capsule; Brief 3 renders it on desktop as a labelled pill, `☰ Mi solicitud (3)`, and icon-only on mobile. Both cannot ship. The labelled desktop form is arguably better — it names the destination — but it changes the 44×44 reservation that closed the layout-shift problem. Pick one and apply it to `Header.tsx` once.
+2. **The quantity control diverges from the drawer.** `/cotizar` uses a `−  n  +` stepper; `ProductVariantsDrawer.tsx:204` uses a bare `<input type="number">`. Two quantity controls in one flow is a real inconsistency. Cheapest resolution is to adopt the stepper in both, which also removes the drawer's empty-string edge case.
+3. **Settle the noun.** The comps use `Mi solicitud`, `Tu lista`, and `cotización` for what is arguably one thing. The split is defensible — *lista* for the collection, *solicitud/cotización* for the act — but it should be a stated rule rather than an accident, because the toast, the header, the page, and the WhatsApp message all have to agree.
+
+Not showable in a comp, required at build time: accessible names on every stepper button and `Quitar` naming their line; `Comprobando precios…` as `role="status"`; `No pudimos comprobar los precios.` as `role="alert"`.
 
 Three rules that override any design instinct to the contrary, repeated here because every story touches at least one:
 
