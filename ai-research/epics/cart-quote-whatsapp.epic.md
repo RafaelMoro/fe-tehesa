@@ -26,7 +26,7 @@ This epic is the one `docs/improvement.md` ("Cart feature follow-up", lines 78-8
 
 This is an epic, not a single story. It spans new client state with persistence, two inert CTAs in two components, a new route, a contact form, an external deep-link integration, a revalidation pass against Strapi, and an extension to a signed-off analytics contract.
 
-Five independently deliverable stories, defined below. Story 1 is researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`.
+Five independently deliverable stories plus one timeboxed spike, defined below. Story 1 is researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Spike 4S prices the WhatsApp delivery mechanisms and gates Story 4; it runs in parallel with Stories 1-3.
 
 ### Epic Acceptance Criteria
 
@@ -86,6 +86,8 @@ Named upgrade path, deliberately not taken now: a tiny non-`httpOnly` `tehesa-ca
 ### Decision 3: WhatsApp payload — `wa.me` deep link, SKU-first compact format
 
 **Mechanism:** a client-built `https://wa.me/<E.164 digits>?text=<encodeURIComponent(message)>` link. No backend, no new route, no Strapi write — matching the "WhatsApp only" answer.
+
+This is the free, zero-backend option, chosen as the v1 default. It has **not** been compared on cost against the WhatsApp Cloud API or a BSP — **Spike 4S** does that before Story 4 is planned, and everything below (length budget, batching, unobservable delivery) is a consequence of this mechanism, not of WhatsApp in general.
 
 **Render it as a real `<a>` anchor, not `window.open()`.** An anchor is not popup-blocked, survives iOS Safari (where `window.open` after an `await` is blocked), and supports long-press / middle-click. When the form is incomplete, render a non-focusable `<span aria-disabled="true">` instead — the same disabled-control pattern `Home.tsx:364-372` already uses for pagination. This also means the URL must be derivable synchronously from current state.
 
@@ -191,9 +193,44 @@ Must-have notes:
 - Match by variant `documentId`, never by `internalId` — the latter is non-unique (Strapi Contract I) and would silently collide.
 - Validate the id list at the route boundary the way every other catalog param is validated: each id against `DOCUMENT_ID_PATTERN` and `DOCUMENT_ID_MAX_LENGTH`, plus a cap on list length. The ids come from `localStorage`, which is user-writable.
 
+### Spike 4S: WhatsApp Delivery Mechanisms — Options, Cost, And Tier
+
+**Timebox: one day. Output is a written recommendation appended to this epic, not code.** Runs before Story 4 is planned, in parallel with Stories 1-3, which do not depend on it.
+
+Everything in Decision 3 — the click-to-chat deep link, the length budget, the batching, the "we cannot observe delivery" constraint — follows from choosing the *free, zero-backend* delivery mechanism. That was the right default to research against, but it was never compared against the paid options on cost. This spike closes that gap before we build a message pipeline we might replace.
+
+**The question that decides everything else: does a programmatic API even fit the direction of this flow?** Click-to-chat is buyer→seller: the buyer's own WhatsApp sends the message, which is why it costs nothing and needs no opt-in. A programmatic API is business→customer: our system sends. Those are not substitutes, and a naive swap changes who is talking to whom. Answer this first — if the API cannot deliver a buyer's quote to a seller without an opt-in the buyer has not given, the remaining cost questions are moot.
+
+Mechanisms to price and compare:
+
+| Mechanism | What to establish |
+|---|---|
+| `wa.me` click-to-chat (current choice) | Baseline. Free, no Meta account, no approval, no backend. Costs: URL length, manual send, no delivery signal, no server-side record. |
+| WhatsApp Business **app** (seller side) | Not a delivery mechanism for us, but it is probably what the seller already uses. Establish whether it is in play, because the next row may force them off their current number. |
+| WhatsApp **Cloud API** (Meta-hosted) | The real alternative. Establish: per-message vs per-conversation pricing under the current model; **Mexico** rates specifically (pricing is per-country); which categories (utility / marketing / authentication / service) our messages fall into; what is free and up to what volume; template pre-approval requirements and turnaround. |
+| Business Solution Providers (Twilio, 360dialog, Infobip, Gupshup, Wati, …) | Markup over Meta's rate plus a monthly platform fee, against what they add — hosted inbox, CRM, multi-agent, analytics. For a seller with no CRM this may be the actual product being bought. |
+| On-Premises API | Expected to be dead — verify sunset status and dismiss in one line if so. |
+
+Non-price questions that have killed this kind of migration before, and must be answered:
+
+- **Does the API require a phone number dedicated to it, one that can no longer be used in the WhatsApp Business app?** If Tehesa's seller answers customers on that number today, this is an operational cost far larger than the per-message rate.
+- **Business verification**: what Meta requires, how long it takes, and who at Tehesa owns it.
+- **The 24-hour customer service window** and what it permits without a pre-approved template.
+- **Opt-in**: whose consent is needed, captured where, and stored how — this touches the contact form in Story 4 and Mexican data-protection expectations.
+- **What we would gain**: a real delivery receipt, a server-side quote record, no length budget (the Cloud API documents a 4096-character body, and no URL is involved, which removes batching entirely), and structured payloads instead of formatted prose.
+- **What we would take on**: a backend, secrets that cannot be `NEXT_PUBLIC_`, a webhook endpoint, and a recurring bill — none of which exist in this repo today.
+
+Deliverable: a table of mechanism × monthly cost at a realistic quote volume (ask the business for an estimate; 50 and 500 quotes/month are reasonable brackets to price), plus a recommendation of *stay on click-to-chat* or *migrate, in this story*.
+
+**Verify every figure at the source.** WhatsApp pricing has changed model more than once — conversation-based to per-message, with categories moving in and out of free — and any number quoted from memory or from a BSP's marketing page is unreliable. Cite Meta's own pricing documentation, dated, with the Mexico rate.
+
+Expected outcome, stated so the spike can disprove it: click-to-chat stays for v1. It is free, ships without a backend, and matches a flow the buyer initiates. The spike exists to put a number on what we are declining and to catch the case where the free path is a false economy — for example, if losing every quote that a buyer abandons mid-batch turns out to cost more in lost sales than the API does.
+
 ### Story 4: Contact Form And The WhatsApp `Cotizar` CTA
 
 Description: Name, last name, and email inputs, plus the message builder and the deep link.
+
+**Gated on Spike 4S.** These acceptance criteria assume click-to-chat. If the spike recommends the Cloud API, AC 5 and AC 6 (length budget, batched sends) disappear entirely and this story grows a backend — re-plan rather than patch.
 
 Acceptance criteria:
 
@@ -506,9 +543,9 @@ Explanation: jsdom provides `localStorage`, so store round-trips, version migrat
 
 ## Research Outcome
 
-The epic is broken into five independently deliverable stories. The three decisions the user asked for are settled with reasoning: a single `/cotizar` route, `localStorage` via `zustand/persist`, and a SKU-first `wa.me` deep link with escaping and a measured length budget that splits into batched sends rather than truncating.
+The epic is broken into five independently deliverable stories plus one timeboxed spike. The three decisions the user asked for are settled with reasoning: a single `/cotizar` route, `localStorage` via `zustand/persist`, and a SKU-first `wa.me` deep link with escaping and a measured length budget that splits into batched sends rather than truncating.
 
-Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Stories 2, 3, and 5 are unblocked — the Strapi contract questions were answered on 2026-07-30 and made Story 3 *smaller* than assumed (one batched query rather than a per-product fan-out). **Story 4 is hard-blocked on the WhatsApp number**, which does not exist anywhere in this repo.
+Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Stories 2, 3, and 5 are unblocked — the Strapi contract questions were answered on 2026-07-30 and made Story 3 *smaller* than assumed (one batched query rather than a per-product fan-out). **Story 4 is hard-blocked on the WhatsApp number**, which does not exist anywhere in this repo, and additionally gated on **Spike 4S**, which prices click-to-chat against the Cloud API and the BSPs before we commit to a message pipeline. The spike can be run today; it needs no code and no unblocking.
 
 The one finding that changes the design rather than the estimate: `internalId` is optional and non-unique in Strapi, so it is display text, not a key. Every story treats the variant's `documentId` as the identity.
 
