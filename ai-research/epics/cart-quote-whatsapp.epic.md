@@ -139,7 +139,9 @@ Escaping, cents arithmetic, and the `internalId` fallback apply identically to e
 
 **Money arithmetic:** accumulate the subtotal in integer cents (`Math.round(price * 100)`) and divide once at the end. Float accumulation across 25 lines drifts visibly, and this number is shown to a buyer and sent to a seller. Format with the existing `formatNumberToCurrency` (`$1,234.50 MXN`) — do not format cart totals separately.
 
-**Blocking configuration:** the destination number does not exist anywhere in this repo (confirmed by grep, and by `docs/improvement.md:67`). It needs a new `NEXT_PUBLIC_WHATSAPP_NUMBER` — `NEXT_PUBLIC_` because the link is built client-side — holding E.164 digits with no `+` and no separators. When unset, the CTA must render disabled with an explanatory message; it must never produce `wa.me/undefined`. Same missing business data blocks the deferred `LocalBusiness` JSON-LD in `docs/improvement.md:62-70`; one answer unblocks both.
+**Configuration (resolved 2026-07-31):** `NEXT_PUBLIC_WHATSAPP_NUMBER=522224417330` — the number is `222 441 7330` (Puebla), and `NEXT_PUBLIC_` because the link is built client-side. Verify the `521…` mobile variant once before fixing it (see WhatsApp I). When the variable is unset the CTA must still render disabled with an explanatory message; it must never produce `wa.me/undefined`.
+
+**Length cap:** `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`, applied to the whole URL including the ~32-character base, not just the `text` parameter. Provisional pending device measurement (WhatsApp IV) but safe to ship — the failure modes are asymmetric, and an over-cautious cap costs one extra message while an over-generous one silently truncates a quote.
 
 ## Epic Structure
 
@@ -155,6 +157,7 @@ Acceptance criteria:
 4. The card CTA adds a single product-level line with no variant, which is displayed and messaged as `Sin variante seleccionada` and contributes no price.
 5. Adding the same variant twice increments the existing line's quantity instead of creating a duplicate; the drawer's index-keyed selection state is re-keyed by the variant's `documentId`.
 6. A header cart badge shows the total line count, renders only after mount, and links to `/cotizar`.
+7. The persisted state has two independently clearable slices: the cart lines and the buyer's contact details (name, last name, email). Both are validated on rehydrate; the contact slice survives the post-hand-off cart clear. The form that writes it lands in Story 4 — only the store shape and its validation belong here.
 
 Must-have notes:
 
@@ -234,13 +237,15 @@ Description: Name, last name, and email inputs, plus the message builder and the
 
 Acceptance criteria:
 
-1. Name, last name, and email are captured with native HTML validation plus a length cap and an email pattern check; no form library is added.
+1. Name, last name, and email are captured with native HTML validation plus a length cap and an email pattern check; no form library is added. The fields prefill from the persisted contact details when present, and whatever they hold at submit becomes the new persisted values.
+1b. A visible, reversible "remembered details" affordance lets the buyer wipe their stored contact details without clearing browser storage. The contact slice clears independently of the cart — the cart clears after hand-off (UI III), the contact details survive.
 2. Every value interpolated into the message — product names from Strapi and form values from the buyer — is stripped of newlines, control characters, and WhatsApp markdown characters before interpolation.
 3. The message contains, per line, the `internalId`, product name, variant, quantity, unit price, and line total; plus the buyer's details, the subtotal, and a short quote reference.
 4. The CTA is a real anchor when the form is valid and a non-focusable `aria-disabled` span when it is not, and it is disabled with an explanatory message when `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset.
 5. The encoded URL length is measured against the safe bound; on overflow the quote is split across several messages on cart-line boundaries rather than being truncated by the browser. Part 1 carries the quote reference, contact details, line count, and subtotal; every part carries `Parte N de M` and the same reference; line numbering is continuous across parts.
 6. When there is more than one part, the UI presents them in order, marks each as *opened* (never as *sent* — delivery is unobservable), and keeps every part re-sendable. A one-part quote renders a single CTA with no stepper.
-7. The message builder is a pure function `buildQuoteMessages(lines, contact): string[]` under `src/shared/utils/`, unit-tested against escaping, empty-variant lines, subtotal exclusion, a one-part cart, and a cart that forces a split (asserting the split lands on a line boundary and that part 1 alone contains the contact details and subtotal).
+7. The message builder is a pure function `buildQuoteMessages(lines, contact): string[]` under `src/shared/utils/`, unit-tested against escaping, empty-variant lines, subtotal exclusion, a one-part cart, and a cart that forces a split (asserting the split lands on a line boundary and that part 1 alone contains the contact details and subtotal). The split threshold is `WHATSAPP_URL_MAX_ENCODED_LENGTH` (1800) measured on the full URL.
+8. The cart clears after the hand-off, but only once the **last** part of a multi-part quote has been opened, and never silently — an explicit acknowledgement or an immediately available undo, since the browser cannot observe whether anything was actually sent.
 
 ### Story 5: Analytics Contract Extension For The Cart Funnel
 
@@ -398,11 +403,14 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 
 ### Unanswered Design Questions
 
-1. Does `internalId` appear in the `/cotizar` line, or only in the WhatsApp message? Showing it helps a buyer who already speaks in SKUs; it also exposes an internal reference that has been deliberately hidden until now.
+1. ~~Does `internalId` appear in the `/cotizar` line?~~ **Answered 2026-07-31: no.** Message only. Nothing to design.
 2. Header badge at zero: visible or hidden?
 3. Add confirmation: inline in the drawer, a toast, or a badge animation? HeroUI v3's available surfaces should decide this — the app has no toast pattern today.
-4. Does the cart clear after the WhatsApp hand-off? (Recommendation above: no, with an explicit reset action.)
-5. How prominent should the "this is a quote, not an order" framing be, and where does it live?
+4. ~~Does the cart clear after the WhatsApp hand-off?~~ **Answered 2026-07-31: yes.** What still needs designing is *how*: the clear cannot be silent (delivery is unobservable), and in a multi-part quote it may only happen after the last part. An acknowledgement step or a visible undo — pick one and design it.
+4b. How are the buyer's remembered contact details surfaced? They now persist across visits, so the form prefills, and there must be a visible, reversible way to wipe them. This is the only PII-bearing state in the app.
+5. How prominent should the "this is a quote, not an order" framing be, and where does it live? Note the card's `Agregar al carrito` label already implies an order on a surface that has nothing to do with `/cotizar`.
+6. Do the two product-card CTAs need relabelling or re-weighting now that they diverge? (Carried up from the Story 1 handoff, where it is the main visual problem.)
+7. Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)? Closing returns the buyer to the grid; staying open lets them see the confirmation. (Carried up from the Story 1 handoff.)
 6. If `measurementUnit` and `packageQuantity` turn out to be populated (Strapi Contract V), where do they sit in a cart line? "3 pz" and "3 cajas de 100 pz" are different quotes, and today the drawer only ever says "piezas".
 
 ## Open Questions
@@ -422,12 +430,17 @@ Context: Answered by the user on 2026-07-30.
 Explanation: This makes `CartLine` a two-case union, excludes those lines from the subtotal, and requires distinct copy in both the `/cotizar` line and the WhatsApp message. It also means the two card CTAs now do materially different things behind near-identical labels — a design problem flagged in the handoff.
 
 III: Question: Does the cart clear after the WhatsApp hand-off?
-Status: pending
-Explanation: Recommendation is no — the hand-off can fail (WhatsApp not installed, wrong account, tab closed) and clearing would destroy the buyer's list with no recovery. Offer an explicit "empezar una nueva cotización" instead. Needs a product yes/no.
+Status: **answered by the user, 2026-07-31 — yes, the cart clears.** Recovery is deferred and noted in `docs/improvement.md` "Cart feature follow-up".
+Context: This overrides the recommendation not to clear. The recovery concern stands but is accepted as follow-up rather than v1 scope.
+Explanation: Two constraints this decision inherits, neither of them optional:
+
+- **In a multi-part quote, clearing may only happen after the *last* part is opened.** Parts 2..N are built from the cart; clearing on the first hand-off makes the rest unbuildable and strands the seller with a partial quote they were told to expect more of. See "Decision 3 → Overflow".
+- **The hand-off is unobservable.** Clicking the anchor means *opened*, not *delivered* — WhatsApp may not be installed, the buyer may back out without sending. So the clear must not be silent: it needs an explicit acknowledgement step or an immediately visible undo, because otherwise a buyer who backs out returns to an empty cart with no idea why. The follow-up note in `docs/improvement.md` covers a durable "restaurar última cotización"; v1 needs at minimum the non-silent version.
 
 IV: Question: Should `internalId` be visible in the `/cotizar` UI, or only in the WhatsApp message?
-Status: pending
-Context: Story 3 decided it is not user-facing anywhere (`plp-product-detail-signals.story3.md`, UI V). The WhatsApp message changes that for the seller-facing channel only.
+Status: **answered by the user, 2026-07-31 — no.** It stays out of the `/cotizar` UI and appears only in the WhatsApp message.
+Context: Story 3 decided it is not user-facing anywhere (`plp-product-detail-signals.story3.md`, UI V). This keeps that decision intact for the buyer-facing surface and changes it only for the seller-facing channel.
+Explanation: The `Sin clave interna` fallback is therefore needed only in the message builder, not in any component. One fewer missing-value state to design.
 
 ### Persistence
 
@@ -438,24 +451,95 @@ Context: Full comparison in "Decision 2" above.
 Explanation: No new dependency, no per-request payload, no 4 KB ceiling, and a cart cookie could not stay `httpOnly` so it would be strictly worse than `localStorage`. The hydration flash is handled by the mounted-guard pattern already in `Header.tsx`.
 
 II: Question: Are the buyer's name, last name, and email persisted alongside the cart?
-Status: pending
-Explanation: Recommendation is yes, in the same store — a repeat buyer should not retype them, and the data stays on their own device. It does mean PII sits in `localStorage`, so it needs an explicit call rather than a default.
+Status: **answered by the user, 2026-07-31 — yes, persisted.** On completing the quote the buyer is asked whether to keep the same details or change them; if changed, the new values become the persisted ones.
+Context: PII in `localStorage`, on the buyer's own device, never transmitted anywhere except into the WhatsApp message the buyer themselves sends.
+Explanation: Behaviour this implies:
+
+- The contact form prefills from persisted values on every subsequent visit, so a repeat buyer never retypes.
+- At hand-off, an explicit control offers *keep these details* or *use different details*. Whatever the form holds at submit is what gets written — editing the fields and sending is itself the "change" path; the control exists so the buyer knows their details are being remembered.
+- **The contact block must clear independently of the cart.** UI III clears the cart after hand-off; the contact details deliberately survive that. Two persisted slices, one lifecycle each.
+- The same validate-on-rehydrate rule as the cart applies — these strings flow into an outbound message, so they are a trust boundary on the way back in as much as on the way out. Length caps and an email shape check on rehydrate, drop rather than repair.
+- **Never sent to analytics.** Story 5 AC 3 already states this; the redaction in `ANALYTICS_EVENT_CONTRACT.md:75` is a backstop, not the control.
+- Design consequence: "remembered" state needs to be visible and reversible. A buyer must be able to find and wipe their own details without clearing browser storage — a plain "olvidar mis datos" is enough.
 
 III: Question: Does the cart expire?
-Status: pending
-Explanation: Recommendation is no explicit expiry, since Story 3's revalidation makes staleness visible rather than silent. If product wants one, a stored timestamp plus a check on rehydrate is a few lines — but it silently destroys a cart the buyer built, which is why it is not the default.
+Status: **answered by the user, 2026-07-31 — no explicit expiry.** Staleness is handled by revalidation: when prices have changed we take the new prices and tell the buyer.
+Context: The answer given describes the revalidation behaviour, which is already Story 3's design (Decision on stale prices, 2026-07-30). Recording it here as: no timestamp, no expiry check on rehydrate.
+Explanation: This is the safer combination anyway — an expiry silently destroys a cart the buyer built, whereas revalidation makes staleness visible at exactly the moment it matters. Note that with no expiry, a cart can be arbitrarily old, so Story 3's "variant no longer exists" state is not an edge case to hand-wave; it is the normal outcome for a cart left for months.
 
 ### WhatsApp Integration
 
 I: Question: What is the destination WhatsApp number?
-Status: pending — **blocks Story 4**
-Context: No phone number, WhatsApp number, address, or business identity exists anywhere in this repo (grep over `src/` and `DESIGN.md`; confirmed in `docs/improvement.md:67`).
-Explanation: Needs `NEXT_PUBLIC_WHATSAPP_NUMBER` in E.164 digits, no `+`, no separators. Also decide whether it is a single number or routed per category/brand. The same missing business data blocks the deferred `LocalBusiness` JSON-LD, so one answer unblocks both.
+Status: **answered by the user, 2026-07-31 — `222 441 7330`** (Puebla, area code 222). **Story 4 is no longer hard-blocked.**
+Context: This was the last piece of business data missing for this epic. It also partly unblocks the deferred `LocalBusiness` JSON-LD in `docs/improvement.md:62-70`, which still needs the legal name, address, and hours.
+Explanation:
+
+- **Value to configure:** `NEXT_PUBLIC_WHATSAPP_NUMBER=522224417330` — country code `52` plus the ten national digits, no `+`, no spaces.
+- **Verify the `521` variant before fixing this.** Mexican mobile numbers historically required an extra `1` after the country code on WhatsApp (`521…`), and the two forms are not interchangeable everywhere. Open `https://wa.me/522224417330` once; if it does not resolve to the right chat, use `5212224417330`. This is a 30-second check and it is the difference between a working CTA and a dead one.
+- **The number must be registered on WhatsApp** (personal, Business app, or Business Platform). A landline that has never been registered produces a valid-looking link that goes nowhere.
+- **It becomes fully public.** `NEXT_PUBLIC_` values are compiled into the client bundle, and the link exposes it in the DOM. That is inherent to click-to-chat, not a leak — but it should be a number the business is content to publish. Note that Spike 4S may require a *different, dedicated* number if the Cloud API is chosen, since an API number cannot also run in the WhatsApp Business app.
+- **Single number, not routed per category or brand.** Nothing in the current data model carries a seller-per-category mapping, and inventing one is out of scope.
 
 II: Question: Is the exact Spanish message wording approved?
-Status: pending
-Context: A draft shape is proposed in "Decision 3". It has not been reviewed by whoever will actually read these messages.
-Explanation: The seller reading these every day is the right reviewer. Worth one round with them before Story 4 is planned — the format is cheap to change now and annoying to change after it is in a test suite.
+Status: pending — **three options drafted below for the seller to pick from (2026-07-31).**
+Context: The seller who reads these every day is the right reviewer. The format is cheap to change now and annoying to change once it is in a test suite.
+Explanation: All three carry identical information and identical escaping; they differ only in tone and in how many characters they spend to convey it. Character counts are plain text for the same two-line sample cart — the encoded length is what the budget is measured against, but the ratio between the options holds.
+
+**Option A — Formal, purchase-order style (~330 chars)**
+
+```
+*Solicitud de cotización* · TH-260731-A4F2
+
+Cliente: Rafael Moro
+Correo: rafael@example.com
+
+1) BRO-1234 · Broca Larga Acero A.V.
+   1/4" · 3 pz · $120.00 c/u · $360.00
+2) KT-9981 · Llave Hexagonal Bondhus
+   Sin variante seleccionada · 2 pz
+
+*Subtotal (líneas con precio):* $360.00 MXN
+2 productos · 5 piezas · 1 línea sin variante
+```
+
+Reads as a document, not a chat message. Fixed field order means the seller scans a column rather than parsing prose, and the whole block survives a copy-paste into their own system.
+
+**Option B — Conversational, human (~370 chars)**
+
+```
+¡Hola! Me interesa cotizar estos productos.
+
+Soy Rafael Moro · rafael@example.com
+Referencia: TH-260731-A4F2
+
+• 3 pz — Broca Larga Acero A.V. 1/4"
+  Clave BRO-1234 · $120.00 c/u
+• 2 pz — Llave Hexagonal Bondhus
+  Clave KT-9981 · falta elegir medida
+
+Subtotal aproximado: $360.00 MXN
+¿Me confirmas disponibilidad y precio final?
+```
+
+Sounds like a person wrote it, and the closing question invites a reply, which matters if reply rate is the metric. Costs the most characters, and puts the quantity before the SKU — friendlier to read, slower to transcribe. **Avoid emoji**: each one is four bytes and costs twelve characters percent-encoded.
+
+**Option C — Compact, data-first (~200 chars)**
+
+```
+COT TH-260731-A4F2
+Rafael Moro | rafael@example.com
+
+BRO-1234 | 1/4" | 3 pz | $360.00
+KT-9981 | s/variante | 2 pz | -
+
+Subtotal $360.00 MXN · 1 línea sin precio
+```
+
+Roughly 40% fewer characters, so **substantially more lines fit before a split** — this is the lever if batching turns out to annoy the seller. The cost is legibility: pipe-delimited rows are hard to read on a phone, and abbreviations like `s/variante` need to be learned once.
+
+**Recommendation: A.** The seller is the reader, and this is their working document — the fixed field order and the explicit `Sin variante seleccionada` are what stop a follow-up round of questions, which is the stated goal of the whole epic. B spends its extra characters on warmth a supplier receiving orders does not need. Keep C in reserve: if Spike 4S or the seller review says multi-part sends are unacceptable, switching A→C buys back most of the length before anything else has to change.
+
+Sub-question still open for the seller: is receiving 2-3 sequential messages for a large quote acceptable, or would they rather get part 1 and reply asking for the rest?
 
 III: Question: How should the flow behave when the message exceeds the safe encoded-URL budget?
 Status: **answered by the user, 2026-07-31 — split into batched sends.** No truncation, no cart-size cap, no field dropping; every line is sent in full across as many messages as it takes. Design detailed in "Decision 3 → Overflow".
@@ -463,9 +547,21 @@ Context: ~700-900 plain-text characters, roughly 8-12 lines, before the encoded 
 Explanation: The cost this accepts is that WhatsApp cannot queue several prefilled messages from one link — the buyer must return to the browser and press the next CTA, and a buyer who abandons after part 1 leaves the seller with a partial quote. That is contained, not eliminated, by making part 1 self-sufficient (reference, contact, line count, subtotal) and labelling every part `Parte N de M` so a missing part is visible. Remaining sub-question for the seller: is receiving 3 sequential messages acceptable in their day-to-day, or would they rather get part 1 alone and reply asking for the rest?
 
 IV: Question: Does the browser's URL-length ceiling, not WhatsApp's, set the real threshold?
-Status: pending — a measurement, not a decision.
-Context: The ~2000-character encoded bound is a conservative engineering figure, not a documented limit. Android Chrome, iOS Safari, and desktop WhatsApp Web each handle long `wa.me` URLs differently.
-Explanation: Now that overflow is handled by splitting rather than degrading, the threshold constant is the whole design. Set it too low and a 6-line quote pointlessly becomes two messages; too high and a part is silently truncated by the OS. Worth 20 minutes of manual QA on a real Android device, a real iPhone, and desktop before fixing the constant — it is one number in `src/shared/constants/`, cheap to tune afterwards.
+Status: pending — but **not blocking. Ship `1800` and tune.**
+Context: The bound is a conservative engineering figure, not a documented limit. WhatsApp itself is not the binding constraint — the Cloud API documents a 4096-character body — the URL handler between the browser and the app is.
+
+**Recommended cap: `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`**, measured on the **entire URL**, not just the `text` parameter. The base (`https://wa.me/522224417330?text=`) is ~32 characters and must come out of the budget. 1800 encoded is roughly 600-800 plain Spanish characters — about 7-10 lines in Option A, 12-15 in Option C.
+
+Why 1800 and not 2000 or 4000: the failure modes are wildly asymmetric. Too low costs one extra message on an unusually large quote. Too high produces a **silently truncated** message — the seller receives a quote that looks complete and is not, and nobody finds out until the wrong goods are priced. Pick low, raise it later on evidence.
+
+**What answering it properly takes** — 20 minutes, no code:
+
+1. Build three `wa.me` URLs with a known encoded length each (~1500, ~2500, ~4000). Padding the `text` with repeated Spanish text is enough; accented characters make it realistic.
+2. Open each on the three targets that matter: a real Android phone in Chrome, a real iPhone in Safari, and a desktop browser handing off to WhatsApp Web or Desktop. Emulators do not exercise the OS-level URL handoff, which is the thing being tested.
+3. For each, check whether the text lands **complete** in the composer — not whether the link opens. Truncation here is silent; the chat opens fine with a shortened message.
+4. The lowest length that fails anywhere, minus a margin, is the cap.
+
+The one prerequisite is a device with WhatsApp installed and a number to test against — the destination number is now known (WhatsApp I), and testing against one's own number works equally well. This is exactly the manual-QA class of check that cannot be done in jsdom and should not be faked there.
 
 ### Strapi Contract
 
@@ -545,7 +641,9 @@ Explanation: jsdom provides `localStorage`, so store round-trips, version migrat
 
 The epic is broken into five independently deliverable stories plus one timeboxed spike. The three decisions the user asked for are settled with reasoning: a single `/cotizar` route, `localStorage` via `zustand/persist`, and a SKU-first `wa.me` deep link with escaping and a measured length budget that splits into batched sends rather than truncating.
 
-Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Stories 2, 3, and 5 are unblocked — the Strapi contract questions were answered on 2026-07-30 and made Story 3 *smaller* than assumed (one batched query rather than a per-product fan-out). **Story 4 is hard-blocked on the WhatsApp number**, which does not exist anywhere in this repo, and additionally gated on **Spike 4S**, which prices click-to-chat against the Cloud API and the BSPs before we commit to a message pipeline. The spike can be run today; it needs no code and no unblocking.
+Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Stories 2, 3, and 5 are unblocked — the Strapi contract questions were answered on 2026-07-30 and made Story 3 *smaller* than assumed (one batched query rather than a per-product fan-out).
+
+**No story is hard-blocked as of 2026-07-31.** The WhatsApp number arrived (`522224417330`), which was the last piece of missing business data. Story 4 remains gated on **Spike 4S**, which prices click-to-chat against the Cloud API and the BSPs before we commit to a message pipeline; the spike needs no code and can run today. Two items are pending but non-blocking: the seller's pick among the three message tones, and the device measurement behind the 1800-character cap.
 
 The one finding that changes the design rather than the estimate: `internalId` is optional and non-unique in Strapi, so it is display text, not a key. Every story treats the variant's `documentId` as the identity.
 

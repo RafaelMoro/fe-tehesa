@@ -64,7 +64,8 @@ Found during Story 4 (SEO) research on 2026-07-27.
 Deferred from Story 4 (`ai-research/stories/plp-seo-readiness.story4.md`, open question SEO IV) on the user's call: keep it pending here rather than blocking the SEO story.
 
 - `Organization` / `LocalBusiness` JSON-LD is the highest-value structured-data item for a Puebla-based distributor, and it is blocked only on business data — no code is missing.
-- Nothing in the repo carries any of it: no legal name, street address, city, postal code, phone, WhatsApp number, opening hours, logo URL, or social profile URLs (grep over `src/` and `DESIGN.md` finds no `whatsapp`, no `puebla`, no domain).
+- Nothing in the repo carries any of it: no legal name, street address, city, postal code, phone, opening hours, logo URL, or social profile URLs (grep over `src/` and `DESIGN.md` finds no `whatsapp`, no `puebla`, no domain).
+- **The WhatsApp number is now known** (`222 441 7330`, Puebla; supplied 2026-07-31 for the cart epic) and lands in the codebase as `NEXT_PUBLIC_WHATSAPP_NUMBER` with the cart feature. `LocalBusiness.telephone` can reuse it — everything else on the list is still missing.
 - Story 4 therefore ships `WebSite` + `SearchAction`, `ItemList`, and `BreadcrumbList` only. Adding `LocalBusiness` later is additive — one more JSON-LD node, no refactor.
 - The production domain (`NEXT_PUBLIC_SITE_URL`) is the other pending value; `LocalBusiness.url` and `logo` need it too.
 - Related: the approved meta description promises `Cotiza por WhatsApp`. The copy ships as approved, and the WhatsApp quote CTA lands with the cart feature, not on the PLP.
@@ -84,3 +85,13 @@ Pick this up when the cart feature reaches develop. Deferred from Story 3 (`ai-r
 - A selected line already carries everything a cart line needs: `internalId`, `diameter`, `price`, and quantity. No extra Strapi call should be required to build the cart payload.
 - `Agregar al carrito` exists but is inert in two places: `ProductCard.tsx` (handler commented out) and the drawer footer (currently just closes the drawer). Both need wiring, and the card-level action needs a product-level decision since the card has no variant selection.
 - Prices are already formatted as `$1,234.50 MXN` by the shared `formatNumberToCurrency`; reuse it rather than formatting cart totals separately.
+
+### Quote recovery after the WhatsApp hand-off (deferred)
+
+Deferred on the user's call, 2026-07-31, from `ai-research/epics/cart-quote-whatsapp.epic.md` (open question UI III). The cart **clears** after the WhatsApp hand-off. Recovery beyond an immediate undo is follow-up work, not v1 scope.
+
+- The hand-off is unobservable: clicking a `wa.me` anchor means the link *opened*, never that the message was *sent*. WhatsApp may not be installed, the buyer may back out of the composer, the wrong account may be signed in. In all of those the cart is already gone.
+- v1 ships the non-silent minimum — an explicit acknowledgement or an immediately visible undo. What is deferred is durable recovery: a "restaurar última cotización" that survives a reload, i.e. keeping the last sent quote in a separate persisted slot rather than discarding it.
+- **Multi-part quotes make this sharper.** A quote too long for one message is split into parts built from the cart, so the clear may only fire after the last part is opened. A buyer who abandons after part 1 has sent the seller a message promising parts that no longer exist.
+- The buyer's contact details (name, last name, email) are persisted separately and deliberately survive the clear. Do not fold the two slices together when implementing recovery.
+- Worth revisiting once there is any funnel data on how often buyers return to `/cotizar` after a hand-off.
