@@ -196,13 +196,22 @@ Add `"use client"`, wrap children in `CartStoreProvider`, and render `Toast.Prov
 ```tsx
 <CartStoreProvider>
   {children}
-  <Toast.Provider placement="bottom right" maxVisibleToasts={1} />
+  <Toast.Provider placement="bottom end" maxVisibleToasts={1} className="z-[60]" />
 </CartStoreProvider>
 ```
 
+- **`placement="bottom end"`, not `"bottom right"`** — the six accepted values are `bottom`, `bottom start`, `bottom end`, `top`, `top start`, `top end` (`@heroui/styles/dist/components/toast/toast.styles.js`).
 - `maxVisibleToasts={1}` is the "do not stack" rule (research Brief 2, note 3) — a new add replaces the message.
 - `DEFAULT_TOAST_TIMEOUT` is already 4000ms; do not pass `timeout`.
 - Mounting here satisfies both "portalled outside the drawer's tree" (the drawer unmounts on add) and "every existing test picks up the provider for free" — `__tests__/test-utils.tsx:9` already wraps every render in `Providers`.
+
+**Mobile behaviour — one line of the above is the whole fix.** `bottom end` plus HeroUI's own region CSS already delivers the research's "bottom on phone, bottom-right on desktop" spec, so **do not add responsive width classes or a `width` prop**:
+
+- `.toast-region` is `w-[calc(100vw-2rem)] sm:w-auto sm:min-w-(--toast-width)` (`@heroui/styles/dist/components/toast.css:6`). The 460px `DEFAULT_TOAST_WIDTH` is a `min-width` that only applies from `sm` up. At 390px the region is 358px wide.
+- `.toast-region--bottom-end` is `right-4 bottom-4`. Combined with the width above, the toast sits inset 16px from both edges at 390px — visually the full-width bottom sheet the research asked for — and collapses to a bottom-right card at `sm`+. One prop, both breakpoints, no media query of ours.
+- `bottom-4` keeps it clear of the header, so the badge and the toast stay readable together (research Brief 2, placement note 1).
+- **`className="z-[60]` is load-bearing.** `.toast-region` is `z-50` and so are `.drawer__backdrop` and `.drawer__content` (`drawer.css:45,96`). The drawer portals to the end of `<body>` while the toast region renders inside `Providers`, so at equal z-index **the drawer wins the tie and hides the toast for the length of its exit animation** — on mobile the drawer is `w-full`, so the toast would be entirely invisible exactly when it fires. Raising the region above the overlay is the fix; this is the z-index note the research flagged but could not specify.
+- HeroUI's `ToastProvider` already runs its own `useMediaQuery("(max-width: 768px)")` internally to reposition the action button. We pass no action button, so it does not apply here — but do not add a second mobile branch on top of it.
 
 ### Edge Cases
 
@@ -357,7 +366,7 @@ Covers AC 4, 5, 5b.
 2. **AC 5b needs no new UI** — the single-`Precio` block at lines 43-47 already exists and is already tested.
 3. **Footer, standard case** (lines 61-76) — restack from `flex justify-between` to `flex-col gap-2` per the Brief 1 mobile comps:
    - `Explorar las N variantes` — `variant="primary"`, `fullWidth`, unchanged behaviour.
-   - `Agregar y elegir después` — beneath it, bare centred text, no capsule, no border. HeroUI's `ghost` variant is the match (`primary | secondary | tertiary | ghost | outline | danger` are what ship). **Compare against `comps/brief-1/mobile-2-brief-1-cart-state.png` before settling on `ghost` vs `tertiary`.** It must be a real `<button>` with a visible focus ring and `min-h-11` for the tap target — the comps cannot show either, and a bare text action loses both most easily.
+   - `Agregar y elegir después` — beneath it, bare centred text, no capsule, no border. **`variant="tertiary"`** (user decision, 2026-07-31; the six that ship are `primary | secondary | tertiary | ghost | outline | danger`). It must be a real `<button>` with a visible focus ring and `min-h-11` for the tap target — the comps cannot show either, and a bare text action loses both most easily. If `tertiary` renders a tinted capsule rather than the bare text in `comps/brief-1/mobile-2-brief-1-cart-state.png`, strip the surface with a `className` rather than switching variants.
    - `onPress` → `addProductLine({ productDocumentId, productName: product.name, variantDocumentId: null, unitPrice: null, quantity: 1 })`, then `toast.success("Producto agregado, elige la medida después")`, or the limit message on `rejected`. **Never `minPrice`** — those columns are unmaintained and three products carry `null`/`0`; a variant-less line has no price by definition.
 4. **Footer, single-variant case** — one `fullWidth variant="primary"` `Agregar 1 pieza`, no second action. Local state `isAdding` / `addError`:
    - Click → `fetchCatalog<ProductVariant[]>(\`/api/catalog/variants?documentId=${encodeURIComponent(product.documentId)}\`)`, reusing the exact helper the drawer uses at line 54. No new route, no new util.
@@ -449,7 +458,7 @@ A statement, not an action. Story 2 promotes the whole thing to a link and the n
 3. At 390px the header does not widen and the gap between cart and theme controls is unchanged across all four counts.
 4. Reload with items — count survives; no visible flash from `0` to the real number beyond the normal mount tick.
 5. Screen reader reads `Mi lista, 3 artículos`, and the control is not reachable by Tab.
-6. Adding from the drawer: the toast at bottom/bottom-right does **not** cover the header — badge and toast are readable together. Check at 390px specifically; the toast's default width is 460px.
+6. Adding from the drawer at 390px: the toast is visible **immediately**, not after the drawer finishes animating out — that is the `z-[60]` check. It sits inset from both edges at the bottom, does not cover the header, and the badge and toast are readable together. Repeat at 1440px, where it should be a bottom-right card.
 
 ### Verification Coverage
 
@@ -473,7 +482,7 @@ A statement, not an action. Story 2 promotes the whole thing to a link and the n
 
 ## Decisions Beyond The Research Doc
 
-**D1 — `Header` stays in `CatalogPageLayout`; the move to the root layout is deferred to Story 2.**
+**D1 — `Header` stays in `CatalogPageLayout`; the move to the root layout is deferred to Story 2. Confirmed by the user, 2026-07-31.**
 The research recommends moving it now. Story 1 ships no new route, so `/` is the only surface a header can appear on and the move buys nothing this story can use. Story 2 creates `/cotizar` *and* promotes the badge to a link — it touches `Header` regardless, so the move costs the same three-file edit whenever it happens. Deferring keeps this story's diff off `layout.tsx` and `page.tsx` entirely.
 *To reverse:* make `layout.tsx` async, `await getThemePreference()`, render `<Header themeFetched={…} />` above `{children}`, drop the `Header` and the `themeFetched` prop from `CatalogPageLayout`, drop `getThemePreference` from `page.tsx`'s `Promise.all`. Verified safe — nothing in `src/` consumes `useChangeThemeStore`, so being outside `ChangeThemeStoreProvider` breaks nothing.
 
@@ -488,9 +497,11 @@ The research flags that the drawer's float-summed `selectedTotal` and a cents-ba
 
 ## Open Questions
 
-1. **`ghost` vs `tertiary` for `Agregar y elegir después`.** HeroUI ships both. The comps say bare centred text, no capsule, no border — `ghost` reads as the match, but it is a visual call the implementer should make against `comps/brief-1/mobile-2-brief-1-cart-state.png` rather than from the variant name.
-2. **Toast width at 390px.** `DEFAULT_TOAST_WIDTH` is 460px on a 390px viewport. Either pass a `width` or cap it in `className`; confirm during Phase 5 manual QA that it neither overflows nor covers the header.
-3. **D1** — confirm deferring the `Header` move is acceptable, or take the reversal steps above.
+All three closed by the user on 2026-07-31. Nothing blocks implementation.
+
+1. ~~`ghost` vs `tertiary` for `Agregar y elegir después`.~~ **Answered — `tertiary`.** Folded into Phase 4.
+2. ~~Toast width at 390px.~~ **Answered — make it work on mobile, and it already does.** `placement="bottom end"` plus HeroUI's own `w-[calc(100vw-2rem)] sm:w-auto sm:min-w-(--toast-width)` region CSS gives the bottom-inset phone layout and the bottom-right desktop card from one prop; the 460px default is a `min-width` that never applies below `sm`. The one real mobile defect found while checking this was a **z-index tie with the drawer overlay** (both `z-50`, drawer portalled later, so it wins) — the toast would be hidden for the whole drawer exit animation, which on a `w-full` mobile drawer means hidden entirely. Fixed with `className="z-[60]"` on `Toast.Provider`. Both are in Phase 1 with a manual check in Phase 5.
+3. ~~D1 — the `Header` move.~~ **Answered — `Header` stays in `CatalogPageLayout`.** Story 2 moves it if it needs to.
 
 ## Out Of Scope
 
