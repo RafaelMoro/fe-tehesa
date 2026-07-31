@@ -279,7 +279,7 @@ II: Question: Does the variant selection need any other field for the cart?
 Status: answered — with a follow-up
 Answer: `documentId` is the only field this story requires. `measurementUnit`, `packageQuantity`, `material`, and `stock` also exist on `product_variant` and are unselected.
 Context: Backend-research subagent, 2026-07-30.
-Explanation: `measurementUnit` and `packageQuantity` would materially improve a quote line ("3 cajas de 100 pz" vs "3 pz") but their population in live data is unverified — `description` and `subcategory` were also confirmed available and turned out empty on every sampled product. Tracked as epic Strapi Contract V; do not add them speculatively.
+Explanation: `measurementUnit` and `packageQuantity` would materially improve a quote line ("3 cajas de 100 pz" vs "3 pz") but their population in live data is unverified — `description` and `subcategory` were also confirmed available and turned out empty on every sampled product. **Decided 2026-07-31 (epic Strapi Contract V): do not use them.** Quantities are pieces throughout. `documentId` remains the only field this story adds.
 
 ### Verification
 

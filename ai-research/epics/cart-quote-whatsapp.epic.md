@@ -316,7 +316,7 @@ Acceptance criteria:
 - **Product-level lines have no price.** `minPrice`/`maxPrice` exist on the list query but are denormalized, unmaintained columns (`docs/improvement.md:20-29`) and three catalog products currently carry `0` or `null`. Do not present them as the line price.
 - **`internalId` is not a key.** It is optional and non-unique in the Strapi schema (Strapi Contract I). Treat it as seller-facing display text only. The variant's `documentId` is the key.
 - **`internalId` is fetched in exactly one place.** Only `GET_PRODUCT_VARIANTS` returns it; no list query does.
-- **Strapi has variant fields nobody is selecting.** `stock` (integer), `quantity` (integer, required, min 1), `packageQuantity`, `measurementUnit`, `material`, `screwHeadType`, `fastenersComponents`, and `pricing.pricePromotion` all exist on `product_variant` and no frontend query touches them. `measurementUnit` and `packageQuantity` in particular would let a quote line say "3 cajas de 100 pz" instead of "3 pz" — see UI question V. This also corrects `REPO_CONTEXT.md:148`, which lists `availability`/`stock` as genuinely absent; that is true of `Product`, not of `product_variant`.
+- **Strapi has variant fields nobody is selecting.** `stock` (integer), `quantity` (integer, required, min 1), `packageQuantity`, `measurementUnit`, `material`, `screwHeadType`, `fastenersComponents`, and `pricing.pricePromotion` all exist on `product_variant` and no frontend query touches them. `measurementUnit` and `packageQuantity` in particular would let a quote line say "3 cajas de 100 pz" instead of "3 pz" — deliberately **not** used (Strapi Contract V, answered 2026-07-31), because their population in live data is unverified and a wrong unit is worse than no unit. This also corrects `REPO_CONTEXT.md:148`, which lists `availability`/`stock` as genuinely absent; that is true of `Product`, not of `product_variant`.
 - **There is no currency field anywhere in Strapi.** `MXN` is a hardcoded frontend assumption in `formatNumberToCurrency`. The WhatsApp message inherits it.
 - **SSR safety.** `localStorage` does not exist on the server. The store module can be pulled into the server graph; guard accordingly.
 - **No auth.** The cart is per-device and per-browser. Two devices are two carts, and clearing site data loses everything. That is acceptable for a quote request; state it in the empty/lost-cart copy expectations rather than engineering around it.
@@ -423,7 +423,7 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 5. How prominent should the "this is a quote, not an order" framing be, and where does it live? Note the card's `Agregar al carrito` label already implies an order on a surface that has nothing to do with `/cotizar`.
 6. Do the two product-card CTAs need relabelling or re-weighting now that they diverge? (Carried up from the Story 1 handoff, where it is the main visual problem.)
 7. Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)? Closing returns the buyer to the grid; staying open lets them see the confirmation. (Carried up from the Story 1 handoff.)
-6. If `measurementUnit` and `packageQuantity` turn out to be populated (Strapi Contract V), where do they sit in a cart line? "3 pz" and "3 cajas de 100 pz" are different quotes, and today the drawer only ever says "piezas".
+6. ~~Where do `measurementUnit` and `packageQuantity` sit in a cart line?~~ **Answered 2026-07-31: they are not used.** Quantities are pieces throughout, matching the drawer's existing `N piezas`. Nothing to design.
 
 ## Open Questions
 
@@ -615,29 +615,41 @@ Context: Backend repo schema sweep, 2026-07-30.
 Explanation: Confirms the WhatsApp-only decision was the cheap one. Recording a lead server-side would mean designing a new content type, granting write permissions to a public-facing token, and building spam protection — a separate epic, not a variation on this one.
 
 V: Question: Should the quote line carry the variant's unit and package size?
-Status: pending
-Context: `product_variant` has `measurementUnit`, `packageQuantity`, `material`, `stock`, and `quantity` (required, min 1), plus `pricing.pricePromotion` — none selected by any frontend query.
-Explanation: "3 pz" and "3 cajas de 100 pz" are very different quotes, and the seller will have to ask if the unit is ambiguous. Recommendation: add `measurementUnit` and `packageQuantity` to the variant selection in Story 1 and render them in both the cart line and the message, *if* they are actually populated in live data. Their population rate is unverified — `description` and `subcategory` were confirmed available and turned out empty everywhere (`plp-product-detail-signals.story3.md`, Strapi II), so check before designing around them.
+Status: **answered by the user, 2026-07-31 — no.** `measurementUnit` and `packageQuantity` are not added to any query, any cart line, or the message. This overrides the recommendation above.
+Context: `product_variant` has `measurementUnit`, `packageQuantity`, `material`, `stock`, and `quantity` (required, min 1), plus `pricing.pricePromotion` — none selected by any frontend query, and their population rate in live data was never verified.
+Explanation: Quantities are therefore expressed in pieces throughout, matching the drawer's existing `N piezas` phrasing — no new unit vocabulary anywhere. The residual risk is the one this epic exists to reduce: if a variant is genuinely sold by the box, "3 pz" and "3 cajas de 100 pz" are different quotes and the seller has to ask. That is acceptable while the fields are of unverified quality — shipping a *wrong* unit is worse than shipping none. Revisit if the seller reports unit ambiguity in real quotes; it is one query field and one line of copy, additive with no refactor.
 
 VI: Question: Is `pricing.pricePromotion` a real promotional price that should override `price` in a quote?
-Status: pending
+Status: **answered by the user, 2026-07-31 — ignore it.** Promotions are not being handled at this time.
 Context: `shared.pricing` has `price` (decimal, required, min 0) and `pricePromotion` (**string**, optional). Nothing in the frontend selects it.
-Explanation: It is typed as a string, not a decimal, which suggests free-text rather than a computable price. Quoting the wrong number to a buyer is the expensive failure mode here, so this stays out of scope until someone confirms what it means and whether it is populated.
+Explanation: `price` is the only price this epic reads, quotes, sums, or sends. Two consequences worth stating so nobody re-derives them later: it is typed as a string rather than a decimal, so it is not computable without a parsing decision nobody has made; and quoting the wrong number to a buyer is the expensive failure mode here. If promotions arrive later, the field's type is the first thing to fix on the backend, not the first thing to consume on the frontend.
 
 VII: Question: Is the Strapi API token write-capable?
-Status: pending — not blocking
+Status: **answered by the user, 2026-07-31 — moot for this repo. Nothing here writes to Strapi.**
 Context: Mutations (`createProductVariant`, etc.) exist in the schema, but the token's actual role permissions live in the database, not the repo.
-Explanation: Irrelevant to this epic as scoped (no writes). Recorded so a future "record the lead" story does not have to rediscover it — and as a note that a write-capable token reaching a public client would be a security problem worth checking independently.
+Explanation: Confirms the epic's read-only posture — no quote, lead, or customer record is written anywhere (see IV: no such content type exists either). The one thing that does *not* go away with this answer: if the token in `STRAPI_API_TOKEN` happens to be write-capable, that is a standing security concern independent of this epic, because it reaches a server-side Apollo client on every request. Worth checking once in the Strapi admin, as its own task, not as part of this work.
 
 ### Verification
 
 I: Question: How is the WhatsApp hand-off tested?
-Status: pending
-Explanation: Recommendation is to unit-test the pure message builder exhaustively (escaping, variant-less lines, subtotal exclusion, encoded length, quote reference) and to assert only the anchor's `href` in component tests. Actually opening WhatsApp is manual QA on a real device — a jsdom test cannot cover it and should not pretend to.
+Status: **answered by the user, 2026-07-31 — unit tests plus manual validation.** No e2e framework, no new test dependency.
+Explanation: The split:
+
+- **Unit** — the pure message builder, exhaustively: escaping (WhatsApp markup, newlines, control characters, in values only and never in the template), variant-less lines, subtotal exclusion, the quote reference, the encoded-length measurement, and the multi-part split landing on a line boundary with a self-sufficient part 1.
+- **Component** — assert the anchor's `href` and the disabled `<span aria-disabled="true">` fallback. Nothing more; the `href` *is* the contract.
+- **Manual, on a real device** — that the link actually opens WhatsApp, resolves to the right chat (`52…` versus `521…`, WhatsApp I), and that the text arrives **complete** in the composer. jsdom cannot navigate to a `wa.me` URL or observe truncation, and a test that pretends to is worse than no test.
+
+Manual QA is the user's own workflow, and it is the only thing that can catch the two highest-risk failures in this epic: a dead number and a silently truncated message.
 
 II: Question: How is persistence tested given jsdom's `localStorage`?
-Status: pending
-Explanation: jsdom provides `localStorage`, so store round-trips, version migration, and rejection of a corrupted blob are all testable. The cases that matter are the adversarial ones: truncated JSON, a valid-JSON-wrong-shape blob, a negative quantity, and a `NaN` price.
+Status: **answered by the user, 2026-07-31 — yes, jsdom's `localStorage`.** That answers it: Jest already runs `jest-environment-jsdom`, which supplies a working `localStorage`, so no mock, no polyfill, no new dependency.
+Explanation: What that leaves to get right in the tests themselves:
+
+- **Clear storage between tests.** jsdom's `localStorage` persists across tests within a file, so a leftover blob silently contaminates the next case. Explicit cleanup in `beforeEach`, not reliance on Jest's isolation.
+- **Create a fresh store per test.** `zustand/persist` rehydrates when the store is created, so a module-level store would read storage exactly once for the whole file. The provider-wraps-store pattern this epic already uses makes this natural — it is a reason for that pattern, not just a consequence.
+- The cases that matter are the adversarial ones, because `localStorage` is a trust boundary: truncated JSON, valid JSON of the wrong shape, a negative quantity, a `NaN` price, a `documentId` failing `DOCUMENT_ID_PATTERN`, and an oversized blob. Each must drop the bad line and leave the rest usable — never throw, never repair.
+- Version migration: a v1 blob read by a v2 store drops cleanly rather than crashing.
+- The contact slice needs the same adversarial treatment, and specifically the collapsed-form path (Persistence II) where saved details reach the message without the form running.
 
 ## Assumptions Made
 
@@ -668,7 +680,7 @@ The epic is broken into five independently deliverable stories plus one timeboxe
 
 Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Stories 2, 3, and 5 are unblocked — the Strapi contract questions were answered on 2026-07-30 and made Story 3 *smaller* than assumed (one batched query rather than a per-product fan-out).
 
-**No story is hard-blocked as of 2026-07-31.** The WhatsApp number arrived (`522224417330`), which was the last piece of missing business data. Story 4 remains gated on **Spike 4S**, which prices click-to-chat against the Cloud API and the BSPs before we commit to a message pipeline; the spike needs no code and can run today. Two items are pending but non-blocking: the seller's pick among the three message tones, and the device measurement behind the 1800-character cap.
+**Every epic-level open question is now answered (2026-07-31), and no story is hard-blocked.** The only outstanding items are non-blocking follow-ups: the seller's reaction to the Option A wording once they see real messages, the device measurement behind the 1800-character cap, and Spike 4S. Story 1's own open questions remain in its story doc. The WhatsApp number arrived (`522224417330`), which was the last piece of missing business data. Story 4 remains gated on **Spike 4S**, which prices click-to-chat against the Cloud API and the BSPs before we commit to a message pipeline; the spike needs no code and can run today. Two items are pending but non-blocking: the seller's pick among the three message tones, and the device measurement behind the 1800-character cap.
 
 The one finding that changes the design rather than the estimate: `internalId` is optional and non-unique in Strapi, so it is display text, not a key. Every story treats the variant's `documentId` as the identity.
 
