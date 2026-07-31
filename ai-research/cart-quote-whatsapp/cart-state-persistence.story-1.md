@@ -114,9 +114,9 @@ The `/cotizar` route, the line list, the subtotal, quantity editing outside the 
 
 ### Unanswered Design Questions
 
-1. How is the "added" confirmation presented, given the app has no toast pattern? Recommendation above is one shared toast; the open part is whether HeroUI v3 supplies one or we write a minimal component.
+1. ~~How is the "added" confirmation presented?~~ **Answered 2026-07-31: one shared toast** with `role="status"`, serving both trigger sites. The only open part is whether HeroUI v3 supplies one or we write a minimal component — check the HeroUI MCP before building.
 2. ~~Does the badge show at zero?~~ **Answered 2026-07-31: yes, showing `0`, bottom-right of the cart control.**
-3. Do the two card CTAs need relabelling or re-weighting now that they diverge? Recommendation is to keep `Explorar las N variantes` primary and demote the other to tertiary with a label naming what it does (`Agregar sin elegir medida` in shape). Final copy is open — see epic design question 7 for the reasoning.
+3. Do the two card CTAs need relabelling or re-weighting now that they diverge? Recommendation: keep `Explorar las N variantes` primary, demote the other to tertiary, label it **`Agregar sin medida`** — it matches the toast (`Producto agregado sin medida`) and the message (`Sin variante seleccionada`) so the three read as one flow. Full copy comparison and two edge cases (single-variant products, products with broken variant data) in epic design question 7.
 4. ~~Does the drawer still close on add?~~ **Answered 2026-07-31: yes.** Confirmation lives outside the drawer; focus returns to the card's trigger button.
 
 ## Technical Research

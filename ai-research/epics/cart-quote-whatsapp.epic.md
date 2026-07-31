@@ -422,7 +422,7 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 
 3. Add confirmation: inline in the drawer, a toast, or a badge animation? **Clarification (asked 2026-07-31): confirmation of the add-to-cart action itself** — the feedback shown after the buyer presses `Agregar al carrito`, from either surface. Two trigger sites: the drawer (one or more variants, with quantities) and the product card (a single variant-less line). It also has to cover the increment case, where an existing line's quantity goes up rather than a new line appearing.
 
-   **Recommendation: one shared toast, plus the badge count as the persistent signal.** Reasons, in order of weight: the drawer **closes on add** (Q7, answered yes), so anything rendered inside it is destroyed at the moment it would be read; the product card has no host surface for an inline message at all; and a toast is one component serving both sites rather than two separate feedback mechanisms. Give it `role="status"` — the drawer already uses that pattern at `ProductVariantsDrawer.tsx:144-145`.
+   **Decided 2026-07-31: one shared toast, plus the badge count as the persistent signal.** Reasons, in order of weight: the drawer **closes on add** (Q7, answered yes), so anything rendered inside it is destroyed at the moment it would be read; the product card has no host surface for an inline message at all; and a toast is one component serving both sites rather than two separate feedback mechanisms. Give it `role="status"` — the drawer already uses that pattern at `ProductVariantsDrawer.tsx:144-145`.
 
    Copy must name what happened, not just that something did: `3 variantes agregadas`, `Producto agregado sin medida`, `Cantidad actualizada`. Check the HeroUI MCP for a v3 toast before building one — the app has no toast pattern today, and a minimal own component is the fallback, not the first choice.
 
@@ -430,9 +430,9 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 
 5. How does the saved-details summary read? The form is hidden once details are saved (Persistence II), so this summary is what a returning buyer sees instead — it has to make clear *which* details will be sent, offer *usar otros datos*, and offer *olvidar mis datos*, without turning into three competing controls above the primary CTA. This is the only PII-bearing surface in the app.
 
-6. How prominent should the "this is a quote, not an order" framing be, and where does it live?
+6. ~~How prominent should the "this is a quote, not an order" framing be, and where does it live?~~ **Answered 2026-07-31: the approach below is approved.**
 
-   **Recommendation: minimal, and anchored to the money rather than to the page.** The framing is already carried by the vocabulary — the route is `/cotizar`, the primary CTA says `Cotizar`, the message header says `Solicitud de cotización`. Adding a banner on top of that is belt-and-braces for a buyer who was never confused.
+   **Minimal, and anchored to the money rather than to the page.** The framing is already carried by the vocabulary — the route is `/cotizar`, the primary CTA says `Cotizar`, the message header says `Solicitud de cotización`. Adding a banner on top of that is belt-and-braces for a buyer who was never confused.
 
    Where it genuinely matters is **beside the subtotal**, because `$1,234.50 MXN` is the one element on the page that reads as a price to pay regardless of surrounding copy. Two things there, both already required for other reasons: the label says `Subtotal estimado (líneas con precio)`, and one line of supporting text — *"Precios de referencia. El vendedor confirma disponibilidad y precio final."* That single line does the whole job.
 
@@ -449,7 +449,27 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 
    The problem is not that `Agregar al carrito` is a poor label in isolation. It is that it is the *conventional* label for the main path in every store the buyer has ever used, and here it is the degraded path. A buyer who taps it expecting normal add-to-cart behaviour produces a worse quote and gets no signal that they did.
 
-   **Recommendation: re-weight, and relabel only the degraded action.** Keep `Explorar las N variantes` as the visual primary; demote the other to tertiary and label it for what it actually does — something in the shape of `Agregar sin elegir medida`. Final copy is the designer's call; the constraint to hand them is that the label must not read as the default action.
+   **Recommendation: re-weight, and relabel only the degraded action.** Keep `Explorar las N variantes` as the visual primary; demote the other to tertiary. The constraint for the label: it must not read as the default action, and it should ideally convey *both* that something is added *and* that the size is missing.
+
+   Spanish copy candidates, grouped by what they lead with:
+
+   | Copy | Says it adds | Says no size | Length | Note |
+   |---|---|---|---|---|
+   | **`Agregar sin medida`** | yes | yes | 18 | **Recommended.** Shortest option that does both jobs. |
+   | `Agregar sin elegir medida` | yes | yes | 25 | The original. Same meaning, seven characters more for nothing. |
+   | `Agregar y elegir después` | yes | implied | 24 | Warmer, promises a next step the flow does not actually provide — the buyer never gets asked again. Slightly misleading. |
+   | `Elegir medida después` | implied | yes | 21 | Same objection, and it does not say a line was created. |
+   | `No sé la medida` | no | yes | 15 | Least likely to be tapped by accident — it describes the buyer's *state*, so nobody presses it casually. But it never says anything was added, which fights the toast. |
+   | `Pedir asesoría` | no | no | 14 | Good tone for an industrial buyer, and clearly not add-to-cart. Conveys neither fact; the buyer may not realise a quote line now exists. |
+   | `Consultar medidas` | no | no | 17 | **Reject.** Reads as "show me the sizes", which is what the *other* button does. |
+   | `Cotizar sin medida` | yes | yes | 18 | **Reject.** `Cotizar` is the final send action on `/cotizar`; reusing the verb here suggests this button sends the quote. |
+
+   **Pick: `Agregar sin medida`.** It matches the toast copy already recommended (`Producto agregado sin medida`) and the message copy (`Sin variante seleccionada`) closely enough that the three read as one flow, which is worth more than any individual phrasing. If accidental taps turn out to be the real problem, `No sé la medida` as a tertiary text link is the stronger deterrent — swap then, on evidence.
+
+   Two edge cases the label has to survive:
+
+   - **Single-variant products.** 35 of 333 have `hasOneProductVariant`, where the card reads `Explorar la variante`. Offering `Agregar sin medida` beside it is close to nonsense — there is only one medida. Worth considering hiding the degraded CTA entirely when `variantCount === 1`, which also removes the worst accidental-tap case.
+   - **Products with no usable variant data.** Three records currently have `variantCount` null or `0` (`docs/improvement.md:35-39`). There the degraded CTA is the *only* working path, so it cannot be hidden unconditionally on a falsy `variantCount` — distinguish "one variant" from "no variant data".
 
 8. ~~Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)?~~ **Answered 2026-07-31: yes, it still closes.** Two consequences: the confirmation must live outside the drawer (see Q3), and **focus must be moved deliberately on close** — back to the card's trigger button is the obvious target. A drawer that closes leaving focus on `<body>` strands keyboard and screen-reader users mid-flow.
 
