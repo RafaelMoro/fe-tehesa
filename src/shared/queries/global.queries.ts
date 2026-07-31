@@ -23,6 +23,7 @@ export const GET_PRODUCT_VARIANTS = gql`
   query Product($documentId: ID!, $pagination: PaginationArg) {
     product(documentId: $documentId) {
       product_variants(pagination: $pagination) {
+        documentId
         internalId
         diameter
         pricing {
