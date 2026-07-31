@@ -1,0 +1,9 @@
+export const CART_STORAGE_KEY = "tehesa-cart"
+export const CART_SCHEMA_VERSION = 1
+export const CART_MAX_LINES = 100
+export const CART_MIN_QUANTITY = 1
+export const CART_MAX_QUANTITY = 100
+export const CART_TEXT_MAX_LENGTH = 200
+export const CONTACT_TEXT_MAX_LENGTH = 100
+export const CONTACT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const NO_VARIANT_KEY = "no-variant"
