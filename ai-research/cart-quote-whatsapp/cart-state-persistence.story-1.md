@@ -295,29 +295,45 @@ Either way this is a small structural decision that has to be made **before** th
 - **`ProductVariant.internalId` is `string | undefined`** in the current type and genuinely optional in Strapi. Every consumer needs the missing case.
 - **Variant arrays are re-sorted on every drawer open** (`ProductVariantsDrawer.tsx:67`), which is exactly why index keys are wrong.
 - **`quantities[index]` can be `""`.** See the drawer section.
-- **A cart line cap is needed.** Not for storage — `localStorage` has room — but because the WhatsApp message has a hard encoded-URL budget (~8-12 lines). Better to cap at add time with a clear message than to silently truncate a message in Story 4. The exact number depends on the Story 4 format decision; pick something defensible now and revisit.
+- **A cart line cap is needed for validation, not as a product rule.** The original reason — the WhatsApp encoded-URL budget — was removed when the epic decided to batch rather than truncate (Decision 3 → Overflow). What remains is a trust-boundary guard: a rehydrated array of 10,000 lines must be rejected before it is rendered or summed. See Open Question UI IV.
 
 ## Open Questions
 
 ### UI And Product Decisions
 
 I: Question: What happens visually when something is added, given the app has no toast pattern?
-Status: pending
-Context: The drawer can host an inline `role="status"` message, but it closes on add today. The card has no host surface at all.
-Explanation: Options are (a) a HeroUI overlay-based notification if v3 offers one — check the `heroui-react` MCP before inventing anything, (b) an inline message in the drawer plus a badge animation for the card, (c) badge-only with no message. Recommendation is (a) if HeroUI provides it, because two different feedback mechanisms for the same action is the outcome to avoid.
+Status: **answered 2026-07-31 — one shared HeroUI v3 toast**, `role="status"`, serving both trigger sites. Designed in Brief 2 (`comps/share-toast-brief-2.png`).
+Explanation: Placement, duration, and stacking were not delivered by the brief; the recommendations in "Brief 2" above stand (bottom / bottom-right, ~4s, no stacking) and are planning-level calls rather than blockers.
 
 II: Question: Does the drawer still close after adding?
-Status: pending
-Explanation: Recommendation is yes — the buyer's next action is almost always another product — provided the confirmation survives the close.
+Status: **answered 2026-07-31 — yes.** The confirmation lives outside the drawer and focus returns to the card's trigger button.
 
 III: Question: Where does the badge link, given `/cotizar` does not exist until Story 2?
-Status: pending
-Explanation: Three options: ship Stories 1 and 2 together; ship the badge as a non-link count in Story 1 and make it a link in Story 2; or ship the link and accept a 404 behind a feature nobody has been told about yet. Recommendation is the second — it keeps the stories independently deliverable, which is the point of the split.
+Status: pending — **the one sequencing decision this story cannot make for itself.**
+Explanation: Three options: ship Stories 1 and 2 together; ship the badge as a non-link count in Story 1 and make it a link in Story 2; or ship the link and accept a 404. Recommendation is the second — it keeps the stories independently deliverable, which is the point of the split. Note that the Brief 2 and Brief 3 comps both draw the control as a link, so option two means shipping something the comps do not show for one story's duration.
 
 IV: Question: Is there a maximum cart size, and what does hitting it look like?
-Status: pending
-Context: Driven by the WhatsApp encoded-URL budget (~8-12 lines), not by storage.
-Explanation: Recommendation is a cap at add time with a message that names the limit, rather than letting Story 4 truncate a message silently. Needs a number from product.
+Status: **partly obsolete, needs re-answering.** The original rationale no longer holds.
+Context: The cap was proposed because the WhatsApp message had a hard ~8-12 line budget and would otherwise truncate silently. **The epic has since decided to batch instead of truncate** (Decision 3 → Overflow, 2026-07-31), so message length no longer forces a product-facing cap.
+Explanation: This now splits into two separate things, and only the first is required:
+
+- **A validation line cap is still needed** — `localStorage` is user-writable, so a rehydrated array of 10,000 lines must be rejected rather than rendered. This is a trust-boundary guard, not a product rule. Something generous like 100 is defensible; it is invisible in normal use.
+- **A product-facing "you have reached the limit" cap is no longer justified by message length.** A 30-line quote now sends as three messages rather than being truncated. Recommend dropping it unless product wants one for a different reason.
+
+V: Question: Which header control ships — Brief 2's or Brief 3's?
+Status: pending — **blocks AC 7.**
+Context: Brief 2 designed an icon-only 44×44 control with a count capsule (`comps/*header-brief-2*`). Brief 3 re-drew it on desktop as a labelled pill, `☰ Mi solicitud (3)`, and icon-only on mobile (`comps/*brief-3*`). Brief 3 was not asked to touch the header; it did so because the header appears on the page it was designing.
+Explanation: Both cannot ship. The labelled desktop form names its destination, which is better, but it changes the 44×44 reservation that closed the layout-shift problem — so the mounted-guard approach has to be re-derived for a variable-width control. AC 7 is written against Brief 2's version and needs updating if Brief 3's wins.
+
+VI: Question: Does the drawer adopt the `− n +` quantity stepper from the Brief 3 comps?
+Status: pending — affects this story's scope.
+Context: `/cotizar` uses a stepper; `ProductVariantsDrawer.tsx:204` uses a bare `<input type="number">`. Two quantity controls in one flow is a real inconsistency, and this story already edits the drawer's quantity handling.
+Explanation: Recommendation is yes, adopt it in both. It is a small addition to work already happening here, it removes the empty-string edge case (`quantities[index]` can be `""`, coerced by `|| 1`) that this story has to resolve anyway, and doing it later means touching the drawer twice. If deferred, record the divergence deliberately rather than letting it look accidental.
+
+VII: Question: What is the noun for the collection — `lista`, `solicitud`, or `cotización`?
+Status: pending — copy, not blocking, but it touches four surfaces.
+Context: The comps use `Mi solicitud` (header), `Tu lista está vacía` (empty state), and `Solicitar cotización` (page heading).
+Explanation: The split is defensible — *lista* for the thing, *solicitud/cotización* for the act — but it should be a stated rule, because the toast, the badge's accessible name, the page, and the WhatsApp message all have to agree.
 
 ### Persistence
 
@@ -346,7 +362,7 @@ Explanation: `measurementUnit` and `packageQuantity` would materially improve a 
 ### Verification
 
 I: Question: How are hostile persisted payloads tested?
-Status: pending
+Status: **answered 2026-07-31 — jsdom's `localStorage`**, unit tests plus manual QA, no e2e framework and no new test dependency (epic Verification I and II). Two mechanics to get right: clear storage in `beforeEach`, since jsdom persists it across tests in a file; and create a fresh store per test, since `persist` rehydrates at store creation.
 Explanation: jsdom provides `localStorage`, so this is directly testable and should be. The cases that matter are the adversarial ones, not the happy path: truncated JSON, valid JSON with the wrong shape, a negative quantity, a non-integer quantity, a `null` unit price, a `documentId` failing `DOCUMENT_ID_PATTERN`, and an oversized line array. Each must drop the offending line, keep the rest, and not throw.
 
 II: Question: Does the drawer's selection re-key break existing tests?
@@ -382,6 +398,16 @@ Story 1 is fully scoped and unblocked. Every Strapi question it depends on was a
 
 The work is one new store, one new provider, one query field, one type file, four edited components, and a test folder. No new dependency, no backend change, no new route.
 
-The open questions that remain are product and design calls (confirmation pattern, badge behaviour, cart cap, storage key) — none of them block planning, and each has a recommendation above so sign-off is a yes/no rather than a re-analysis.
+Design is delivered for every surface this story touches (Briefs 1 and 2, `comps/`).
+
+**Readiness for planning, as of 2026-07-31: three decisions short.** Everything else has a recommendation attached, so sign-off is a yes/no rather than a re-analysis.
+
+| # | Decision | Why it blocks |
+|---|---|---|
+| UI V | Brief 2's icon-only header control, or Brief 3's labelled pill? | AC 7 is written against Brief 2's. The two comps disagree, and the labelled form changes the fixed-44×44 reservation that solved the layout shift. |
+| UI III | Where the badge links, given `/cotizar` lands in Story 2 | Ship 1+2 together, ship a non-link count first, or ship a link to a 404. Changes what "done" means for this story. |
+| UI VI | Does the drawer adopt the `− n +` stepper from Brief 3? | Grows or does not grow this story's drawer work. Deferring means editing the drawer twice. |
+
+Non-blocking but worth answering in the same pass: the storage key (`tehesa-cart` recommended), drop-on-version-mismatch as the `migrate`, the validation line cap number, toast placement/duration/stacking, and the `lista` / `solicitud` / `cotización` noun.
 
 Awaiting human sign-off. No source files were modified during this research.
