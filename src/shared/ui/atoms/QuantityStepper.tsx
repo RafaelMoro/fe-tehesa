@@ -28,6 +28,9 @@ export const QuantityStepper = ({
       value={value}
       onChange={(next) => {
         if (Number.isNaN(next)) {
+          console.warn(
+            `QuantityStepper: ignored NaN onChange for "${label}" (input cleared)`,
+          )
           return
         }
         onChange(next)
