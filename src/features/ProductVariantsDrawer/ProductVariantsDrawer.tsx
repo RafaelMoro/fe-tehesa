@@ -3,11 +3,13 @@ import {
   Button,
   Checkbox,
   Drawer,
+  toast,
   type UseOverlayStateReturn,
 } from "@heroui/react"
 import { RiCloseLine } from "@remixicon/react"
 
 import {
+  CartVariantLine,
   Product,
   ProductVariant,
   ProductVariantUI,
@@ -17,6 +19,9 @@ import {
   fetchCatalog,
 } from "@/shared/utils/catalog-api.utils"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
+import { CART_MAX_LINES } from "@/shared/constants/cart.constants"
+import { useCartStore } from "@/zustand/provider/cart.provider"
+import { QuantityStepper } from "@/shared/ui/atoms/QuantityStepper"
 
 interface ProductVariantsDrawerProps {
   product: Product
@@ -27,17 +32,18 @@ export const ProductVariantsDrawer = ({
   product,
   state,
 }: ProductVariantsDrawerProps) => {
+  const addVariantLines = useCartStore((store) => store.addVariantLines)
   const [variants, setVariants] = useState<ProductVariantUI[]>([])
-  const [selectedVariantIndexes, setSelectedVariantIndexes] = useState<
-    Set<number>
-  >(new Set())
-  const [quantities, setQuantities] = useState<Record<number, number | "">>({})
+  const [selectedVariantIds, setSelectedVariantIds] = useState<Set<string>>(
+    new Set(),
+  )
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const resetVariants = () => {
     setVariants([])
-    setSelectedVariantIndexes(new Set())
+    setSelectedVariantIds(new Set())
     setQuantities({})
     setIsLoading(false)
     setErrorMessage(null)
@@ -59,6 +65,7 @@ export const ProductVariantsDrawer = ({
         }
         const formattedData = data
           .map((variant) => ({
+            documentId: variant.documentId,
             internalId: variant.internalId,
             diameter: variant.diameter,
             price: variant.pricing.price,
@@ -67,7 +74,9 @@ export const ProductVariantsDrawer = ({
           .sort((a, b) => a.price - b.price)
         setVariants(formattedData)
         setQuantities(
-          Object.fromEntries(formattedData.map((_, index) => [index, 1])),
+          Object.fromEntries(
+            formattedData.map((variant) => [variant.documentId, 1]),
+          ),
         )
       } catch (error) {
         if (!isActive) {
@@ -102,16 +111,48 @@ export const ProductVariantsDrawer = ({
     state.close()
   }
 
+  const handleAdd = () => {
+    const inputs: CartVariantLine[] = variants
+      .filter((variant) => selectedVariantIds.has(variant.documentId))
+      .map((variant) => ({
+        productDocumentId: product.documentId,
+        productName: product.name,
+        variantDocumentId: variant.documentId,
+        internalId: variant.internalId,
+        diameter: variant.diameter,
+        unitPrice: variant.price,
+        quantity: quantities[variant.documentId] ?? 1,
+      }))
+
+    const result = addVariantLines(inputs)
+
+    if (result.rejected) {
+      toast.danger(`Tu lista llegó al máximo de ${CART_MAX_LINES} productos.`)
+      return
+    }
+
+    const message =
+      result.added > 0
+        ? `${result.added} variante${result.added === 1 ? "" : "s"} agregada${
+            result.added === 1 ? "" : "s"
+          }`
+        : "Cantidad actualizada"
+    toast.success(message)
+    handleClose()
+  }
+
   const selectedTotal = variants.reduce(
-    (total, variant, index) =>
-      selectedVariantIndexes.has(index)
-        ? total + variant.price * (quantities[index] || 1)
+    (total, variant) =>
+      selectedVariantIds.has(variant.documentId)
+        ? total + variant.price * (quantities[variant.documentId] ?? 1)
         : total,
     0,
   )
   const selectedPieces = variants.reduce(
-    (total, _, index) =>
-      selectedVariantIndexes.has(index) ? total + (quantities[index] || 1) : total,
+    (total, variant) =>
+      selectedVariantIds.has(variant.documentId)
+        ? total + (quantities[variant.documentId] ?? 1)
+        : total,
     0,
   )
 
@@ -158,25 +199,25 @@ export const ProductVariantsDrawer = ({
                     <span>Precio</span>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {variants.map((variant, index) => (
+                    {variants.map((variant) => (
                       <div
-                        key={`${variant.diameter}-${variant.price}`}
-                        className={`grid grid-cols-[auto_1fr_70px_auto] items-center gap-3 rounded-lg border p-3 ${
-                          selectedVariantIndexes.has(index)
+                        key={variant.documentId}
+                        className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-lg border p-3 ${
+                          selectedVariantIds.has(variant.documentId)
                             ? "border-emerald-700 bg-emerald-50 dark:bg-emerald-950/20"
                             : "border-default-200"
                         }`}
                       >
                         <Checkbox
                           aria-label={`Seleccionar ${variant.diameter}`}
-                          isSelected={selectedVariantIndexes.has(index)}
+                          isSelected={selectedVariantIds.has(variant.documentId)}
                           onChange={(isSelected) => {
-                            setSelectedVariantIndexes((current) => {
+                            setSelectedVariantIds((current) => {
                               const next = new Set(current)
                               if (isSelected) {
-                                next.add(index)
+                                next.add(variant.documentId)
                               } else {
-                                next.delete(index)
+                                next.delete(variant.documentId)
                               }
                               return next
                             })
@@ -189,23 +230,13 @@ export const ProductVariantsDrawer = ({
                         </Checkbox.Content>
                         </Checkbox>
                         <span className="font-medium">{variant.diameter}</span>
-                        <input
-                          aria-label={`Cantidad de ${variant.diameter}`}
-                          className="h-11 w-full rounded-md border border-default-200 bg-transparent px-2 text-center tabular-nums"
-                          min={1}
-                          type="number"
-                          value={quantities[index]}
-                          onChange={(event) => {
-                            const value = event.target.value
-                            const quantity = Number(value)
+                        <QuantityStepper
+                          label={`Cantidad de ${variant.diameter}`}
+                          value={quantities[variant.documentId] ?? 1}
+                          onChange={(quantity) => {
                             setQuantities((current) => ({
                               ...current,
-                              [index]:
-                                value === ""
-                                  ? ""
-                                  : Number.isInteger(quantity) && quantity > 0
-                                    ? quantity
-                                    : 1,
+                              [variant.documentId]: quantity,
                             }))
                           }}
                         />
@@ -219,8 +250,8 @@ export const ProductVariantsDrawer = ({
             <Drawer.Footer className="flex-col gap-4 border-t border-default-200 p-6">
               <div className="flex w-full items-center justify-between">
                 <span className="text-sm text-muted">
-                  {selectedVariantIndexes.size} variante
-                  {selectedVariantIndexes.size === 1 ? "" : "s"} · {selectedPieces} pieza
+                  {selectedVariantIds.size} variante
+                  {selectedVariantIds.size === 1 ? "" : "s"} · {selectedPieces} pieza
                   {selectedPieces === 1 ? "" : "s"}
                 </span>
                 <span className="text-xl font-bold">
@@ -230,12 +261,12 @@ export const ProductVariantsDrawer = ({
               <Button
                 fullWidth
                 variant="primary"
-                onPress={handleClose}
-                isDisabled={selectedVariantIndexes.size === 0}
+                onPress={handleAdd}
+                isDisabled={selectedVariantIds.size === 0}
               >
-                {selectedVariantIndexes.size === 0
+                {selectedVariantIds.size === 0
                   ? "Agregar al carrito"
-                  : `Agregar ${selectedVariantIndexes.size} al carrito`}
+                  : `Agregar ${selectedVariantIds.size} al carrito`}
               </Button>
             </Drawer.Footer>
           </Drawer.Dialog>

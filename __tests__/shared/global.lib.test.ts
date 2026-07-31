@@ -51,7 +51,11 @@ const product: Product = {
   documentId: "doc-1",
 }
 
-const variant: ProductVariant = { diameter: '15"', pricing: { price: 100 } }
+const variant: ProductVariant = {
+  documentId: "variant-1",
+  diameter: '15"',
+  pricing: { price: 100 },
+}
 
 describe("Apollo adapters", () => {
   it("fetchProducts sends GET_PRODUCTS with page and page size 50", async () => {
