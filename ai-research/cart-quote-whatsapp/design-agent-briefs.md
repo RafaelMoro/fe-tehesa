@@ -43,9 +43,11 @@ Also have ready as a file attachment: **`DESIGN.md`** (repo root).
 
 ---
 
-## Brief 1 — Product Card Footers
+## Brief 1 — Product Card Footers ✅ DONE (2026-07-31)
 
 Unblocks Story 1. The highest-value single brief: the same card renders 333 times and it is where a buyer's quote silently degrades.
+
+**Output:** `comps/desktop-{light,dark}-brief-1-cart-state.png`, `comps/mobile-{1,2}-brief-1-cart-state.png`. All four rejection criteria below passed on the first run. What the comps settle, plus the three implementation checks they cannot show, is recorded in `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md` → "Delivered Comps".
 
 ### Attach
 

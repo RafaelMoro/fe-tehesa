@@ -338,7 +338,7 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 
 | Surface | File | States | Story | Brief |
 |---|---|---|---|---|
-| Product card footer | `src/components/ProductCard.tsx` | Multi-variant, single-variant (one CTA, with pending + failure), broken-data | 1 | 1 |
+| Product card footer | `src/components/ProductCard.tsx` | Multi-variant, single-variant (one CTA, with pending + failure), broken-data | 1 | **1 — designed, comps in `comps/`** |
 | Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | 2 |
 | Add-confirmation toast | new, shared | 4 messages incl. the increment case | 1 | 2 |
 | Variants drawer footer | `src/features/ProductVariantsDrawer/` | Unchanged visually; CTA works, drawer still closes, focus returns | 1 | 2 |
@@ -347,6 +347,15 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | `/cotizar` contact block | new route | No saved details, saved (no form), editing | 4 | 4 |
 | `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | 4 |
 | `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | 4 |
+
+**Delivered comps** live in `comps/` at the repo root:
+
+| File | Covers |
+|---|---|
+| `comps/desktop-light-brief-1-cart-state.png` | Three card footers at 1440px, light, plus the single-variant default / pending / failure row |
+| `comps/desktop-dark-brief-1-cart-state.png` | Same, dark |
+| `comps/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark side by side |
+| `comps/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
 
 Three rules that override any design instinct to the contrary, repeated here because every story touches at least one:
 
@@ -425,7 +434,9 @@ The record of what was decided and why. Struck-through entries are settled, kept
 
    The problem is not that `Agregar al carrito` is a poor label in isolation. It is that it is the *conventional* label for the main path in every store the buyer has ever used, and here it is the degraded path. A buyer who taps it expecting normal add-to-cart behaviour produces a worse quote and gets no signal that they did.
 
-   **Recommendation: re-weight, and relabel only the degraded action.** Keep `Explorar las N variantes` as the visual primary; demote the other to tertiary. The constraint for the label: it must not read as the default action, and it should ideally convey *both* that something is added *and* that the size is missing.
+   **Designed and delivered 2026-07-31 — see `comps/*brief-1*`.** The comps resolve this: `Explorar las N variantes` is a full-width filled primary; `Agregar y elegir después` is a bare centred text action beneath it, with no capsule and no border. The designer's stated rationale is that the verb "Explorar" anticipates a decision rather than a purchase, and that the tertiary must read as *a deliberate alternative exit*, not as a disabled or secondary version of the same thing. Colour semantics are theme-independent: green for the recommended action, neutral text for the deliberate exit, red only for failure.
+
+   **Recommendation as originally written: re-weight, and relabel only the degraded action.** Keep `Explorar las N variantes` as the visual primary; demote the other to tertiary. The constraint for the label: it must not read as the default action, and it should ideally convey *both* that something is added *and* that the size is missing.
 
    Spanish copy candidates, grouped by what they lead with:
 

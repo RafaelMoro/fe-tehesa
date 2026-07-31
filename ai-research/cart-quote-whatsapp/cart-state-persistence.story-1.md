@@ -22,7 +22,8 @@ This story ships **no new route**. `/cotizar` is Story 2. The badge links to it,
 2. Rehydrated state is validated line by line before it reaches any consumer. A truncated blob, a valid-JSON-wrong-shape blob, a negative or non-integer quantity, and a non-finite price each result in that line being dropped and the rest of the cart surviving. Nothing throws.
 3. The variants drawer CTA adds one line per selected variant, carrying the variant's `documentId`, `internalId`, `diameter`, unit price, and quantity — all from state already in hand, with no additional Strapi request.
 4. The product card CTA (`Agregar y elegir después`, tertiary) adds a single product-level line with no variant, marked so it can be rendered and messaged as `Sin variante seleccionada` and excluded from any price total.
-5. Single-variant products (`variantCount === 1`) render a different card with **one primary CTA, `Agregar 1 pieza`**, which fetches the product's only variant through the existing `/api/catalog/variants` route and adds a complete, priced line at quantity 1. The button has a pending state and a failure state. The branch is on `variantCount === 1` exactly — `variantCount` of null or `0` (three known records, `docs/improvement.md`) is *not* this case and keeps the standard card.
+5. Single-variant products (`variantCount === 1`) render a different card with **one primary CTA, `Agregar 1 pieza`**, which fetches the product's only variant through the existing `/api/catalog/variants` route and adds a complete, priced line at quantity 1. Pending holds the label unchanged and shows a spinner; failure returns the button to default and surfaces `No se pudo agregar. Intenta de nuevo.` in a `role="alert"` beneath it, recoverable in place. The branch is on `variantCount === 1` exactly — `variantCount` of null or `0` (three known records, `docs/improvement.md`) is *not* this case and keeps the standard card.
+5b. A single-variant card shows one `PRECIO` value rather than the `DESDE` / `HASTA` pair, since `minPrice === maxPrice` for these products. Small change to the card's price block, introduced by the Brief 1 comps.
 6. Adding a variant already in the cart increments that line's quantity rather than appending a duplicate, keyed by the variant's `documentId`.
 7. A header cart badge shows the number of lines, always visible including at `0`, positioned bottom-right of the cart control, rendering only after mount so it never mismatches the server render, and reachable and announced by a screen reader.
 8. The persisted state has two independently clearable slices, cart lines and buyer contact details, both validated on rehydrate. The contact form itself lands in Story 4; only the store shape belongs here.
@@ -48,6 +49,36 @@ Single story, 3 implementation phases (store + persistence, drawer/card wiring, 
 - **Blocks:** Stories 2, 3, and 4 of the epic. Nothing can be reviewed or quoted until something can be added.
 - **Blocked by:** nothing. Every Strapi contract question this story depends on was answered on 2026-07-30.
 - **Coupling to Story 2:** the badge's destination. Options in Open Questions (UI III).
+
+## Delivered Comps (2026-07-31)
+
+Brief 1 is complete. The card footers are designed; build against these rather than re-deriving from the prose below.
+
+| File | Covers |
+|---|---|
+| `comps/desktop-light-brief-1-cart-state.png` | Three card footers at 1440px, light, plus the single-variant default / pending / failure row |
+| `comps/desktop-dark-brief-1-cart-state.png` | Same, dark |
+| `comps/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark |
+| `comps/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
+
+What the comps settle:
+
+- **Multi-variant footer** — `Explorar las N variantes` as a full-width filled primary; `Agregar y elegir después` as a bare centred text action beneath it, no capsule, no border.
+- **Single-variant footer** — one full-width `Agregar 1 pieza`, no second action.
+- **Broken-data footer** — visually identical to multi-variant, as specified.
+- **The three action states** — default; pending (spinner plus the label held **exactly** the same, not swapped for "Agregando…"); failure (button returns to default, with `No se pudo agregar. Intenta de nuevo.` in red beneath it). Failure is recoverable in place — no toast, no state loss.
+- **Colour semantics are theme-independent**: green for the recommended action, neutral text for the deliberate exit, red only for failure.
+
+Two things the comps introduce that were not in the brief, both worth keeping:
+
+- **A single-variant card shows one `PRECIO` label** instead of the `DESDE` / `HASTA` pair. Correct — `minPrice === maxPrice` for these products, so the range presentation is noise. This is a small change to the card's price block, which Brief 1 had put out of scope; fold it into this story rather than deferring it.
+- **The mobile layout stacks the tertiary action below the primary with real vertical separation**, rather than side by side. That is what makes the hierarchy survive a 390px width.
+
+Three things to verify during implementation, none of which a comp can show:
+
+1. **Tap target on the bare tertiary action.** It has no capsule, so its hit area is not visually bounded. It needs a minimum ~44px touch height regardless of the text's own line height.
+2. **Focus ring on the tertiary action.** A bare text button loses its focus indicator more easily than a filled one. It must be a real `<button>` with a visible focus style, not a styled `<span>`.
+3. **The pending and failure states must be announced**, not only shown. The failure message needs `role="alert"`; the pending state must not leave a focused button that silently does nothing.
 
 ## Design Agent Handoff
 
