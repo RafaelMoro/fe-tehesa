@@ -348,7 +348,24 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | **4 — designed, comps in `comps/brief-4/`** |
 | `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | **4 — designed, comps in `comps/brief-4/`** |
 
-**Delivered comps** live in `comps/<brief>/` at the repo root, one folder per brief. **All four briefs are complete as of 2026-07-31.**
+**Delivered comps** live in `comps/<brief>/` at the repo root, one folder per brief. **All four briefs have been run as of 2026-07-31 and every surface in the index above has comps.**
+
+Outstanding design work, in full:
+
+| # | Item | Kind | Blocks |
+|---|---|---|---|
+| D1 | Toast **placement, duration, stacking**, and its behaviour as the drawer closes beneath it | Never delivered — Brief 2 asked, comps show only the four messages | Story 1. Recommendations stand in their place (bottom / bottom-right, ~4s, no stacking); build against those unless re-asked. |
+| D2 | Drawer footer **with the `− n +` stepper** | Conditional — only exists if the stepper is adopted (Story 1, UI VI). No comp shows a modified drawer. | Story 1, only if adopted |
+| D3 | The drawer opened **from `/cotizar`** by `Elegir medida`, and what the buyer sees when the line upgrades in place | Behaviour, not a new surface — the drawer is existing UI | Story 2 |
+
+Everything else outstanding is a **decision, not design** — both options already exist as comps, or the answer is one word:
+
+- Which header control ships, Brief 2's icon-only or Brief 3's labelled pill (Story 1, UI V).
+- Whether the drawer adopts Brief 3's stepper (Story 1, UI VI).
+- Where the badge links before `/cotizar` exists (Story 1, UI III).
+- Whether `Restaurar lista` is in Story 4's scope or stays deferred.
+- When the list clears in a multi-part send — on opening the last part, or on `Empezar una nueva cotización`.
+- The noun: `lista` / `solicitud` / `cotización`. Briefs 3 and 4 both lean `lista` for the collection; only the header's `Mi solicitud` diverges.
 
 | File | Covers |
 |---|---|
