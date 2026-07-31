@@ -95,3 +95,21 @@ Deferred on the user's call, 2026-07-31, from `ai-research/epics/cart-quote-what
 - **Multi-part quotes make this sharper.** A quote too long for one message is split into parts built from the cart, so the clear may only fire after the last part is opened. A buyer who abandons after part 1 has sent the seller a message promising parts that no longer exist.
 - The buyer's contact details (name, last name, email) are persisted separately and deliberately survive the clear. Do not fold the two slices together when implementing recovery.
 - Worth revisiting once there is any funnel data on how often buyers return to `/cotizar` after a hand-off.
+
+### PDF quote document and email delivery (idea, not scoped)
+
+Raised 2026-07-31 alongside the cart epic. WhatsApp click-to-chat is the v1 channel; this is the natural second one. Two related but separable ideas — the second is much cheaper than the first.
+
+**a) Generate a PDF of the quote.** A real document the buyer can keep, forward internally, or attach to their own purchase order. It also sidesteps the WhatsApp length budget entirely: a PDF has no character cap, so a 40-line quote needs no batching. Delivery options are download-in-browser, email attachment, or a WhatsApp attachment (which click-to-chat cannot do — only a programmatic API can, see Spike 4S).
+
+**b) Send the quote as an email.** Either to a fixed internal address that receives every quote, or to the buyer's own address as a copy, or both. Cheaper than (a) and arguably the higher-value half: it produces a **server-side record of every quote**, which is exactly what the current design has none of. Today a quote that the buyer never presses send on simply never existed.
+
+What this would need, none of which exists in this repo today:
+
+- A backend path — the current architecture is read-only against Strapi with no write, no queue, no outbound integration.
+- An email provider and credentials that cannot be `NEXT_PUBLIC_`, so a route handler or server action rather than the client-side link the WhatsApp flow uses.
+- A PDF approach for (a): server-side rendering is the sane one, since a client-side generator means a new dependency, a large bundle, and fonts. Note the design constraint that `DESIGN.md` mandates Geist Sans and no Geist Mono for prices — a PDF renderer needs those fonts embedded.
+- Spam and abuse handling. An unauthenticated endpoint that sends email to an address supplied in a form is an open relay unless rate-limited, and quotes carry buyer PII.
+- A decision on whether the seller wants quotes in email at all, or whether WhatsApp is deliberately their whole workflow.
+
+Sequencing note: this overlaps heavily with Spike 4S. If that spike recommends the WhatsApp Cloud API, a backend appears anyway and both of these get much cheaper — worth deciding them together rather than separately.

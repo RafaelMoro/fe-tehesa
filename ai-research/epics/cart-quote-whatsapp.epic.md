@@ -237,8 +237,10 @@ Description: Name, last name, and email inputs, plus the message builder and the
 
 Acceptance criteria:
 
-1. Name, last name, and email are captured with native HTML validation plus a length cap and an email pattern check; no form library is added. The fields prefill from the persisted contact details when present, and whatever they hold at submit becomes the new persisted values.
-1b. A visible, reversible "remembered details" affordance lets the buyer wipe their stored contact details without clearing browser storage. The contact slice clears independently of the cart — the cart clears after hand-off (UI III), the contact details survive.
+1. Name, last name, and email are captured with native HTML validation plus a length cap and an email pattern check; no form library is added.
+1b. **The form is only rendered when there are no valid saved details, or when the buyer presses the control to use different information.** With valid saved details the page shows a read-only summary and goes straight to `Cotizar`, feeding the saved values into the message. Revealing the form prefills it with the saved values and moves focus into it.
+1c. Saved details are validated on rehydrate **and** again at message-build time, because in the collapsed path they reach the message without passing through the form's native validation. Details that fail fall back to the expanded form, prefilled with whatever survived — never a summary of a half-valid record, never a silent send.
+1d. A visible, reversible "olvidar mis datos" affordance lets the buyer wipe their stored contact details without clearing browser storage. The contact slice clears independently of the cart — the cart clears after hand-off (UI III), the contact details survive.
 2. Every value interpolated into the message — product names from Strapi and form values from the buyer — is stripped of newlines, control characters, and WhatsApp markdown characters before interpolation.
 3. The message contains, per line, the `internalId`, product name, variant, quantity, unit price, and line total; plus the buyer's details, the subtotal, and a short quote reference.
 4. The CTA is a real anchor when the form is valid and a non-focusable `aria-disabled` span when it is not, and it is disabled with an explanatory message when `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset.
@@ -352,7 +354,9 @@ Surfaces: the PLP grid card (`src/components/ProductCard.tsx`), the variants dra
 
 **`/cotizar` — contact form and CTA**
 
-- Default, per-field invalid, and form-incomplete states.
+- **No saved details** — the form is shown expanded, as the only way forward. Default, per-field invalid, and form-incomplete states all live here.
+- **Saved details present** — *no form*. A read-only summary of name, last name, and email, plus a *usar otros datos* control, with `Cotizar` immediately available. This is the common state for a returning buyer and should read as two taps, not as a collapsed form.
+- **Saved details, editing** — the form revealed and prefilled. Focus moves into it on reveal.
 - CTA disabled (form incomplete) — non-focusable, visibly inert, with the reason stated, not a mystery grey button.
 - CTA disabled (WhatsApp not configured) — a distinct state with different copy; this is our failure, not the buyer's.
 - CTA ready — the primary action of the page.
@@ -407,7 +411,7 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 2. Header badge at zero: visible or hidden?
 3. Add confirmation: inline in the drawer, a toast, or a badge animation? HeroUI v3's available surfaces should decide this — the app has no toast pattern today.
 4. ~~Does the cart clear after the WhatsApp hand-off?~~ **Answered 2026-07-31: yes.** What still needs designing is *how*: the clear cannot be silent (delivery is unobservable), and in a multi-part quote it may only happen after the last part. An acknowledgement step or a visible undo — pick one and design it.
-4b. How are the buyer's remembered contact details surfaced? They now persist across visits, so the form prefills, and there must be a visible, reversible way to wipe them. This is the only PII-bearing state in the app.
+4b. How does the saved-details summary read? The form is hidden once details are saved (Persistence II), so this summary is what a returning buyer sees instead — it has to make clear *which* details will be sent, offer *usar otros datos*, and offer *olvidar mis datos*, without turning into three competing controls above the primary CTA. This is the only PII-bearing surface in the app.
 5. How prominent should the "this is a quote, not an order" framing be, and where does it live? Note the card's `Agregar al carrito` label already implies an order on a surface that has nothing to do with `/cotizar`.
 6. Do the two product-card CTAs need relabelling or re-weighting now that they diverge? (Carried up from the Story 1 handoff, where it is the main visual problem.)
 7. Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)? Closing returns the buyer to the grid; staying open lets them see the confirmation. (Carried up from the Story 1 handoff.)
@@ -455,8 +459,19 @@ Status: **answered by the user, 2026-07-31 — yes, persisted.** On completing t
 Context: PII in `localStorage`, on the buyer's own device, never transmitted anywhere except into the WhatsApp message the buyer themselves sends.
 Explanation: Behaviour this implies:
 
-- The contact form prefills from persisted values on every subsequent visit, so a repeat buyer never retypes.
-- At hand-off, an explicit control offers *keep these details* or *use different details*. Whatever the form holds at submit is what gets written — editing the fields and sending is itself the "change" path; the control exists so the buyer knows their details are being remembered.
+**The form is hidden when saved details exist (user decision, 2026-07-31).** A returning buyer does not see a form at all — they see their saved details and go straight to `Cotizar`, and the saved values feed the quote directly. The form appears only if they press the control to use different information.
+
+Three states, and the first one is the one that is easy to get wrong:
+
+1. **No saved details** (first visit, or after "olvidar mis datos"). The form is shown, expanded, as the only way forward. There is nothing to collapse.
+2. **Saved details present.** No form. A read-only summary of name, last name, and email, plus a control along the lines of *usar otros datos*. `Cotizar` is the primary action and is immediately available — this is the whole point of the decision, and it is what turns a repeat quote into two taps.
+3. **Saved details, buyer chose to change them.** The form is revealed, prefilled with the saved values so a one-field correction does not mean retyping three. Submitting overwrites the saved values.
+
+Consequences:
+
+- **The saved details still have to be validated before use, not just on entry.** They come back out of `localStorage`, which is user-writable, and in state 2 they flow into the outbound message *without passing through a form*. That removes the browser's native validation from the path entirely, so the same shape checks must run on rehydrate and again at message-build time. This is the direct cost of hiding the form and it is not optional.
+- **If the saved details fail validation, fall back to state 1** — show the form, prefilled with whatever survived. Never render a summary of a half-valid record and never silently send it.
+- Revealing the form must move focus into it and be announced; a `Cotizar` button that changes what it does depending on a collapsed region is a screen-reader trap otherwise.
 - **The contact block must clear independently of the cart.** UI III clears the cart after hand-off; the contact details deliberately survive that. Two persisted slices, one lifecycle each.
 - The same validate-on-rehydrate rule as the cart applies — these strings flow into an outbound message, so they are a trust boundary on the way back in as much as on the way out. Length caps and an email shape check on rehydrate, drop rather than repair.
 - **Never sent to analytics.** Story 5 AC 3 already states this; the redaction in `ANALYTICS_EVENT_CONTRACT.md:75` is a backstop, not the control.
@@ -481,11 +496,11 @@ Explanation:
 - **Single number, not routed per category or brand.** Nothing in the current data model carries a seller-per-category mapping, and inventing one is out of scope.
 
 II: Question: Is the exact Spanish message wording approved?
-Status: pending — **three options drafted below for the seller to pick from (2026-07-31).**
-Context: The seller who reads these every day is the right reviewer. The format is cheap to change now and annoying to change once it is in a test suite.
+Status: **answered by the user, 2026-07-31 — Option A, the formal purchase-order style.** This is the format Story 4 builds. Options B and C are kept below as the record of what was rejected and why.
+Context: The seller who reads these every day was not the reviewer; if they push back after seeing real messages, the wording is one pure function and its tests. Option C stays the named fallback if message length becomes the problem.
 Explanation: All three carry identical information and identical escaping; they differ only in tone and in how many characters they spend to convey it. Character counts are plain text for the same two-line sample cart — the encoded length is what the budget is measured against, but the ratio between the options holds.
 
-**Option A — Formal, purchase-order style (~330 chars)**
+**Option A — Formal, purchase-order style (~330 chars) — CHOSEN**
 
 ```
 *Solicitud de cotización* · TH-260731-A4F2
@@ -537,7 +552,9 @@ Subtotal $360.00 MXN · 1 línea sin precio
 
 Roughly 40% fewer characters, so **substantially more lines fit before a split** — this is the lever if batching turns out to annoy the seller. The cost is legibility: pipe-delimited rows are hard to read on a phone, and abbreviations like `s/variante` need to be learned once.
 
-**Recommendation: A.** The seller is the reader, and this is their working document — the fixed field order and the explicit `Sin variante seleccionada` are what stop a follow-up round of questions, which is the stated goal of the whole epic. B spends its extra characters on warmth a supplier receiving orders does not need. Keep C in reserve: if Spike 4S or the seller review says multi-part sends are unacceptable, switching A→C buys back most of the length before anything else has to change.
+**Chosen: A.** The seller is the reader, and this is their working document — the fixed field order and the explicit `Sin variante seleccionada` are what stop a follow-up round of questions, which is the stated goal of the whole epic. B spends its extra characters on warmth a supplier receiving orders does not need. C stays in reserve: if the seller review or Spike 4S says multi-part sends are unacceptable, switching A→C buys back most of the length before anything else has to change.
+
+Implementation notes for A specifically: the `*asterisk*` bold on the header and subtotal lines is WhatsApp markup and must survive escaping, while every interpolated value must have that same markup stripped from it — the escape function applies to values, never to the template. Line numbering is continuous across parts in a multi-part quote. The `Sin variante seleccionada` line carries no price and no `c/u`, and the subtotal label says `(líneas con precio)` so the number is never read as the quote total.
 
 Sub-question still open for the seller: is receiving 2-3 sequential messages for a large quote acceptable, or would they rather get part 1 and reply asking for the rest?
 
@@ -547,10 +564,10 @@ Context: ~700-900 plain-text characters, roughly 8-12 lines, before the encoded 
 Explanation: The cost this accepts is that WhatsApp cannot queue several prefilled messages from one link — the buyer must return to the browser and press the next CTA, and a buyer who abandons after part 1 leaves the seller with a partial quote. That is contained, not eliminated, by making part 1 self-sufficient (reference, contact, line count, subtotal) and labelling every part `Parte N de M` so a missing part is visible. Remaining sub-question for the seller: is receiving 3 sequential messages acceptable in their day-to-day, or would they rather get part 1 alone and reply asking for the rest?
 
 IV: Question: Does the browser's URL-length ceiling, not WhatsApp's, set the real threshold?
-Status: pending — but **not blocking. Ship `1800` and tune.**
+Status: **answered by the user, 2026-07-31 — ship the 1800 cap.** The device measurement below stays as a follow-up to tune the constant on evidence; it does not gate Story 4.
 Context: The bound is a conservative engineering figure, not a documented limit. WhatsApp itself is not the binding constraint — the Cloud API documents a 4096-character body — the URL handler between the browser and the app is.
 
-**Recommended cap: `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`**, measured on the **entire URL**, not just the `text` parameter. The base (`https://wa.me/522224417330?text=`) is ~32 characters and must come out of the budget. 1800 encoded is roughly 600-800 plain Spanish characters — about 7-10 lines in Option A, 12-15 in Option C.
+**Cap: `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`**, measured on the **entire URL**, not just the `text` parameter. The base (`https://wa.me/522224417330?text=`) is ~32 characters and must come out of the budget. 1800 encoded is roughly 600-800 plain Spanish characters — about 7-10 lines in Option A, 12-15 in Option C.
 
 Why 1800 and not 2000 or 4000: the failure modes are wildly asymmetric. Too low costs one extra message on an unusually large quote. Too high produces a **silently truncated** message — the seller receives a quote that looks complete and is not, and nobody finds out until the wrong goods are priced. Pick low, raise it later on evidence.
 
