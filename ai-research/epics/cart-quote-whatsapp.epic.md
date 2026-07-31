@@ -237,9 +237,9 @@ Description: Name, last name, and email inputs, plus the message builder and the
 
 Acceptance criteria:
 
-1. Name, last name, and email are captured with native HTML validation plus a length cap and an email pattern check; no form library is added.
+1. Name, last name, and email are captured with **`react-hook-form`** (user decision, 2026-07-31), with a required check, a length cap, and an email pattern on each field.
 1b. **The form is only rendered when there are no valid saved details, or when the buyer presses the control to use different information.** With valid saved details the page shows a read-only summary and goes straight to `Cotizar`, feeding the saved values into the message. Revealing the form prefills it with the saved values and moves focus into it.
-1c. Saved details are validated on rehydrate **and** again at message-build time, because in the collapsed path they reach the message without passing through the form's native validation. Details that fail fall back to the expanded form, prefilled with whatever survived — never a summary of a half-valid record, never a silent send.
+1c. Saved details are validated on rehydrate **and** again at message-build time, because in the collapsed path they reach the message without passing through the form — and therefore without `react-hook-form` ever running. The rules live in one shared pure validator consumed by both paths, not inline in the form. Details that fail fall back to the expanded form, prefilled with whatever survived — never a summary of a half-valid record, never a silent send.
 1d. A visible, reversible "olvidar mis datos" affordance lets the buyer wipe their stored contact details without clearing browser storage. The contact slice clears independently of the cart — the cart clears after hand-off (UI III), the contact details survive.
 2. Every value interpolated into the message — product names from Strapi and form values from the buyer — is stripped of newlines, control characters, and WhatsApp markdown characters before interpolation.
 3. The message contains, per line, the `internalId`, product name, variant, quantity, unit price, and line total; plus the buyer's details, the subtotal, and a short quote reference.
@@ -248,6 +248,14 @@ Acceptance criteria:
 6. When there is more than one part, the UI presents them in order, marks each as *opened* (never as *sent* — delivery is unobservable), and keeps every part re-sendable. A one-part quote renders a single CTA with no stepper.
 7. The message builder is a pure function `buildQuoteMessages(lines, contact): string[]` under `src/shared/utils/`, unit-tested against escaping, empty-variant lines, subtotal exclusion, a one-part cart, and a cart that forces a split (asserting the split lands on a line boundary and that part 1 alone contains the contact details and subtotal). The split threshold is `WHATSAPP_URL_MAX_ENCODED_LENGTH` (1800) measured on the full URL.
 8. The cart clears after the hand-off, but only once the **last** part of a multi-part quote has been opened, and never silently — an explicit acknowledgement or an immediately available undo, since the browser cannot observe whether anything was actually sent.
+
+Must-have notes:
+
+- **This is the only new dependency in the epic.** `react-hook-form` is not currently installed (`package.json` dependencies verified 2026-07-31). It is a deliberate exception to the CLAUDE.md rule against form libraries — that rule allows them "unless explicitly planned", and this is the plan. Add it in this story only, never during research. No resolver package: `zod`/`yup` would be a *second* dependency, and RHF's built-in `required` / `maxLength` / `pattern` rules cover three text fields.
+- **RHF is not the trust boundary, and this is the trap in this story.** AC 1c means saved contact details reach the WhatsApp message *without passing through the form at all* in the collapsed path. So the rules must live in one shared pure validator (plus constants for the caps and the email pattern), consumed both by RHF's field rules and by the rehydrate and message-build checks. If RHF's rules are written inline in the component, the two paths drift and the unvalidated one is the one that ships PII into an outbound message.
+- **`defaultValues` versus rehydration.** RHF captures `defaultValues` at first render, while `zustand/persist` rehydrates from `localStorage` after mount. The naive wiring yields a permanently empty prefilled form. Either gate the form's render on the mounted flag (the `Header.tsx:15-21` pattern this epic already uses everywhere) or call `reset(savedContact)` once rehydration completes. Decide this in planning — it is the single most likely source of a "prefill doesn't work" bug.
+- **HeroUI v3 integration is unverified.** RHF's `register` wants an uncontrolled input with a forwarded ref; HeroUI v3 inputs may be controlled, which would require `Controller` instead. Check against the HeroUI MCP (configured in `opencode.json`) before planning, not during implementation — it changes the shape of every field.
+- Jest should resolve `react-hook-form` by name without a `moduleNameMapper` entry, unlike `@heroui/react`. Verify rather than assume; if the form ends up wrapped in `Controller`, the existing HeroUI mapping already covers that half.
 
 ### Story 5: Analytics Contract Extension For The Cart Funnel
 
@@ -296,7 +304,7 @@ Acceptance criteria:
 - `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`.
 - `pnpm test` for the full suite; `pnpm test -- __tests__/cart/<file>` for targeted runs.
 - `pnpm design:lint` if `DESIGN.md` tokens change.
-- Do not run `pnpm install`. No new dependency is needed for any story in this epic — `zustand/persist` ships inside the installed `zustand`, and the WhatsApp link is a URL.
+- **One new dependency, in Story 4 only: `react-hook-form`** (user decision, 2026-07-31). Stories 1, 2, 3, and 5 add nothing — `zustand/persist` ships inside the installed `zustand`, and the WhatsApp link is a URL. Do not run `pnpm install` during research or during any story other than Story 4.
 - Manual QA (dev server, live Strapi) is the user's; agents do not start `pnpm dev`.
 
 ### Edge Cases And Constraints
@@ -469,7 +477,7 @@ Three states, and the first one is the one that is easy to get wrong:
 
 Consequences:
 
-- **The saved details still have to be validated before use, not just on entry.** They come back out of `localStorage`, which is user-writable, and in state 2 they flow into the outbound message *without passing through a form*. That removes the browser's native validation from the path entirely, so the same shape checks must run on rehydrate and again at message-build time. This is the direct cost of hiding the form and it is not optional.
+- **The saved details still have to be validated before use, not just on entry.** They come back out of `localStorage`, which is user-writable, and in state 2 they flow into the outbound message *without passing through a form*. That removes the form — and `react-hook-form` with it — from the path entirely, so the same shape checks must run on rehydrate and again at message-build time, from a shared pure validator rather than from the form's field rules. This is the direct cost of hiding the form and it is not optional.
 - **If the saved details fail validation, fall back to state 1** — show the form, prefilled with whatever survived. Never render a summary of a half-valid record and never silently send it.
 - Revealing the form must move focus into it and be announced; a `Cotizar` button that changes what it does depending on a collapsed region is a screen-reader trap otherwise.
 - **The contact block must clear independently of the cart.** UI III clears the cart after hand-off; the contact details deliberately survive that. Two persisted slices, one lifecycle each.
@@ -664,6 +672,6 @@ Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-wh
 
 The one finding that changes the design rather than the estimate: `internalId` is optional and non-unique in Strapi, so it is display text, not a key. Every story treats the variant's `documentId` as the identity.
 
-No new dependency is required by any story. No backend change is required by any story.
+One new dependency, `react-hook-form`, is added by Story 4 only (user decision, 2026-07-31); Stories 1, 2, 3, and 5 add none. No backend change is required by any story.
 
 Awaiting human sign-off.
