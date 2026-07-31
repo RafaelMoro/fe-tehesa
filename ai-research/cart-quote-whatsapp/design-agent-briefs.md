@@ -6,6 +6,8 @@
 
 ## How To Use This File
 
+**Status: all four briefs complete (2026-07-31).** Comps live in `comps/<brief>/`, one folder per brief. This file is now the record of how they were produced; re-run a brief only if a decision changes.
+
 Four briefs, run in order. Each has three parts:
 
 1. **Attach** — screenshots and files to upload.
@@ -47,7 +49,7 @@ Also have ready as a file attachment: **`DESIGN.md`** (repo root).
 
 Unblocks Story 1. The highest-value single brief: the same card renders 333 times and it is where a buyer's quote silently degrades.
 
-**Output:** `comps/desktop-{light,dark}-brief-1-cart-state.png`, `comps/mobile-{1,2}-brief-1-cart-state.png`. All four rejection criteria below passed on the first run. What the comps settle, plus the three implementation checks they cannot show, is recorded in `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md` → "Delivered Comps".
+**Output:** `comps/brief-1/desktop-{light,dark}-brief-1-cart-state.png`, `comps/brief-1/mobile-{1,2}-brief-1-cart-state.png`. All four rejection criteria below passed on the first run. What the comps settle, plus the three implementation checks they cannot show, is recorded in `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md` → "Delivered Comps".
 
 ### Attach
 
@@ -155,7 +157,7 @@ made this harder than it needed to be.
 
 Completes Story 1. Two small surfaces, one brief, because they are the same feedback loop.
 
-**Output:** `comps/desktop-header-brief-2.png`, `comps/mobile-header-brief-2.png`, `comps/share-toast-brief-2.png`. All four rejection criteria passed.
+**Output:** `comps/brief-2/desktop-header-brief-2.png`, `comps/brief-2/mobile-header-brief-2.png`, `comps/brief-2/share-toast-brief-2.png`. All four rejection criteria passed.
 
 **Gap:** the prompt asked for toast placement, duration, stacking behaviour, and the interaction with the drawer closing underneath. The comps show the four messages only. Recommendations were recorded in `cart-state-persistence.story-1.md` → "Brief 2" rather than re-running the brief; re-ask only if the designer disagrees. Lesson for future briefs: behavioural questions buried in a paragraph get answered less reliably than states listed as items — put them in their own numbered block.
 
@@ -260,7 +262,7 @@ themes, plus your recommendation on toast duration and stacking behaviour.
 
 Covers Stories 2 and 3. The largest brief, and the first entirely new screen.
 
-**Output:** `comps/*brief-3*` — normal state and all seven line states, desktop and mobile, light and dark. All four rejection criteria passed. What the comps settle, and three cross-brief inconsistencies to resolve before implementing, are recorded in `ai-research/epics/cart-quote-whatsapp.epic.md` → "What The Brief 3 Comps Settle".
+**Output:** `comps/brief-3/*brief-3*` — normal state and all seven line states, desktop and mobile, light and dark. All four rejection criteria passed. What the comps settle, and three cross-brief inconsistencies to resolve before implementing, are recorded in `ai-research/epics/cart-quote-whatsapp.epic.md` → "What The Brief 3 Comps Settle".
 
 **Lesson for Brief 4:** Brief 3 re-rendered the header, which Brief 2 had already designed differently. When a brief's screen contains a surface an earlier brief owns, attach that brief's output and say explicitly that it is fixed and must be reproduced, not redesigned.
 
@@ -373,15 +375,19 @@ a buyer would misread the subtotal.
 
 ---
 
-## Brief 4 — Contact Block, Send Button, And The Multi-Message Send
+## Brief 4 — Contact Block, Send Button, And The Multi-Message Send ✅ DONE (2026-07-31)
 
 Covers Story 4. The hardest brief, because it contains the one state that is easy to design dishonestly. Run it after Brief 3, and attach Brief 3's output.
+
+**Output:** `comps/brief-4/` — contact states, the send flow, the WhatsApp-unconfigured state, and the on-screen-keyboard case, desktop and mobile, light and dark. All four rejection criteria passed, including the one that mattered: **no success state anywhere in the send flow.** Findings and the two things to resolve before planning are in `ai-research/epics/cart-quote-whatsapp.epic.md` → "What The Brief 4 Comps Settle".
+
+**What worked, worth reusing:** naming the failure mode explicitly and at length ("designing anything that asserts delivery would be a lie the browser cannot back up — this is the single most important constraint in this brief") produced a flow with no green checks and no completion screen, on the first run. Anti-goals stated as consequences beat anti-goals stated as rules.
 
 ### Attach
 
 - `DESIGN.md`
-- **Brief 3's output** (`comps/*brief-3*` — the quote page design; this brief sits below it)
-- **Brief 2's header comps** (`comps/*header-brief-2*`) — state in the prompt that the header is already designed, is fixed, and must be reproduced rather than reinterpreted. Brief 3 redesigned it by accident.
+- **Brief 3's output** (`comps/brief-3/*brief-3*` — the quote page design; this brief sits below it)
+- **Brief 2's header comps** (`comps/brief-2/*header-brief-2*`) — state in the prompt that the header is already designed, is fixed, and must be reproduced rather than reinterpreted. Brief 3 redesigned it by accident.
 - S2 (phone-width catalog, for scale reference)
 
 ### Prompt

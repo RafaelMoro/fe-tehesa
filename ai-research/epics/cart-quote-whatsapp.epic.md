@@ -338,31 +338,37 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 
 | Surface | File | States | Story | Brief |
 |---|---|---|---|---|
-| Product card footer | `src/components/ProductCard.tsx` | Multi-variant, single-variant (one CTA, with pending + failure), broken-data | 1 | **1 — designed, comps in `comps/`** |
-| Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | **2 — designed, comps in `comps/`** |
+| Product card footer | `src/components/ProductCard.tsx` | Multi-variant, single-variant (one CTA, with pending + failure), broken-data | 1 | **1 — designed, comps in `comps/brief-1/`** |
+| Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | **2 — designed, comps in `comps/brief-2/`** |
 | Add-confirmation toast | new, shared | 4 messages incl. the increment case | 1 | **2 — messages designed; placement, duration, stacking still open** |
 | Variants drawer footer | `src/features/ProductVariantsDrawer/` | Unchanged visually; CTA works, drawer still closes, focus returns | 1 | 2 |
-| `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | **3 — designed, comps in `comps/`** |
-| `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | **3 — designed, comps in `comps/`** |
-| `/cotizar` contact block | new route | No saved details, saved (no form), editing | 4 | 4 |
-| `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | 4 |
-| `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | 4 |
+| `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | **3 — designed, comps in `comps/brief-3/`** |
+| `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | **3 — designed, comps in `comps/brief-3/`** |
+| `/cotizar` contact block | new route | No saved details, saved (no form), editing | 4 | **4 — designed, comps in `comps/brief-4/`** |
+| `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | **4 — designed, comps in `comps/brief-4/`** |
+| `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | **4 — designed, comps in `comps/brief-4/`** |
 
-**Delivered comps** live in `comps/` at the repo root:
+**Delivered comps** live in `comps/<brief>/` at the repo root, one folder per brief. **All four briefs are complete as of 2026-07-31.**
 
 | File | Covers |
 |---|---|
-| `comps/desktop-light-brief-1-cart-state.png` | Three card footers at 1440px, light, plus the single-variant default / pending / failure row |
-| `comps/desktop-dark-brief-1-cart-state.png` | Same, dark |
-| `comps/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark side by side |
-| `comps/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
-| `comps/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
-| `comps/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
-| `comps/share-toast-brief-2.png` | The four toast messages, light and dark |
-| `comps/desktop-{light,dark}-normal-state-brief-3.png` | `/cotizar` in its normal state at 1440px |
-| `comps/desktop-seven-state-{1,2}-brief-3.png`, `comps/desktop-seven-state-dark-1-brief-3.png` | The seven line states at 1440px, light and dark |
-| `comps/mobile-brief-3.png` | `/cotizar` normal state at 390px, light and dark |
-| `comps/mobile-seven-state-{1,2,3}-brief-3.png` | The seven line states at 390px |
+| `comps/brief-1/desktop-light-brief-1-cart-state.png` | Three card footers at 1440px, light, plus the single-variant default / pending / failure row |
+| `comps/brief-1/desktop-dark-brief-1-cart-state.png` | Same, dark |
+| `comps/brief-1/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark side by side |
+| `comps/brief-1/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
+| `comps/brief-2/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
+| `comps/brief-2/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
+| `comps/brief-2/share-toast-brief-2.png` | The four toast messages, light and dark |
+| `comps/brief-3/desktop-{light,dark}-normal-state-brief-3.png` | `/cotizar` in its normal state at 1440px |
+| `comps/brief-3/desktop-seven-state-{1,2}-brief-3.png`, `comps/brief-3/desktop-seven-state-dark-1-brief-3.png` | The seven line states at 1440px, light and dark |
+| `comps/brief-3/mobile-brief-3.png` | `/cotizar` normal state at 390px, light and dark |
+| `comps/brief-3/mobile-seven-state-{1,2,3}-brief-3.png` | The seven line states at 390px |
+| `comps/brief-4/desktop-fill-user-data-{,2-}brief-4.png` | Contact states 1-5 at 1440px, light and dark |
+| `comps/brief-4/desktop-check-data-contact-brief-4.png` | The common case — saved details plus `Cotizar` — in page context |
+| `comps/brief-4/desktop-check-quote-flow-{1,2,3}-brief-4.png` | Single part, multi-part before/in-progress/all-opened, return-with-cleared-list, WhatsApp unconfigured |
+| `comps/brief-4/mobile-fill-user-data-{1,2,3}-brief-4.png` | Contact states at 390px |
+| `comps/brief-4/mobile-fill-user-data-w-keyboard-brief-4.png` | **The on-screen keyboard case** — sticky action region above the keyboard |
+| `comps/brief-4/mobile-check-quote-flow-{1,2,3}-brief-4.png` | The send flow at 390px |
 
 ### What The Brief 3 Comps Settle (Stories 2 and 3)
 
@@ -384,6 +390,27 @@ Three things to resolve before implementing, none of which is a comp defect:
 3. **Settle the noun.** The comps use `Mi solicitud`, `Tu lista`, and `cotización` for what is arguably one thing. The split is defensible — *lista* for the collection, *solicitud/cotización* for the act — but it should be a stated rule rather than an accident, because the toast, the header, the page, and the WhatsApp message all have to agree.
 
 Not showable in a comp, required at build time: accessible names on every stepper button and `Quitar` naming their line; `Comprobando precios…` as `role="status"`; `No pudimos comprobar los precios.` as `role="alert"`.
+
+### What The Brief 4 Comps Settle (Story 4)
+
+All four rejection criteria passed, including the one this brief existed to prevent — **there is no success state anywhere in the send flow.**
+
+- **Contact, first visit** — `Tus datos de contacto` / `Se guardarán en este dispositivo para tu próxima visita.` Fields `NOMBRE`, `APELLIDOS`, `CORREO ELECTRÓNICO`. Per-field errors are specific (`Escribe tu nombre.`, `Escribe un correo válido.`), and the disabled CTA always states its reason (`Completa nombre, apellidos y correo para continuar.`) rather than being an unexplained grey button.
+- **Contact, saved (the common case)** — a read-only three-column summary, `Solo en este dispositivo`, with `Usar otros datos` as a bordered secondary and `Olvidar mis datos` as a text action, and `Cotizar` live. The form is genuinely absent, as decided. The competing-controls problem is solved by weight: one bordered button, one text link, one filled primary.
+- **Contact, editing** — `Usar otros datos` / `Actualiza los valores que quieres usar ahora.`, prefilled, plus a `Cancelar cambios` escape the brief did not ask for. Keep it — without it, opening the editor is a one-way door.
+- **The CTA's supporting copy carries the honesty**: `Se abrirá WhatsApp con el mensaje preparado. Tú decides si lo envías.` One sentence, and it is doing most of the work of the no-success-state rule.
+- **Single-part send** — `Todo listo para cotizar`, one `Cotizar`, no stepper, no mention that splitting exists.
+- **Multi-part, before the first send** — `Esta cotización necesita 3 partes` with the whole plan visible up front and every part marked `Pendiente`. The CTA carries a subtitle: `Cotizar` / `Abrir parte 1 de 3 en WhatsApp`. This is what stops a buyer assuming the first tap finished the job.
+- **Multi-part, in progress** — `Continúa con la parte 2 de 3`, previous parts marked `Abierta en WhatsApp · vuelve a abrirla si hace falta` with a `Volver a abrir` action each.
+- **All parts opened** — `Abriste las 3 partes en WhatsApp` / `No podemos confirmar si las enviaste. Puedes volver a abrir cualquier parte.` No check, no `enviado`, no completion screen. Every part is still re-openable.
+- **Return with the list cleared** — `Abrimos WhatsApp para ti` / `No podemos confirmar si enviaste el mensaje. La lista se limpió en este dispositivo, pero conservamos una copia para recuperarla.` with `Restaurar lista` beside `Empezar una nueva cotización`.
+- **WhatsApp unconfigured** — `No podemos abrir WhatsApp porque falta la configuración de Tehesa. Inténtalo más tarde.`, and it reassures that `Tus datos y tu lista permanecen guardados en este dispositivo.` Reads as our failure, as specified.
+- **The keyboard case is designed, not assumed** — the action region sticks above the on-screen keyboard, carries its blocking reason with it, and does not cover the active field.
+
+Two things to resolve before Story 4 is planned:
+
+1. **`Restaurar lista` is a scope increase.** The epic's v1 was an acknowledgement or an *immediate* undo, with durable recovery deferred to `docs/improvement.md`. The comps design durable recovery — the cleared list is kept as a copy and restorable after a return trip through WhatsApp. That is the better product; it is also more than was scoped. Either pull it into Story 4 deliberately, or ship the acknowledgement-only version and keep the comp for later.
+2. **When exactly does the list clear in a multi-part send?** State 4 (all parts opened) still shows the list and offers `Empezar una nueva cotización`; state 5 is the return with the list already cleared. Whether the clear fires on opening the last part or on pressing `Empezar una nueva cotización` is not determinable from the comps, and it decides whether a buyer who opens part 3 and closes the tab comes back to a cart or to a restore prompt.
 
 Three rules that override any design instinct to the contrary, repeated here because every story touches at least one:
 
@@ -462,7 +489,7 @@ The record of what was decided and why. Struck-through entries are settled, kept
 
    The problem is not that `Agregar al carrito` is a poor label in isolation. It is that it is the *conventional* label for the main path in every store the buyer has ever used, and here it is the degraded path. A buyer who taps it expecting normal add-to-cart behaviour produces a worse quote and gets no signal that they did.
 
-   **Designed and delivered 2026-07-31 — see `comps/*brief-1*`.** The comps resolve this: `Explorar las N variantes` is a full-width filled primary; `Agregar y elegir después` is a bare centred text action beneath it, with no capsule and no border. The designer's stated rationale is that the verb "Explorar" anticipates a decision rather than a purchase, and that the tertiary must read as *a deliberate alternative exit*, not as a disabled or secondary version of the same thing. Colour semantics are theme-independent: green for the recommended action, neutral text for the deliberate exit, red only for failure.
+   **Designed and delivered 2026-07-31 — see `comps/brief-1/*brief-1*`.** The comps resolve this: `Explorar las N variantes` is a full-width filled primary; `Agregar y elegir después` is a bare centred text action beneath it, with no capsule and no border. The designer's stated rationale is that the verb "Explorar" anticipates a decision rather than a purchase, and that the tertiary must read as *a deliberate alternative exit*, not as a disabled or secondary version of the same thing. Colour semantics are theme-independent: green for the recommended action, neutral text for the deliberate exit, red only for failure.
 
    **Recommendation as originally written: re-weight, and relabel only the degraded action.** Keep `Explorar las N variantes` as the visual primary; demote the other to tertiary. The constraint for the label: it must not read as the default action, and it should ideally convey *both* that something is added *and* that the size is missing.
 

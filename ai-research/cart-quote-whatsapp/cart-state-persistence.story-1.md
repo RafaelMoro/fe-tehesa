@@ -56,10 +56,10 @@ Brief 1 is complete. The card footers are designed; build against these rather t
 
 | File | Covers |
 |---|---|
-| `comps/desktop-light-brief-1-cart-state.png` | Three card footers at 1440px, light, plus the single-variant default / pending / failure row |
-| `comps/desktop-dark-brief-1-cart-state.png` | Same, dark |
-| `comps/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark |
-| `comps/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
+| `comps/brief-1/desktop-light-brief-1-cart-state.png` | Three card footers at 1440px, light, plus the single-variant default / pending / failure row |
+| `comps/brief-1/desktop-dark-brief-1-cart-state.png` | Same, dark |
+| `comps/brief-1/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark |
+| `comps/brief-1/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
 
 What the comps settle:
 
@@ -84,9 +84,9 @@ Three things to verify during implementation, none of which a comp can show:
 
 | File | Covers |
 |---|---|
-| `comps/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
-| `comps/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
-| `comps/share-toast-brief-2.png` | The four toast messages, light and dark |
+| `comps/brief-2/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
+| `comps/brief-2/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
+| `comps/brief-2/share-toast-brief-2.png` | The four toast messages, light and dark |
 
 What the comps settle:
 
@@ -302,7 +302,7 @@ Either way this is a small structural decision that has to be made **before** th
 ### UI And Product Decisions
 
 I: Question: What happens visually when something is added, given the app has no toast pattern?
-Status: **answered 2026-07-31 — one shared HeroUI v3 toast**, `role="status"`, serving both trigger sites. Designed in Brief 2 (`comps/share-toast-brief-2.png`).
+Status: **answered 2026-07-31 — one shared HeroUI v3 toast**, `role="status"`, serving both trigger sites. Designed in Brief 2 (`comps/brief-2/share-toast-brief-2.png`).
 Explanation: Placement, duration, and stacking were not delivered by the brief; the recommendations in "Brief 2" above stand (bottom / bottom-right, ~4s, no stacking) and are planning-level calls rather than blockers.
 
 II: Question: Does the drawer still close after adding?
@@ -322,7 +322,7 @@ Explanation: This now splits into two separate things, and only the first is req
 
 V: Question: Which header control ships — Brief 2's or Brief 3's?
 Status: pending — **blocks AC 7.**
-Context: Brief 2 designed an icon-only 44×44 control with a count capsule (`comps/*header-brief-2*`). Brief 3 re-drew it on desktop as a labelled pill, `☰ Mi solicitud (3)`, and icon-only on mobile (`comps/*brief-3*`). Brief 3 was not asked to touch the header; it did so because the header appears on the page it was designing.
+Context: Brief 2 designed an icon-only 44×44 control with a count capsule (`comps/brief-2/*header-brief-2*`). Brief 3 re-drew it on desktop as a labelled pill, `☰ Mi solicitud (3)`, and icon-only on mobile (`comps/brief-3/*brief-3*`). Brief 3 was not asked to touch the header; it did so because the header appears on the page it was designing.
 Explanation: Both cannot ship. The labelled desktop form names its destination, which is better, but it changes the 44×44 reservation that closed the layout-shift problem — so the mounted-guard approach has to be re-derived for a variable-width control. AC 7 is written against Brief 2's version and needs updating if Brief 3's wins.
 
 VI: Question: Does the drawer adopt the `− n +` quantity stepper from the Brief 3 comps?
@@ -398,7 +398,7 @@ Story 1 is fully scoped and unblocked. Every Strapi question it depends on was a
 
 The work is one new store, one new provider, one query field, one type file, four edited components, and a test folder. No new dependency, no backend change, no new route.
 
-Design is delivered for every surface this story touches (Briefs 1 and 2, `comps/`).
+Design is delivered for every surface this story touches (Briefs 1 and 2, `comps/brief-1/` and `comps/brief-2/`). All four epic briefs are complete.
 
 **Readiness for planning, as of 2026-07-31: three decisions short.** Everything else has a recommendation attached, so sign-off is a yes/no rather than a re-analysis.
 
