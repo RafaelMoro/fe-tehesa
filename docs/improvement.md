@@ -96,6 +96,26 @@ Deferred on the user's call, 2026-07-31, from `ai-research/epics/cart-quote-what
 - The buyer's contact details (name, last name, email) are persisted separately and deliberately survive the clear. Do not fold the two slices together when implementing recovery.
 - Worth revisiting once there is any funnel data on how often buyers return to `/cotizar` after a hand-off.
 
+### Quantity field on the single-variant product card (deferred)
+
+Deferred 2026-07-31 from `ai-research/epics/cart-quote-whatsapp.epic.md` (design question 7). The 35 products with `hasOneProductVariant` ship with a single CTA, `Agregar 1 pieza`, which adds exactly one piece. Adjusting the quantity means going to `/cotizar` and editing the line there.
+
+- That is fine for a buyer wanting one or two, and poor for the industrial buyer this catalog targets, who is more likely to want 50. Add-then-navigate-then-edit is three steps for what should be one.
+- The improvement is a small quantity input on the card itself, beside the CTA, so the button reads `Agregar` and adds whatever the field holds. The drawer already has exactly this control per variant (`ProductVariantsDrawer.tsx:204`), including its `aria-label` pattern and its empty-string edge case — reuse it rather than inventing a second quantity input.
+- Worth doing only once there is evidence buyers are editing quantities on `/cotizar` for these products. Until then the extra control is on every one of those cards for a use case nobody has confirmed.
+- Design note if it is built: two cards in the same grid would then have visibly different footers, one with an input and one without. That is a grid-consistency question, not just a component question.
+
+### Product list query does not carry single-variant data
+
+Raised 2026-07-31 alongside the cart epic. Verified in `src/shared/queries/global.queries.ts`.
+
+- All four product-list queries — `GET_PRODUCTS`, `GET_PRODUCTS_BY_CATEGORY`, `GET_PRODUCTS_BY_BRAND`, `GET_PRODUCTS_BY_NAME` — select the same product scalars and **none selects `product_variants`**. The only query that reaches variants is `GET_PRODUCT_VARIANTS`, by single `documentId`.
+- A cart line needs the variant's `documentId` (the identity key), `internalId` (for the WhatsApp message), and `diameter` (for display). None is on the card. Price is the exception: `minPrice === maxPrice` for a single-variant product, so it is already there.
+- Consequence: the `Agregar 1 pieza` CTA fetches the variant on click, which puts a round trip inside a button press and forces the button to carry pending and failure states.
+- **The optimisation** is to select `product_variants(pagination: { limit: 1 }) { documentId internalId diameter pricing { price } }` on the list queries, so a single-variant card can add its line with no request at all.
+- **Why it is not being done now:** that join runs for all 50 products on every page to serve the ~10.5% (35 of 333) that are single-variant. Whether that trade is worth it depends on the CTA's actual click rate, which does not exist yet. Revisit once it does.
+- A backend-side alternative worth pricing at the same time: exposing the single variant's identity as a field on `product` for the `hasOneProductVariant` case, which would avoid the relation join entirely. That is a Strapi change, not a frontend one.
+
 ### PDF quote document and email delivery (idea, not scoped)
 
 Raised 2026-07-31 alongside the cart epic. WhatsApp click-to-chat is the v1 channel; this is the natural second one. Two related but separable ideas — the second is much cheaper than the first.

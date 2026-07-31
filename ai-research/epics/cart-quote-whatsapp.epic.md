@@ -154,7 +154,8 @@ Acceptance criteria:
 1. A Zustand cart store follows the existing provider-wraps-store pattern (`src/zustand/`), is mounted in `src/app/providers.tsx` so every route sees it, and persists to `localStorage` with a `version` and a `migrate`.
 2. Rehydrated state is validated line by line before use; malformed or truncated lines are dropped rather than repaired, and a corrupted blob never throws.
 3. The drawer CTA adds one line per selected variant carrying the variant's `documentId`, `internalId`, `diameter`, `price`, and quantity, taken from state already in hand — no additional Strapi request. `GET_PRODUCT_VARIANTS` gains `documentId` on the variant selection.
-4. The card CTA adds a single product-level line with no variant, which is displayed and messaged as `Sin variante seleccionada` and contributes no price.
+4. The card CTA adds a single product-level line with no variant, which is displayed and messaged as `Sin variante seleccionada` and contributes no price. Label: `Agregar y elegir después`, demoted to tertiary beneath `Explorar las N variantes`.
+4b. Single-variant products (`variantCount === 1`) render a **different card: one primary CTA, `Agregar 1 pieza`**, which fetches the product's single variant via the existing `/api/catalog/variants` route and adds a complete, priced line at quantity 1. The button carries a pending state and a failure state, since it makes a request on click. This must branch on `variantCount === 1` specifically — the three records with `variantCount` null or `0` (`docs/improvement.md:35-39`) are *not* single-variant products and keep the standard card.
 5. Adding the same variant twice increments the existing line's quantity instead of creating a duplicate; the drawer's index-keyed selection state is re-keyed by the variant's `documentId`.
 6. A header cart badge shows the total line count, renders only after mount, and links to `/cotizar`.
 7. The persisted state has two independently clearable slices: the cart lines and the buyer's contact details (name, last name, email). Both are validated on rehydrate; the contact slice survives the post-hand-off cart clear. The form that writes it lands in Story 4 — only the store shape and its validation belong here.
@@ -346,7 +347,7 @@ Surfaces: the PLP grid card (`src/components/ProductCard.tsx`), the variants dra
 
 **Variants drawer footer** — the existing selection count, piece count, and total stay. The CTA becomes functional and **the drawer still closes on add**, so focus must be returned deliberately (the card's trigger button) rather than left on `<body>`. The drawer's own subtotal already exists and should not diverge from the cart's.
 
-**Product card** — two CTAs currently sit side by side with near-identical weight. Once both work they do different things: one opens variant selection and yields a priced line, the other commits an unpriced line. Decided 2026-07-31: `Explorar las N variantes` stays the visual primary, the other is demoted to tertiary and labelled **`Agregar y elegir después`**. Single-variant products (`variantCount === 1`) get a different card: **one button, `Elegir cantidad`** — neither of the standard labels makes sense when there is nothing to explore and nothing to elect. See design question 7.
+**Product card** — two CTAs currently sit side by side with near-identical weight. Once both work they do different things: one opens variant selection and yields a priced line, the other commits an unpriced line. Decided 2026-07-31: `Explorar las N variantes` stays the visual primary, the other is demoted to tertiary and labelled **`Agregar y elegir después`**. Single-variant products (`variantCount === 1`) get a different card: **one button, `Agregar 1 pieza`** — neither standard label makes sense when there is nothing to explore and nothing to elect. That button also needs a **pending and a failure state**, because it fetches the variant on click. See design question 7.
 
 **`/cotizar` — line list**
 
@@ -480,18 +481,18 @@ Payment, checkout, orders, accounts, addresses, shipping, tax, coupons, saved ca
 
    Both labels are wrong here, in different ways. `Explorar la variante` invites exploration of a set of one. `Agregar y elegir después` promises a choice that does not exist. And the drawer, for these products, is not a variant picker at all — its only remaining job is **quantity**.
 
-   **Recommendation: one button, `Elegir cantidad`.** Drop the second CTA entirely. There is no degraded path to offer when there is nothing to degrade, and a single primary action on these 35 cards is both simpler to build and impossible to mis-tap.
+   **Decided 2026-07-31: one button, `Agregar 1 pieza`, as the primary and only CTA.** No drawer, no second action, no quantity control on the card for now. It adds the single variant at quantity 1 — a **complete, priced** line, the exact opposite of what the multi-variant card's secondary CTA produces. Quantity is adjusted on `/cotizar`, where every line already has a quantity control (Story 2 AC 2).
 
-   If a quick-add path is wanted, the two-button form is:
+   The deferred half — a quantity field directly on the single-variant card, so a buyer wanting 50 pieces does not have to add one and then edit — is recorded in `docs/improvement.md`.
 
-   | Slot | Copy | Behaviour |
-   |---|---|---|
-   | Primary | `Elegir cantidad` | Opens the drawer, which here is a quantity picker with one row. |
-   | Secondary | `Agregar 1 pieza` | Adds the single variant at quantity 1 — a **complete, priced** line. |
+   Rejected for this case: `Elegir cantidad` (opens a drawer whose only remaining job is a number input — more ceremony than the action deserves), `Explorar la variante` (nothing to explore), `Agregar y elegir después` (nothing to elect), `Ver detalle` (no detail page exists), `Agregar al carrito` (the generic label this epic is moving away from).
 
-   Note what changes: on a single-variant product the quick action produces a *priced* line, the exact opposite of the multi-variant secondary CTA. The two cards look similar and their second buttons mean opposite things, which is an argument for the one-button version.
+   **This CTA needs data the card does not have.** Verified 2026-07-31 in `src/shared/queries/global.queries.ts`: all four product-list queries (`GET_PRODUCTS`, `GET_PRODUCTS_BY_CATEGORY`, `GET_PRODUCTS_BY_BRAND`, `GET_PRODUCTS_BY_NAME`) select the same product scalars and **none of them touch `product_variants`**. A cart line needs the variant's `documentId` (the identity key, Strapi Contract I), `internalId` (for the seller's message), and `diameter` (for display). The card has none of them. Price is the one exception — `minPrice === maxPrice` for a single-variant product, so it is already on the card.
 
-   Rejected for this case: `Explorar la variante` (nothing to explore), `Agregar y elegir después` (nothing to elect), `Ver detalle` (no detail page exists), `Agregar al carrito` (the generic label this epic is trying to move away from).
+   Two ways to close that gap:
+
+   - **Fetch on click (recommended for v1).** Press the button, call the existing `/api/catalog/variants?documentId=…` route, take the single variant, add the line. No query change, no new route, no backend work — it reuses what Story 1 already wires. The cost is a round trip inside the button press, so the CTA needs a pending state and a failure state, and the toast fires after the response rather than instantly.
+   - **Extend the list queries** to select `product_variants` limited to one. Removes the round trip but adds a relation join to every product on every page — 50 rows fetched to serve the ~10.5% that are single-variant. Recorded in `docs/improvement.md` as the optimisation to make once the CTA is in use and its click rate is known, not before.
 
 8. ~~Does the variants drawer still close on add (`ProductVariantsDrawer.tsx:230`)?~~ **Answered 2026-07-31: yes, it still closes.** Two consequences: the confirmation must live outside the drawer (see Q3), and **focus must be moved deliberately on close** — back to the card's trigger button is the obvious target. A drawer that closes leaving focus on `<body>` strands keyboard and screen-reader users mid-flow.
 

@@ -21,9 +21,11 @@ This story ships **no new route**. `/cotizar` is Story 2. The badge links to it,
 1. A Zustand cart store follows the existing provider-wraps-store pattern (`src/zustand/store/` + `src/zustand/provider/`), is mounted in `src/app/providers.tsx`, and persists to `localStorage` through `zustand/persist` with an explicit `version` and `migrate`.
 2. Rehydrated state is validated line by line before it reaches any consumer. A truncated blob, a valid-JSON-wrong-shape blob, a negative or non-integer quantity, and a non-finite price each result in that line being dropped and the rest of the cart surviving. Nothing throws.
 3. The variants drawer CTA adds one line per selected variant, carrying the variant's `documentId`, `internalId`, `diameter`, unit price, and quantity — all from state already in hand, with no additional Strapi request.
-4. The product card CTA adds a single product-level line with no variant, marked so it can be rendered and messaged as `Sin variante seleccionada` and excluded from any price total.
-5. Adding a variant already in the cart increments that line's quantity rather than appending a duplicate, keyed by the variant's `documentId`.
-6. A header cart badge shows the number of lines, renders only after mount so it never mismatches the server render, and is reachable and announced by a screen reader.
+4. The product card CTA (`Agregar y elegir después`, tertiary) adds a single product-level line with no variant, marked so it can be rendered and messaged as `Sin variante seleccionada` and excluded from any price total.
+5. Single-variant products (`variantCount === 1`) render a different card with **one primary CTA, `Agregar 1 pieza`**, which fetches the product's only variant through the existing `/api/catalog/variants` route and adds a complete, priced line at quantity 1. The button has a pending state and a failure state. The branch is on `variantCount === 1` exactly — `variantCount` of null or `0` (three known records, `docs/improvement.md`) is *not* this case and keeps the standard card.
+6. Adding a variant already in the cart increments that line's quantity rather than appending a duplicate, keyed by the variant's `documentId`.
+7. A header cart badge shows the number of lines, always visible including at `0`, positioned bottom-right of the cart control, rendering only after mount so it never mismatches the server render, and reachable and announced by a screen reader.
+8. The persisted state has two independently clearable slices, cart lines and buyer contact details, both validated on rehydrate. The contact form itself lands in Story 4; only the store shape belongs here.
 
 ### Task Breakdown
 
@@ -116,7 +118,7 @@ The `/cotizar` route, the line list, the subtotal, quantity editing outside the 
 
 1. ~~How is the "added" confirmation presented?~~ **Answered 2026-07-31: one shared toast** with `role="status"`, serving both trigger sites. The only open part is whether HeroUI v3 supplies one or we write a minimal component — check the HeroUI MCP before building.
 2. ~~Does the badge show at zero?~~ **Answered 2026-07-31: yes, showing `0`, bottom-right of the cart control.**
-3. ~~Do the two card CTAs need relabelling or re-weighting?~~ **Answered 2026-07-31.** `Explorar las N variantes` stays primary; the other is demoted to tertiary and labelled **`Agregar y elegir después`**. **Single-variant products get a different card entirely: one button, `Elegir cantidad`** — this story must branch the card on `variantCount === 1`, and must not confuse that with the three records whose `variantCount` is null or `0`. Full reasoning and the rejected copy in epic design question 7.
+3. ~~Do the two card CTAs need relabelling or re-weighting?~~ **Answered 2026-07-31.** `Explorar las N variantes` stays primary; the other is demoted to tertiary and labelled **`Agregar y elegir después`**. **Single-variant products get a different card entirely: one button, `Agregar 1 pieza`** — this story must branch the card on `variantCount === 1`, and must not confuse that with the three records whose `variantCount` is null or `0`. That CTA fetches the variant on click (no list query carries variant fields — verified), so it needs pending and failure states. Full reasoning and the rejected copy in epic design question 7.
 4. ~~Does the drawer still close on add?~~ **Answered 2026-07-31: yes.** Confirmation lives outside the drawer; focus returns to the card's trigger button.
 
 ## Technical Research
