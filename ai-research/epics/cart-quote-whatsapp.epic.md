@@ -121,6 +121,20 @@ Two consequences that ripple into the UI, both flowing from the product-card CTA
 - **Lines with no variant carry no price and must be excluded from the subtotal.** The subtotal is "subtotal of the priced lines", and the UI has to say so rather than showing a number that quietly under-reports.
 - **The message must state the variant-less lines explicitly** (`Sin variante seleccionada`), so the seller knows to ask rather than assuming an omission.
 
+**Overflow: split the quote into batched sends (user decision, 2026-07-31).** When the encoded URL would exceed the safe bound, the message is split across several sends rather than truncated or capped.
+
+The builder is therefore `buildQuoteMessages(lines, contact): string[]` — a pure function returning **one** message in the common case and N only on overflow. The split is driven by the *measured* `encodeURIComponent(message).length` against the threshold, never by a guessed line count: a cart of ten short SKUs and a cart of ten accented product names encode to very different lengths. Split only on cart-line boundaries, never mid-line.
+
+What this costs, and what has to be true for it to work:
+
+- **One `wa.me` link opens one chat with one prefilled message. There is no way to queue several.** Batching means the buyer sends part 1, returns to the browser, and presses the next CTA. The `localStorage` cart survives that round trip; the buyer's attention may not.
+- **Part 1 must be self-sufficient**, because it is the only part guaranteed to arrive. It carries the quote reference, the buyer's name and email, the line count, and the subtotal — all computable before the lines are laid out. A seller who receives part 1 and nothing else still has who to call and what it is worth.
+- **Every part carries `Parte N de M` and the same quote reference.** That is what lets the seller reassemble them, and — more importantly — notice that part 3 never arrived. Continuous line numbering across parts (`7)`, `8)`, …) rather than restarting per part.
+- **The page cannot know whether a part was actually sent.** Clicking the anchor is "opened", not "delivered"; the browser never learns the outcome. The UI must reflect *opened*, keep every part re-sendable, and never present a green "quote sent" state it cannot substantiate.
+- **Single-message stays the default path.** Most quotes will fit in one. Batching is the overflow branch — build it as a branch, not as the primary flow, and do not introduce a stepper UI for the 1-message case.
+
+Escaping, cents arithmetic, and the `internalId` fallback apply identically to every part; the split happens after those, on the already-escaped lines.
+
 **Money arithmetic:** accumulate the subtotal in integer cents (`Math.round(price * 100)`) and divide once at the end. Float accumulation across 25 lines drifts visibly, and this number is shown to a buyer and sent to a seller. Format with the existing `formatNumberToCurrency` (`$1,234.50 MXN`) — do not format cart totals separately.
 
 **Blocking configuration:** the destination number does not exist anywhere in this repo (confirmed by grep, and by `docs/improvement.md:67`). It needs a new `NEXT_PUBLIC_WHATSAPP_NUMBER` — `NEXT_PUBLIC_` because the link is built client-side — holding E.164 digits with no `+` and no separators. When unset, the CTA must render disabled with an explanatory message; it must never produce `wa.me/undefined`. Same missing business data blocks the deferred `LocalBusiness` JSON-LD in `docs/improvement.md:62-70`; one answer unblocks both.
@@ -187,8 +201,9 @@ Acceptance criteria:
 2. Every value interpolated into the message — product names from Strapi and form values from the buyer — is stripped of newlines, control characters, and WhatsApp markdown characters before interpolation.
 3. The message contains, per line, the `internalId`, product name, variant, quantity, unit price, and line total; plus the buyer's details, the subtotal, and a short quote reference.
 4. The CTA is a real anchor when the form is valid and a non-focusable `aria-disabled` span when it is not, and it is disabled with an explanatory message when `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset.
-5. The encoded URL length is measured; when it would exceed the safe bound the message degrades predictably (documented behaviour) rather than being silently truncated by the browser.
-6. The message builder is a pure function under `src/shared/utils/`, unit-tested against escaping, empty-variant lines, subtotal exclusion, and the length budget.
+5. The encoded URL length is measured against the safe bound; on overflow the quote is split across several messages on cart-line boundaries rather than being truncated by the browser. Part 1 carries the quote reference, contact details, line count, and subtotal; every part carries `Parte N de M` and the same reference; line numbering is continuous across parts.
+6. When there is more than one part, the UI presents them in order, marks each as *opened* (never as *sent* — delivery is unobservable), and keeps every part re-sendable. A one-part quote renders a single CTA with no stepper.
+7. The message builder is a pure function `buildQuoteMessages(lines, contact): string[]` under `src/shared/utils/`, unit-tested against escaping, empty-variant lines, subtotal exclusion, a one-part cart, and a cart that forces a split (asserting the split lands on a line boundary and that part 1 alone contains the contact details and subtotal).
 
 ### Story 5: Analytics Contract Extension For The Cart Funnel
 
@@ -244,7 +259,7 @@ Acceptance criteria:
 
 - **`localStorage` is a trust boundary.** Validate every rehydrated line; never `JSON.parse` into typed state and use it.
 - **Quote-time float drift.** Accumulate in cents.
-- **Encoded URL length.** ~700-900 plain-text characters is the safe budget; measure the encoded string, do not guess from the plain one.
+- **Encoded URL length.** ~700-900 plain-text characters is the safe budget; measure the encoded string, do not guess from the plain one. Over budget, the quote splits into batched sends (Decision 3 → Overflow) — so the threshold constant decides how often a buyer is asked to send twice, and deserves real-device measurement.
 - **WhatsApp markdown in Strapi data.** Product names are editor-authored and unescaped today.
 - **Product-level lines have no price.** `minPrice`/`maxPrice` exist on the list query but are denormalized, unmaintained columns (`docs/improvement.md:20-29`) and three catalog products currently carry `0` or `null`. Do not present them as the line price.
 - **`internalId` is not a key.** It is optional and non-unique in the Strapi schema (Strapi Contract I). Treat it as seller-facing display text only. The variant's `documentId` is the key.
@@ -300,6 +315,17 @@ Surfaces: the PLP grid card (`src/components/ProductCard.tsx`), the variants dra
 - CTA disabled (WhatsApp not configured) — a distinct state with different copy; this is our failure, not the buyer's.
 - CTA ready — the primary action of the page.
 - Post-tap: WhatsApp opens in a new context and the buyer returns to a page that still holds their cart. Decide whether the cart clears, and where the user lands. Recommendation: do not clear automatically — a failed hand-off would destroy the list — but offer an explicit "empezar una nueva cotización".
+
+**`/cotizar` — batched send (large quotes only)**
+
+This is the hardest state in the epic to design and the easiest to design dishonestly. A quote too long for one message is split into parts; the buyer must send part 1, leave WhatsApp, come back, and send part 2.
+
+- Single part (the common case) — one CTA, no stepper, no mention that batching exists.
+- Multi-part, before the first send — the buyer must understand *before* tapping that this takes several sends and why, or they will assume the first tap finished the job. State the part count up front.
+- Multi-part, in progress — which part is next is the page's primary action. Earlier parts stay visible and re-sendable, because the buyer may have backed out of WhatsApp without pressing send.
+- Part state is **opened, not sent.** The browser cannot observe delivery. Copy and iconography must not imply confirmation — no green check, no "enviado". Something closer to "abierto — vuelve a abrir si no se envió".
+- All parts opened — still not a success state. Offer "empezar una nueva cotización" and nothing that claims the seller received it.
+- Returning to the page mid-sequence (the normal path on mobile) must not lose progress or reset to part 1.
 
 ### Mobile And Desktop Expectations
 
@@ -395,9 +421,14 @@ Context: A draft shape is proposed in "Decision 3". It has not been reviewed by 
 Explanation: The seller reading these every day is the right reviewer. Worth one round with them before Story 4 is planned — the format is cheap to change now and annoying to change after it is in a test suite.
 
 III: Question: How should the flow behave when the message exceeds the safe encoded-URL budget?
-Status: pending
+Status: **answered by the user, 2026-07-31 — split into batched sends.** No truncation, no cart-size cap, no field dropping; every line is sent in full across as many messages as it takes. Design detailed in "Decision 3 → Overflow".
 Context: ~700-900 plain-text characters, roughly 8-12 lines, before the encoded URL becomes unsafe.
-Explanation: Options are (a) send the first N lines plus a count of the rest, (b) cap cart size at the point of adding, (c) send only SKU + quantity above the threshold and drop the prose. Recommendation is (c) — it degrades to the fields the seller actually needs and keeps every line represented. Needs a product decision; silent browser truncation is the one unacceptable outcome.
+Explanation: The cost this accepts is that WhatsApp cannot queue several prefilled messages from one link — the buyer must return to the browser and press the next CTA, and a buyer who abandons after part 1 leaves the seller with a partial quote. That is contained, not eliminated, by making part 1 self-sufficient (reference, contact, line count, subtotal) and labelling every part `Parte N de M` so a missing part is visible. Remaining sub-question for the seller: is receiving 3 sequential messages acceptable in their day-to-day, or would they rather get part 1 alone and reply asking for the rest?
+
+IV: Question: Does the browser's URL-length ceiling, not WhatsApp's, set the real threshold?
+Status: pending — a measurement, not a decision.
+Context: The ~2000-character encoded bound is a conservative engineering figure, not a documented limit. Android Chrome, iOS Safari, and desktop WhatsApp Web each handle long `wa.me` URLs differently.
+Explanation: Now that overflow is handled by splitting rather than degrading, the threshold constant is the whole design. Set it too low and a 6-line quote pointlessly becomes two messages; too high and a part is silently truncated by the OS. Worth 20 minutes of manual QA on a real Android device, a real iPhone, and desktop before fixing the constant — it is one number in `src/shared/constants/`, cheap to tune afterwards.
 
 ### Strapi Contract
 
@@ -475,7 +506,7 @@ Explanation: jsdom provides `localStorage`, so store round-trips, version migrat
 
 ## Research Outcome
 
-The epic is broken into five independently deliverable stories. The three decisions the user asked for are settled with reasoning: a single `/cotizar` route, `localStorage` via `zustand/persist`, and a SKU-first `wa.me` deep link with escaping and a measured length budget.
+The epic is broken into five independently deliverable stories. The three decisions the user asked for are settled with reasoning: a single `/cotizar` route, `localStorage` via `zustand/persist`, and a SKU-first `wa.me` deep link with escaping and a measured length budget that splits into batched sends rather than truncating.
 
 Story 1 is fully unblocked and researched in depth at `ai-research/cart-quote-whatsapp/cart-state-persistence.story-1.md`. Stories 2, 3, and 5 are unblocked — the Strapi contract questions were answered on 2026-07-30 and made Story 3 *smaller* than assumed (one batched query rather than a per-product fan-out). **Story 4 is hard-blocked on the WhatsApp number**, which does not exist anywhere in this repo.
 
