@@ -151,9 +151,13 @@ made this harder than it needed to be.
 
 ---
 
-## Brief 2 — Header Cart Badge And Add-Confirmation Toast
+## Brief 2 — Header Cart Badge And Add-Confirmation Toast ✅ DONE, with one gap (2026-07-31)
 
 Completes Story 1. Two small surfaces, one brief, because they are the same feedback loop.
+
+**Output:** `comps/desktop-header-brief-2.png`, `comps/mobile-header-brief-2.png`, `comps/share-toast-brief-2.png`. All four rejection criteria passed.
+
+**Gap:** the prompt asked for toast placement, duration, stacking behaviour, and the interaction with the drawer closing underneath. The comps show the four messages only. Recommendations were recorded in `cart-state-persistence.story-1.md` → "Brief 2" rather than re-running the brief; re-ask only if the designer disagrees. Lesson for future briefs: behavioural questions buried in a paragraph get answered less reliably than states listed as items — put them in their own numbered block.
 
 ### Attach
 

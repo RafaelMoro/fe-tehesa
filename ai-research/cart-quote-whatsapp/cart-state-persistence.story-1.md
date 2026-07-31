@@ -25,7 +25,7 @@ This story ships **no new route**. `/cotizar` is Story 2. The badge links to it,
 5. Single-variant products (`variantCount === 1`) render a different card with **one primary CTA, `Agregar 1 pieza`**, which fetches the product's only variant through the existing `/api/catalog/variants` route and adds a complete, priced line at quantity 1. Pending holds the label unchanged and shows a spinner; failure returns the button to default and surfaces `No se pudo agregar. Intenta de nuevo.` in a `role="alert"` beneath it, recoverable in place. The branch is on `variantCount === 1` exactly — `variantCount` of null or `0` (three known records, `docs/improvement.md`) is *not* this case and keeps the standard card.
 5b. A single-variant card shows one `PRECIO` value rather than the `DESDE` / `HASTA` pair, since `minPrice === maxPrice` for these products. Small change to the card's price block, introduced by the Brief 1 comps.
 6. Adding a variant already in the cart increments that line's quantity rather than appending a duplicate, keyed by the variant's `documentId`.
-7. A header cart badge shows the number of lines, always visible including at `0`, positioned bottom-right of the cart control, rendering only after mount so it never mismatches the server render, and reachable and announced by a screen reader.
+7. A header cart badge shows the number of lines, always visible including at `0`, positioned bottom-right of the cart control, in a control that **reserves 44×44px from the first render** so only the counter's content changes after mount. `0` is styled neutrally and `1`+ uses the primary accent, so `0` reads as empty rather than as an unread notification. `99+` grows inside the same button without changing header width at 390px. The control links to `/cotizar` — no popover, no mini-cart — and carries an accessible name including the count (`Ver cotización, 3 artículos`).
 8. The persisted state has two independently clearable slices, cart lines and buyer contact details, both validated on rehydrate. The contact form itself lands in Story 4; only the store shape belongs here.
 
 ### Task Breakdown
@@ -79,6 +79,33 @@ Three things to verify during implementation, none of which a comp can show:
 1. **Tap target on the bare tertiary action.** It has no capsule, so its hit area is not visually bounded. It needs a minimum ~44px touch height regardless of the text's own line height.
 2. **Focus ring on the tertiary action.** A bare text button loses its focus indicator more easily than a filled one. It must be a real `<button>` with a visible focus style, not a styled `<span>`.
 3. **The pending and failure states must be announced**, not only shown. The failure message needs `role="alert"`; the pending state must not leave a focused button that silently does nothing.
+
+### Brief 2 — header control and toast
+
+| File | Covers |
+|---|---|
+| `comps/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
+| `comps/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
+| `comps/share-toast-brief-2.png` | The four toast messages, light and dark |
+
+What the comps settle:
+
+- **The control reserves 44×44px from the first render.** Only the counter's *content* changes; the button never appears, disappears, or resizes. That is the layout-shift concern closed at the design level, and it pairs exactly with the mounted-guard pattern in `Header.tsx:15-21` — reserve the box on the server, fill the number after mount.
+- **`0` is styled neutrally** (neutral surface, border, and text) while `1`, `9`, and `99+` use primary green with `primary-900` text. This is the distinction that keeps `0` reading as *empty* rather than as an unread notification, and it is the single thing most likely to be lost if the badge is rebuilt from a generic component.
+- **`99+` grows inside the same 44px button**; header width is unchanged at 390px, and the gap between the cart and theme controls stays constant.
+- **The whole control is a link to `/cotizar`.** No popover, no mini-cart — explicitly annotated as such.
+- **Toast is HeroUI v3's**, which answers the open sub-question about whether one had to be written. Anatomy: confirmation icon, explicit text, optional close. Meaning does not depend on the green — the icon and the wording carry it, so the colour-alone concern is closed.
+
+**Not delivered — three behaviours the prompt asked for and the comps do not show.** They are not blocking, so the recommendations below stand unless the designer supplies otherwise:
+
+1. **Placement.** Recommendation: bottom on phone, bottom-right on desktop. It must **not** cover the header, because the badge count updating is the second half of the confirmation — the two signals should be visible together.
+2. **Duration.** Recommendation: ~4 seconds. Long enough to read `Producto agregado, elige la medida después`, short enough not to linger. Auto-dismissing, with the close button as an override rather than the only way out.
+3. **Stacking.** Recommendation: **do not stack.** One toast at a time; a new add replaces the message and resets the timer. The badge already carries the cumulative count, so a stack would restate what the header shows while covering more of the screen. Simplest to build and the better behaviour.
+
+Two implementation notes the comps imply but cannot state:
+
+- **The toast must be portalled outside the drawer's tree** — mounted at the layout or provider level — because the drawer unmounts on add. It also needs a z-index above the drawer overlay, since the drawer may still be animating out when the toast appears.
+- **The badge needs an accessible name carrying the count**, e.g. `Ver cotización, 3 artículos`. The comp shows a number in a capsule; a screen reader needs the sentence.
 
 ## Design Agent Handoff
 

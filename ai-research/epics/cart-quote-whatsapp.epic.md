@@ -339,8 +339,8 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | Surface | File | States | Story | Brief |
 |---|---|---|---|---|
 | Product card footer | `src/components/ProductCard.tsx` | Multi-variant, single-variant (one CTA, with pending + failure), broken-data | 1 | **1 — designed, comps in `comps/`** |
-| Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | 2 |
-| Add-confirmation toast | new, shared | 4 messages incl. the increment case | 1 | 2 |
+| Header cart badge | `src/shared/ui/organisms/Header.tsx` | `0`, count, 99+; always visible | 1 | **2 — designed, comps in `comps/`** |
+| Add-confirmation toast | new, shared | 4 messages incl. the increment case | 1 | **2 — messages designed; placement, duration, stacking still open** |
 | Variants drawer footer | `src/features/ProductVariantsDrawer/` | Unchanged visually; CTA works, drawer still closes, focus returns | 1 | 2 |
 | `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | 3 |
 | `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | 3 |
@@ -356,6 +356,9 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | `comps/desktop-dark-brief-1-cart-state.png` | Same, dark |
 | `comps/mobile-1-brief-1-cart-state.png` | Multi-variant footer and the three action states at 390px, light and dark side by side |
 | `comps/mobile-2-brief-1-cart-state.png` | All three card cases stacked at 390px, light and dark |
+| `comps/desktop-header-brief-2.png` | Header cart control at 1440px, counts 0 / 1 / 9 / 99+, light and dark |
+| `comps/mobile-header-brief-2.png` | Same control at 390px, all four counts, light and dark |
+| `comps/share-toast-brief-2.png` | The four toast messages, light and dark |
 
 Three rules that override any design instinct to the contrary, repeated here because every story touches at least one:
 
