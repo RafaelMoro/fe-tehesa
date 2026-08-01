@@ -844,7 +844,7 @@ Awaiting human sign-off.
 
 ## Epic Completion Status
 
-**Updated 2026-07-31, after implementing Story 1** (`ai-planning/cart-quote-whatsapp/cart-state-persistence.story-1.md`).
+**Updated 2026-07-31, after implementing Story 2** (`ai-planning/cart-quote-whatsapp/quote-page-line-review.story-2.md`).
 
 ### Story 1: Cart State, Persistence, And Add-To-Cart Wiring — Complete
 
@@ -861,27 +861,40 @@ Implemented and verified against every acceptance criterion in this doc's Story 
 
 Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (27 suites, 219 passed, 1 pre-existing unrelated skip), `pnpm build` all pass. Manual browser QA (dev server + live Strapi) is deferred to the user per this workflow's rule against starting the dev server.
 
+### Story 2: Quote Page (`/cotizar`) — Line Review And Subtotal — Complete
+
+Implemented and verified against every acceptance criterion in this doc's Story 2 section, plus two ACs the planning doc added beyond this epic section's original scope (both were already anticipated here — see Story 1's approved AC 6 divergence and the Next Steps below):
+
+- AC 1 (product name, variant or `Sin variante seleccionada`, quantity, unit price, line total; `internalId` never rendered) — `src/features/QuotePage/QuoteLineRow.tsx`. `__tests__/quote/QuotePage.test.tsx` covers both row states and asserts `internalId` never appears.
+- AC 2 (quantity change + line removal update the store and `localStorage` immediately) — `setLineQuantity`/`removeLine` in `src/zustand/store/cart.store.ts`. `__tests__/cart/cart.store.test.ts` (clamping, truncation, NaN guard, no-ops) and `QuotePage.test.tsx` (interaction-level).
+- AC 2b (`Elegir medida` opens the drawer in single-select upgrade mode; the line is replaced in place, position and quantity survive; a same-variant collision merges into the existing priced line, clamped, keeping that line's position) — `upgradeLine` in `cart.store.ts`; optional `initialQuantity`/`onConfirmVariant` props on `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` (all 12 pre-existing tests pass unmodified — the optional-prop seam held, exactly as Verification I predicted); wiring in `src/features/QuotePage/QuotePage.tsx`. Tests: `cart.store.test.ts` (position preserved, merge clamp), 3 new cases in `ProductVariantsDrawer.test.tsx`, 2 new cases in `QuotePage.test.tsx` (in-place replace asserting row order, merge collapsing to one row).
+- AC 3 (subtotal sums only priced lines, integer-cents accumulation, `formatNumberToCurrency`, labelled `Subtotal estimado (líneas con precio)` + reference-price copy, `N productos · N piezas` at top and beside the subtotal) — `getQuoteTotals` in `src/features/QuotePage/quote.utils.ts`; `quote.utils.test.ts` asserts cents accumulation against a float baseline that measurably drifts.
+- AC 4 (empty cart shows `Tu lista está vacía` + `Volver al catálogo`, never a bare `$0.00`, no pre-hydration flash) — the mounted-guard gate in `QuotePage.tsx`. `QuotePage.test.tsx` asserts the empty copy is absent from a `renderToString` pre-mount pass, and that seeded `localStorage` renders the populated list without ever showing the empty copy. The flash itself is unverifiable in jsdom and stays a manual-QA item, as the plan called out.
+- AC 5 (`generateMetadata` returns `noindex, follow` with canonical `/cotizar`; absent from `sitemap.ts`; not added to `robots.ts` disallow) — `src/app/cotizar/page.tsx`. `__tests__/seo/quote-metadata.test.ts`; existing `sitemap.test.ts`/`robots.test.ts` pass unmodified (no `/cotizar` added to either).
+- **Beyond this section's original 6 ACs, per the planning doc:** a `Vaciar lista` control with Brief 5's centred-dialog confirmation (`AlertDialog`, `Esc` cancels, focus opens on `Cancelar`) ships in `QuotePage.tsx`, covered by `QuotePage.test.tsx`. The header cart badge (`src/shared/ui/atoms/CartCount.tsx`) is promoted from a status to a real `next/link` to `/cotizar` with `aria-current="page"` — this is the fulfillment of Story 1's approved AC 6 divergence and this doc's own Next Steps item 1, not new scope. Covered by `__tests__/cart/CartCount.test.tsx`.
+
+Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (30 suites, 256 passed, 1 pre-existing unrelated skip), `pnpm build` all pass (`/` and `/cotizar` both render as dynamic routes now that the root layout awaits `getThemePreference()` — a deliberate, documented consequence of moving `Header` there). Manual browser QA (dev server + live Strapi, the hydration-flash check specifically) is deferred to the user per this workflow's rule against starting the dev server.
+
 ### Epic Story Overview
 
 | Story | Status | Evidence | Remaining work / blocker |
 |---|---|---|---|
 | Story 1: Cart state, persistence, add-to-cart wiring | Complete | See above | None |
-| Story 2: Quote page (`/cotizar`) — line review and subtotal | Not started | — | Depends on Story 1 (done). Also promotes the Story 1 header badge to a link. |
-| Story 3: Price/availability revalidation on `/cotizar` | Not started | — | Depends on Story 2 existing (the route to revalidate on load) |
+| Story 2: Quote page (`/cotizar`) — line review and subtotal | Complete | See above | None |
+| Story 3: Price/availability revalidation on `/cotizar` | Not started | — | Depends on Story 2 existing (the route to revalidate on load) — now unblocked |
 | Spike 4S: WhatsApp delivery mechanisms | Not started | — | Timeboxed research spike; gates Story 4 |
 | Story 4: Contact form and the WhatsApp `Cotizar` CTA | Not started | — | Gated on Spike 4S; depends on Story 2/3 for line data to build the message |
 | Story 5: Analytics contract extension | Not started | — | Documentation-only; can run independently once trigger sites are final |
 
 ### Overall Completion
 
-**7 / 33** acceptance criteria verified complete (Story 1's 8 ACs counted as 7, per the approved AC 6 divergence above; Stories 2-5 contribute 0 of their 25 combined ACs) ≈ **21%**.
+**13 / 33** acceptance criteria verified complete (Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, plus Story 2's 6 ACs; Stories 3-5 contribute 0 of their 19 remaining combined ACs) ≈ **39%**.
 
-The epic is not complete — Stories 2 through 5 and Spike 4S remain.
+The epic is not complete — Stories 3 through 5 and Spike 4S remain.
 
 ### Next Steps
 
-1. Plan and implement Story 2 (`/cotizar` line review + subtotal) — the next unblocked story; also the point where the header badge becomes a link.
-2. Run Spike 4S (WhatsApp delivery mechanism pricing) in parallel with Story 2/3 planning — it gates Story 4's shape.
-3. Plan and implement Story 3 (revalidation) once Story 2's route exists.
-4. Plan and implement Story 4 (contact form + WhatsApp CTA) once Spike 4S recommends a mechanism.
-5. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 once Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist).
+1. Run Spike 4S (WhatsApp delivery mechanism pricing) — it gates Story 4's shape and does not depend on Story 3.
+2. Plan and implement Story 3 (revalidation) now that Story 2's route exists.
+3. Plan and implement Story 4 (contact form + WhatsApp CTA) once Spike 4S recommends a mechanism and Story 3 has settled the revalidated-price shape it builds the message from.
+4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 once Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist).
