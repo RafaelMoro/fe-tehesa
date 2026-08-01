@@ -280,30 +280,44 @@ Status: pending — no comp.
 Explanation: HeroUI v3 has a dialog; an inline two-step confirm on the button is smaller. Either is fine, `window.confirm` is not. Brief 5 below asks the design agent for it. Copy suggestion: `¿Vaciar tu lista?` / `Se quitarán los N productos. No se puede deshacer.` / `Vaciar` (danger) + `Cancelar`.
 
 IV: Question: Does the header link show an active state on `/cotizar` itself?
-Status: pending — **recommend `aria-current="page"` only, no visual treatment.**
-Explanation: On `/cotizar` the header cart link points at the page the buyer is already on. Two separable things:
+Status: **answered by the user, 2026-07-31 — `aria-current="page"` only, no visual active state.**
+Explanation: On `/cotizar` the header cart link points at the page the buyer is already on.
 
-- **`aria-current="page"`** — one attribute, no visual change. A screen reader announces "current page" instead of offering navigation that goes nowhere. This is the accessibility fix and it is worth doing.
-- **A visual active state** — filled instead of outlined icon, or a tinted 44×44 box. Nothing in the Brief 2 comps covers this, so it would be invented, and the header has exactly one destination — a buyer on `/cotizar` already knows from the heading. Recommend not building it.
+- **`aria-current="page"`** ships. One attribute, no visual change: a screen reader announces "current page" instead of offering navigation that goes nowhere.
+- **No visual active state.** Nothing in the Brief 2 comps covers one, so it would be invented, and the header has exactly one destination — a buyer on `/cotizar` already knows from the heading.
 
-Needs `usePathname()`, which makes `CartCount` route-aware; trivial, but it is the only reason that component would import from `next/navigation`.
+Implementation note: this needs `usePathname()` in `CartCount`, the only reason that component imports from `next/navigation`. Set the attribute conditionally — `aria-current={pathname === "/cotizar" ? "page" : undefined}`, never `aria-current="false"` as a string, which is truthy to some assistive tech. It stays a real link on `/cotizar` (do not degrade it to a span); the 44×44 reservation and the `0`-is-neutral badge styling are unaffected.
 
 ### Catalog Behavior
 
 I: Question: Does `Elegir medida` need to handle a product whose variants have since disappeared?
-Status: pending — **recommend: yes, but with the drawer's existing copy.**
-Context: `ProductVariantsDrawer` already renders `No encontramos variantes para este producto.` (line 188) and an error path (line 186). Both work unchanged from `/cotizar`.
-Explanation: A full "the product no longer exists" treatment is Story 3's state 4. This story just must not crash when the drawer comes back empty.
+Status: **answered by the user, 2026-07-31 — yes, handled, with the drawer's existing copy.**
+Context: `ProductVariantsDrawer` already renders `No encontramos variantes para este producto.` (line 188) and a fetch-error path (line 186). Both work unchanged when the drawer is opened from `/cotizar`.
+Explanation: No new copy and no new state in this story. What the implementation must guarantee:
+
+- **The line survives.** An empty or failed variants fetch leaves the variant-less line exactly as it was — never removed, never zeroed, never converted to a priced line.
+- **The confirm CTA is unreachable** when nothing is selectable, which the existing `isDisabled={selectedVariantIds.size === 0}` (line 270) already gives for free.
+- **Closing the empty drawer returns focus** to the `Elegir medida` button that opened it, same as a successful upgrade.
+
+A full "this product no longer exists" treatment is Story 3's state 4 (`Buscar alternativa`). This story only has to not crash and not lose the line.
 
 ### Verification
 
 I: Question: Does the drawer's upgrade mode break `__tests__/product-variants/ProductVariantsDrawer.test.tsx`?
-Status: pending — **read the file in the first planning phase**, do not guess here.
-Explanation: If upgrade mode is added as optional props with today's behaviour as the default, existing tests should pass untouched. That is the argument for the optional-prop seam over a mode enum that every call site has to pass.
+Status: **deferred to planning by the user, 2026-07-31 — read the file, do not guess here.**
+Explanation: Read `__tests__/product-variants/ProductVariantsDrawer.test.tsx` in the **first** planning phase, before the drawer work is scheduled. The expectation to confirm or disprove: if upgrade mode arrives as *optional* props with today's behaviour as the default, every existing test passes untouched. That is the whole argument for the optional-prop seam over a mode enum every call site has to pass — and if reading the file shows the tests break anyway, the seam should be reconsidered rather than the tests rewritten. (Story 1 deferred the same question about the same file for the stepper swap; that is the precedent for reading it early.)
 
 II: Question: How is the hydration gate tested?
-Status: pending — **recommend: assert the gate, not the flash.**
-Explanation: jsdom cannot reproduce an SSR/hydration mismatch. What is testable: seed `localStorage` before rendering and assert the populated list appears; render with empty storage and assert `Tu lista está vacía`; assert the empty copy is absent from the pre-mount output. Clear `localStorage` in `beforeEach` and build a fresh store per test — `persist` rehydrates at store creation (Story 1, Verification I).
+Status: **answered by the user, 2026-07-31 — assert the gate, not the flash.**
+Explanation: jsdom cannot reproduce an SSR/hydration mismatch, so there is no test that catches the flash itself. What is asserted instead:
+
+- Seed `localStorage` with a valid cart **before** rendering, then assert the populated list appears and `Tu lista está vacía` is absent.
+- Render with empty storage and assert the empty state appears.
+- Assert the empty copy is absent from the pre-mount output — this is the gate itself, and it is the one assertion that fails if someone later removes the mounted guard.
+
+Two mechanics carried over from Story 1 (Verification I): clear `localStorage` in `beforeEach`, since jsdom persists it across tests in a file; and build a fresh store per test, since `persist` rehydrates at store creation.
+
+**The flash stays a manual-QA item**, not a covered case. Worth stating in the PR so nobody reads a green suite as proof it cannot happen.
 
 ## Assumptions Made
 
@@ -333,8 +347,21 @@ Story 2 is fully scoped. Design is delivered for everything except two items, ne
 
 The work is three store actions, one new route, one new feature folder, an optional-prop mode on an existing drawer, a header move, and a link promotion. No new dependency, no backend change, no Strapi query change.
 
-Six decisions the user settled on 2026-07-31: single-select upgrade mode, `Header` moves to the root layout, `Vaciar lista` ships in this story, full research depth, **the upgrade collision merges quantities**, and **the upgrade confirms with a success toast** (with distinct copy for the merge case).
+Seven decisions the user settled on 2026-07-31: single-select upgrade mode, `Header` moves to the root layout, `Vaciar lista` ships in this story, full research depth, **the upgrade collision merges quantities**, **the upgrade confirms with a success toast** (with distinct copy for the merge case), and **`aria-current="page"` on the header link with no visual active state**.
 
-The remaining open questions are planning-level defaults with no behavioural consequence: the header's `aria-current` (recommend the attribute, no visual state), the `Vaciar lista` confirmation styling (D4, Brief 5), the drawer's empty-variants path from `/cotizar`, and two test-approach calls.
+**Every open question is now closed except one design gap and one deliberate planning task.** The gap is the `Vaciar lista` confirmation styling (D4, Brief 5 — dialog or inline two-step), which blocks nothing and can be designed while the store work proceeds. The planning task is Verification I: **read `__tests__/product-variants/ProductVariantsDrawer.test.tsx` in the first planning phase**, before the drawer work is scheduled, to confirm the optional-prop seam leaves the existing tests untouched.
+
+**Ready for planning as of 2026-07-31.**
+
+| # | Decision |
+|---|---|
+| UI I | Upgrade collision **merges** quantities, clamped at 100, keeping the existing priced line's position. |
+| UI II | The upgrade confirms with a **success toast**, with distinct copy for the merge case. |
+| UI III | `Vaciar lista` ships with a confirmation step. Styling open (D4). |
+| UI IV | **`aria-current="page"`** on the header link, no visual active state. |
+| Catalog I | The empty/failed variants fetch reuses the drawer's **existing copy**; the line always survives. |
+| Verification I | **Deferred to planning** — read the drawer's test file first. |
+| Verification II | **Assert the gate, not the flash.** The flash stays manual QA. |
+| (Story scope) | Single-select upgrade mode; `Header` moves to the root layout. |
 
 Awaiting human sign-off. No source files were modified during this research.
