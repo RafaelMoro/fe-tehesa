@@ -1,3 +1,9 @@
+## v0.28.0 (2026-08-01)
+
+### Pull Requests
+[#35](https://github.com/RafaelMoro/fe-tehesa/pull/35) | Add cart feature | Story 2 | Add quote page, line review and subtotal
+
+
 ## v0.27.0 (2026-08-01)
 
 ### Pull Requests
