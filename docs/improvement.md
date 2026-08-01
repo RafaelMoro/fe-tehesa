@@ -78,13 +78,12 @@ Deferred from Story 4 (`ai-research/stories/plp-seo-readiness.story4.md`, open q
 
 ## Cart feature follow-up
 
-Pick this up when the cart feature reaches develop. Deferred from Story 3 (`ai-research/stories/plp-product-detail-signals.story3.md`, open question UI V).
+**Resolved 2026-07-31 by the cart epic's Story 1** (`ai-planning/cart-quote-whatsapp/cart-state-persistence.story-1.md`). Kept for history; the items below no longer describe the current code.
 
-- `ProductVariantsDrawer` keys its selection state by array index (`selectedVariantIndexes`, `quantities`). Decide then whether to re-key it by `internalId`; Story 3 deliberately left it alone because nothing consumed the value yet.
-- Story 3 retains `internalId` on every mapped variant (`ProductVariantUI`) precisely so the cart does not have to refetch variants for a product the user already opened. The drawer is the only place `internalId` is ever fetched — no product list query returns it — so do not drop it from the selected-variant shape.
-- A selected line already carries everything a cart line needs: `internalId`, `diameter`, `price`, and quantity. No extra Strapi call should be required to build the cart payload.
-- `Agregar al carrito` exists but is inert in two places: `ProductCard.tsx` (handler commented out) and the drawer footer (currently just closes the drawer). Both need wiring, and the card-level action needs a product-level decision since the card has no variant selection.
-- Prices are already formatted as `$1,234.50 MXN` by the shared `formatNumberToCurrency`; reuse it rather than formatting cart totals separately.
+- `ProductVariantsDrawer` now keys selection state (`selectedVariantIds`, `quantities`) by the variant's `documentId`, not array index or `internalId`. Backend research during planning found `internalId` neither required nor unique on `product_variant`, which ruled it out as an identity key — `documentId` (`ID!`, always present, always unique) is now selected by `GET_PRODUCT_VARIANTS` and used throughout.
+- `internalId` still rides on every cart line as seller-facing display text (never rendered, never a key), exactly as this entry anticipated.
+- Both `Agregar al carrito` CTAs are wired: the drawer footer adds one line per selected variant to the new Zustand cart store (`src/zustand/store/cart.store.ts`, persisted to `localStorage`); the card's tertiary `Agregar y elegir después` adds a variant-less product-level line. A third case this entry didn't anticipate — `variantCount === 1` products — got its own single-CTA `Agregar 1 pieza` card branch.
+- Cart totals reuse `formatNumberToCurrency`, as recommended here.
 
 ### Quote recovery after the WhatsApp hand-off (deferred)
 

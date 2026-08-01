@@ -838,3 +838,47 @@ The one finding that changes the design rather than the estimate: `internalId` i
 One new dependency, `react-hook-form`, is added by Story 4 only (user decision, 2026-07-31); Stories 1, 2, 3, and 5 add none. No backend change is required by any story.
 
 Awaiting human sign-off.
+
+## Epic Completion Status
+
+**Updated 2026-07-31, after implementing Story 1** (`ai-planning/cart-quote-whatsapp/cart-state-persistence.story-1.md`).
+
+### Story 1: Cart State, Persistence, And Add-To-Cart Wiring — Complete
+
+Implemented and verified against every acceptance criterion in this doc's Story 1 section, with one documented, approved divergence:
+
+- AC 1 (store, provider-wraps-store, mounted in `providers.tsx`, `version`/`migrate`) — `src/zustand/store/cart.store.ts`, `src/zustand/provider/cart.provider.tsx`, `src/app/providers.tsx`. `pnpm test -- __tests__/cart/cart.store.test.ts` (7 tests).
+- AC 2 (rehydrate validation, drop-not-repair, never throws) — `isValidCartLine`/`sanitizeCartState` in `cart.store.ts`. `pnpm test -- __tests__/cart/cart.rehydrate.test.ts` (17 tests) covers truncated JSON, wrong-shape blobs, negative/non-integer quantity, non-finite price, bad `documentId`, oversized arrays, bad contact email, version mismatch.
+- AC 3 (drawer CTA, `documentId` on `GET_PRODUCT_VARIANTS`, no extra request) — `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` re-keyed to `documentId`, `handleAdd` builds lines from state already in hand.
+- AC 4 (card CTA, variant-less line, `Agregar y elegir después` tertiary) — `src/components/ProductCard.tsx`; line carries `variantDocumentId: null`/`unitPrice: null` so Story 2 can render `Sin variante seleccionada` and exclude it from a subtotal.
+- AC 4b (single-variant card, `Agregar 1 pieza`, pending/failure) — `src/components/ProductCard.tsx`, branch on `variantCount === 1`; fetches `/api/catalog/variants` on click, `role="alert"` on failure (including empty-`data`), recoverable in place.
+- AC 5 (dedup/increment by `documentId`) — `cartLineKey`/`addLines` in `cart.store.ts`; drawer and card both re-add through it.
+- **AC 6 (header badge) — approved divergence.** The badge (`src/shared/ui/atoms/CartCount.tsx`, wired into `src/shared/ui/organisms/Header.tsx`) shows the line count with a mounted guard, but is **not** a link in this story. This was decided during planning (research doc, Open Question "UI III", user-approved 2026-07-31): `/cotizar` doesn't exist until Story 2, so a link would be dead; Story 1 ships a non-focusable labelled status (`Mi lista, N artículos`) and Story 2 promotes it to a link. Counted as satisfied given the approved re-scope, not as a gap.
+- AC 7 (two independently clearable, both-validated slices) — `clearLines`/`clearContact` in `cart.store.ts`, `sanitizeContact` validates the contact slice independently of lines.
+
+Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (27 suites, 219 passed, 1 pre-existing unrelated skip), `pnpm build` all pass. Manual browser QA (dev server + live Strapi) is deferred to the user per this workflow's rule against starting the dev server.
+
+### Epic Story Overview
+
+| Story | Status | Evidence | Remaining work / blocker |
+|---|---|---|---|
+| Story 1: Cart state, persistence, add-to-cart wiring | Complete | See above | None |
+| Story 2: Quote page (`/cotizar`) — line review and subtotal | Not started | — | Depends on Story 1 (done). Also promotes the Story 1 header badge to a link. |
+| Story 3: Price/availability revalidation on `/cotizar` | Not started | — | Depends on Story 2 existing (the route to revalidate on load) |
+| Spike 4S: WhatsApp delivery mechanisms | Not started | — | Timeboxed research spike; gates Story 4 |
+| Story 4: Contact form and the WhatsApp `Cotizar` CTA | Not started | — | Gated on Spike 4S; depends on Story 2/3 for line data to build the message |
+| Story 5: Analytics contract extension | Not started | — | Documentation-only; can run independently once trigger sites are final |
+
+### Overall Completion
+
+**7 / 33** acceptance criteria verified complete (Story 1's 8 ACs counted as 7, per the approved AC 6 divergence above; Stories 2-5 contribute 0 of their 25 combined ACs) ≈ **21%**.
+
+The epic is not complete — Stories 2 through 5 and Spike 4S remain.
+
+### Next Steps
+
+1. Plan and implement Story 2 (`/cotizar` line review + subtotal) — the next unblocked story; also the point where the header badge becomes a link.
+2. Run Spike 4S (WhatsApp delivery mechanism pricing) in parallel with Story 2/3 planning — it gates Story 4's shape.
+3. Plan and implement Story 3 (revalidation) once Story 2's route exists.
+4. Plan and implement Story 4 (contact form + WhatsApp CTA) once Spike 4S recommends a mechanism.
+5. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 once Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist).

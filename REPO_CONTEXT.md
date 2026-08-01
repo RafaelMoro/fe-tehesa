@@ -44,13 +44,14 @@ Strapi GraphQL API via ApolloClient
 Key invariants:
 
 - `src/app/layout.tsx` is the root server layout. It sets `lang="es"`, loads Google Geist fonts, wraps children in `Providers`, then wraps them in `NextThemesProvider` with `attribute="class"` and `defaultTheme="dark"`.
-- `src/app/providers.tsx` currently returns children unchanged; HeroUI v3 does not require a provider in this app.
+- `src/app/providers.tsx` is `"use client"` and mounts `CartStoreProvider` plus HeroUI's `Toast.Provider` (`placement="bottom end"`, `maxVisibleToasts={1}`, `className="z-[60]"` — the drawer overlay is also `z-50`, portals later, and would otherwise hide the toast for its exit animation). Every route gets the cart; `__tests__/test-utils.tsx` picks it up for free since it already wraps `render` in `Providers`.
 - `src/app/page.tsx` is the only page route currently present. It awaits `searchParams` per Next 15, canonicalizes invalid catalog URLs with `redirect()`, fetches the selected product result set, categories, brands, and theme in parallel, and wraps the catalog in `ChangeThemeStoreProvider`.
 - Base catalog pagination derives 7 pages from `KNOWN_PRODUCT_TOTAL = 333` and `PRODUCT_PAGE_SIZE = 50` in `src/shared/constants/catalog.constants.ts`; replace the total source when Strapi exposes live pagination metadata.
 - Server data access lives in `src/shared/lib/global.lib.ts` with the `"use server"` directive. It creates a new Apollo Client for each call through `src/app/apollo-client.ts`.
 - Client components no longer import server actions from `global.lib.ts` for catalog reads. URL-backed catalog navigation is server-rendered through `src/app/page.tsx`; route handlers still wrap server actions for other client API consumers such as product variants.
 - Theme persistence is cookie-backed through `POST /api/preferences` -> `saveThemeCookie()`. The cookie key is `tehesa-theme` in `src/shared/constants/global.constants.ts`.
 - The Zustand theme store follows the provider-wraps-store pattern under `src/zustand/provider` and `src/zustand/store`. Keep stores request-safe by creating them inside provider refs, not module-level singletons.
+- A Zustand cart store (`src/zustand/store/cart.store.ts` + `src/zustand/provider/cart.provider.tsx`) follows the same provider-wraps-store pattern and persists to `localStorage` (`tehesa-cart`) via `zustand/persist`, with an explicit `version`/`migrate` (drop-on-mismatch) and rehydrate-time validation (`sanitizeCartState`/`isValidCartLine`) — `localStorage` is a trust boundary, so a truncated/tampered blob drops the offending line rather than throwing or repairing it. Lines are keyed by `` `${productDocumentId}:${variantDocumentId ?? "no-variant"}` `` (never `internalId`, which is neither required nor unique on `product_variant`), capped at 100 lines, enforced as an all-or-nothing batch on add.
 
 ## Directory Layout
 
@@ -62,7 +63,7 @@ Key invariants:
 | `page.tsx`                        | Catalog route `/`; parses canonical catalog URL state, server-fetches the selected products + taxonomy + theme, and renders `Home`.                                    |
 | `loading.tsx`                     | Minimal route fallback with accessible Spanish loading status.                                                                                                          |
 | `error.tsx`                       | Client error boundary with Spanish catalog recovery copy and retry.                                                                                                     |
-| `providers.tsx`                   | Client provider for HeroUI.                                                                                                                                            |
+| `providers.tsx`                   | Client provider: mounts `CartStoreProvider` and HeroUI's `Toast.Provider`.                                                                                             |
 | `apollo-client.ts`                | Apollo Client factory for Strapi GraphQL.                                                                                                                              |
 | `robots.ts`                       | `GET /robots.txt` — disallows `/api/`, points to `/sitemap.xml`. Never disallows `?mode=name` (its `noindex` must still be crawled to be read).                        |
 | `sitemap.ts`                      | `GET /sitemap.xml` — base pages `/` + `/?page=2..7` plus one URL per live category/brand. No `lastModified`/`changeFrequency`/`priority`. Degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`. |
@@ -92,13 +93,13 @@ Key invariants:
 
 | Subdir         | Purpose                                                                                                        |
 | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `constants`    | Cross-cutting constants such as the theme cookie key, `CAT_*`/`MSG_CAT_*` catalog error codes, and SEO copy/origin (`seo.constants.ts`). |
+| `constants`    | Cross-cutting constants such as the theme cookie key, `CAT_*`/`MSG_CAT_*` catalog error codes, SEO copy/origin (`seo.constants.ts`), and cart constants (`cart.constants.ts`: storage key, schema version, quantity/line bounds). |
 | `hooks`        | Reusable client hooks; currently `useMediaQuery`.                                                              |
 | `lib`          | Server actions for Strapi reads and theme cookie persistence.                                                  |
-| `queries`      | GraphQL operations for products, filtered products, variants, categories, and brands.                          |
-| `types`        | Product, variant, app theme, error, pagination, category, brand, and dynamic `TaxonomyItem` types.             |
-| `ui/atoms`     | Reusable atomic UI such as `ToggleDarkMode`.                                                                   |
-| `ui/organisms` | Reusable composed UI such as `Header`.                                                                         |
+| `queries`      | GraphQL operations for products, filtered products, variants (now including `documentId`), categories, and brands. |
+| `types`        | Product, variant (now with `documentId`), app theme, error, pagination, category, brand, `TaxonomyItem`, and cart (`CartLine`/`CartVariantLine`/`CartProductLine`/`CartContact`) types.             |
+| `ui/atoms`     | Reusable atomic UI: `ToggleDarkMode`, `QuantityStepper` (HeroUI `NumberField` composition, bounded `1..100`, Spanish `Aumentar`/`Disminuir` labels, guards `onChange` against React Aria's cleared-input `NaN`), `CartCount` (mounted-guard badge showing cart line count).                                                                   |
+| `ui/organisms` | Reusable composed UI such as `Header` (now also renders `CartCount` beside `ToggleDarkMode`).                                                                         |
 | `utils`        | Pure helpers such as currency formatting, the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`), and SEO metadata/JSON-LD builders (`seo.utils.ts`: `buildCatalogMetadata`, `buildCatalogJsonLd`, `toJsonLdHtml`). |
 
 ### `src/zustand/`
@@ -107,6 +108,8 @@ Key invariants:
 | ------------------------------------ | ---------------------------------------------------------------- |
 | `store/change-theme.store.ts`        | Vanilla Zustand theme store and React context.                   |
 | `provider/change-theme.provider.tsx` | Client provider that creates a per-provider store with `useRef`. |
+| `store/cart.store.ts`                | Vanilla Zustand cart store with `zustand/persist`, rehydrate validation, and add/increment/cap logic. |
+| `provider/cart.provider.tsx`         | Client provider that creates a per-provider cart store with `useRef`; exposes `useCartStore`. |
 
 ## Data Flow
 
@@ -154,8 +157,9 @@ Catalog behavior:
 - `src/app/loading.tsx` provides route loading feedback. `src/app/error.tsx` provides Spanish retry UI for server-rendered catalog failures.
 - `ProductVariantsDrawer` fetches variants when opened, formats prices with `formatNumberToCurrency`, and sorts by numeric price ascending.
 - `formatNumberToCurrency` renders `$1,234.50 MXN` (fixed business format via a plain decimal `Intl.NumberFormat` plus an explicit `$...MXN` template, not a locale currency formatter). Used by both `ProductCard` and `ProductVariantsDrawer`.
-- `Product.hasOneProductVariant` (added to `GET_PRODUCTS`, `GET_PRODUCTS_BY_CATEGORY`, `GET_PRODUCTS_BY_BRAND`, `GET_PRODUCTS_BY_NAME`) gates a single-price `Precio` block on `ProductCard` in place of the `Desde`/`Hasta` range grid when `=== true`. It does not key off `minPrice === maxPrice`. `GET_PRODUCT_VARIANTS` is unchanged.
-- Each variant mapped by `ProductVariantsDrawer` retains `internalId` (via `ProductVariantUI.internalId`) in state for the upcoming cart feature; it is never rendered.
+- `ProductCard` now derives `isSingleVariant = product.variantCount === 1` and uses that single signal for **both** the price block (single `Precio` instead of `Desde`/`Hasta`) and the footer branch (one `Agregar 1 pieza` CTA instead of the two-CTA footer). `Product.hasOneProductVariant` still exists on the type/queries but the card no longer branches on it — two denormalized signals answering one question was a drift risk (cart epic Story 1, decision D2). `variantCount` of `null`/`0` (three known bad records, see `docs/improvement.md`) keeps the standard card.
+- `GET_PRODUCT_VARIANTS` now also selects `documentId` (`ProductVariant.documentId` / `ProductVariantUI.documentId`, both required). This is the cart's line-identity key — `internalId` is neither required nor unique on `product_variant` and was ruled out as a key during the cart epic's backend research. `ProductVariantsDrawer` keys its selection/quantity state and cart line composition by `documentId`, not array index (the variant array is re-fetched and re-sorted on every open) and not `internalId`.
+- Each variant mapped by `ProductVariantsDrawer` still retains `internalId` (via `ProductVariantUI.internalId`) purely as seller-facing display text carried onto the cart line for the future WhatsApp message; it is never rendered and never used as a key.
 
 ## API Route Inventory
 
@@ -325,13 +329,18 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 | `src/features/Pagination/{types.pagination,utils.pagination}.ts`                           | Feature-local catalog URL parsing/building helpers and types for server URL orchestration, plus the pure `parseCatalogParams` and canonical-URL builders (`buildCanonicalPath`, `buildBasePagePath`, `buildModeUrl`) shared with SEO metadata/sitemap/anchor pagination.                          |
 | `src/features/ProductListing/*.tsx`                                                        | Listing grid, search input, category and brand dropdowns.                                                                                                                                           |
 | `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx`                                 | HeroUI right-side drawer with name-search form plus the catalog-wide category/brand dropdowns.                                                                                                      |
-| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`                             | Variant drawer and price display.                                                                                                                                                                   |
-| `src/components/ProductCard.tsx`                                                           | Product card UI.                                                                                                                                                                                    |
+| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`                             | Variant drawer and price display; selection/quantity keyed by variant `documentId`, uses `QuantityStepper`, CTA adds lines to the cart store.                                                     |
+| `src/components/ProductCard.tsx`                                                           | Product card UI; two-CTA footer (`Explorar…` + tertiary `Agregar y elegir después`) or, when `variantCount === 1`, a single `Agregar 1 pieza` CTA with pending/failure states.                    |
 | `src/shared/lib/global.lib.ts`                                                             | Server actions for Strapi reads and theme cookies.                                                                                                                                                  |
 | `src/shared/queries/global.queries.ts`                                                     | GraphQL operations.                                                                                                                                                                                 |
-| `src/shared/types/global.types.ts`                                                         | Product/domain types plus hardcoded category and brand options.                                                                                                                                     |
+| `src/shared/types/global.types.ts`                                                         | Product/domain types plus hardcoded category and brand options, plus the `CartLine` union and `CartContact`.                                                                                       |
+| `src/shared/constants/cart.constants.ts`                                                   | Cart storage key, schema version, quantity/line-count bounds, contact validation constants.                                                                                                        |
+| `src/shared/ui/atoms/QuantityStepper.tsx`                                                  | Shared `− n +` stepper (HeroUI `NumberField` composition); used by the drawer and reserved for `/cotizar` (Story 2).                                                                                |
+| `src/shared/ui/atoms/CartCount.tsx`                                                        | Header cart badge; mounted-guard pattern, not a link/button in Story 1 (AC 7b).                                                                                                                     |
 | `src/zustand/provider/change-theme.provider.tsx`                                           | Theme store provider and hook.                                                                                                                                                                      |
 | `src/zustand/store/change-theme.store.ts`                                                  | Vanilla Zustand theme store.                                                                                                                                                                        |
+| `src/zustand/provider/cart.provider.tsx`                                                   | Cart store provider and `useCartStore` hook.                                                                                                                                                        |
+| `src/zustand/store/cart.store.ts`                                                          | Vanilla Zustand cart store: persist config, rehydrate validation, add/increment/cap logic.                                                                                                          |
 
 ## External References
 
