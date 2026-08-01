@@ -87,7 +87,7 @@ A buyer who has collected 3-20 items across the catalog needs to check the list 
 | `/cotizar` subtotal | same | Labelled as excluding unpriced lines | **2** | 3 |
 | `/cotizar` empty state | same | `Tu lista está vacía` | **2** | 3 |
 | `Vaciar lista` + confirm | same | Resting, centred-dialog confirmation, empty result | **2** | 5 — `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` |
-| Upgrade drawer | `src/features/ProductVariantsDrawer/` | Single-select, quantity prefilled, confirm replaces line | **2** | **none — design gap D3, behaviour only** |
+| Upgrade drawer | `src/features/ProductVariantsDrawer/` | Single-select, quantity prefilled, confirm replaces line | **2** | none — no comp needed; D3 settled as a success toast (UI II) |
 | Header cart control | `src/shared/ui/atoms/CartCount.tsx` | `0`, count, 99+ — now a link | **2** | 2 — comps in `comps/brief-2/` |
 
 ### Rules That Override Any Design Instinct
@@ -104,7 +104,7 @@ Phone-first, single column at ~390px with the subtotal reachable without hunting
 ### Accessibility
 
 - Every `QuantityStepper` and every `Quitar` needs an accessible name that identifies its line (`Cantidad de Broca Larga, 1/4"`, `Quitar Broca Larga, 1/4"`). Two rows that both say `Quitar` are unusable with a screen reader.
-- `Vaciar lista` is destructive: the confirmation must be a real dialog or an inline confirm with focus management, not a `window.confirm`.
+- `Vaciar lista` is destructive: Brief 5's centred dialog, never `window.confirm`. The comp cannot express focus behaviour, so it is specified here — initial focus on `Cancelar`, focus trapped inside the dialog, `Esc` cancels, and on close focus returns to the `Vaciar lista` control (or, after confirming, to the empty state's `Volver al catálogo`).
 - After a line is removed, focus must land somewhere deliberate — not on `<body>`. Removing the last line changes the whole page to the empty state; announce the change.
 - Quantity and subtotal changes should be announced via a `role="status"` live region rather than only re-rendered.
 - The drawer, opened from `/cotizar`, must return focus to the `Elegir medida` button that opened it.
@@ -129,7 +129,7 @@ Revalidation and its four line states (Story 3), the contact form (Story 4), the
 - ~~Should the upgrade drawer be multi-select?~~ **Answered 2026-07-31 — single-select upgrade mode.** One variant replaces the line in place, keeping position and quantity. A second selection is not offered.
 - ~~Where does `Header` live so `/cotizar` gets the badge?~~ **Answered 2026-07-31 — move it into the root layout.**
 - ~~Does Story 2 ship a clear-all control?~~ **Answered 2026-07-31 — yes, `Vaciar lista`, with a centred-dialog confirmation.** See `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png`.
-- **D3 (open, behavioural):** what the buyer sees at the moment a line upgrades in place. Recorded as outstanding in the epic. No comp; a planning call, not a blocker.
+- ~~D3~~ **closed 2026-07-31 — a success toast**, with distinct copy for the merge case (UI II). Behavioural, so no comp was needed. The epic still lists D3 as outstanding; update it there when this story is planned.
 - ~~D4~~ **closed 2026-07-31:** Brief 5 selects the centred dialog; the inline control remains an alternative. Static comps do not establish focus management.
 
 ## Technical Research
