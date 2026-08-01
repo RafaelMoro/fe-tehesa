@@ -109,6 +109,8 @@ File path:
 - Story belonging to an epic: first check for `ai-research/<epic-folder-name>/`; create it when absent, then write `ai-research/<epic-folder-name>/<story-name>.story-<story-number>.md`.
 - Standalone story: `ai-research/<story-name>.story.md`.
 
+- Design brief for a story or epic that includes UI work: see Step 7b.
+
 Use lowercase kebab-case names. An epic folder name is the epic name without the `.epic.md` suffix. Do not put epic stories in `ai-research/epics/` or flatten them into `ai-research/`.
 
 Length target: **~200-500 lines** for full mode, **~100-200 lines** for quick mode. Cut aggressively for small stories.
@@ -124,15 +126,19 @@ The research doc must include:
 
 ### Design Agent Handoff
 
-Include this section only when the story creates or materially changes UI, user flows, visual states, responsive behavior, or other design work. It must give a design agent the product context without prescribing implementation:
+Include this section only when the story creates or materially changes UI, user flows, visual states, responsive behavior, or other design work. Omit it for backend-only, data-only, tooling-only, or non-visual stories.
 
-- User goal and affected screen or flow
-- Required UI states and interactions: default, loading, empty, error, success, and disabled states when applicable
-- Mobile and desktop expectations, accessibility requirements, and existing visual patterns to preserve
-- Content, data, and technical constraints the design must respect
-- Explicitly out-of-scope visual work and unanswered design questions
+**Design work is split across two files.** The design agent is external — it has no repository access, and it is fed screenshots plus `DESIGN.md` by hand. So the research doc holds what a *developer or planner* needs, and a separate brief file (Step 7b) holds what a *repo-blind design agent* needs. Do not duplicate content between them; each constraint lives on the side that acts on it.
 
-Omit this section for backend-only, data-only, tooling-only, or non-visual stories.
+Keep in the research doc:
+
+- A one-paragraph statement of the user goal, and what the feature is **not** (this is the framing that stops a quote page becoming a checkout).
+- A **surface index table**: surface, the file it lives in, its states, the story it belongs to, and which brief covers it. This is the planner's-eye view no single brief can give, because each brief sees only its own slice.
+- The two to four rules that override any design instinct to the contrary, when the feature has them (e.g. "never present a total as a price the buyer will pay").
+- **Implementation-facing constraints**, as short reference subsections the stories point at: mobile/desktop expectations with the repo gotchas that matter (hook limitations, breakpoint sources), accessibility requirements with concrete `aria-*` and focus rules, visual patterns to preserve with `DESIGN.md` line references and `pnpm design:lint`, content constraints naming the real helpers (`formatNumberToCurrency`), and explicit out-of-scope work.
+- A **decision record** of design questions: what was decided, why, and what is still open. Strike through settled entries rather than deleting them, so a decision is not reopened by accident.
+
+Do **not** put in the research doc: a step-by-step design process, copy-pasteable prompts, or screenshot lists. Those belong in the brief file, and keeping them in both places guarantees they drift.
 
 ### Technical Research
 
@@ -164,6 +170,28 @@ Omit this section for backend-only, data-only, tooling-only, or non-visual stori
 
 Focus on **high-level actions** needed to accomplish the task. Do not include implementation code beyond illustrative file references.
 
+## Step 7b - Write the design agent brief
+
+Run this step **only** when the research doc includes a Design Agent Handoff.
+
+File path: `ai-research/<epic-folder-name>/design-agent-briefs.md` for an epic, or `ai-research/<story-name>.design-brief.md` for a standalone story.
+
+The design agent has no repository access. It cannot read `DESIGN.md`, cannot open a component, and cannot follow a reference to another document. **Every prompt must be self-contained** — inline the exact labels, the exact Spanish strings, and every constraint, rather than pointing at the epic.
+
+The file has three parts.
+
+**1. A screenshot capture guide**, written once at the top. A table of shot ID, what to capture, viewport (~390px phone and ~1440px desktop), theme (light and dark), and *why that shot is needed*. Name which existing surface is the closest visual precedent for anything new — that is what stops the agent inventing a pattern the app does not use. The user runs `pnpm dev` and captures these by hand; do not attempt it yourself.
+
+**2. One brief per surface group**, each with:
+
+- **Attach** — which shot IDs and which files (`DESIGN.md` at minimum, plus a previous brief's output when the new surface sits beside it).
+- **Prompt** — a fenced block to copy verbatim. Structure it as: who you are and what the app is → **why the problem exists** → what to design, state by state → hard constraints → deliverable. Lead with the problem, not the task list: an agent that does not understand the problem solves a different one. State the anti-goals explicitly ("do not add an image placeholder", "do not invent stock levels") — an agent will otherwise fill gaps with e-commerce defaults that do not apply here.
+- **Check the output for** — the two to four predictable failures for that surface, phrased as what to reject and re-run.
+
+**3. A closing note** on what to bring back to the research doc, and a reminder that implementation follows the acceptance criteria, not the comps — several ACs typically have no visual expression at all.
+
+Sizing: one surface group per brief. Do not merge them. Order them so the briefs that unblock the first story come first, and say explicitly where a valid stopping point is, so implementation can begin before the whole epic is designed.
+
 ## Step 8 - Capture non-obvious findings
 
 If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
@@ -178,14 +206,15 @@ End the turn with:
 2. Story / epic structure if broken down
 3. A bullet list of unresolved open questions
 4. A bullet list of assumptions made
-5. The design-agent handoff summary, when included
+5. When design work is included: the path to the design brief file, how many briefs it contains, which stories each unblocks, and the screenshots the user needs to capture before running the first one
 
 Do **not** start planning or writing code. Wait for human sign-off.
 
 ## Don'ts
 
 - Do not propose implementation; that is the planning phase.
-- Do not write or modify source files other than the research doc, except for a verified broadly useful `REPO_CONTEXT.md` note.
+- Do not write or modify source files other than the research doc and its design brief file (Step 7b), except for a verified broadly useful `REPO_CONTEXT.md` note.
+- Do not start the dev server or attempt to capture screenshots yourself; the screenshot guide is instructions for the user.
 - Do not run tests, builds, `pnpm install`, or package manager changes during research.
 - Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, or finance domains; those are not present in this repo. Jest and Testing Library are present.
 - Do not read or shell into the backend repo yourself; backend repo access is scoped to the `backend-research` subagent (Step 5).

@@ -3,6 +3,7 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
+import { CartCount } from "../atoms/CartCount"
 import { useTheme } from "next-themes"
 import type { AppTheme } from "@/shared/types/global.types"
 
@@ -29,7 +30,10 @@ export const Header = ({ themeFetched }: HeaderProps) => {
         className="rounded-sm"
         src={logoTheme === "dark" ? "/tehesa-logo-negativo.webp" : "/tehesa-logo.webp"}
       />
-      <ToggleDarkMode />
+      <div className="flex items-center gap-2">
+        <CartCount />
+        <ToggleDarkMode />
+      </div>
     </header>
   )
 }

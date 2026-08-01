@@ -61,6 +61,7 @@ export interface PaginationProps {
 }
 
 export type ProductVariant = {
+  documentId: string
   internalId?: string
   diameter: string
   pricing: {
@@ -69,8 +70,35 @@ export type ProductVariant = {
 }
 
 export type ProductVariantUI = {
+  documentId: string
   internalId?: string
   diameter: string
   price: number
   priceFormatted: string
+}
+
+export type CartVariantLine = {
+  productDocumentId: string
+  productName: string
+  quantity: number
+  variantDocumentId: string
+  internalId?: string
+  diameter: string
+  unitPrice: number
+}
+
+export type CartProductLine = {
+  productDocumentId: string
+  productName: string
+  quantity: number
+  variantDocumentId: null
+  unitPrice: null
+}
+
+export type CartLine = CartVariantLine | CartProductLine
+
+export type CartContact = {
+  firstName: string
+  lastName: string
+  email: string
 }
