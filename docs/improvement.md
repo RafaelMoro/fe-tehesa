@@ -58,6 +58,7 @@ Found during Story 4 (SEO) research on 2026-07-27.
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
 - Analytics: Story 5 defines the vendor-neutral event contract in `docs/ANALYTICS_EVENT_CONTRACT.md` (planned, not yet implemented). GA4 is the recommended first provider; choose any second provider during contract sign-off, then implement instrumentation in a separate story without adding a provider dependency prematurely.
 - Show a notification error when the theme is changed but the cookie persistance failed
+- Remove the dead `change-theme` Zustand store/provider (`src/zustand/store/change-theme.store.ts`, `src/zustand/provider/change-theme.provider.tsx`). Noticed during cart epic Story 2 planning and implementation (`ai-planning/cart-quote-whatsapp/quote-page-line-review.story-2.md`): `useChangeThemeStore` has zero consumers — `ToggleDarkMode` uses next-themes directly — and the store is kept alive only by `ChangeThemeStoreProvider` in `src/app/page.tsx`. Not touched during Story 2 to keep the story's scope to the quote page; safe to delete in a follow-up cleanup.
 
 ## Business data for local SEO structured data (pending)
 

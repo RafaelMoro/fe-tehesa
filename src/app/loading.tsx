@@ -5,7 +5,7 @@ import { ProductCardSkeleton } from "@/components/ProductCardSkeleton"
 
 export default function Loading() {
   return (
-    <CatalogPageLayout themeFetched="light">
+    <CatalogPageLayout>
       <CatalogHero isDisabled />
       <CatalogDisabledFilters />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

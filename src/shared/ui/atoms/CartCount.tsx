@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { RiShoppingCart2Line } from "@remixicon/react"
 
 import { useCartStore } from "@/zustand/provider/cart.provider"
@@ -8,6 +10,7 @@ import { useCartStore } from "@/zustand/provider/cart.provider"
 export const CartCount = () => {
   const [mounted, setMounted] = useState(false)
   const lineCount = useCartStore((store) => store.lines.length)
+  const pathname = usePathname()
 
   useEffect(() => {
     setMounted(true)
@@ -17,7 +20,11 @@ export const CartCount = () => {
   const countLabel = count > 99 ? "99+" : String(count)
 
   return (
-    <div className="relative flex size-11 items-center justify-center">
+    <Link
+      href="/cotizar"
+      aria-current={pathname === "/cotizar" ? "page" : undefined}
+      className="relative flex size-11 items-center justify-center"
+    >
       <RiShoppingCart2Line aria-hidden="true" className="size-6" />
       <span
         aria-hidden="true"
@@ -30,8 +37,8 @@ export const CartCount = () => {
         {countLabel}
       </span>
       <span className="sr-only">
-        Mi lista, {count} artículo{count === 1 ? "" : "s"}
+        Ver mi lista, {count} artículo{count === 1 ? "" : "s"}
       </span>
-    </div>
+    </Link>
   )
 }

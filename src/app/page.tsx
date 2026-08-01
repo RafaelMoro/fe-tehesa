@@ -3,11 +3,7 @@ import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
 import { CatalogPageLayout } from "@/features/Home/CatalogPageLayout"
-import {
-  fetchBrands,
-  fetchCategories,
-  getThemePreference,
-} from "@/shared/lib/global.lib"
+import { fetchBrands, fetchCategories } from "@/shared/lib/global.lib"
 import {
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
@@ -39,11 +35,10 @@ export default async function MainPage({
   const params = await searchParams
   const selection = getCatalogSelection(params)
 
-  const [products, categories, brands, themeFetched] = await Promise.all([
+  const [products, categories, brands] = await Promise.all([
     selection.fetchProducts(),
     fetchCategories(),
     fetchBrands(),
-    getThemePreference(),
   ])
 
   if (selection.page > PRODUCT_PAGE_MIN && products.length === 0) {
@@ -61,7 +56,7 @@ export default async function MainPage({
           __html: toJsonLdHtml(buildCatalogJsonLd(selection, products)),
         }}
       />
-      <CatalogPageLayout themeFetched={themeFetched}>
+      <CatalogPageLayout>
         <Home
           products={products}
           currentPage={selection.page}

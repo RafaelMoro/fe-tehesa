@@ -26,12 +26,17 @@ import { QuantityStepper } from "@/shared/ui/atoms/QuantityStepper"
 interface ProductVariantsDrawerProps {
   product: Product
   state: UseOverlayStateReturn
+  initialQuantity?: number
+  onConfirmVariant?: (variant: ProductVariantUI, quantity: number) => void
 }
 
 export const ProductVariantsDrawer = ({
   product,
   state,
+  initialQuantity,
+  onConfirmVariant,
 }: ProductVariantsDrawerProps) => {
+  const isUpgradeMode = onConfirmVariant !== undefined
   const addVariantLines = useCartStore((store) => store.addVariantLines)
   const [variants, setVariants] = useState<ProductVariantUI[]>([])
   const [selectedVariantIds, setSelectedVariantIds] = useState<Set<string>>(
@@ -75,7 +80,10 @@ export const ProductVariantsDrawer = ({
         setVariants(formattedData)
         setQuantities(
           Object.fromEntries(
-            formattedData.map((variant) => [variant.documentId, 1]),
+            formattedData.map((variant) => [
+              variant.documentId,
+              initialQuantity ?? 1,
+            ]),
           ),
         )
       } catch (error) {
@@ -104,7 +112,7 @@ export const ProductVariantsDrawer = ({
     return () => {
       isActive = false
     }
-  }, [state.isOpen, product.documentId])
+  }, [state.isOpen, product.documentId, initialQuantity])
 
   const handleClose = () => {
     resetVariants()
@@ -112,6 +120,18 @@ export const ProductVariantsDrawer = ({
   }
 
   const handleAdd = () => {
+    if (isUpgradeMode) {
+      const selected = variants.find((variant) =>
+        selectedVariantIds.has(variant.documentId),
+      )
+      if (!selected) {
+        return
+      }
+      onConfirmVariant(selected, quantities[selected.documentId] ?? 1)
+      handleClose()
+      return
+    }
+
     const inputs: CartVariantLine[] = variants
       .filter((variant) => selectedVariantIds.has(variant.documentId))
       .map((variant) => ({
@@ -214,6 +234,14 @@ export const ProductVariantsDrawer = ({
                             aria-label={`Seleccionar ${variant.diameter}`}
                             isSelected={selectedVariantIds.has(variant.documentId)}
                             onChange={(isSelected) => {
+                              if (isUpgradeMode) {
+                                setSelectedVariantIds(
+                                  isSelected
+                                    ? new Set([variant.documentId])
+                                    : new Set(),
+                                )
+                                return
+                              }
                               setSelectedVariantIds((current) => {
                                 const next = new Set(current)
                                 if (isSelected) {
@@ -269,9 +297,11 @@ export const ProductVariantsDrawer = ({
                 onPress={handleAdd}
                 isDisabled={selectedVariantIds.size === 0}
               >
-                {selectedVariantIds.size === 0
-                  ? "Agregar al carrito"
-                  : `Agregar ${selectedVariantIds.size} al carrito`}
+                {isUpgradeMode
+                  ? "Elegir esta medida"
+                  : selectedVariantIds.size === 0
+                    ? "Agregar al carrito"
+                    : `Agregar ${selectedVariantIds.size} al carrito`}
               </Button>
             </Drawer.Footer>
           </Drawer.Dialog>

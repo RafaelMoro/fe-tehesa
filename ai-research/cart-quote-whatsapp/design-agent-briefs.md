@@ -6,9 +6,9 @@
 
 ## How To Use This File
 
-**Status: all four briefs complete (2026-07-31).** Comps live in `comps/<brief>/`, one folder per brief. This file is now the record of how they were produced; re-run a brief only if a decision changes.
+**Status: Briefs 1-5 complete (2026-07-31).** Brief 5 covers `Vaciar lista`, a control the user added to Story 2 after Brief 3 was designed. Its delivered composite is `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png`. For Briefs 1-4 this file is now the record of how they were produced; re-run one only if a decision changes.
 
-Four briefs, run in order. Each has three parts:
+Five briefs, run in order. Each has three parts:
 
 1. **Attach** — screenshots and files to upload.
 2. **Prompt** — copy the fenced block verbatim. It is written to be self-contained; the agent cannot look anything up.
@@ -504,6 +504,98 @@ comp.
 - Did it collapse the saved-details case into a pre-filled form? The whole point is that no form is shown.
 - Did it add a phone number field? Very common, and wrong — we message the seller, not the buyer.
 - Is the send button still reachable with a phone keyboard open?
+
+---
+
+## Brief 5 — `Vaciar lista` And Its Confirmation (Story 2)
+
+Added 2026-07-31 during Story 2 research. The user decided `/cotizar` ships a clear-the-whole-list control (Story 2 AC 6); Brief 3 never drew one. This is the only uncomped surface in Story 2.
+
+Small brief. It unblocks nothing else — Story 2 can be planned and started without it, and this control fitted last.
+
+### Attach
+
+- `DESIGN.md`
+- `comps/brief-3/desktop-light-normal-state-brief-3.png` and `comps/brief-3/mobile-brief-3.png` — **the page is already designed and is fixed. Reproduce it, do not redesign it.** (Brief 3's lesson: a brief whose screen contains an earlier brief's surface must say this explicitly.)
+- `comps/brief-3/desktop-dark-normal-state-brief-3.png` for dark mode
+
+### Prompt
+
+```
+You are adding one control to an existing, already-designed page in a Next.js
+catalog for Tehesa, an industrial tool and hardware distributor in Mexico. The
+interface is in Spanish. I have attached the design system (DESIGN.md) and the
+finished comps for this page. THE PAGE IS FIXED — reproduce it exactly and add
+only the control described below. Do not restyle the header, the line rows, or
+the subtotal.
+
+CONTEXT — WHY THIS CONTROL IS DANGEROUS
+
+The page is /cotizar, where a buyer reviews the list of products they have
+collected before sending it to a salesperson over WhatsApp. Nothing is ever
+purchased here: no payment, no order, no account.
+
+The list lives only in the buyer's own browser. There is no server copy, no
+account, no history, and no undo. A buyer who has spent fifteen minutes
+assembling a twenty-line list and taps the wrong control loses all of it with
+no way back. Each row already has its own "Quitar" text action for removing one
+line; this new control removes everything at once.
+
+So the design problem is not "where does the button go". It is: how does a
+destructive, unrecoverable action stay findable by the buyer who wants it and
+stay un-tappable by the buyer who does not?
+
+WHAT TO DESIGN
+
+1. The resting state — the "Vaciar lista" control in place on the full page,
+   phone and desktop. Show where it sits relative to the line list, the
+   subtotal, and the per-row "Quitar" actions. It must be visibly weaker than
+   every constructive action on the page and must never be mistaken for one of
+   the per-row actions.
+
+2. The confirmation step. Copy to use verbatim:
+     Heading:  ¿Vaciar tu lista?
+     Body:     Se quitarán los 12 productos. No se puede deshacer.
+     Confirm:  Vaciar
+     Cancel:   Cancelar
+   Cancel is the safe, easy, default-focused choice. Confirm is the destructive
+   one. Design it both as a centred dialog and as an inline two-step confirm on
+   the control itself, so the trade-off can be judged — say which you would
+   ship and why.
+
+3. The result — the page immediately after confirming. The existing empty state
+   is already designed ("Tu lista está vacía" plus "Volver al catálogo");
+   reproduce it and show whether anything extra appears, such as a brief
+   acknowledgement that the list was emptied.
+
+HARD CONSTRAINTS
+
+- Follow the attached DESIGN.md exactly. HeroUI v3 components, Tailwind
+  utilities, existing colors, Geist Sans. Dark and light mode.
+- Spanish throughout. The collection is called "lista", never "carrito" and
+  never "solicitud".
+- Phone-first at ~390px, then desktop at ~1440px.
+- Do NOT add an undo affordance, a snackbar with "deshacer", a trash/archive
+  concept, or a "restore last list" path. None of those exist — the data is
+  genuinely gone, and designing a promise we cannot keep is worse than the
+  loss.
+- Do NOT use a browser-native confirm dialog appearance.
+- Do NOT redesign anything else on the page.
+
+DELIVERABLE
+
+Resting state, both confirmation approaches, and the post-confirm page, at
+~390px and ~1440px, light and dark. Say which confirmation you would ship.
+```
+
+**Output:** `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` — the centred dialog is recommended over the inline confirmation. The header in the composite reintroduces Brief 3's discarded `Mi solicitud` treatment, so it is not a header reference.
+
+### Check the output for
+
+- Did it make `Vaciar lista` a prominent filled or danger-coloured button in the resting state? That is the failure mode — a destructive action drawn with the weight of a primary one.
+- Is `Cancelar` the visually and focus-default safe choice, or did it give both buttons equal weight?
+- Did it invent an undo, a snackbar with `deshacer`, or a recoverable trash? Explicitly rejected — reject and re-run.
+- Did it restyle the rest of the page, particularly the header? Brief 3 already did this once; the page is fixed.
 
 ---
 
