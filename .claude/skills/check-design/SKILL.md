@@ -13,7 +13,7 @@ Use `$ARGUMENTS`, the conversation, and supplied image attachments/paths to iden
 
 - The design brief file and brief number. A brief heading is `## Brief N`.
 - The epic or standalone research artifact the brief belongs to.
-- The completed screenshot files.
+- The completed screenshot files, which may be separate images or one composite image containing all comps.
 
 If any of these is unclear, ask one question before moving files. Do not guess an epic, brief number, or image source.
 
@@ -43,13 +43,19 @@ Create `comps/<research-name>/` if it does not exist, then create `brief-<N>/` i
 
 Rename each supplied image before moving it into the brief folder. Use lowercase kebab-case:
 
-`<desktop|mobile>-<light|dark|both>-<description>.png`
+`<desktop|mobile|both>-<light|dark|both>-<description>.png`
 
 - Determine `desktop` or `mobile` from the actual viewport.
 - Determine `light`, `dark`, or `both` from the actual theme coverage.
 - `<description>` is a clear description of the visible state in **six words or fewer**. Do not use generic names such as `screenshot`, `design`, `final`, or `image`.
 - Preserve the source extension when it is not PNG.
 - If two images would produce the same name, add the smallest meaningful state distinction, not a numeric suffix.
+
+### Composite images
+
+Prefer one referenced composite image when it clearly shows all relevant states. Name it with `both` for each dimension it covers, for example `both-both-clear-list-states.png`. In documentation, reference the same file for each state and identify the visible section it covers. This keeps the delivered artifact intact and avoids crop coordinates becoming another source of truth.
+
+Crop a composite only when the user requests individual image files or a relevant epic/story needs distinct images that cannot be clearly referenced in the composite. Crop only the states that need separate paths, retain the composite as the source, and name each crop by its actual viewport, theme, and state. Use an already-installed image tool if one is available; do not install a library just to crop screenshots.
 
 Move the original files rather than copying them. Before moving, list the planned source-to-destination mapping to the user. Do not overwrite a file: if the target exists, stop and ask whether it is the same comp or needs a different description.
 
