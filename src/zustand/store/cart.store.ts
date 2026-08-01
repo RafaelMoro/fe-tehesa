@@ -35,12 +35,17 @@ export type CartAddResult = {
   rejected: boolean
 }
 
+export type CartUpgradeResult = "upgraded" | "merged" | "missing"
+
 export type CartActions = {
   addVariantLines: (inputs: CartVariantLine[]) => CartAddResult
   addProductLine: (input: CartProductLine) => CartAddResult
   clearLines: () => void
   setContact: (contact: CartContact) => void
   clearContact: () => void
+  setLineQuantity: (key: string, quantity: number) => void
+  removeLine: (key: string) => void
+  upgradeLine: (key: string, line: CartVariantLine) => CartUpgradeResult
 }
 
 export type CartStore = CartState & CartActions
@@ -257,6 +262,61 @@ export const createCartStore = (initState: CartState = defaultCartState) => {
         clearLines: () => set({ lines: [] }),
         setContact: (contact) => set({ contact }),
         clearContact: () => set({ contact: null }),
+        setLineQuantity: (key, quantity) => {
+          if (!Number.isFinite(quantity)) {
+            return
+          }
+          const clamped = Math.min(
+            Math.max(Math.trunc(quantity), CART_MIN_QUANTITY),
+            CART_MAX_QUANTITY,
+          )
+          set({
+            lines: get().lines.map((line) =>
+              cartLineKey(line) === key ? { ...line, quantity: clamped } : line,
+            ),
+          })
+        },
+        removeLine: (key) => {
+          set({
+            lines: get().lines.filter((line) => cartLineKey(line) !== key),
+          })
+        },
+        upgradeLine: (key, line) => {
+          const currentLines = get().lines
+          const index = currentLines.findIndex(
+            (existing) => cartLineKey(existing) === key,
+          )
+          if (index === -1) {
+            return "missing"
+          }
+
+          const nextKey = cartLineKey(line)
+          const collisionIndex = currentLines.findIndex(
+            (existing, i) => i !== index && cartLineKey(existing) === nextKey,
+          )
+
+          if (collisionIndex === -1) {
+            const nextLines = [...currentLines]
+            nextLines[index] = line
+            set({ lines: nextLines })
+            return "upgraded"
+          }
+
+          const collided = currentLines[collisionIndex]
+          const mergedQuantity = Math.min(
+            collided.quantity + line.quantity,
+            CART_MAX_QUANTITY,
+          )
+          const nextLines = currentLines
+            .filter((_, i) => i !== index)
+            .map((existing) =>
+              cartLineKey(existing) === nextKey
+                ? { ...existing, quantity: mergedQuantity }
+                : existing,
+            )
+          set({ lines: nextLines })
+          return "merged"
+        },
       }),
       {
         name: CART_STORAGE_KEY,
