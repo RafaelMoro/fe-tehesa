@@ -258,21 +258,35 @@ export const generateMetadata = (): Metadata => ({
 ### UI And Product Decisions
 
 I: Question: When the upgraded variant collides with an existing priced line for the same product, does the store merge the quantities or refuse the upgrade?
-Status: pending — **recommend merge.**
+Status: **answered by the user, 2026-07-31 — merge.**
 Context: Reachable today: add a product from the card (variant-less), then add a specific size from the drawer, then press `Elegir medida` on the first and pick that same size.
-Explanation: Merge matches `addLines`' existing repeat-add behaviour and never rejects an action the buyer explicitly took. The merged row should keep the existing priced line's position. A planning-level call; either answer is implementable in the same amount of code.
+Explanation: Merge matches `addLines`' existing repeat-add behaviour (`cart.store.ts:219-225`) and never rejects an action the buyer explicitly took. Consequences to implement exactly:
+
+- The merged quantity is `Math.min(existing + upgraded, CART_MAX_QUANTITY)`, the same clamp `addLines` applies.
+- The merged row keeps the **existing priced line's** position, not the upgraded row's. The variant-less row disappears.
+- The list gets shorter by one, which is the one case where an upgrade changes the line count. The confirmation copy should say so — see II.
 
 II: Question: What does the buyer see at the moment a line upgrades in place (D3)?
-Status: pending — no comp, behavioural.
-Explanation: The drawer closes, a tinted no-price row becomes a normal priced row, and the subtotal jumps. Minimum viable: a `toast.success` naming the chosen size, plus focus returned to the row. A row-level highlight is nicer and not required.
+Status: **answered by the user, 2026-07-31 — a success toast.**
+Explanation: `toast.success` through the HeroUI `Toast.Provider` already mounted at `providers.tsx:12` — the same mechanism Story 1 uses for adds, no second feedback pattern. Two messages, because the merge case (I) is genuinely different:
+
+- Normal upgrade: name the chosen size, e.g. `Medida elegida: 1/4"`.
+- Merge case: say the rows combined, e.g. `Medida elegida: 1/4". Se combinó con la línea que ya tenías.` Without this the buyer watches two rows become one and assumes something was lost.
+
+Focus returns to the upgraded row (or to the row that absorbed it) rather than to `<body>`. The toast is the confirmation; a row-level highlight is optional polish, not required.
 
 III: Question: What is the `Vaciar lista` confirmation (D4)?
 Status: pending — no comp.
 Explanation: HeroUI v3 has a dialog; an inline two-step confirm on the button is smaller. Either is fine, `window.confirm` is not. Brief 5 below asks the design agent for it. Copy suggestion: `¿Vaciar tu lista?` / `Se quitarán los N productos. No se puede deshacer.` / `Vaciar` (danger) + `Cancelar`.
 
 IV: Question: Does the header link show an active state on `/cotizar` itself?
-Status: pending — cosmetic.
-Explanation: A link to the page you are on is a small accessibility wart (`aria-current="page"` fixes it). One attribute; a planning detail, not a blocker.
+Status: pending — **recommend `aria-current="page"` only, no visual treatment.**
+Explanation: On `/cotizar` the header cart link points at the page the buyer is already on. Two separable things:
+
+- **`aria-current="page"`** — one attribute, no visual change. A screen reader announces "current page" instead of offering navigation that goes nowhere. This is the accessibility fix and it is worth doing.
+- **A visual active state** — filled instead of outlined icon, or a tinted 44×44 box. Nothing in the Brief 2 comps covers this, so it would be invented, and the header has exactly one destination — a buyer on `/cotizar` already knows from the heading. Recommend not building it.
+
+Needs `usePathname()`, which makes `CartCount` route-aware; trivial, but it is the only reason that component would import from `next/navigation`.
 
 ### Catalog Behavior
 
@@ -319,6 +333,8 @@ Story 2 is fully scoped. Design is delivered for everything except two items, ne
 
 The work is three store actions, one new route, one new feature folder, an optional-prop mode on an existing drawer, a header move, and a link promotion. No new dependency, no backend change, no Strapi query change.
 
-Four decisions the user settled on 2026-07-31: single-select upgrade mode, `Header` moves to the root layout, `Vaciar lista` ships in this story, full research depth. The remaining open questions are planning-level defaults — the upgrade collision rule being the only one with a real behavioural consequence.
+Six decisions the user settled on 2026-07-31: single-select upgrade mode, `Header` moves to the root layout, `Vaciar lista` ships in this story, full research depth, **the upgrade collision merges quantities**, and **the upgrade confirms with a success toast** (with distinct copy for the merge case).
+
+The remaining open questions are planning-level defaults with no behavioural consequence: the header's `aria-current` (recommend the attribute, no visual state), the `Vaciar lista` confirmation styling (D4, Brief 5), the drawer's empty-variants path from `/cotizar`, and two test-approach calls.
 
 Awaiting human sign-off. No source files were modified during this research.
