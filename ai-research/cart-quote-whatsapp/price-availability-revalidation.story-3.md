@@ -24,8 +24,9 @@ The hard constraint is stated in the comps' own annotation: **the check is globa
 2. A line whose current unit price differs from its snapshot renders the **previous price struck through beside the current one**, with `El precio cambió al comprobar la lista.`, and the column relabelled `TOTAL ACTUAL`. The subtotal uses the **current** price. Comparison is in integer cents, never on floats.
 3. A **variant that no longer exists** and a **product that no longer exists** get distinct Spanish states and actions — variant gone → `La medida <diameter> ya no está disponible.` + `Elegir otra medida`; product gone → `Este producto ya no está disponible.` + `Buscar alternativa`. Both add `Esta línea no se incluye en el subtotal.` and both are excluded from the subtotal. Neither line is auto-removed.
 4. A revalidation failure **never blocks the quote**: a page-level `No pudimos comprobar los precios.` / `Mostramos los precios guardados; puedes continuar con tu solicitud.` banner with a `Reintentar` action, snapshot prices shown, every line marked `Precio guardado`, and quantity editing, removal, `Elegir medida`, and (in Story 4) sending all still work.
-5. Revalidation results live in **ephemeral React state only** (user decision, 2026-08-01). The persisted cart keeps its snapshot untouched: no new persisted field, no `CART_SCHEMA_VERSION` bump, no `migrate` change, no new rehydrate validation.
+5. Revalidation results live in **ephemeral React state only** (user decision, 2026-08-01; re-confirmed 2026-08-01 after a write-back proposal was raised and deferred — see UI I). The persisted cart keeps its snapshot untouched: no new persisted field, no `CART_SCHEMA_VERSION` bump, no `migrate` change, no new rehydrate validation.
 6. The route handler validates the id lists at the boundary the way every other catalog param is validated — each id against `DOCUMENT_ID_PATTERN` and `DOCUMENT_ID_MAX_LENGTH`, plus a cap on list length — and returns the standard `CAT_*` envelope. The ids come from `localStorage`, which is user-writable.
+7. A variant that **still exists but carries no `pricing` component** renders a fifth line state: `Esta medida no tiene precio actual.` plus `Te confirmaremos el precio al responder tu solicitud. Si no está disponible, buscaremos una alternativa.` and `Esta línea no se incluye en el subtotal.` It is excluded from the subtotal, **keeps its quantity stepper** (the buyer still states how many they want and the seller quotes it by hand), shows no price block, and offers only `Quitar`. It is not a "gone" line and must not borrow that copy.
 
 ### Task Breakdown
 
@@ -34,7 +35,7 @@ The hard constraint is stated in the comps' own annotation: **the check is globa
 3. A list-parsing helper in `src/app/api/catalog/_utils.ts` plus one new error code, and the new route `src/app/api/catalog/revalidate/route.ts`.
 4. A `useQuoteRevalidation` hook (or inline effect) in `src/features/QuotePage/`: fires once after the hydration gate, holds page status + a results map, exposes `retry`.
 5. Extend `getQuoteTotals` with an optional checks argument so the subtotal uses current prices and skips gone lines. Counts stay over the whole list.
-6. Extend `QuoteLineRow` with the four new states, per the Brief 3 comps.
+6. Extend `QuoteLineRow` with **five** new states — the four Brief 3 comped, plus the no-current-price row (AC 7), which has no comp and reuses the gone-row layout with its own copy and no recovery action.
 7. Wire `Elegir otra medida` to the **existing** upgrade drawer and `Buscar alternativa` to `/?mode=name&q=<product name>`.
 8. Tests: route validation, adapters, totals with checks, and the page's four states plus the failure path.
 
@@ -70,6 +71,8 @@ Exact copy the comps fix, transcribed:
 | Checking | Page-level row above the list: spinner + `Comprobando precios…` / `Puedes seguir ajustando cantidades.` Lines below render normally with `9/16" · precio guardado`. Annotation `no bloquea`. |
 | Check failed | Page-level banner: `No pudimos comprobar los precios.` / `Mostramos los precios guardados; puedes continuar con tu solicitud.` with a `Reintentar` action on the right. Lines carry a `Precio guardado` affix. Annotation `precios guardados`. |
 
+**One state has no comp.** AC 7's no-current-price row was decided after Brief 3 was designed (UI IV, 2026-08-01). It needs **no re-brief**: reuse the gone-row layout exactly — de-emphasised, no price block, no tint — with two differences, both deliberate. It **keeps its quantity stepper**, because the line is still quotable by a human and the buyer's quantity is what the seller prices. And it offers **no recovery action**, only `Quitar`, because the copy already says Tehesa will resolve it. Do not give it `Elegir otra medida` or `Buscar alternativa`; both imply the buyer has a problem to fix, and the decision was that they do not.
+
 Two things the comps settle that prose would have got wrong:
 
 - **`Comprobando precios…` and `No pudimos comprobar los precios.` are page-level, not per-line.** The comp's own header note says so: *"Los estados de comprobación son globales y no bloquean cantidades ni una futura solicitud."* That collapses the state model from seven per-line variants to four per-line results plus one page status.
@@ -89,6 +92,7 @@ A buyer opens a list they may have assembled weeks ago and needs to know whether
 |---|---|---|---|---|
 | `/cotizar` line list | `src/features/QuotePage/QuoteLineRow.tsx` | Priced, no-size (+ `Elegir medida`) | 2 — shipped | 3 |
 | `/cotizar` line list | same | **Price changed, variant gone, product gone** | **3** | 3 — `comps/brief-3/desktop-seven-state-1-brief-3.png` |
+| `/cotizar` line list | same | **No current price** (AC 7) | **3** | none — reuses the gone-row layout, keeps the stepper |
 | `/cotizar` check banner | `src/features/QuotePage/QuotePage.tsx` | **Checking, check failed (+ `Reintentar`)** | **3** | 3 — seven-state 1 and 2 |
 | `/cotizar` subtotal | same | Excludes gone lines, counts current prices | **3** (extends 2) | 3 |
 | Upgrade drawer | `src/features/ProductVariantsDrawer/` | Reused unchanged for `Elegir otra medida` | 2 — shipped | none needed |
@@ -116,7 +120,7 @@ Specified here because a comp cannot express any of it (the epic already flags t
 - `Reintentar`, `Elegir otra medida`, and `Buscar alternativa` all need accessible names identifying their line, exactly as Story 2's `Quitar` and `QuantityStepper` do (`QuoteLineRow.tsx:44,51,61`). Three rows saying `Elegir otra medida` are unusable with a screen reader.
 - A price change is conveyed today by strikethrough and position. Give the struck value a text equivalent (`Precio anterior`), never colour or line-through alone.
 - `Elegir otra medida` opens the existing drawer; focus must return to the button that opened it, as Story 2 already requires.
-- When the check completes and a line becomes "gone", its quantity stepper is removed from the DOM. If focus was inside it, focus must land somewhere deliberate — the same problem Story 2 solved for `Quitar` with `requestRegionFocus` (`QuotePage.tsx:50-65`). Reuse it.
+- When the check completes and a line becomes "gone", its quantity stepper is removed from the DOM. If focus was inside it, focus must land somewhere deliberate — the same problem Story 2 solved for `Quitar` with `requestRegionFocus` (`QuotePage.tsx:50-65`). Reuse it. **The no-price row (AC 7) keeps its stepper, so it does not have this problem** — one more reason not to build it as a variation on the gone row's behaviour, only on its layout.
 
 ### Visual Patterns To Preserve
 
@@ -132,11 +136,13 @@ Specified here because a comp cannot express any of it (the epic already flags t
 
 ### Explicitly Out Of Scope
 
-The contact form and the WhatsApp message (Story 4), analytics (Story 5), quote recovery after hand-off (deferred, `docs/improvement.md`), any persisted record of the check, background or interval re-checking, refreshing a **renamed** product's name (see Catalog Behavior III), and `pricePromotion` (epic Strapi Contract VI — ignored).
+The contact form and the WhatsApp message (Story 4), analytics (Story 5), quote recovery after hand-off (deferred, `docs/improvement.md`), any persisted record of the check (**including the deferred price write-back — UI I-b**), background or interval re-checking, refreshing a **renamed** product's name (see Catalog Behavior III), and `pricePromotion` (epic Strapi Contract VI — ignored).
 
 ### Decision Record
 
-- ~~Do revalidation results persist?~~ **Answered 2026-08-01 — no, ephemeral React state.** The persisted cart is the snapshot and stays the snapshot. Persisting the current price would need a second field for the previous value, a schema version bump, a `migrate`, and new rehydrate validation — for a value that a reload recomputes in one request.
+- ~~Do revalidation results persist?~~ **Answered 2026-08-01 — no, ephemeral React state.** The persisted cart is the snapshot and stays the snapshot. Reopened the same day as a write-back proposal (overwrite `unitPrice` on a successful check) and **deferred to the business owner**; build ephemeral now. Full cost analysis is preserved at UI I-b, including the one constraint any future write-back must carry: the price-changed badge is derived from `current !== line.unitPrice`, so writing back erases the badge unless `previousPrice` is captured explicitly at comparison time.
+- ~~What does a variant with no `pricing` render as?~~ **Answered 2026-08-01 — its own line state (AC 7).** Not the snapshot, not "gone". Tehesa quotes it by hand, so the row states that and keeps the quantity stepper instead of offering the buyer a recovery action.
+- ~~Is unpublish-reads-as-deleted acceptable?~~ **Answered 2026-08-01 — yes, no mitigation.**
 - ~~One route or two?~~ **Answered 2026-08-01 — one `GET /api/catalog/revalidate`** carrying both id lists and returning both result sets in one envelope. It is one operation from the page's point of view, and two routes would mean two failure states to reconcile into one banner.
 - ~~Where does `Buscar alternativa` go?~~ **Answered 2026-08-01 — `/?mode=name&q=<product name>`**, the wide-search URL the app already serves. A `next/link` to an existing route; no new code.
 - ~~Does `Elegir otra medida` need a new drawer mode?~~ **No.** Story 2's single-select upgrade mode and `upgradeLine` (including its collision-merge branch) already do exactly this. The only difference is the line being upgraded already had a variant.
@@ -189,10 +195,13 @@ pageStatus: "idle" | "checking" | "done" | "failed"
 
 check:
   | { kind: "priced"; currentPrice: number }   // "changed" is derived, not stored
+  | { kind: "no-price" }                       // variant present, `pricing` component empty (AC 7)
   | { kind: "variant-gone" }
   | { kind: "product-gone" }
   // absent from the map = never checked → render the snapshot with `precio guardado`
 ```
+
+`no-price` and the two `gone` kinds look alike and are not. `gone` is derived from **absence** — the id was asked for and did not come back. `no-price` is derived from **presence with a null `pricing`** — the record is there. Only variant lines can reach it; a variant-less line has no variant to price.
 
 `changed` is **derived** at render time — `Math.round(current * 100) !== Math.round(line.unitPrice * 100)` — rather than stored. Storing it would create a second source of truth for the same comparison and a way for the badge and the subtotal to disagree.
 
@@ -258,10 +267,10 @@ query GetProductsByIds($filters: ProductFiltersInput, $pagination: PaginationArg
 
 ```
 getQuoteTotals(lines)          // unchanged behaviour — every existing test still passes
-getQuoteTotals(lines, checks)  // gone lines contribute no money; priced lines use the current price
+getQuoteTotals(lines, checks)  // gone and no-price lines contribute no money; priced lines use the current price
 ```
 
-`productCount` and `pieceCount` stay over the whole list. The cents accumulation is already correct (`Math.round(unitPrice * 100) * quantity`, divided once) — do not rewrite it, just choose which price goes in.
+Three kinds contribute nothing to the subtotal — `variant-gone`, `product-gone`, and `no-price` — and they do so for two different reasons that the code should not collapse into one branch: the first two have no record, the third has no price. `productCount` and `pieceCount` stay over the whole list. The cents accumulation is already correct (`Math.round(unitPrice * 100) * quantity`, divided once) — do not rewrite it, just choose which price goes in.
 
 ### Existing Patterns To Follow
 
@@ -286,15 +295,17 @@ getQuoteTotals(lines, checks)  // gone lines contribute no money; priced lines u
 | File | Cases |
 |---|---|
 | `__tests__/catalog/revalidate/route.test.ts` | Env guard; both lists absent → empty success; a bad id pattern, an over-length id, an empty segment, an over-cap list → `CAT_VAL_007`; ids forwarded verbatim to the adapters; adapter rejection → `CAT_ERR_001` |
-| `__tests__/quote/quote.utils.test.ts` | Extended: current price wins over snapshot; gone lines contribute nothing; counts unchanged by gone lines; cents arithmetic across a changed price |
-| `__tests__/quote/revalidation.test.tsx` | The comps' annotation set as the matrix — `incluida`, `excluida` ×2, `cuenta el actual`, `no bloquea`, `precios guardados`; plus: no request on an empty cart; a quantity edit does not refire the request; `Reintentar` refires it; the banner announces once |
+| `__tests__/quote/quote.utils.test.ts` | Extended: current price wins over snapshot; gone lines contribute nothing; **no-price lines contribute nothing while still counting in `productCount`/`pieceCount`**; counts unchanged by gone lines; cents arithmetic across a changed price |
+| `__tests__/quote/revalidation.test.tsx` | The comps' annotation set as the matrix — `incluida`, `excluida` ×2, `cuenta el actual`, `no bloquea`, `precios guardados`; plus the uncomped fifth state (**no-price row: keeps its stepper, shows no price, offers only `Quitar`**); no request on an empty cart; a quantity edit does not refire the request; `Reintentar` refires it; the banner announces once |
 
-`__tests__/quote/QuotePage.test.tsx` seeds the cart directly into `localStorage` and renders through `Providers` — reuse that harness rather than building a second one.
+Two cases worth naming because they are the ones a reasonable implementation gets wrong silently: a variant returned **with** `pricing: null` must produce `no-price` and **not** `variant-gone` (presence versus absence), and a `no-price` line must keep counting toward `N productos · N piezas`.
+
+`__tests__/quote/QuotePage.test.tsx` seeds the cart directly into `localStorage` and renders through `Providers` — reuse that harness rather than building a second one, and hoist its existing `mockFetch` helper (`:252`) to file scope first, per Verification II.
 
 ### Edge Cases And Constraints
 
 - **A truncated response is indistinguishable from a batch of deletions.** The sharpest hazard in the story, and it is not hypothetical: Strapi's GraphQL default page size is **10** (Strapi Contract IX). Omit `pagination` and an 11-line cart reports lines 11 onward as `ya no está disponible` and drops them from the subtotal, with no error anywhere. Both new operations must pass an explicit limit.
-- **A variant can exist with no price.** `pricing` is nullable (Strapi Contract X), so `variant.pricing?.price` — never `variant.pricing.price`. What to *render* in that case is UI IV, not a guard.
+- **A variant can exist with no price.** `pricing` is nullable (Strapi Contract X), so `variant.pricing?.price` — never `variant.pricing.price`. This is now a first-class result kind (`no-price`) with its own row, per AC 7 and UI IV — not a guard, and not folded into either "gone" state.
 - **An unpublished record reads as a deleted one.** Draft & Publish is on (Strapi Contract XI). Nothing to build; see UI V.
 - **`localStorage` is a trust boundary and the ids come from it.** Story 1 validates on rehydrate, so ids reaching the page have already passed `DOCUMENT_ID_PATTERN` — but the route must not rely on that. It is reachable directly.
 - **Draft & Publish.** If it is enabled, an *unpublished* variant is absent from a default query and will render as deleted. That is arguably the right buyer-facing outcome, but it is a different fact, and it decides whether an editor unpublishing a variant for ten minutes shows a wrong state to every buyer (Strapi Contract XI).
@@ -371,8 +382,33 @@ Explanation: Two sequential requests (products first, then variants for survivor
 ### UI And Product Decisions
 
 I: Question: Where do revalidation results live?
-Status: **answered by the user, 2026-08-01 — ephemeral React state.**
+Status: **answered by the user, 2026-08-01 — ephemeral React state.** Reopened and re-closed the same day; the write-back variant is deferred to the business owner (see I-b).
 Explanation: The persisted cart stays the snapshot. No new persisted field, no `CART_SCHEMA_VERSION` bump, no `migrate` change, no new rehydrate validation, and no way for a stored "previous price" to drift from a stored "current price". Consequence to accept: a reload re-checks, and a buyer who reloads during a Strapi outage sees snapshot prices with the warning. That is exactly AC 4's contract.
+
+I-b: Question: Should a successful check **write the current prices back** into the persisted cart, so a returning buyer is not re-checking the same list from scratch every time?
+Status: **raised 2026-08-01, deferred — build ephemeral (UI I) for now; the user is taking the write-back to the business owner.**
+Explanation: Recorded in full so the analysis is not re-derived when it comes back.
+
+*The premise does not hold on cost.* One mount is one batched `fetch` → two Strapi queries, ≤100 records, three fields each, against a 333-product catalog. Repeating it is not expensive. The case for persisting has to rest on something else, and exactly one thing qualifies: **outage resilience** — a check that failed today can fall back on yesterday's checked price instead of March's snapshot. Avoiding the ~200ms `Comprobando precios…` flash is worth little, since Brief 3 designed that moment to be calm and non-blocking.
+
+*Three shapes were costed:*
+
+| | Shape | Verdict |
+|---|---|---|
+| **A** | Ephemeral React state | **Chosen.** No store change; results self-heal every load. |
+| **B** | A separate `tehesa-cart-check` localStorage blob, prices only, **no TTL** — used for first paint and the outage fallback, never to decide whether to ask Strapi | The honest middle. ~30 lines, no `CART_SCHEMA_VERSION` bump, corrupt blob → discard and recheck. |
+| **C** | New persisted fields on the cart line + a `lastCheckedAt` that gates the request | Rejected. See the four hazards below. |
+
+*What sank C, in order of sharpness:*
+
+1. **The badge eats itself.** `changed` is derived as `current !== line.unitPrice`. Overwrite `unitPrice` with the current price and the comparison self-erases — the strikethrough vanishes the instant it is written, or never paints at all. Any write-back design must capture `previousPrice` explicitly at comparison time rather than re-reading the line. This is the single constraint to carry forward if the business owner says yes; it presents as a rendering bug days later, not as a design flaw on the day.
+2. **A persisted `gone` verdict is a stored false claim.** Draft & Publish is on (Strapi Contract XI). An editor unpublishes a variant for ten minutes, the check lands inside that window, and under a TTL the line reads `ya no está disponible` and drops out of the subtotal for hours after the variant returns. **Any write-back must be prices-only** — never gone-ness, which stays ephemeral and self-heals.
+3. **The schema bump wipes carts.** `migrate: () => defaultCartState` (`cart.store.ts`) drops everything on version mismatch, by design. Bumping `CART_SCHEMA_VERSION` for new fields deletes every buyer's in-flight cart on deploy unless a real `migrate` is written. Note the corollary: **overwriting the existing `unitPrice` needs no bump at all**, only a new store action — so the write-back is cheaper than it first looks, and hazard 1 becomes the real gate rather than this one. Separately, a tampered `checkedAt: 9e99` under a TTL means the check never runs again for that user — a permanent-stale bug reachable from devtools, and `isValidCartLine` would have to cover it.
+4. **A TTL cannot pay off, because the request is batched.** Freshness is per line (a line added after the check is unchecked while the rest are checked), but a partial refresh costs the same single round trip as a full one. The TTL only saves a request when *every* line is already fresh — the fast reload where nothing changed anyway.
+
+Also unresolved under any persisting design: `Reintentar` gains a second fallback layer (cache or snapshot?), and two tabs both write the cache with last-writer-wins.
+
+*Rule that survives whatever is decided:* **a cache may never be an authority.** Persist to paint faster and degrade better; never let a stored value decide whether to ask Strapi.
 
 II: Question: Should a line that failed to revalidate look different from one that was never checked?
 Status: pending
@@ -383,12 +419,14 @@ Status: answered — **a `next/link` anchor** to `/?mode=name&q=<encoded product
 Explanation: It is navigation, so it is an anchor — which also gives middle-click and open-in-new-tab, and matches the repo's "anchor-or-disabled-span, never `href="#"`" rule (`Home.tsx:356-372`). Note the product name is Strapi-authored text going into a URL: `encodeURIComponent` it, and note that the wide-search route validates `q` against `SEARCH_TERM_PATTERN` — a product name containing a character outside that allowlist will land on a validation error rather than a search. Worth a planning check against real names.
 
 IV: Question: What should a variant that still exists but has an empty `pricing` component render as?
-Status: pending — **user decision**
-Explanation: Strapi Contract X confirms `pricing` is nullable while `price` inside it is `Float!`, so this is real and representable: a variant with no price at all. It is neither "price changed" nor "no longer available". Three options, in increasing honesty and cost: (a) treat it as unchanged and keep showing the snapshot price — cheap, but quotes a number Strapi no longer publishes; (b) treat it as gone — reuses an existing state, but tells the buyer something false; (c) a fourth line state, "this size has no current price", excluded from the subtotal and left in the list. **Recommendation: (a) for v1**, keeping the snapshot with the `precio guardado` affix already designed for the failure path, because the population rate of empty `pricing` in live data is unmeasured and the three known-bad records (`docs/improvement.md:35-39`) suggest it is tiny. Worth one live count before deciding.
+Status: **answered by the user, 2026-08-01 — option (c), a distinct line state. See AC 7.**
+Answer: A fifth line state, excluded from the subtotal and left in the list. Copy: `Esta medida no tiene precio actual.` / `Te confirmaremos el precio al responder tu solicitud. Si no está disponible, buscaremos una alternativa.` / `Esta línea no se incluye en el subtotal.` Layout reuses the gone row (de-emphasised, no price block, no tint), with two deliberate departures: it **keeps its quantity stepper**, and it offers **only `Quitar`** — no `Elegir otra medida`, no `Buscar alternativa`.
+Explanation: The recommendation had been (a), keep the snapshot. The user chose the more honest and slightly costlier state, and the reason resolves what looked like a design gap: this line is not the buyer's problem to fix. Tehesa quotes it by hand and finds the alternative if there is none — so the row states that commitment rather than handing the buyer a recovery action, and it keeps the stepper because the buyer's quantity is exactly what the seller needs in order to quote. The copy is not comp-fixed (Brief 3 predates the decision); planning may tighten the wording, but not the semantics. Consequence for Story 4: the line travels in the WhatsApp message with a quantity and no price — the same shape a variant-less line already has, so no new handling is implied.
 
 V: Question: Is it acceptable that unpublishing a variant in Strapi shows every buyer holding that line `La medida ya no está disponible.`?
-Status: pending — **user decision**
-Explanation: Strapi Contract XI confirms Draft & Publish is on and default queries return published entries only, so an unpublished record is absent and reads as deleted. There is nothing to build either way — it is a question of whether Tehesa's editors treat unpublish as "temporarily hide" or as "retire". If it is the former, the state is misleading and the cheapest mitigation is process ("do not unpublish, edit"), not code; adding `status: DRAFT` would be worse, since it would quote buyers prices from unpublished drafts.
+Status: **answered by the user, 2026-08-01 — acceptable, no mitigation.**
+Answer: Agreed behaviour. Nothing to build, no process note recorded.
+Explanation: Strapi Contract XI confirms Draft & Publish is on and default queries return published entries only, so an unpublished record is absent and reads as deleted. Adding `status: DRAFT` would be strictly worse — it would quote buyers prices from unpublished drafts. Recorded so a future reader does not mistake this for an oversight: the collapse of "unpublished" into "deleted" is known and accepted, and it is invisible in the logs as well as the UI. It is also the reason UI I-b's hazard 2 stands — this is precisely the state that must never be persisted.
 
 VI: Question: Does a gone line get auto-removed?
 Status: answered — **no.**
@@ -401,14 +439,16 @@ Status: answered
 Explanation: At the unit level the mechanism is "requested id absent from the response", so the route adapter mock simply returns fewer records than were asked for — no Strapi involvement. What that **cannot** prove is that live Strapi omits rather than errors (Strapi Contract XII) or that it does not silently cap (IX). Those two are manual, and they are the only two that can turn this feature into a mass false "no longer available".
 
 II: Question: Does the existing `QuotePage.test.tsx` harness cover a component that now fetches on mount?
-Status: pending — planning check
-Explanation: The existing tests render `QuotePage` through `Providers` with a seeded `localStorage`. Once the page fetches on mount, **every one of those tests** issues a request unless `fetch` is mocked globally in that file. An unmocked `fetch` in jsdom does not fail loudly — it produces an unhandled rejection after the assertion has already passed. Add the mock in the existing file as part of this story, not as a follow-up.
+Status: **answered 2026-08-01 — no, and the gap is confirmed by inspection.**
+Answer: `QuotePage.test.tsx` **does** have a `mockFetch` helper and a `globalThis.fetch` save/restore pair, but they are declared **inside the `describe("QuotePage variant upgrade")` block** — `originalFetch` at `QuotePage.test.tsx:240`, `mockFetch` at `:252`, the restoring `afterEach` at `:263`. Every earlier `describe` in the file renders `QuotePage` with **no** `fetch` mock at all.
+Context: Read directly, 2026-08-01.
+Explanation: So the fix is not "add a mock", it is "hoist the existing one to file scope" — cheaper than it looked, and the helper to reuse already exists rather than needing to be written. Do it as part of this story. An unmocked `fetch` in jsdom does not fail loudly: it produces an unhandled rejection *after* the assertion has already passed, so the suite goes green while the console fills up.
 
 ## Assumptions Made
 
 - Stories 1 and 2 are shipped and stable; this story does not revisit their decisions.
 - Spike 4S has not changed the WhatsApp mechanism, so "the price Story 4 sends" is still "the price this page shows". If the spike moves Story 4 to the Cloud API, this story is unaffected — it produces prices, not messages.
-- The Strapi contract was re-verified live on 2026-08-01 for this story, so it is not assumed — but the *live data* behind it (how many variants have an empty `pricing`, how often editors unpublish) is unmeasured, and UI IV and UI V both turn on that.
+- The Strapi contract was re-verified live on 2026-08-01 for this story, so it is not assumed. The *live data* behind it — how many variants carry an empty `pricing`, how often editors unpublish — remains unmeasured, but UI IV and UI V were both decided without needing that count, so nothing now depends on it. It would only change how often the AC 7 row is seen, not whether it is right.
 - `CART_MAX_LINES = 100` remains the cart ceiling, so `REVALIDATE_MAX_IDS` can be pinned to it rather than invented separately.
 - Manual QA against live Strapi is the user's workflow (no dev server is started by agents).
 
@@ -418,6 +458,9 @@ Explanation: The existing tests render `QuotePage` through `Providers` with a se
 - **Absence is the deletion signal, so the request list must be retained.** The response cannot report what is missing; only the difference between what was asked and what came back can.
 - **Strapi's GraphQL default page size is 10, and there is no hard cap** (verified 2026-08-01). The REST `maxLimit: 100` in `config/api.ts` does not apply to GraphQL, and `config/plugins.ts` sets nothing. So the danger was never a ceiling — it is the floor. Combined with the previous finding, a forgotten `pagination` argument produces a confident, silent, wrong "these 40 items were deleted". `fetchProductVariants` is safe only because it happens to pass `pageSize: 100` (`global.lib.ts:167-172`).
 - **`pricing` is nullable but `pricing.price` is not.** A variant either has a price or has no `pricing` component at all — there is no null price. Two existing call sites dereference it unguarded (`ProductVariantsDrawer.tsx:77`, `ProductCard.tsx:79`), which is a pre-existing single-record exposure this story would multiply by 100.
+- **A write-back would erase the very badge it exists to support.** `changed` is derived as `current !== line.unitPrice`. Persist the current price into `unitPrice` and the comparison self-erases — the strikethrough vanishes as it is written, or never paints. The fix is to capture `previousPrice` at comparison time, but the failure presents as a rendering bug days later, not as a design flaw on the day. Recorded because the write-back is deferred, not dead (UI I-b).
+- **Overwriting `unitPrice` needs no schema bump — which makes it more tempting than it should be.** It is an existing field, so no `CART_SCHEMA_VERSION` change, no `migrate`, no new rehydrate validation. The gate on a write-back is the badge derivation above and the rule that gone-ness must never persist, not the cost of the store change.
+- **`QuotePage.test.tsx` already has a `fetch` mock — scoped to one `describe`.** `mockFetch` at `:252` lives inside `describe("QuotePage variant upgrade")`, so every earlier block renders `QuotePage` unmocked. The task is to hoist it, not to write it.
 - **Unpublishing a variant in the Strapi admin is, to this feature, a deletion.** Draft & Publish is enabled and default queries return published entries only. There is no way to tell the two apart from the frontend, and no way to tell them apart in a log either.
 - **`documentId` is an `IDFilterInput`, not a `StringFilterInput`** as the epic's Strapi Contract II records. Harmless until someone types a GraphQL variable `[String!]` and gets a variable-type error that reads as a filter problem.
 - **The epic's AC 1 leaves a dead end** for a variant line whose product was deleted: `Elegir otra medida` opens a drawer for a product that no longer exists. Sending every product id, not just the variant-less ones, closes it for free.
@@ -428,15 +471,18 @@ Explanation: The existing tests render `QuotePage` through `Providers` with a se
 
 ## Research Outcome
 
-Story 3 is smaller than the epic's original framing and **fully designed already** — Brief 3's comps cover all four states, so no design work is required and no brief needs re-running. Four decisions were taken with the user on 2026-08-01: ephemeral results, one combined route, `Buscar alternativa` → wide search, full research depth.
+Story 3 is smaller than the epic's original framing and **all but one state is designed already** — Brief 3's comps cover four of the five, so no brief needs re-running. The fifth (AC 7, no current price) was decided after Brief 3 and reuses the gone-row layout; it needs no comp.
+
+Decisions taken with the user on 2026-08-01: ephemeral results, one combined route, `Buscar alternativa` → wide search, full research depth, a distinct line state for a priceless variant (UI IV), unpublish-reads-as-deleted accepted without mitigation (UI V), and a **price write-back deferred to the business owner** (UI I-b) — build ephemeral now.
 
 Implementation is three phases: query + adapters + route; page hook and totals; line states and actions. No new dependency, no store change, no backend change, and no change to the persisted schema.
 
 **The Strapi contract is fully verified** (backend-research subagent, 2026-08-01, live introspection plus the backend repo). The batched filter works, missing ids are silently omitted rather than erroring, and there is no cap to work around. But the verification turned up the story's sharpest hazard in an unexpected place: **the GraphQL default page size is 10.** Omitting `pagination` does not fail — it returns the first ten records, and every line after them renders `ya no está disponible` and drops out of the subtotal. Silent, confident, and wrong, on every cart above ten lines. Both new operations must carry an explicit limit, and that is the first thing to check in review.
 
-Two answers need a **user decision** before planning, neither of which is code:
+**Every blocking question is now answered.** UI IV and UI V were resolved by the user, and Verification II was resolved by inspection (the `fetch` mock exists but is `describe`-scoped, so it needs hoisting rather than writing). One question remains open and does **not** block planning:
 
-- **UI IV** — what a variant with an empty `pricing` component should render as. `pricing` is nullable while `price` inside it is not, so a priceless variant is representable. Recommendation: keep the snapshot for v1.
-- **UI V** — whether it is acceptable that unpublishing a variant shows every buyer holding that line `ya no está disponible`. Draft & Publish is enabled; there is no frontend way to distinguish unpublish from delete. This is a process question, not a build one.
+- **UI II** — whether a line that *failed* to revalidate should look different from one that was never checked. Both render `precio guardado` in the comps. Recommendation stands: do not distinguish them.
 
-Everything else is settled. Awaiting human sign-off.
+One decision is parked outside the story: **UI I-b, the price write-back**, which the user is taking to the business owner. Story 3 ships ephemeral either way; if the answer comes back yes, it is an additive change to a story that will already be built, and UI I-b records the two constraints it must respect (capture `previousPrice` at comparison time, never persist gone-ness).
+
+Awaiting human sign-off.
