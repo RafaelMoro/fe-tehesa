@@ -4,7 +4,11 @@ import { render, screen, userEvent } from "@__tests__/test-utils"
 import { ProductVariantsDrawer } from "@/features/ProductVariantsDrawer/ProductVariantsDrawer"
 import { useCartStore } from "@/zustand/provider/cart.provider"
 import { CART_MAX_LINES } from "@/shared/constants/cart.constants"
-import type { CartVariantLine, Product } from "@/shared/types/global.types"
+import type {
+  CartVariantLine,
+  Product,
+  ProductVariantUI,
+} from "@/shared/types/global.types"
 import type { CatalogEnvelope } from "@/shared/utils/catalog-api.utils"
 
 const product: Product = {
@@ -42,6 +46,30 @@ const DrawerHarness = ({
     <>
       <Button onPress={state.open}>Abrir detalles</Button>
       <ProductVariantsDrawer product={product} state={state} />
+      <span>{lineCount} líneas en el carrito</span>
+    </>
+  )
+}
+
+const UpgradeDrawerHarness = ({
+  initialQuantity,
+  onConfirmVariant,
+}: {
+  initialQuantity?: number
+  onConfirmVariant: (variant: ProductVariantUI, quantity: number) => void
+}) => {
+  const state = useOverlayState()
+  const lineCount = useCartStore((store) => store.lines.length)
+
+  return (
+    <>
+      <Button onPress={state.open}>Abrir detalles</Button>
+      <ProductVariantsDrawer
+        product={product}
+        state={state}
+        initialQuantity={initialQuantity}
+        onConfirmVariant={onConfirmVariant}
+      />
       <span>{lineCount} líneas en el carrito</span>
     </>
   )
@@ -389,5 +417,88 @@ describe("ProductVariantsDrawer", () => {
     expect(
       screen.getByText(`${CART_MAX_LINES} líneas en el carrito`),
     ).toBeInTheDocument()
+  })
+})
+
+describe("ProductVariantsDrawer upgrade mode", () => {
+  it("starts the stepper at initialQuantity and labels the CTA Elegir esta medida", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(
+      <UpgradeDrawerHarness initialQuantity={4} onConfirmVariant={jest.fn()} />,
+    )
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await screen.findByRole("checkbox", { name: /Pequeña/ })
+
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toHaveValue("4")
+    expect(
+      screen.getByRole("button", { name: "Elegir esta medida" }),
+    ).toBeDisabled()
+  })
+
+  it("single-selects: choosing a second variant deselects the first", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [
+          { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          { documentId: "var-002", diameter: "Grande", pricing: { price: 30 } },
+        ],
+      }),
+    )
+
+    render(<UpgradeDrawerHarness onConfirmVariant={jest.fn()} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const first = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    const second = screen.getByRole("checkbox", { name: /Grande/ })
+
+    await user.click(first)
+    expect(first).toBeChecked()
+
+    await user.click(second)
+    expect(second).toBeChecked()
+    expect(first).not.toBeChecked()
+  })
+
+  it("confirming calls onConfirmVariant with the variant and current quantity, and adds no cart line", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+    const onConfirmVariant = jest.fn()
+
+    render(
+      <UpgradeDrawerHarness
+        initialQuantity={2}
+        onConfirmVariant={onConfirmVariant}
+      />,
+    )
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    await user.click(checkbox)
+
+    await user.click(
+      screen.getByRole("button", { name: "Elegir esta medida" }),
+    )
+
+    expect(onConfirmVariant).toHaveBeenCalledTimes(1)
+    expect(onConfirmVariant).toHaveBeenCalledWith(
+      expect.objectContaining({ documentId: "var-001", diameter: "Pequeña" }),
+      2,
+    )
+    expect(screen.getByText("0 líneas en el carrito")).toBeInTheDocument()
   })
 })

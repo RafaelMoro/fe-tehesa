@@ -2,11 +2,17 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { AlertDialog, Button } from "@heroui/react"
+import { AlertDialog, Button, toast, useOverlayState } from "@heroui/react"
 
 import { useCartStore } from "@/zustand/provider/cart.provider"
 import { cartLineKey } from "@/zustand/store/cart.store"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
+import { ProductVariantsDrawer } from "@/features/ProductVariantsDrawer/ProductVariantsDrawer"
+import type {
+  CartVariantLine,
+  Product,
+  ProductVariantUI,
+} from "@/shared/types/global.types"
 import { QuoteLineRow } from "./QuoteLineRow"
 import { getQuoteTotals } from "./quote.utils"
 
@@ -39,9 +45,11 @@ export const QuotePage = () => {
   const setLineQuantity = useCartStore((store) => store.setLineQuantity)
   const removeLine = useCartStore((store) => store.removeLine)
   const clearLines = useCartStore((store) => store.clearLines)
+  const upgradeLine = useCartStore((store) => store.upgradeLine)
 
   const listRegionRef = useRef<HTMLDivElement>(null)
   const shouldFocusRegionRef = useRef(false)
+  const [focusRequestId, setFocusRequestId] = useState(0)
 
   // ponytail: one region-level focus target; per-row neighbour focus if QA says the jump is disorienting
   useEffect(() => {
@@ -49,14 +57,70 @@ export const QuotePage = () => {
       listRegionRef.current?.focus()
       shouldFocusRegionRef.current = false
     }
-  }, [lines.length])
+  }, [focusRequestId])
+
+  const requestRegionFocus = () => {
+    shouldFocusRegionRef.current = true
+    setFocusRequestId((id) => id + 1)
+  }
+
+  const [upgradeKey, setUpgradeKey] = useState<string | null>(null)
+  const upgradeState = useOverlayState({
+    onOpenChange: (isOpen) => {
+      if (!isOpen) {
+        setUpgradeKey(null)
+      }
+    },
+  })
+  const upgradeTargetLine = lines.find(
+    (line) => cartLineKey(line) === upgradeKey,
+  )
+  const upgradeProduct: Product | null = upgradeTargetLine
+    ? {
+        documentId: upgradeTargetLine.productDocumentId,
+        name: upgradeTargetLine.productName,
+        category: null,
+        brand: null,
+      }
+    : null
 
   const { subtotal, productCount, pieceCount } = getQuoteTotals(lines)
   const formattedSubtotal = formatNumberToCurrency(subtotal)
 
   const handleRemove = (key: string) => {
-    shouldFocusRegionRef.current = true
+    requestRegionFocus()
     removeLine(key)
+  }
+
+  const handleChooseVariant = (key: string) => {
+    setUpgradeKey(key)
+    upgradeState.open()
+  }
+
+  const handleUpgradeConfirm = (variant: ProductVariantUI, quantity: number) => {
+    if (!upgradeKey || !upgradeTargetLine) {
+      return
+    }
+    const next: CartVariantLine = {
+      productDocumentId: upgradeTargetLine.productDocumentId,
+      productName: upgradeTargetLine.productName,
+      variantDocumentId: variant.documentId,
+      internalId: variant.internalId,
+      diameter: variant.diameter,
+      unitPrice: variant.price,
+      quantity,
+    }
+    const result = upgradeLine(upgradeKey, next)
+
+    if (result === "upgraded") {
+      toast.success(`Medida elegida: ${variant.diameter}`)
+      requestRegionFocus()
+    } else if (result === "merged") {
+      toast.success(
+        `Medida elegida: ${variant.diameter}. Se combinó con la línea que ya tenías.`,
+      )
+      requestRegionFocus()
+    }
   }
 
   if (!mounted) {
@@ -108,7 +172,7 @@ export const QuotePage = () => {
                 line={line}
                 onQuantityChange={(quantity) => setLineQuantity(key, quantity)}
                 onRemove={() => handleRemove(key)}
-                onChooseVariant={() => {}}
+                onChooseVariant={() => handleChooseVariant(key)}
               />
             )
           })}
@@ -166,6 +230,14 @@ export const QuotePage = () => {
           </AlertDialog.Container>
         </AlertDialog.Backdrop>
       </AlertDialog>
+      {upgradeProduct && (
+        <ProductVariantsDrawer
+          product={upgradeProduct}
+          state={upgradeState}
+          initialQuantity={upgradeTargetLine?.quantity}
+          onConfirmVariant={handleUpgradeConfirm}
+        />
+      )}
     </>
   )
 }

@@ -27,7 +27,10 @@ export const QuoteLineRow = ({
 
   if (line.variantDocumentId === null) {
     return (
-      <li className="flex flex-col gap-3 rounded-lg border border-emerald-700 bg-emerald-50 p-4 dark:bg-emerald-950/20">
+      <li
+        aria-label={lineLabel}
+        className="flex flex-col gap-3 rounded-lg border border-emerald-700 bg-emerald-50 p-4 dark:bg-emerald-950/20"
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-bold">{line.productName}</p>
@@ -65,7 +68,10 @@ export const QuoteLineRow = ({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-default-200 p-4">
+    <li
+      aria-label={lineLabel}
+      className="flex flex-col gap-3 rounded-lg border border-default-200 p-4"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-bold">{line.productName}</p>
