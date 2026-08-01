@@ -171,6 +171,15 @@ describe("Home - URL-backed catalog modes", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Búsqueda ampliada" })).not.toBeInTheDocument()
     })
+    // The CTA is disabled while the route transition from the first select is
+    // still pending (Home.tsx isBusy = isRoutePending || isLoadingCatalogSearch).
+    // Wait for it to re-enable before reopening, or a slow/loaded run can click
+    // it while disabled and never see the drawer open.
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      ).toBeEnabled()
+    })
 
     await user.click(
       screen.getByRole("button", { name: "Buscar en catálogo completo" }),
