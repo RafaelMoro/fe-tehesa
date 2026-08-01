@@ -124,6 +124,8 @@ Product reads are GraphQL queries against Strapi:
 - `fetchCategories()` calls `GET_CATEGORIES` returning `TaxonomyItem[]` (`{ name, customId }`).
 - `fetchBrands()` calls `GET_BRANDS` returning `TaxonomyItem[]` (`{ name, customId }`).
 
+**`pagination` is mandatory on every collection query.** Strapi's GraphQL plugin applies no hard cap (`limit: 1000` returns 1000), but **omitting `pagination` returns only 10 records** — silently, with no error. The REST `maxLimit: 100` in the backend's `config/api.ts` does not apply to GraphQL, and `config/plugins.ts` sets no GraphQL limit at all. Every adapter above passes an explicit `pageSize`; a new one that forgets will return a confidently wrong first-10 result. Verified live 2026-08-01.
+
 Catalog data flow from the browser:
 
 ```text
