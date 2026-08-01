@@ -189,6 +189,7 @@ Acceptance criteria:
 1. On load, `/cotizar` revalidates every variant line in a **single batched request** filtered by the variants' `documentId`s, and every product-level line in a second batched request by product `documentId`.
 2. A changed unit price is shown as previous → current, and the subtotal uses the current price.
 3. A variant that no longer exists, and a product that no longer exists, each get a distinct Spanish state and are excluded from the subtotal.
+
 4. A revalidation failure never blocks the quote: the snapshot prices are shown with a warning, and the flow continues.
 
 Must-have notes:
