@@ -193,7 +193,8 @@ export const ProductVariantsDrawer = ({
                     Selecciona una o más medidas e indica cuántas piezas
                     necesitas de cada una.
                   </p>
-                  <div className="mb-2 grid grid-cols-[1fr_70px_auto] gap-3 px-12 text-xs text-muted uppercase">
+                  <div className="mb-2 hidden gap-3 px-12 text-xs text-muted uppercase lg:grid lg:grid-cols-[auto_1fr_auto_auto]">
+                    <span />
                     <span>Diámetro</span>
                     <span>Cantidad</span>
                     <span>Precio</span>
@@ -202,45 +203,49 @@ export const ProductVariantsDrawer = ({
                     {variants.map((variant) => (
                       <div
                         key={variant.documentId}
-                        className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-lg border p-3 ${
+                        className={`flex flex-col gap-2 rounded-lg border p-3 lg:grid lg:grid-cols-[auto_1fr_auto_auto] lg:items-center lg:gap-3 ${
                           selectedVariantIds.has(variant.documentId)
                             ? "border-emerald-700 bg-emerald-50 dark:bg-emerald-950/20"
                             : "border-default-200"
                         }`}
                       >
-                        <Checkbox
-                          aria-label={`Seleccionar ${variant.diameter}`}
-                          isSelected={selectedVariantIds.has(variant.documentId)}
-                          onChange={(isSelected) => {
-                            setSelectedVariantIds((current) => {
-                              const next = new Set(current)
-                              if (isSelected) {
-                                next.add(variant.documentId)
-                              } else {
-                                next.delete(variant.documentId)
-                              }
-                              return next
-                            })
-                          }}
-                        >
-                          <Checkbox.Content>
-                          <Checkbox.Control className="shrink-0">
-                            <Checkbox.Indicator />
-                          </Checkbox.Control>
-                        </Checkbox.Content>
-                        </Checkbox>
-                        <span className="font-medium">{variant.diameter}</span>
-                        <QuantityStepper
-                          label={`Cantidad de ${variant.diameter}`}
-                          value={quantities[variant.documentId] ?? 1}
-                          onChange={(quantity) => {
-                            setQuantities((current) => ({
-                              ...current,
-                              [variant.documentId]: quantity,
-                            }))
-                          }}
-                        />
-                        <span className="text-muted">{variant.priceFormatted}</span>
+                        <div className="flex items-center gap-3 lg:contents">
+                          <Checkbox
+                            aria-label={`Seleccionar ${variant.diameter}`}
+                            isSelected={selectedVariantIds.has(variant.documentId)}
+                            onChange={(isSelected) => {
+                              setSelectedVariantIds((current) => {
+                                const next = new Set(current)
+                                if (isSelected) {
+                                  next.add(variant.documentId)
+                                } else {
+                                  next.delete(variant.documentId)
+                                }
+                                return next
+                              })
+                            }}
+                          >
+                            <Checkbox.Content>
+                            <Checkbox.Control className="shrink-0">
+                              <Checkbox.Indicator />
+                            </Checkbox.Control>
+                          </Checkbox.Content>
+                          </Checkbox>
+                          <span className="font-medium">{variant.diameter}</span>
+                        </div>
+                        <div className="flex flex-col items-start gap-2 lg:contents">
+                          <QuantityStepper
+                            label={`Cantidad de ${variant.diameter}`}
+                            value={quantities[variant.documentId] ?? 1}
+                            onChange={(quantity) => {
+                              setQuantities((current) => ({
+                                ...current,
+                                [variant.documentId]: quantity,
+                              }))
+                            }}
+                          />
+                          <span className="text-muted">{variant.priceFormatted}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
