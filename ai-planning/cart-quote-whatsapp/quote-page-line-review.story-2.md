@@ -236,22 +236,33 @@ Focus and announcements:
 ```tsx
 <AlertDialog>
   <AlertDialog.Trigger><Button variant="danger">Vaciar lista</Button></AlertDialog.Trigger>
-  <AlertDialog.Backdrop>
+  {/* Esc is disabled by default on this component — see the gotcha below */}
+  <AlertDialog.Backdrop isKeyboardDismissDisabled={false}>
     <AlertDialog.Container placement="center">
       <AlertDialog.Dialog>
-        <AlertDialog.Header><AlertDialog.Heading>¿Vaciar la lista?</AlertDialog.Heading></AlertDialog.Header>
-        <AlertDialog.Body>Se quitarán los N productos de tu lista. No se puede deshacer.</AlertDialog.Body>
-        <AlertDialog.Footer>
-          <AlertDialog.CloseTrigger>Cancelar</AlertDialog.CloseTrigger>
-          <Button variant="danger" onPress={confirmClear}>Vaciar lista</Button>
-        </AlertDialog.Footer>
+        {({ close }) => (
+          <>
+            <AlertDialog.Header><AlertDialog.Heading>¿Vaciar la lista?</AlertDialog.Heading></AlertDialog.Header>
+            <AlertDialog.Body>Se quitarán los {productCount} productos de tu lista. No se puede deshacer.</AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button variant="secondary" autoFocus onPress={close}>Cancelar</Button>
+              <Button variant="danger" onPress={() => { clearLines(); close() }}>Vaciar lista</Button>
+            </AlertDialog.Footer>
+          </>
+        )}
       </AlertDialog.Dialog>
     </AlertDialog.Container>
   </AlertDialog.Backdrop>
 </AlertDialog>
 ```
 
-The `Trigger` composition is what buys the focus trap, `Esc`-cancels, and focus-return-to-trigger without hand-written focus code. `window.confirm` is not acceptable. Two requirements the component does not give for free and must be checked in manual QA: **initial focus on `Cancelar`** (add `autoFocus` to the close trigger if HeroUI's default lands elsewhere), and after confirming, focus reaching the empty state's `Volver al catálogo` — the trigger has unmounted, so the region-focus ref from the removal path covers this case too.
+The `Trigger` composition (`AlertDialog.Root` is React Aria's `DialogTrigger`) is what buys the focus trap and focus-return-to-trigger without hand-written focus code. `window.confirm` is not acceptable. Three things verified in `node_modules/@heroui/react/dist/components/alert-dialog/alert-dialog.js` rather than assumed:
+
+- **`Esc` is off by default.** `AlertDialogBackdrop` defaults `isKeyboardDismissDisabled = true` ("alert dialogs typically require explicit action"). The story's accessibility spec requires `Esc` cancels, so **`isKeyboardDismissDisabled={false}` is mandatory**, not optional. `isDismissable` also defaults to `false` — keep that default; a stray backdrop click should not resolve a destructive dialog either way.
+- **Do not use `AlertDialog.CloseTrigger` for `Cancelar`.** It renders `CloseButton` — an icon-only React Aria button styled by `closeButtonVariants`, whose default child is an X icon and which hardcodes `aria-label="Close"`. Passing `children="Cancelar"` replaces the icon but the English `aria-label` still wins the accessible name. (Same class of bug as `NumberField`'s English stepper labels, already recorded in `REPO_CONTEXT.md`.) The `Dialog` render prop `({ close }) => …` passes straight through to React Aria's `Dialog`, so a real HeroUI `<Button>` with `onPress={close}` is both correctly styled and correctly named.
+- **`AlertDialog.Dialog` sets `role="alertdialog"`** — that is the query handle for the test, and `AlertDialog.Heading` carries `slot="title"` so the dialog is named by its heading automatically.
+
+`autoFocus` on `Cancelar` is the user's decision (2026-07-31): initial focus lands on the non-destructive action. After confirming, the trigger unmounts with the list, so focus falls to the region-focus ref from the removal path, which then holds the empty state's `Volver al catálogo`.
 
 Edge cases:
 - `localStorage` can throw (Safari private mode, quota). Story 1's `safeLocalStorage` swallows it, so an edit can update memory and silently fail to persist. Unchanged, acceptable, worth knowing.
@@ -272,7 +283,7 @@ Edge cases:
 - Edit a quantity → subtotal and both counters update; reload → the change persisted.
 - `Quitar` the last line → the empty state appears; `Volver al catálogo` navigates to `/`.
 - **The gate:** hard-reload `/cotizar` on a throttled connection with a populated cart — `Tu lista está vacía` must never appear. jsdom cannot reproduce this; it stays a manual item, and the PR should say so rather than let a green suite read as proof.
-- `Vaciar lista`: `Esc` cancels, `Tab` stays inside the dialog, cancel returns focus to the trigger, confirm empties the list.
+- `Vaciar lista`: focus opens on `Cancelar`, `Esc` cancels (regression-prone — it is off by default), `Tab` stays inside the dialog, cancel returns focus to the trigger, confirm empties the list.
 
 ### Verification Coverage
 
@@ -280,7 +291,8 @@ Edge cases:
 |---|---|---|
 | `quote.utils.ts` | cents arithmetic vs. a float baseline (e.g. many `0.1`-class prices), variant-less lines excluded from the subtotal but counted in `productCount`/`pieceCount`, empty input → zeros | `__tests__/quote/quote.utils.test.ts` |
 | `QuotePage.tsx` | **the gate** — seed `localStorage` before render, assert the list appears and `Tu lista está vacía` is absent; empty storage → empty state; and a `renderToString` of the component asserting the empty copy is absent from pre-mount output (this is the assertion that fails if someone deletes the mounted guard) | `__tests__/quote/QuotePage.test.tsx` |
-| `QuotePage.tsx` | quantity edit updates the subtotal, `Quitar` removes one line, per-line accessible names are distinct, `Vaciar lista` cancel keeps the list and confirm empties it, subtotal block absent when empty | same |
+| `QuotePage.tsx` | quantity edit updates the subtotal, `Quitar` removes one line, per-line accessible names are distinct, subtotal block absent when empty | same |
+| `Vaciar lista` dialog | opening yields `role="alertdialog"` named `¿Vaciar la lista?`; `Cancelar` (by that accessible name, not "Close") keeps every line; the danger action empties the list and reveals the empty state; **`Esc` closes without clearing** — that last one is the regression guard for `isKeyboardDismissDisabled={false}`. HeroUI overlays portal outside the container; query through global `screen`. | same |
 | `QuoteLineRow.tsx` | `internalId` never rendered; variant-less row shows `Sin variante seleccionada` / `Sin precio por ahora` and `Elegir medida`; priced row shows unit price and line total | same |
 | `src/app/cotizar/page.tsx` | `generateMetadata()` returns `robots: { index: false, follow: true }` and canonical `/cotizar` (call the exported function; do not `render` the async route) | `__tests__/seo/quote-metadata.test.ts` |
 | `sitemap.ts` / `robots.ts` | `/cotizar` absent from both — existing suites already assert their full output | `pnpm test -- __tests__/seo/` |
@@ -406,12 +418,11 @@ Edge cases (Catalog I):
 
 ## Open Questions
 
-None blocking. Research Verification I is closed by reading the drawer test file (see the table at the top): the optional-prop seam leaves all 12 tests untouched.
+**None.** All three are closed.
 
-Two items to confirm during implementation, neither of which changes the plan:
-
-1. HeroUI `AlertDialog`'s default initial-focus target. If it is not `Cancelar`, add `autoFocus` to the close trigger. The comp cannot express this; the spec is in the research doc's Accessibility section.
-2. Whether `AlertDialog.CloseTrigger` renders a `<Button>` by default or needs one as a child — a 2-minute check against the HeroUI MCP docs when writing the dialog.
+- **Research Verification I** — closed by reading `__tests__/product-variants/ProductVariantsDrawer.test.tsx`: all 12 tests pass only `product` and `state`, so the optional-prop seam leaves them untouched.
+- **Initial focus in the confirm dialog** — closed by the user, 2026-07-31: **`autoFocus` on `Cancelar`**, the non-destructive action.
+- **`AlertDialog.CloseTrigger`'s shape** — closed by reading `node_modules/@heroui/react/dist/components/alert-dialog/alert-dialog.js` (the HeroUI MCP is configured for OpenCode, not this session; the installed package is the authoritative source either way). It renders an icon-only `CloseButton` with a hardcoded English `aria-label="Close"`, so it is **not** the `Cancelar` control — the `Dialog` render prop plus a real `<Button>` is. That read also surfaced the `Esc`-disabled-by-default gotcha the plan now handles.
 
 ## Out Of Scope
 
