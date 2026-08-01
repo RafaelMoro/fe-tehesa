@@ -160,7 +160,7 @@ export const ProductVariantsDrawer = ({
     <Drawer state={state}>
       <Drawer.Backdrop>
         <Drawer.Content placement="right" className="w-full">
-          <Drawer.Dialog className="flex h-full flex-col">
+          <Drawer.Dialog className="flex h-full flex-col md:w-[440px]! lg:w-[520px]!">
             <Drawer.Header className="flex items-start justify-between gap-4 border-b border-default-200 p-6">
               <div className="w-full flex justify-end">
                 <Button
