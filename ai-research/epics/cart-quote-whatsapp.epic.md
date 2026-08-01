@@ -344,11 +344,12 @@ A buyer — most likely a purchasing contact at a workshop or industrial supplie
 | Variants drawer footer | `src/features/ProductVariantsDrawer/` | Unchanged visually; CTA works, drawer still closes, focus returns | 1 | 2 |
 | `/cotizar` line list | new route | Priced, no-size (+ `Elegir medida`), price changed, unavailable, checking, check failed, empty | 2, 3 | **3 — designed, comps in `comps/brief-3/`** |
 | `/cotizar` subtotal | new route | Labelled as excluding unpriced lines; one line of reference-price copy | 2 | **3 — designed, comps in `comps/brief-3/`** |
+| `/cotizar` clear-list control | new route | Resting, centred-dialog confirmation, inline alternative, empty result | 2 | **5 — `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png`** |
 | `/cotizar` contact block | new route | No saved details, saved (no form), editing | 4 | **4 — designed, comps in `comps/brief-4/`** |
 | `/cotizar` send CTA | new route | Ready, disabled-incomplete, disabled-unconfigured, post-tap clear | 4 | **4 — designed, comps in `comps/brief-4/`** |
 | `/cotizar` multi-part send | new route | Single part, multi before first send, in progress, all opened | 4 | **4 — designed, comps in `comps/brief-4/`** |
 
-**Delivered comps** live in `comps/<brief>/` at the repo root, one folder per brief. **All four briefs have been run as of 2026-07-31 and every surface in the index above has comps.**
+**Delivered comps** for Briefs 1-4 live in `comps/<brief>/`; Brief 5 lives in `comps/cart-quote-whatsapp/brief-5/`. **All five briefs have been run as of 2026-07-31.**
 
 Outstanding design work, in full:
 
@@ -357,6 +358,7 @@ Outstanding design work, in full:
 | ~~D1~~ | ~~Toast placement, duration, stacking~~ | **Closed 2026-07-31.** `comps/brief-2/share-toast-brief-2.png` is confirmed as the toast design. | — |
 | D2 | Drawer footer **with the `− n +` stepper** | **Resolved 2026-07-31** — the stepper *is* adopted, and it is Brief 3's existing design applied to a second surface. Build it once in `src/shared/ui/`. No new comp needed. | — |
 | D3 | The drawer opened **from `/cotizar`** by `Elegir medida`, and what the buyer sees when the line upgrades in place | Behaviour, not a new surface — the drawer is existing UI | Story 2 |
+| ~~D4~~ | ~~`Vaciar lista` confirmation~~ | **Closed 2026-07-31.** Ship the centred dialog; the inline design is an alternative only. `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` | — |
 
 **Vocabulary rule (decided 2026-07-31).** `lista` names the collection the buyer builds — `Tu lista está vacía`, `Restaurar lista`, `Mi lista, N artículos`. `cotización` names the artifact and the act — `Solicitar cotización`, `Cotizar`, `Esta cotización necesita 3 partes`, `Empezar una nueva cotización`. **`solicitud` is dropped as a name for the collection**, which removes Brief 3's `Mi solicitud` header label; `Solicitar cotización` survives because it names the act, not the collection. The one surviving use is the WhatsApp message header `*Solicitud de cotización*`, kept as standard seller-facing commercial Spanish.
 
@@ -397,6 +399,7 @@ Everything else outstanding is a **decision, not design** — both options alrea
 | `comps/brief-4/mobile-fill-user-data-{1,2,3}-brief-4.png` | Contact states at 390px |
 | `comps/brief-4/mobile-fill-user-data-w-keyboard-brief-4.png` | **The on-screen keyboard case** — sticky action region above the keyboard |
 | `comps/brief-4/mobile-check-quote-flow-{1,2,3}-brief-4.png` | The send flow at 390px |
+| `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` | `Vaciar lista` resting state, centred-dialog and inline confirmations, and empty result at 1440px and 390px in light and dark |
 
 ### What The Brief 3 Comps Settle (Stories 2 and 3)
 

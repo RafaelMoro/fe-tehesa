@@ -24,7 +24,7 @@ No contact form, no WhatsApp link, no revalidation against Strapi. Prices shown 
 3. The subtotal sums only priced lines, is accumulated in **integer cents** and divided once at the end, is formatted with `formatNumberToCurrency`, and is labelled `Subtotal estimado (líneas con precio)` with `Precios de referencia. El vendedor confirma disponibilidad y precio final.` directly beneath. `N productos · N piezas` appears at the top of the page and beside the subtotal.
 4. An empty cart shows `Tu lista está vacía` plus a `Volver al catálogo` route back. Never a bare `$0.00`. The empty state must not flash before rehydration completes (see "The Hydration Gate").
 5. `generateMetadata` marks the route `noindex, follow` with a `/cotizar` canonical; the route is absent from `sitemap.ts` and is **not** added to `robots.ts` disallow — a `noindex` page must stay crawlable to be read (same reasoning as `?mode=name`, `REPO_CONTEXT.md:207`).
-6. **A `Vaciar lista` control empties the whole list** (user decision, 2026-07-31). Destructive and unrecoverable, so it needs a confirmation step; it has no comp (design gap D4 below).
+6. **A `Vaciar lista` control empties the whole list** (user decision, 2026-07-31). Destructive and unrecoverable, so it uses the centred-dialog confirmation in Brief 5.
 7. The header cart control becomes a **link to `/cotizar`** with the accessible name `Ver mi lista, N artículos`. Story 1 shipped it deliberately as a non-link count (Story 1 AC 7b); this is the story that promotes it, and the 44×44 reservation and `0`-is-neutral styling must survive the promotion.
 
 ### Task Breakdown
@@ -49,7 +49,7 @@ Single story, 3 implementation phases (store actions → route and line list →
 
 ## Delivered Comps
 
-Brief 3 is complete and covers this story's entire visual surface. Build against the comps.
+Briefs 3 and 5 cover this story's visual surface. Build against the comps.
 
 | File | Covers |
 |---|---|
@@ -57,6 +57,7 @@ Brief 3 is complete and covers this story's entire visual surface. Build against
 | `comps/brief-3/mobile-brief-3.png` | Normal state at 390px, light and dark |
 | `comps/brief-3/desktop-seven-state-{1,2}-brief-3.png`, `desktop-seven-state-dark-1-brief-3.png` | All seven line states at 1440px |
 | `comps/brief-3/mobile-seven-state-{1,2,3}-brief-3.png` | The seven line states at 390px |
+| `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` | `Vaciar lista` resting state, centred-dialog confirmation (chosen), inline alternative, and empty result at 1440px and 390px in light and dark |
 
 What they settle for **this** story (the full list is in the epic, "What The Brief 3 Comps Settle"):
 
@@ -85,7 +86,7 @@ A buyer who has collected 3-20 items across the catalog needs to check the list 
 | `/cotizar` line list | same | Price changed, unavailable ×2, checking, check failed | 3 | 3 — comps exist, not built here |
 | `/cotizar` subtotal | same | Labelled as excluding unpriced lines | **2** | 3 |
 | `/cotizar` empty state | same | `Tu lista está vacía` | **2** | 3 |
-| `Vaciar lista` + confirm | same | Idle, confirming | **2** | **none — design gap D4** |
+| `Vaciar lista` + confirm | same | Resting, centred-dialog confirmation, empty result | **2** | 5 — `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` |
 | Upgrade drawer | `src/features/ProductVariantsDrawer/` | Single-select, quantity prefilled, confirm replaces line | **2** | **none — design gap D3, behaviour only** |
 | Header cart control | `src/shared/ui/atoms/CartCount.tsx` | `0`, count, 99+ — now a link | **2** | 2 — comps in `comps/brief-2/` |
 
@@ -127,9 +128,9 @@ Revalidation and its four line states (Story 3), the contact form (Story 4), the
 
 - ~~Should the upgrade drawer be multi-select?~~ **Answered 2026-07-31 — single-select upgrade mode.** One variant replaces the line in place, keeping position and quantity. A second selection is not offered.
 - ~~Where does `Header` live so `/cotizar` gets the badge?~~ **Answered 2026-07-31 — move it into the root layout.**
-- ~~Does Story 2 ship a clear-all control?~~ **Answered 2026-07-31 — yes, `Vaciar lista`, with a confirmation step.** No comp exists; see D4.
+- ~~Does Story 2 ship a clear-all control?~~ **Answered 2026-07-31 — yes, `Vaciar lista`, with a centred-dialog confirmation.** See `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png`.
 - **D3 (open, behavioural):** what the buyer sees at the moment a line upgrades in place. Recorded as outstanding in the epic. No comp; a planning call, not a blocker.
-- **D4 (new, open):** `Vaciar lista` and its confirmation have no comp. Brief 5 below.
+- ~~D4~~ **closed 2026-07-31:** Brief 5 selects the centred dialog; the inline control remains an alternative. Static comps do not establish focus management.
 
 ## Technical Research
 
@@ -276,8 +277,8 @@ Explanation: `toast.success` through the HeroUI `Toast.Provider` already mounted
 Focus returns to the upgraded row (or to the row that absorbed it) rather than to `<body>`. The toast is the confirmation; a row-level highlight is optional polish, not required.
 
 III: Question: What is the `Vaciar lista` confirmation (D4)?
-Status: pending — no comp.
-Explanation: HeroUI v3 has a dialog; an inline two-step confirm on the button is smaller. Either is fine, `window.confirm` is not. Brief 5 below asks the design agent for it. Copy suggestion: `¿Vaciar tu lista?` / `Se quitarán los N productos. No se puede deshacer.` / `Vaciar` (danger) + `Cancelar`.
+Status: **answered by Brief 5, 2026-07-31 — centred dialog.**
+Explanation: `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` shows the resting control, both approaches, and the empty result, and recommends the centred dialog. The inline approach is not selected. The comp cannot prove the initial focus target, focus trap, or focus return; those remain implementation requirements. `window.confirm` is not acceptable.
 
 IV: Question: Does the header link show an active state on `/cotizar` itself?
 Status: **answered by the user, 2026-07-31 — `aria-current="page"` only, no visual active state.**
@@ -343,13 +344,13 @@ Two mechanics carried over from Story 1 (Verification I): clear `localStorage` i
 
 ## Research Outcome
 
-Story 2 is fully scoped. Design is delivered for everything except two items, neither of which blocks planning: the `Vaciar lista` confirmation (D4, new — Brief 5 added to `design-agent-briefs.md`) and the in-place upgrade moment (D3, behavioural).
+Story 2 is fully scoped. Brief 5 settles the `Vaciar lista` confirmation; only the in-place upgrade moment (D3, behavioural) remains without a comp.
 
 The work is three store actions, one new route, one new feature folder, an optional-prop mode on an existing drawer, a header move, and a link promotion. No new dependency, no backend change, no Strapi query change.
 
 Seven decisions the user settled on 2026-07-31: single-select upgrade mode, `Header` moves to the root layout, `Vaciar lista` ships in this story, full research depth, **the upgrade collision merges quantities**, **the upgrade confirms with a success toast** (with distinct copy for the merge case), and **`aria-current="page"` on the header link with no visual active state**.
 
-**Every open question is now closed except one design gap and one deliberate planning task.** The gap is the `Vaciar lista` confirmation styling (D4, Brief 5 — dialog or inline two-step), which blocks nothing and can be designed while the store work proceeds. The planning task is Verification I: **read `__tests__/product-variants/ProductVariantsDrawer.test.tsx` in the first planning phase**, before the drawer work is scheduled, to confirm the optional-prop seam leaves the existing tests untouched.
+**Every open question is now closed except one deliberate planning task.** Brief 5 selects the centred-dialog confirmation for `Vaciar lista`; focus management remains an implementation requirement. The planning task is Verification I: **read `__tests__/product-variants/ProductVariantsDrawer.test.tsx` in the first planning phase**, before the drawer work is scheduled, to confirm the optional-prop seam leaves the existing tests untouched.
 
 **Ready for planning as of 2026-07-31.**
 
@@ -357,7 +358,7 @@ Seven decisions the user settled on 2026-07-31: single-select upgrade mode, `Hea
 |---|---|
 | UI I | Upgrade collision **merges** quantities, clamped at 100, keeping the existing priced line's position. |
 | UI II | The upgrade confirms with a **success toast**, with distinct copy for the merge case. |
-| UI III | `Vaciar lista` ships with a confirmation step. Styling open (D4). |
+| UI III | `Vaciar lista` ships with Brief 5's centred-dialog confirmation. |
 | UI IV | **`aria-current="page"`** on the header link, no visual active state. |
 | Catalog I | The empty/failed variants fetch reuses the drawer's **existing copy**; the line always survives. |
 | Verification I | **Deferred to planning** — read the drawer's test file first. |

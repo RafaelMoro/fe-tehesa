@@ -6,7 +6,7 @@
 
 ## How To Use This File
 
-**Status: Briefs 1-4 complete (2026-07-31). Brief 5 added 2026-07-31 and not yet run** — it covers `Vaciar lista`, a control the user added to Story 2 after Brief 3 was designed. Comps live in `comps/<brief>/`, one folder per brief. For Briefs 1-4 this file is now the record of how they were produced; re-run one only if a decision changes.
+**Status: Briefs 1-5 complete (2026-07-31).** Brief 5 covers `Vaciar lista`, a control the user added to Story 2 after Brief 3 was designed. Its delivered composite is `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png`. For Briefs 1-4 this file is now the record of how they were produced; re-run one only if a decision changes.
 
 Five briefs, run in order. Each has three parts:
 
@@ -587,6 +587,8 @@ DELIVERABLE
 Resting state, both confirmation approaches, and the post-confirm page, at
 ~390px and ~1440px, light and dark. Say which confirmation you would ship.
 ```
+
+**Output:** `comps/cart-quote-whatsapp/brief-5/both-both-clear-list-states.png` — the centred dialog is recommended over the inline confirmation. The header in the composite reintroduces Brief 3's discarded `Mi solicitud` treatment, so it is not a header reference.
 
 ### Check the output for
 
