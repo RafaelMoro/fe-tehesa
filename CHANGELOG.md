@@ -1,3 +1,9 @@
+## v0.27.0 (2026-08-01)
+
+### Pull Requests
+[#34](https://github.com/RafaelMoro/fe-tehesa/pull/34) | Add cart feature | Story 1 | Cart persistence, state and add-to-cart wiring
+
+
 ## v0.26.0 (2026-07-30)
 
 ### Pull Requests
