@@ -6,3 +6,6 @@ export const SITE_DESCRIPTION =
 export const SITE_LOCALE = "es_MX"
 export const TITLE_BASE = "Herramienta Industrial y Tornilleria en Puebla"
 export const TITLE_TAXONOMY_SUFFIX = "Herramienta industrial en Puebla"
+export const QUOTE_TITLE = "Solicitar cotización | Tehesa"
+export const QUOTE_DESCRIPTION =
+  "Revisa los productos, medidas y cantidades de tu lista antes de solicitar tu cotización a Tehesa."

@@ -3,6 +3,8 @@ import localFont from "next/font/local"
 import "./globals.css"
 import { Providers } from "./providers"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { Header } from "@/shared/ui/organisms/Header"
+import { getThemePreference } from "@/shared/lib/global.lib"
 import {
   SITE_DESCRIPTION,
   SITE_LOCALE,
@@ -41,11 +43,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const themeFetched = await getThemePreference()
+
   return (
     <html lang="es" suppressHydrationWarning>
       <body
@@ -53,6 +57,7 @@ export default function RootLayout({
       >
         <Providers>
           <NextThemesProvider attribute="class" defaultTheme="light">
+            <Header themeFetched={themeFetched} />
             {children}
           </NextThemesProvider>
         </Providers>
