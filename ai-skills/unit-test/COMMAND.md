@@ -23,7 +23,7 @@ Read in order before writing code:
 
 1. `docs/UNIT_TESTING_GUIDELINES.md` - canonical test-authoring rules. Follow it for the whole task.
 2. `docs/IMPLEMENTATION_GUIDELINES.md` - project-wide code style rules.
-3. `REPO_CONTEXT.md` - architecture map, data flow, conventions, CI.
+3. `ai-skills/REPO_CONTEXT.md` - architecture map, data flow, conventions, CI.
 4. `AGENTS.md` - compact commands, env, structure, PR guidance.
 5. `package.json` - dependencies and scripts (`pnpm test | test:watch | lint`).
 6. The relevant source files and any existing test files for the same module.
@@ -119,4 +119,4 @@ Do not commit, push, or open a PR without explicit approval. Do not start a new 
 - Do not edit `CHANGELOG.md`, `package.json` version, or release workflows.
 - Do not run `pnpm build` for a test-only change unless production source moved.
 
-If you update this command, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
+If you update `ai-skills/unit-test/COMMAND.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.

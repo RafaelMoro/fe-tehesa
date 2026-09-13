@@ -17,7 +17,7 @@ Parse whatever the user supplied from `$ARGUMENTS` and the conversation.
 
 Before any codebase exploration, read these files and do not re-discover what is already documented:
 
-1. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions
+1. `ai-skills/REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions
 2. `AGENTS.md` - compact toolchain, commands, env, tests, structure, and PR/release guidance
 3. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | test | test:watch | sync:prompts`)
 4. Relevant executable config: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.js`
@@ -194,9 +194,9 @@ Sizing: one surface group per brief. Do not merge them. Order them so the briefs
 
 ## Step 8 - Capture non-obvious findings
 
-If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
+If research surfaces a non-obvious constraint or domain fact future work would benefit from, add it to `ai-skills/REPO_CONTEXT.md` only if it is verified and broadly useful. Skip this for story-specific details.
 
-If you update `.opencode/command/research.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
+If you update `ai-skills/research/COMMAND.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 9 - Present for review
 
@@ -213,7 +213,7 @@ Do **not** start planning or writing code. Wait for human sign-off.
 ## Don'ts
 
 - Do not propose implementation; that is the planning phase.
-- Do not write or modify source files other than the research doc and its design brief file (Step 7b), except for a verified broadly useful `REPO_CONTEXT.md` note.
+- Do not write or modify source files other than the research doc and its design brief file (Step 7b), except for a verified broadly useful `ai-skills/REPO_CONTEXT.md` note.
 - Do not start the dev server or attempt to capture screenshots yourself; the screenshot guide is instructions for the user.
 - Do not run tests, builds, `pnpm install`, or package manager changes during research.
 - Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, or finance domains; those are not present in this repo. Jest and Testing Library are present.
