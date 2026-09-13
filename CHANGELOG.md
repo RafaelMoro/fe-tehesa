@@ -1,3 +1,9 @@
+## v0.30.0 (2026-09-13)
+
+### Pull Requests
+[#37](https://github.com/RafaelMoro/fe-tehesa/pull/37) | Story 3 | Feat: add price/availability revalidation flow with line state management
+
+
 ## v0.29.0 (2026-09-13)
 
 ### Pull Requests
