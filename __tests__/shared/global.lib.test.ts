@@ -4,12 +4,15 @@
 import {
   fetchBrands,
   fetchCategories,
+  fetchProductsByIds,
   fetchProductVariants,
   fetchProducts,
   fetchProductsByBrand,
   fetchProductsByCategory,
   fetchProductsByName,
+  fetchVariantsByIds,
 } from "@/shared/lib/global.lib"
+import { REVALIDATE_MAX_IDS } from "@/shared/constants/catalog.constants"
 import {
   GET_BRANDS,
   GET_CATEGORIES,
@@ -17,15 +20,21 @@ import {
   GET_PRODUCTS,
   GET_PRODUCTS_BY_BRAND,
   GET_PRODUCTS_BY_CATEGORY,
+  GET_PRODUCTS_BY_IDS,
   GET_PRODUCTS_BY_NAME,
+  GET_VARIANTS_BY_IDS,
 } from "@/shared/queries/global.queries"
 import type {
   FetchBrandsResponse,
   FetchCategoriesResponse,
+  FetchProductsByIdsResponse,
   FetchProductsResponse,
   FetchSingleProductResponse,
+  FetchVariantsByIdsResponse,
   Product,
   ProductVariant,
+  RevalidatedProduct,
+  RevalidatedVariant,
   TaxonomyItem,
 } from "@/shared/types/global.types"
 
@@ -178,6 +187,84 @@ describe("Apollo adapters", () => {
       queryMock.mockResolvedValue({ data: {} })
       const result = await fetchBrands()
       expect(result).toEqual([])
+    })
+  })
+
+  describe("fetchVariantsByIds and fetchProductsByIds", () => {
+    const revalidatedVariant: RevalidatedVariant = {
+      documentId: "variant-1",
+      diameter: '15"',
+      pricing: { price: 100 },
+    }
+    const revalidatedProduct: RevalidatedProduct = {
+      documentId: "doc-1",
+      name: "Tire",
+    }
+
+    it("fetchVariantsByIds returns [] and does not call the client when ids is empty", async () => {
+      const result = await fetchVariantsByIds([])
+      expect(result).toEqual([])
+      expect(queryMock).not.toHaveBeenCalled()
+    })
+
+    it("fetchProductsByIds returns [] and does not call the client when ids is empty", async () => {
+      const result = await fetchProductsByIds([])
+      expect(result).toEqual([])
+      expect(queryMock).not.toHaveBeenCalled()
+    })
+
+    it("fetchVariantsByIds sends documentId.in filter and pagination pinned to REVALIDATE_MAX_IDS", async () => {
+      queryMock.mockResolvedValue(
+        ok<FetchVariantsByIdsResponse>({ productVariants: [revalidatedVariant] }),
+      )
+
+      const result = await fetchVariantsByIds(["variant-1", "variant-2"])
+      expect(result).toEqual([revalidatedVariant])
+      expect(queryMock).toHaveBeenCalledWith({
+        query: GET_VARIANTS_BY_IDS,
+        variables: {
+          filters: { documentId: { in: ["variant-1", "variant-2"] } },
+          pagination: { page: 1, pageSize: REVALIDATE_MAX_IDS },
+        },
+      })
+    })
+
+    it("fetchProductsByIds sends documentId.in filter and pagination pinned to REVALIDATE_MAX_IDS", async () => {
+      queryMock.mockResolvedValue(
+        ok<FetchProductsByIdsResponse>({ products: [revalidatedProduct] }),
+      )
+
+      const result = await fetchProductsByIds(["doc-1"])
+      expect(result).toEqual([revalidatedProduct])
+      expect(queryMock).toHaveBeenCalledWith({
+        query: GET_PRODUCTS_BY_IDS,
+        variables: {
+          filters: { documentId: { in: ["doc-1"] } },
+          pagination: { page: 1, pageSize: REVALIDATE_MAX_IDS },
+        },
+      })
+    })
+
+    it("fetchVariantsByIds returns [] when productVariants is missing", async () => {
+      queryMock.mockResolvedValue({ data: {} })
+      const result = await fetchVariantsByIds(["variant-1"])
+      expect(result).toEqual([])
+    })
+
+    it("fetchProductsByIds returns [] when products is missing", async () => {
+      queryMock.mockResolvedValue({ data: {} })
+      const result = await fetchProductsByIds(["doc-1"])
+      expect(result).toEqual([])
+    })
+
+    it("fetchVariantsByIds rejects on Apollo failure", async () => {
+      queryMock.mockRejectedValue(new Error("up"))
+      await expect(fetchVariantsByIds(["variant-1"])).rejects.toThrow("up")
+    })
+
+    it("fetchProductsByIds rejects on Apollo failure", async () => {
+      queryMock.mockRejectedValue(new Error("up"))
+      await expect(fetchProductsByIds(["doc-1"])).rejects.toThrow("up")
     })
   })
 

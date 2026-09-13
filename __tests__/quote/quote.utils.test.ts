@@ -1,5 +1,10 @@
-import { getQuoteTotals } from "@/features/QuotePage/quote.utils"
+import {
+  buildProductSearchHref,
+  getQuoteTotals,
+  type LineChecks,
+} from "@/features/QuotePage/quote.utils"
 import type { CartLine } from "@/shared/types/global.types"
+import { cartLineKey } from "@/zustand/store/cart.store"
 
 const pricedLine = (overrides: Partial<CartLine> = {}): CartLine =>
   ({
@@ -71,5 +76,112 @@ describe("getQuoteTotals", () => {
 
     expect(totals.pieceCount).toBe(10)
     expect(totals.productCount).toBe(2)
+  })
+
+  it("one-arg call is unchanged when checks is omitted", () => {
+    const lines = [pricedLine(), variantLessLine()]
+    expect(getQuoteTotals(lines, undefined)).toEqual(getQuoteTotals(lines))
+  })
+
+  it("uses the current price over the snapshot for a priced check", () => {
+    const line = pricedLine({ unitPrice: 10, quantity: 2 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "priced", currentPrice: 15 },
+    }
+    const totals = getQuoteTotals([line], checks)
+    expect(totals.subtotal).toBe(30)
+  })
+
+  it("excludes a variant-gone line from the subtotal but keeps it in the counts", () => {
+    const line = pricedLine({ quantity: 3 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "variant-gone" },
+    }
+    const totals = getQuoteTotals([line], checks)
+    expect(totals.subtotal).toBe(0)
+    expect(totals.productCount).toBe(1)
+    expect(totals.pieceCount).toBe(3)
+  })
+
+  it("excludes a product-gone line from the subtotal but keeps it in the counts", () => {
+    const line = pricedLine({ quantity: 3 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "product-gone" },
+    }
+    const totals = getQuoteTotals([line], checks)
+    expect(totals.subtotal).toBe(0)
+    expect(totals.productCount).toBe(1)
+    expect(totals.pieceCount).toBe(3)
+  })
+
+  it("excludes a no-price line from the subtotal but keeps it in the counts", () => {
+    const line = pricedLine({ quantity: 4 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "no-price" },
+    }
+    const totals = getQuoteTotals([line], checks)
+    expect(totals.subtotal).toBe(0)
+    expect(totals.productCount).toBe(1)
+    expect(totals.pieceCount).toBe(4)
+  })
+
+  it("falls back to the snapshot price for a line with no check entry", () => {
+    const checked = pricedLine({
+      productDocumentId: "prod-1",
+      unitPrice: 10,
+      quantity: 1,
+    })
+    const unchecked = pricedLine({
+      productDocumentId: "prod-3",
+      variantDocumentId: "variant-3",
+      unitPrice: 7,
+      quantity: 1,
+    })
+    const checks: LineChecks = {
+      [cartLineKey(checked)]: { kind: "priced", currentPrice: 10 },
+    }
+    const totals = getQuoteTotals([checked, unchecked], checks)
+    expect(totals.subtotal).toBe(17)
+  })
+
+  it("compares prices in integer cents, not floats", () => {
+    const line = pricedLine({ unitPrice: 648.9, quantity: 1 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "priced", currentPrice: 648.9 },
+    }
+    const totals = getQuoteTotals([line], checks)
+    expect(totals.subtotal).toBeCloseTo(648.9, 10)
+  })
+})
+
+describe("buildProductSearchHref", () => {
+  it("keeps a fraction-and-quote product name whole, since / and \" are now legal", () => {
+    expect(buildProductSearchHref('1/2" Punta Bristol Cromado')).toBe(
+      "/?mode=name&q=1%2F2%22%20Punta%20Bristol%20Cromado&page=1",
+    )
+  })
+
+  it("keeps a degree-sign product name whole", () => {
+    expect(buildProductSearchHref("Broca AAV 135° Split Point")).toBe(
+      "/?mode=name&q=Broca%20AAV%20135%C2%B0%20Split%20Point&page=1",
+    )
+  })
+
+  it("keeps a mid-string quote product name whole", () => {
+    expect(
+      buildProductSearchHref('Dado Cuadro 1" Llanta Trasera Capuchon'),
+    ).toBe(
+      "/?mode=name&q=Dado%20Cuadro%201%22%20Llanta%20Trasera%20Capuchon&page=1",
+    )
+  })
+
+  it("returns null when nothing survives the strip", () => {
+    expect(buildProductSearchHref("***")).toBeNull()
+  })
+
+  it("takes the longest safe segment when a name contains truly unsafe characters", () => {
+    expect(buildProductSearchHref("Foo * Bar Baz")).toBe(
+      "/?mode=name&q=Bar%20Baz&page=1",
+    )
   })
 })

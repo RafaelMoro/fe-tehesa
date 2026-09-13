@@ -845,6 +845,23 @@ Awaiting human sign-off.
 
 ## Epic Completion Status
 
+**Updated 2026-09-13, after implementing Story 3** (`ai-planning/cart-quote-whatsapp/price-availability-revalidation.story-3.md`).
+
+### Story 3: Price And Availability Revalidation On `/cotizar` — Complete
+
+Implemented against the planning doc's 8 acceptance criteria — **grown from this epic section's original 4** during research/planning (AC 3 split into distinct variant-gone/product-gone states, AC 5 (ephemeral state) and AC 6 (boundary validation) made explicit, and AC 7/AC 8 added for the no-price fifth state and the search-allowlist fix `Buscar alternativa` depends on). Same pattern as Story 1's approved AC 6 divergence: counted as the current, superseding scope.
+
+- AC 1 (single batched round trip, no request on an empty cart) — `GET /api/catalog/revalidate` (`src/app/api/catalog/revalidate/route.ts`) batches `productVariants(filters: { documentId: { in } })` and `products(filters: { documentId: { in } })` into one envelope; `src/features/QuotePage/useQuoteRevalidation.ts` fires it once per mount, gated on hydration, never refired by a quantity edit. Verified live against Strapi (25/25 variant ids returned in one call, proving `pagination` wasn't dropped) and by `__tests__/quote/revalidation.test.tsx` (zero requests on an empty cart, exactly one on a seeded cart, ids deduped).
+- AC 2 (changed price: struck previous, `Total actual`, subtotal on current, integer-cents comparison) — `QuoteLineRow.tsx`'s priced-row extension. `revalidation.test.tsx` covers the struck price + sr-only "Precio anterior", the header swap, and the `648.9` vs `648.90` no-false-positive case.
+- AC 3 (distinct variant-gone/product-gone states, both excluded from the subtotal, neither auto-removed) — `QuoteLineRow.tsx`, precedence enforced (product-gone checked before variant-gone). `revalidation.test.tsx` covers both states, precedence, and that `Elegir otra medida` still opens the existing upgrade drawer.
+- AC 4 (failure never blocks: banner + `Reintentar`, snapshot prices, working controls) — the `role="alert"` banner in `QuotePage.tsx` plus the `precio sin confirmar` affix in `QuoteLineRow.tsx`. Verified live (`STRAPI_HOST` unset → `CAT_ENV_001` at the route, `/cotizar` still 200) and by tests (banner copy verbatim, `Reintentar` refires and clears on success, quantity/`Quitar` keep working while failed).
+- AC 5 (ephemeral state only, no persisted-schema change) — `useQuoteRevalidation` keeps checks in React state; `git diff --stat` for this story confirms `cart.store.ts` and `cart.constants.ts` are untouched.
+- AC 6 (id lists validated at the boundary, `CAT_*` envelope) — `CAT_VAL_007` + `parseDocumentIdList` in `src/app/api/catalog/_utils.ts`. Verified live for every failure cause (unsafe char, empty segment, trailing comma, over-length id, over-count list) plus the env guard.
+- AC 7 (variant with `pricing: null` → fifth state, stepper kept, only `Quitar`) — `QuoteLineRow.tsx`'s no-price branch. `revalidation.test.tsx` asserts the stepper stays functional, no other action renders, and the line is excluded from the subtotal while still counted.
+- AC 8 (`Buscar alternativa` reaches a filtered search) — widened `SEARCH_TERM_PATTERN` (now admits `"`, `/`, `°`, `#`) plus `buildProductSearchHref`. Verified live against the real product `1/2" Punta Bristol Cromado` (found via search, no redirect on `mode=name`) and by tests (correct `href`, no link when a name strips to nothing).
+
+Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (32 suites, 314 passed, 1 pre-existing unrelated skip), `pnpm build` all pass. Dev-server validation ran for all four phases against live Strapi data. Manual browser/assistive-tech QA (M1-M17 in the planning doc — live Strapi edits, real clicks, layout at 390px, screen reader) is deferred to the user per this workflow's rule against claiming unrun manual verification.
+
 **Updated 2026-07-31, after implementing Story 2** (`ai-planning/cart-quote-whatsapp/quote-page-line-review.story-2.md`).
 
 ### Story 1: Cart State, Persistence, And Add-To-Cart Wiring — Complete
@@ -882,20 +899,20 @@ Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (30 suites, 256
 |---|---|---|---|
 | Story 1: Cart state, persistence, add-to-cart wiring | Complete | See above | None |
 | Story 2: Quote page (`/cotizar`) — line review and subtotal | Complete | See above | None |
-| Story 3: Price/availability revalidation on `/cotizar` | Not started | — | Depends on Story 2 existing (the route to revalidate on load) — now unblocked |
+| Story 3: Price/availability revalidation on `/cotizar` | Complete | See above | Manual browser/live-Strapi/assistive-tech QA (M1-M17) deferred to the user |
 | Spike 4S: WhatsApp delivery mechanisms | Not started | — | Timeboxed research spike; gates Story 4 |
 | Story 4: Contact form and the WhatsApp `Cotizar` CTA | Not started | — | Gated on Spike 4S; depends on Story 2/3 for line data to build the message |
 | Story 5: Analytics contract extension | Not started | — | Documentation-only; can run independently once trigger sites are final |
 
 ### Overall Completion
 
-**13 / 33** acceptance criteria verified complete (Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, plus Story 2's 6 ACs; Stories 3-5 contribute 0 of their 19 remaining combined ACs) ≈ **39%**.
+**21 / 37** acceptance criteria verified complete (Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, and Story 3's 8 ACs — grown from this section's original 4 during research/planning, so the epic total grows by 4 to 37; Stories 4-5 contribute 0 of their remaining combined ACs) ≈ **57%**.
 
-The epic is not complete — Stories 3 through 5 and Spike 4S remain.
+The epic is not complete — Stories 4 and 5 and Spike 4S remain.
 
 ### Next Steps
 
 1. Run Spike 4S (WhatsApp delivery mechanism pricing) — it gates Story 4's shape and does not depend on Story 3.
-2. Plan and implement Story 3 (revalidation) now that Story 2's route exists.
-3. Plan and implement Story 4 (contact form + WhatsApp CTA) once Spike 4S recommends a mechanism and Story 3 has settled the revalidated-price shape it builds the message from.
+2. Complete Story 3's manual QA (M1-M17: live Strapi edits, real clicks, 390px layout in light/dark, screen reader) before merge.
+3. Plan and implement Story 4 (contact form + WhatsApp CTA) once Spike 4S recommends a mechanism — Story 3 has now settled the revalidated-price shape it builds the message from.
 4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 once Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist).

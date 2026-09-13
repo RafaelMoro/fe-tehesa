@@ -127,12 +127,18 @@ export const ProductCard = ({
             </div>
           ))}
       </Card.Content>
-      <Card.Footer className="flex flex-col gap-2">
+      <Card.Footer
+        className={
+          isSingleVariant
+            ? "flex flex-col items-center gap-2"
+            : "flex justify-between gap-3"
+        }
+      >
         {isSingleVariant ? (
           <>
             <Button
-              fullWidth
               variant="primary"
+              className="w-1/2"
               isDisabled={isAdding}
               onPress={handleAddSingleVariant}
             >
@@ -159,7 +165,7 @@ export const ProductCard = ({
             <Button
               fullWidth
               variant="tertiary"
-              className="min-h-11 border-0 bg-transparent shadow-none hover:bg-transparent"
+              className="min-h-11 min-w-0 border-0 bg-transparent shadow-none hover:bg-transparent"
               onPress={handleAddProductLine}
             >
               Agregar y elegir después

@@ -5,10 +5,14 @@ import createApolloClient from "@/app/apollo-client"
 import type {
   FetchBrandsResponse,
   FetchCategoriesResponse,
+  FetchProductsByIdsResponse,
   FetchProductsResponse,
   FetchSingleProductResponse,
+  FetchVariantsByIdsResponse,
   Product,
   ProductVariant,
+  RevalidatedProduct,
+  RevalidatedVariant,
   TaxonomyItem,
 } from "../types/global.types"
 import {
@@ -17,6 +21,7 @@ import {
   THEME_COOKIE_KEY,
   type AppTheme,
 } from "../constants/global.constants"
+import { REVALIDATE_MAX_IDS } from "../constants/catalog.constants"
 import {
   GET_BRANDS,
   GET_CATEGORIES,
@@ -24,7 +29,9 @@ import {
   GET_PRODUCTS,
   GET_PRODUCTS_BY_BRAND,
   GET_PRODUCTS_BY_CATEGORY,
+  GET_PRODUCTS_BY_IDS,
   GET_PRODUCTS_BY_NAME,
+  GET_VARIANTS_BY_IDS,
 } from "../queries/global.queries"
 
 /**
@@ -172,6 +179,56 @@ export const fetchProductVariants = async ({
     },
   })
   return res?.data?.product?.product_variants ?? []
+}
+
+export const fetchVariantsByIds = async (
+  ids: string[],
+): Promise<RevalidatedVariant[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
+  if (ids.length === 0) {
+    return []
+  }
+  const client = createApolloClient()
+  const res = await client.query<FetchVariantsByIdsResponse>({
+    query: GET_VARIANTS_BY_IDS,
+    variables: {
+      filters: {
+        documentId: {
+          in: ids,
+        },
+      },
+      pagination: {
+        page: 1,
+        pageSize: REVALIDATE_MAX_IDS,
+      },
+    },
+  })
+  return res?.data?.productVariants ?? []
+}
+
+export const fetchProductsByIds = async (
+  ids: string[],
+): Promise<RevalidatedProduct[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
+  if (ids.length === 0) {
+    return []
+  }
+  const client = createApolloClient()
+  const res = await client.query<FetchProductsByIdsResponse>({
+    query: GET_PRODUCTS_BY_IDS,
+    variables: {
+      filters: {
+        documentId: {
+          in: ids,
+        },
+      },
+      pagination: {
+        page: 1,
+        pageSize: REVALIDATE_MAX_IDS,
+      },
+    },
+  })
+  return res?.data?.products ?? []
 }
 
 export const fetchCategories = async (): Promise<TaxonomyItem[]> => {

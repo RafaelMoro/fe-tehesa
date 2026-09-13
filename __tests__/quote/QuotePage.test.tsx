@@ -33,8 +33,47 @@ const seedCart = (lines: CartLine[]) => {
   )
 }
 
+const originalFetch = globalThis.fetch
+const originalResizeObserver = globalThis.ResizeObserver
+
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+const jsonResponse = <T,>(body: CatalogEnvelope<T>) =>
+  ({ json: async () => body }) as Response
+
+const mockFetch = () => {
+  const fetchMock = jest.fn<Promise<Response>, Parameters<typeof fetch>>()
+  globalThis.fetch = fetchMock as typeof fetch
+  return fetchMock
+}
+
+let fetchMock: ReturnType<typeof mockFetch>
+
 beforeEach(() => {
   localStorage.clear()
+  globalThis.ResizeObserver =
+    MockResizeObserver as unknown as typeof ResizeObserver
+  fetchMock = mockFetch()
+  fetchMock.mockImplementation(async (input) => {
+    const url = typeof input === "string" ? input : String(input)
+    if (url.includes("/api/catalog/revalidate")) {
+      return jsonResponse({
+        success: true,
+        data: { variants: [], products: [] },
+      })
+    }
+    return jsonResponse({ success: true, data: [] })
+  })
+})
+
+afterEach(() => {
+  globalThis.fetch = originalFetch
+  globalThis.ResizeObserver = originalResizeObserver
+  toast.clear()
 })
 
 describe("QuotePage hydration gate", () => {
@@ -70,6 +109,23 @@ describe("QuotePage hydration gate", () => {
 describe("QuotePage line list", () => {
   it("updates the subtotal when a quantity changes", async () => {
     const user = userEvent.setup()
+    // Matches the seeded lines' prices so revalidation resolves both as
+    // "priced" with the same currentPrice, leaving the subtotal unchanged.
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: {
+          variants: [
+            { documentId: "variant-1", diameter: "1/4 in", pricing: { price: 10 } },
+            { documentId: "variant-2", diameter: "1/2 in", pricing: { price: 5 } },
+          ],
+          products: [
+            { documentId: "prod-1", name: "Tornillo" },
+            { documentId: "prod-2", name: "Tuerca" },
+          ],
+        },
+      }),
+    )
     seedCart([
       variantLine({
         productDocumentId: "prod-1",
@@ -104,6 +160,24 @@ describe("QuotePage line list", () => {
 
   it("removes one line via Quitar and keeps the other", async () => {
     const user = userEvent.setup()
+    // Matches both seeded lines so checks resolve as "priced" and the row
+    // shape stays stable across the click (an unrelated product-gone
+    // re-render mid-click can shift the Quitar button and cancel the press).
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: {
+          variants: [
+            { documentId: "variant-1", diameter: "1/4 in", pricing: { price: 10 } },
+            { documentId: "variant-2", diameter: "1/2 in", pricing: { price: 10 } },
+          ],
+          products: [
+            { documentId: "prod-1", name: "Tornillo" },
+            { documentId: "prod-2", name: "Tuerca" },
+          ],
+        },
+      }),
+    )
     seedCart([
       variantLine({ productDocumentId: "prod-1", productName: "Tornillo" }),
       variantLine({
@@ -237,38 +311,8 @@ describe("Vaciar lista", () => {
 })
 
 describe("QuotePage variant upgrade", () => {
-  const originalFetch = globalThis.fetch
-  const originalResizeObserver = globalThis.ResizeObserver
-
-  class MockResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-
-  const jsonResponse = <T,>(body: CatalogEnvelope<T>) =>
-    ({ json: async () => body }) as Response
-
-  const mockFetch = () => {
-    const fetchMock = jest.fn<Promise<Response>, Parameters<typeof fetch>>()
-    globalThis.fetch = fetchMock as typeof fetch
-    return fetchMock
-  }
-
-  beforeEach(() => {
-    globalThis.ResizeObserver =
-      MockResizeObserver as unknown as typeof ResizeObserver
-  })
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch
-    globalThis.ResizeObserver = originalResizeObserver
-    toast.clear()
-  })
-
   it("replaces the variant-less line in place at the same position", async () => {
     const user = userEvent.setup()
-    const fetchMock = mockFetch()
     fetchMock.mockResolvedValue(
       jsonResponse({
         success: true,
@@ -313,7 +357,6 @@ describe("QuotePage variant upgrade", () => {
 
   it("collapses a colliding upgrade into the priced line and shows the merge toast", async () => {
     const user = userEvent.setup()
-    const fetchMock = mockFetch()
     fetchMock.mockResolvedValue(
       jsonResponse({
         success: true,

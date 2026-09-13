@@ -1,4 +1,5 @@
 ---
+name: implement
 description: Execute an approved Tehesa planning doc phase by phase and report results.
 ---
 
@@ -44,15 +45,20 @@ For each phase in the plan:
 
 1. Make the file changes specified in the phase's **Changes Required** section. Stay faithful to the plan; fill implementation details pragmatically.
 2. Run the phase's automated success criteria, using the narrowest useful commands from the plan.
-3. Fix failures before moving to the next phase.
-4. Update any implementation checklist in the planning doc if the plan includes one.
-5. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Do not auto-continue across phase boundaries even if the plan does not say to pause. The user must say "continue", "go", or otherwise approve the next phase. While waiting, summarize the completed phase (files touched, what was built, what was verified) and ask for sign-off.
-6. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
+3. Run the phase's **dev-server validation** yourself (see Step 5). Do not hand this to the user.
+4. Fix failures before moving to the next phase.
+5. Update any implementation checklist in the planning doc if the plan includes one.
+6. **Update the plan's AC Validation Summary.** For every AC row that names this phase, set Status from the dev-server validation you just ran: `Validated` (check passed), `Failed` (check ran and did not pass), or `Cannot validate` (check could not run, e.g. missing Strapi env, manual-only; Notes must say why). Never leave a row for this phase as `Not validated`.
+   - If any row is `Failed`: stop before asking for sign-off. Tell the user which AC failed, the exact check and output, your diagnosis, and the action you propose (fix in this phase, adjust the plan, or defer with a recorded reason). Do not pick one yourself; wait for the user's decision, then apply it and re-run the check.
+   - If any row is `Cannot validate`: report it in the phase summary with the reason and what the user must verify manually instead.
+7. **Kill any dev server you started before ending the phase.** Never leave it running while waiting for sign-off.
+8. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Always. Do not auto-continue across phase boundaries even if the plan does not say to pause. While waiting, summarize the completed phase (files touched, what was built, what was verified, AC Validation Summary rows touched and their status) and ask for sign-off. The only sign-off is `cnp`: **commit** the phase's changes (one commit scoped to the phase, conventional message), then start the next phase. Anything else (including "continue" or "go") is not sign-off; ask.
+9. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
     - Stop and obtain user approval before making the change. Do not silently expand the scope.
     - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
     - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
     - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
-7. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
+10. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
 
 ## Step 4 - Apply repo conventions while implementing
 
@@ -82,7 +88,14 @@ Follow the planning doc's verification section and use only real commands:
 - `pnpm lint` for lint verification.
 - `pnpm build` for full production verification when server/client integration, routing, or data fetching changed.
 - `pnpm test -- <relative test path>` for targeted test work, then `pnpm test` for the full suite, when the plan includes tests. No coverage threshold is enforced.
-- When UI behavior, theme persistence, or route-handler behavior changed, check whether the dev server is already running. Never start it yourself. If it is running, ask the user to manually validate the affected behavior; otherwise ask them to start it and validate it manually.
+- **Dev-server validation (every phase):** start the app and check the change yourself before asking for sign-off.
+  1. Check whether something already listens on port 3000 (`ss -ltn | grep 3000`). If so, reuse it; otherwise start `pnpm dev` in the background and wait for the "Ready" line in its log.
+  2. Hit the routes the plan's dev-server validation section lists with `curl -s -o /dev/null -w '%{http_code}'` for status and `curl -s ... | grep` for expected markup/text or JSON envelope fields. Cover invalid input for API routes.
+  3. Read the dev-server log for errors, unhandled rejections, and hydration warnings.
+  4. Stop the server you started (kill the background process); leave one you did not start alone.
+  5. Report the exact commands run and results in the phase summary. A failed check blocks the phase.
+  `.env.local` must provide `STRAPI_HOST` and `STRAPI_API_TOKEN`; if they are missing, report that Strapi-backed routes could not be validated instead of skipping silently.
+- **Manual (user) validation:** only for what `curl` cannot exercise: clicks, drawers, localStorage state, mobile/desktop layout. Give the user a short checklist after the dev-server validation passes.
 
 If verification fails, fix the implementation or adjust the plan only with user approval. Do not weaken checks, ignore failures, or claim unrun verification passed.
 
@@ -94,7 +107,9 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm lint`
   - `pnpm test` when the change touched tests
   - `pnpm build` when production behavior changed
+  - Dev-server validation of every route the story touches, end to end
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
+- Confirm no AC Validation Summary row is still `Not validated`. Every `Failed` row must have a user-decided action recorded in Notes; every `Cannot validate` row must name what covers it instead.
 - Review `docs/improvement.md` against the completed plan. Update it when Step 1 identified an applicable entry; otherwise state that no update was needed in the final report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
 - When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` only after all planned work and verification pass. Update the epic's existing completion-status section, or append `## Epic Completion Status` when absent. Include:
@@ -119,22 +134,23 @@ End the turn with:
 
 1. Files created / modified / deleted.
 2. Phase status and what was completed.
-3. Typecheck / build / lint / manual verification status with exact commands run.
-4. Whether `ai-skills/REPO_CONTEXT.md` was updated and why.
-5. Deferred follow-ups.
-6. Epic completion update, when applicable: percentage, story overview, and next steps.
-7. Out-of-scope implementation changes recorded, when applicable.
-8. Whether `docs/improvement.md` was updated and why.
-9. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
+3. AC Validation Summary: count of Validated / Failed / Cannot validate rows, and the user-decided action for each Failed row.
+4. Typecheck / build / lint / dev-server / manual verification status with exact commands run.
+5. Whether `ai-skills/REPO_CONTEXT.md` was updated and why.
+6. Deferred follow-ups.
+7. Epic completion update, when applicable: percentage, story overview, and next steps.
+8. Out-of-scope implementation changes recorded, when applicable.
+9. Whether `docs/improvement.md` was updated and why.
+10. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
 ## Don'ts
 
 - Do not start implementation without an approved planning doc unless the user explicitly bypasses the workflow.
 - Do not skip planned verification.
-- Do not push, force-push, commit, or open a PR without explicit approval.
+- Do not push, force-push, commit, or open a PR without explicit approval. At a phase boundary, `cnp` is the only approval to commit and continue.
 - Do not add features beyond the plan. If something seems missing, stop and ask.
 - Do not remove pre-existing console statements unless planned.
 - Do not edit `CHANGELOG.md` or package version unless explicitly asked.
 - Do not assume TanStack Query, Flowbite, auth/session cookies, shipping workflows, finance domains, or external backend repository access; those are not present in this repo. Jest and Testing Library are present.
 - Do not run `pnpm install` or package manager changes unless the plan intentionally changes dependencies.
-- Do not launch the dev server. Ask the user to perform manual validation when it is needed.
+- Do not skip dev-server validation or claim it passed without running it. Do not leave a dev server you started running after the phase.
