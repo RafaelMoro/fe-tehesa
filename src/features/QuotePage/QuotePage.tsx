@@ -15,6 +15,7 @@ import type {
 } from "@/shared/types/global.types"
 import { QuoteLineRow } from "./QuoteLineRow"
 import { getQuoteTotals } from "./quote.utils"
+import { useQuoteRevalidation } from "./useQuoteRevalidation"
 
 interface QuoteHeadingProps {
   counts?: { productCount: number; pieceCount: number }
@@ -46,6 +47,8 @@ export const QuotePage = () => {
   const removeLine = useCartStore((store) => store.removeLine)
   const clearLines = useCartStore((store) => store.clearLines)
   const upgradeLine = useCartStore((store) => store.upgradeLine)
+
+  const { pageStatus, checks, retry } = useQuoteRevalidation(lines, mounted)
 
   const listRegionRef = useRef<HTMLDivElement>(null)
   const shouldFocusRegionRef = useRef(false)
@@ -84,7 +87,7 @@ export const QuotePage = () => {
       }
     : null
 
-  const { subtotal, productCount, pieceCount } = getQuoteTotals(lines)
+  const { subtotal, productCount, pieceCount } = getQuoteTotals(lines, checks)
   const formattedSubtotal = formatNumberToCurrency(subtotal)
 
   const handleRemove = (key: string) => {
@@ -159,6 +162,32 @@ export const QuotePage = () => {
   return (
     <>
       <QuoteHeading counts={{ productCount, pieceCount }} />
+      {pageStatus === "checking" && (
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-lg border border-default-200 bg-default-50 p-4 text-sm"
+        >
+          <p className="font-medium">Comprobando precios…</p>
+          <p className="text-muted">Puedes seguir ajustando cantidades.</p>
+        </div>
+      )}
+      {pageStatus === "failed" && (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-danger-200 bg-danger-50 p-4 text-sm sm:flex-row sm:items-center sm:justify-between dark:bg-danger-950/20"
+        >
+          <div>
+            <p className="font-medium">No pudimos comprobar los precios.</p>
+            <p className="text-muted">
+              Mostramos los precios guardados. Te los confirmaremos al
+              responder tu solicitud; puedes continuar.
+            </p>
+          </div>
+          <Button variant="secondary" onPress={retry}>
+            Reintentar
+          </Button>
+        </div>
+      )}
       <p role="status" className="sr-only">
         {`${productCount} productos · ${pieceCount} piezas. Subtotal ${formattedSubtotal}`}
       </p>
