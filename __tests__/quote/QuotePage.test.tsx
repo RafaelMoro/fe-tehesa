@@ -160,6 +160,24 @@ describe("QuotePage line list", () => {
 
   it("removes one line via Quitar and keeps the other", async () => {
     const user = userEvent.setup()
+    // Matches both seeded lines so checks resolve as "priced" and the row
+    // shape stays stable across the click (an unrelated product-gone
+    // re-render mid-click can shift the Quitar button and cancel the press).
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: {
+          variants: [
+            { documentId: "variant-1", diameter: "1/4 in", pricing: { price: 10 } },
+            { documentId: "variant-2", diameter: "1/2 in", pricing: { price: 10 } },
+          ],
+          products: [
+            { documentId: "prod-1", name: "Tornillo" },
+            { documentId: "prod-2", name: "Tuerca" },
+          ],
+        },
+      }),
+    )
     seedCart([
       variantLine({ productDocumentId: "prod-1", productName: "Tornillo" }),
       variantLine({

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type FocusEventHandler } from "react"
 import Link from "next/link"
 import { AlertDialog, Button, toast, useOverlayState } from "@heroui/react"
 
@@ -66,6 +66,31 @@ export const QuotePage = () => {
     shouldFocusRegionRef.current = true
     setFocusRequestId((id) => id + 1)
   }
+
+  // A stepper removed by an incoming check takes its focused element with it,
+  // and the browser resets focus to <body> before this effect can run — so
+  // "was focus in the region" is tracked live via focus/blur, not read after
+  // the fact from document.activeElement.
+  const focusWithinRegionRef = useRef(false)
+  const handleRegionFocusCapture = () => {
+    focusWithinRegionRef.current = true
+  }
+  const handleRegionBlurCapture: FocusEventHandler<HTMLDivElement> = (
+    event,
+  ) => {
+    if (!listRegionRef.current?.contains(event.relatedTarget as Node | null)) {
+      focusWithinRegionRef.current = false
+    }
+  }
+
+  useEffect(() => {
+    if (pageStatus !== "done") {
+      return
+    }
+    if (focusWithinRegionRef.current) {
+      requestRegionFocus()
+    }
+  }, [pageStatus, checks])
 
   const [upgradeKey, setUpgradeKey] = useState<string | null>(null)
   const upgradeState = useOverlayState({
@@ -191,7 +216,12 @@ export const QuotePage = () => {
       <p role="status" className="sr-only">
         {`${productCount} productos · ${pieceCount} piezas. Subtotal ${formattedSubtotal}`}
       </p>
-      <div ref={listRegionRef} tabIndex={-1}>
+      <div
+        ref={listRegionRef}
+        tabIndex={-1}
+        onFocusCapture={handleRegionFocusCapture}
+        onBlurCapture={handleRegionBlurCapture}
+      >
         <ul className="flex flex-col gap-3">
           {lines.map((line) => {
             const key = cartLineKey(line)
@@ -199,6 +229,8 @@ export const QuotePage = () => {
               <QuoteLineRow
                 key={key}
                 line={line}
+                check={checks[key]}
+                pageStatus={pageStatus}
                 onQuantityChange={(quantity) => setLineQuantity(key, quantity)}
                 onRemove={() => handleRemove(key)}
                 onChooseVariant={() => handleChooseVariant(key)}
