@@ -100,6 +100,33 @@ export const GET_PRODUCTS_BY_NAME = gql`
   }
 `
 
+export const GET_VARIANTS_BY_IDS = gql`
+  query GetVariantsByIds(
+    $filters: ProductVariantFiltersInput
+    $pagination: PaginationArg
+  ) {
+    productVariants(filters: $filters, pagination: $pagination) {
+      documentId
+      diameter
+      pricing {
+        price
+      }
+    }
+  }
+`
+
+export const GET_PRODUCTS_BY_IDS = gql`
+  query GetProductsByIds(
+    $filters: ProductFiltersInput
+    $pagination: PaginationArg
+  ) {
+    products(filters: $filters, pagination: $pagination) {
+      documentId
+      name
+    }
+  }
+`
+
 export const GET_CATEGORIES = gql`
   query GetCategories {
     categories {

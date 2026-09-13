@@ -69,6 +69,32 @@ export type ProductVariant = {
   }
 }
 
+export type RevalidatedVariant = {
+  documentId: string
+  diameter: string
+  pricing: {
+    price: number
+  } | null
+}
+
+export type RevalidatedProduct = {
+  documentId: string
+  name: string
+}
+
+export type RevalidateData = {
+  variants: RevalidatedVariant[]
+  products: RevalidatedProduct[]
+}
+
+export interface FetchVariantsByIdsResponse {
+  productVariants: RevalidatedVariant[]
+}
+
+export interface FetchProductsByIdsResponse {
+  products: RevalidatedProduct[]
+}
+
 export type ProductVariantUI = {
   documentId: string
   internalId?: string

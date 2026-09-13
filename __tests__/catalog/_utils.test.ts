@@ -15,12 +15,18 @@ import {
   MSG_CAT_VAL_003,
   MSG_CAT_VAL_004,
   MSG_CAT_VAL_005,
+  CAT_VAL_007,
   MSG_CAT_VAL_006_EMPTY,
   MSG_CAT_VAL_006_LENGTH,
   MSG_CAT_VAL_006_PATTERN,
+  MSG_CAT_VAL_007_COUNT,
+  MSG_CAT_VAL_007_EMPTY,
+  MSG_CAT_VAL_007_LENGTH,
+  MSG_CAT_VAL_007_PATTERN,
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
   PRODUCT_PAGE_SIZE,
+  REVALIDATE_MAX_IDS,
   SEARCH_TERM_MAX_LENGTH,
   VARIANT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
@@ -364,6 +370,84 @@ describe("catalog _utils", () => {
       expect(searchTerm).toEqual({
         ok: false,
         error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN },
+      })
+    })
+  })
+
+  describe("readValidatedParams - variantIds / productIds (parseDocumentIdList)", () => {
+    it("returns [] when the param is absent", () => {
+      const { variantIds } = readValidatedParams(requestWith(""))
+      expect(variantIds).toEqual({ ok: true, value: [] })
+    })
+
+    it("returns [] when the param is blank", () => {
+      const { productIds } = readValidatedParams(requestWith("?productIds="))
+      expect(productIds).toEqual({ ok: true, value: [] })
+    })
+
+    it("returns ids in order, not deduped", () => {
+      const { variantIds } = readValidatedParams(
+        requestWith("?variantIds=a,b,a"),
+      )
+      expect(variantIds).toEqual({ ok: true, value: ["a", "b", "a"] })
+    })
+
+    it("rejects an empty segment (double comma) with CAT_VAL_007 empty message", () => {
+      const { variantIds } = readValidatedParams(
+        requestWith("?variantIds=a,,b"),
+      )
+      expect(variantIds).toEqual({
+        ok: false,
+        error: { code: CAT_VAL_007, message: MSG_CAT_VAL_007_EMPTY },
+      })
+    })
+
+    it("rejects a trailing comma with CAT_VAL_007 empty message", () => {
+      const { variantIds } = readValidatedParams(requestWith("?variantIds=a,"))
+      expect(variantIds).toEqual({
+        ok: false,
+        error: { code: CAT_VAL_007, message: MSG_CAT_VAL_007_EMPTY },
+      })
+    })
+
+    it("rejects a list over REVALIDATE_MAX_IDS with the count message", () => {
+      const ids = Array.from(
+        { length: REVALIDATE_MAX_IDS + 1 },
+        (_, index) => `id${index}`,
+      ).join(",")
+      const { productIds } = readValidatedParams(
+        requestWith(`?productIds=${ids}`),
+      )
+      expect(productIds).toEqual({
+        ok: false,
+        error: {
+          code: CAT_VAL_007,
+          message: MSG_CAT_VAL_007_COUNT(
+            REVALIDATE_MAX_IDS,
+            REVALIDATE_MAX_IDS + 1,
+          ),
+        },
+      })
+    })
+
+    it("rejects an id with unsafe characters using the pattern message", () => {
+      const { variantIds } = readValidatedParams(
+        requestWith("?variantIds=bad!id"),
+      )
+      expect(variantIds).toEqual({
+        ok: false,
+        error: { code: CAT_VAL_007, message: MSG_CAT_VAL_007_PATTERN },
+      })
+    })
+
+    it("rejects an id over the max length using the length message", () => {
+      const tooLong = "a".repeat(31)
+      const { variantIds } = readValidatedParams(
+        requestWith(`?variantIds=${tooLong}`),
+      )
+      expect(variantIds).toEqual({
+        ok: false,
+        error: { code: CAT_VAL_007, message: MSG_CAT_VAL_007_LENGTH },
       })
     })
   })

@@ -8,6 +8,7 @@ import {
   CAT_VAL_004,
   CAT_VAL_005,
   CAT_VAL_006,
+  CAT_VAL_007,
   DOCUMENT_ID_MAX_LENGTH,
   DOCUMENT_ID_PATTERN,
   MSG_CAT_ENV_001,
@@ -19,9 +20,14 @@ import {
   MSG_CAT_VAL_006_EMPTY,
   MSG_CAT_VAL_006_LENGTH,
   MSG_CAT_VAL_006_PATTERN,
+  MSG_CAT_VAL_007_COUNT,
+  MSG_CAT_VAL_007_EMPTY,
+  MSG_CAT_VAL_007_LENGTH,
+  MSG_CAT_VAL_007_PATTERN,
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
   PRODUCT_PAGE_SIZE,
+  REVALIDATE_MAX_IDS,
   SEARCH_TERM_MAX_LENGTH,
   SEARCH_TERM_PATTERN,
   VARIANT_PAGE_SIZE,
@@ -35,6 +41,7 @@ export type CatalogErrorCode =
   | typeof CAT_VAL_004
   | typeof CAT_VAL_005
   | typeof CAT_VAL_006
+  | typeof CAT_VAL_007
   | "CAT_NF_001"
   | "CAT_NF_002"
   | "CAT_NF_003"
@@ -292,6 +299,60 @@ const parseSearchTerm = (
   }
 }
 
+const parseDocumentIdList = (
+  raw: string | null,
+): { ok: true; value: string[] } | { ok: false; error: CatalogError } => {
+  if (raw === null || raw.trim() === "") {
+    return {
+      ok: true,
+      value: [],
+    }
+  }
+  const segments = raw.split(",")
+  if (segments.some((segment) => segment.length === 0)) {
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_007,
+        message: MSG_CAT_VAL_007_EMPTY,
+      },
+    }
+  }
+  if (segments.length > REVALIDATE_MAX_IDS) {
+    return {
+      ok: false,
+      error: {
+        code: CAT_VAL_007,
+        message: MSG_CAT_VAL_007_COUNT(REVALIDATE_MAX_IDS, segments.length),
+      },
+    }
+  }
+  for (const segment of segments) {
+    if (!DOCUMENT_ID_PATTERN.test(segment)) {
+      return {
+        ok: false,
+        error: {
+          code: CAT_VAL_007,
+          message: MSG_CAT_VAL_007_PATTERN,
+        },
+      }
+    }
+    if (segment.length > DOCUMENT_ID_MAX_LENGTH) {
+      return {
+        ok: false,
+        error: {
+          code: CAT_VAL_007,
+          message: MSG_CAT_VAL_007_LENGTH,
+        },
+      }
+    }
+  }
+  return {
+    ok: true,
+    value: segments,
+  }
+}
+
 export const readValidatedParams = (request: Request) => {
   const url = new URL(request.url)
   const params = url.searchParams
@@ -318,6 +379,8 @@ export const readValidatedParams = (request: Request) => {
   )
   const documentId = parseDocumentId(params.get("documentId"))
   const searchTerm = parseSearchTerm(params.get("q"))
+  const variantIds = parseDocumentIdList(params.get("variantIds"))
+  const productIds = parseDocumentIdList(params.get("productIds"))
 
   return {
     page,
@@ -328,5 +391,7 @@ export const readValidatedParams = (request: Request) => {
     brandName,
     documentId,
     searchTerm,
+    variantIds,
+    productIds,
   }
 }

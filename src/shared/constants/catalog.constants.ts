@@ -1,3 +1,5 @@
+import { CART_MAX_LINES } from "@/shared/constants/cart.constants"
+
 export const CAT_ENV_001 = "CAT_ENV_001"
 export const CAT_VAL_001 = "CAT_VAL_001"
 export const CAT_VAL_002 = "CAT_VAL_002"
@@ -5,6 +7,7 @@ export const CAT_VAL_003 = "CAT_VAL_003"
 export const CAT_VAL_004 = "CAT_VAL_004"
 export const CAT_VAL_005 = "CAT_VAL_005"
 export const CAT_VAL_006 = "CAT_VAL_006"
+export const CAT_VAL_007 = "CAT_VAL_007"
 export const CAT_NF_001 = "CAT_NF_001"
 export const CAT_NF_002 = "CAT_NF_002"
 export const CAT_NF_003 = "CAT_NF_003"
@@ -21,6 +24,11 @@ export const MSG_CAT_VAL_006 = "Invalid search term"
 export const MSG_CAT_VAL_006_EMPTY = "Invalid search term: empty"
 export const MSG_CAT_VAL_006_LENGTH = "Invalid search term: over length"
 export const MSG_CAT_VAL_006_PATTERN = "Invalid search term: unsafe characters"
+export const MSG_CAT_VAL_007_PATTERN = "Invalid id list: id contains unsafe characters"
+export const MSG_CAT_VAL_007_LENGTH = "Invalid id list: id over max length"
+export const MSG_CAT_VAL_007_EMPTY = "Invalid id list: empty segment"
+export const MSG_CAT_VAL_007_COUNT = (max: number, got: number) =>
+  `Invalid id list: ${got} ids, max ${max}`
 export const MSG_CAT_NF_001 = "Category not found"
 export const MSG_CAT_NF_002 = "Brand not found"
 export const MSG_CAT_NF_003 = "Product not found"
@@ -37,3 +45,4 @@ export const DOCUMENT_ID_MAX_LENGTH = 30
 export const DOCUMENT_ID_PATTERN = /^[A-Za-z0-9_-]+$/
 export const SEARCH_TERM_MAX_LENGTH = 100
 export const SEARCH_TERM_PATTERN = /^[\p{L}\p{N}\s\-_.,&()]+$/u
+export const REVALIDATE_MAX_IDS = CART_MAX_LINES

@@ -7,6 +7,7 @@ const SPANISH_COPY: Record<string, string> = {
   CAT_VAL_004: "Marca inválida.",
   CAT_VAL_005: "Producto inválido.",
   CAT_VAL_006: "Revisa el texto de búsqueda e inténtalo de nuevo.",
+  CAT_VAL_007: "No pudimos comprobar tu lista. Vuelve a cargar la página.",
   CAT_NF_001: "No se encontró la categoría seleccionada.",
   CAT_NF_002: "No se encontró la marca seleccionada.",
   CAT_NF_003: "No se encontró el producto.",
