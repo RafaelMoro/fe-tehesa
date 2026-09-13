@@ -2,7 +2,7 @@
 
 **Source research:** `ai-research/epics/cart-quote-whatsapp.epic.md`, section "Spike 4S" (lines 202-234), plus Decision 3, WhatsApp I-IV, and Strapi Contract IV for context.
 **Research status:** the epic header still reads *"Awaiting human sign-off"*, but Stories 1-3 were planned and implemented from it and every epic-level open question is answered (2026-07-31). Planning proceeded on that basis. **Confirm sign-off before `/implement`.**
-**Date:** 2026-09-13
+**Date:** 2026-09-13 · **Open questions answered by the user:** 2026-09-13 (volume, seller setup, multi-part acceptance)
 **Timebox:** one working day. Output is prose appended to the epic — **no source, test, config, or dependency changes**.
 
 ## Why This Plan Looks Different
@@ -15,8 +15,9 @@ This is a research spike, not a feature. There is no code, no route, no dev serv
 
 ## Assumptions
 
-- **Quote volume brackets: 50 and 500 quotes/month**, the epic's own suggested brackets. The epic says "ask the business for an estimate"; if the user supplies a real figure before `/implement`, price that too — but do not block on it.
-- **The seller's current setup is unknown** (whether `222 441 7330` runs in the WhatsApp Business app today). Phase 1 asks the user once; if unanswered, the spike records both branches and the recommendation holds under either.
+- **Quote volume: fewer than 100 quotes/month** (user, 2026-09-13). Price the table at **50 and 100**; the epic's 500 bracket is dropped as unrealistic.
+- **The seller answers customers on `222 441 7330` from the WhatsApp Business app today** (user, 2026-09-13). Phase 1 records this as fact; the "both branches" fallback is not needed. Number exclusivity (Phase 3 item 1) is therefore a live operational cost, not a hypothetical.
+- **The seller accepts 2-3 sequential messages for a large quote** (user, 2026-09-13). Closes the WhatsApp II/III sub-question; Story 4's batched sends are acceptable to the reader.
 - The spike compares mechanisms **for this flow only**: a buyer on `/cotizar` handing a quote to one Tehesa seller. It does not price a general messaging platform.
 - Figures known from memory (per-message pricing model since mid-2025, free service conversations, On-Premises sunset) are **hypotheses to verify at source**, never citations. The plan names them only so the spike knows what to look for.
 
@@ -27,7 +28,7 @@ Derived from the spike section, which has no numbered ACs. Each traces to a sent
 1. **Direction fit is answered first** (line 208): whether a programmatic API can deliver a *buyer's* quote to the *seller* without an opt-in the buyer has not given, and what each viable framing changes about who is talking to whom. If the answer is "no viable framing", the cost questions are recorded as moot and the spike stops early.
 2. **Each of the five mechanisms** in the table (lines 212-218) is assessed against its "What to establish" column: click-to-chat baseline, WhatsApp Business app (seller side), Cloud API (Mexico rates, categories, free tier, template approval), BSPs (markup + platform fee vs what they add), On-Premises API (sunset status, dismissed in one line if dead).
 3. **The five non-price questions** (lines 222-227) are answered: phone-number exclusivity, business verification, the 24-hour customer-service window, opt-in/consent storage, and the gain/cost ledger (delivery receipt, server-side record, no length budget vs backend, secrets, webhook, bill).
-4. **A mechanism × monthly-cost table** at 50 and 500 quotes/month (line 229), every figure cited to Meta's own pricing documentation with the retrieval date and the Mexico rate (line 231). BSP figures cite the BSP's own pricing page, dated, and are labelled as vendor-published.
+4. **A mechanism × monthly-cost table** at 50 and 100 quotes/month (the epic suggests 50 and 500 at line 229; brackets narrowed per the user's volume answer), every figure cited to Meta's own pricing documentation with the retrieval date and the Mexico rate (line 231). BSP figures cite the BSP's own pricing page, dated, and are labelled as vendor-published.
 5. **A recommendation: stay on click-to-chat or migrate in Story 4** (line 229), stated so it can be disproved (line 233), including what Story 4 inherits either way — specifically whether Story 4 AC 5 and AC 6 (length budget, batched sends) survive or disappear (line 239).
 6. **The written recommendation is appended to the epic** (line 204) — no code — and the epic's Story Overview row and Next Steps are updated so the epic stays the single record.
 
@@ -45,7 +46,7 @@ Derived from the spike section, which has no numbered ACs. Each traces to a sent
 
 ## Phase 1 — Direction Fit And The Seller's Current Setup
 
-Delivers AC 1 and the first half of AC 2 (rows 1-2 of the mechanism table). This is the gate: if no API framing delivers buyer→seller without buyer opt-in, Phases 2-3 shrink to a one-paragraph dismissal.
+Delivers AC 1 and the first half of AC 2 (rows 1-2 of the mechanism table). AC 4 brackets are 50 and 100 quotes/month throughout (see Assumptions). This is the gate: if no API framing delivers buyer→seller without buyer opt-in, Phases 2-3 shrink to a one-paragraph dismissal.
 
 ### Changes Required
 
@@ -57,11 +58,7 @@ Answer with the two candidate framings written out, and a verdict per framing:
 - **Framing B — system→buyer.** The WABA messages the *buyer*, who has just given name and email on `/cotizar`. Establish: this delivers nothing to the seller, so it cannot replace click-to-chat; it only adds a buyer-side confirmation. Requires buyer opt-in captured on the form (Story 4 AC 1 grows a checkbox) and the buyer's phone number, which the form does not collect. Expected verdict: not a substitute; note it and move on.
 - **Framing C — hybrid.** Click-to-chat stays as the delivery; the Cloud API is used only for a server-side record or a seller notification. Establish whether this earns anything the free path lacks (delivery receipt of *our* notification ≠ delivery of the buyer's message).
 
-**Subsection `### 2. Seller-side setup today`** — record the answer to one question put to the user at the start of the phase:
-
-> Does the seller answer customers on `222 441 7330` from the WhatsApp Business app today (green "Business" badge, catalog, quick replies)? Or from the consumer app?
-
-Record the answer verbatim with the date. If the user does not know, write both branches: "if Business app → a Cloud API migration forces a second number or a migration off the app (see Phase 3); if consumer app → same constraint, one fewer feature lost."
+**Subsection `### 2. Seller-side setup today`** — record the answered fact (user, 2026-09-13): the seller answers customers on `222 441 7330` from the WhatsApp Business app. Consequence to state: a Cloud API migration on that number forces either a second number or moving the seller off the app (Phase 3 item 1).
 
 ### Success Criteria
 
@@ -74,7 +71,7 @@ Record the answer verbatim with the date. If the user does not know, write both 
 | Area | Check | Reference |
 |---|---|---|
 | Framing A/B/C verdicts | Each cites the Meta page (URL + retrieval date) that decides it | Manual read of the new section |
-| Seller setup | Recorded verbatim with date, or both branches written | Manual read |
+| Seller setup | Recorded with date and its exclusivity consequence | Manual read |
 
 ---
 
@@ -143,12 +140,12 @@ Delivers AC 4, AC 5, AC 6.
 
 ### Changes Required
 
-**Same epic section** — subsection `### 5. Monthly cost at 50 and 500 quotes/month`:
+**Same epic section** — subsection `### 5. Monthly cost at 50 and 100 quotes/month`:
 
-| Mechanism | 50 quotes/mo | 500 quotes/mo | Fixed monthly | What is *not* in the number |
+| Mechanism | 50 quotes/mo | 100 quotes/mo | Fixed monthly | What is *not* in the number |
 |---|---|---|---|---|
 | `wa.me` click-to-chat | $0 | $0 | $0 | buyer abandonment mid-batch, no record |
-| Cloud API direct (Framing A, category X) | rate × 50 (× parts if multi-message) | rate × 500 | $0 | verification lead time, second number, backend |
+| Cloud API direct (Framing A, category X) | rate × 50 (× parts if multi-message) | rate × 100 | $0 | verification lead time, second number, backend |
 | BSP 1..n | pass-through + markup | … | platform fee | … |
 
 Rates are MXN or USD as Meta publishes them — state which, do not convert. Every cell traces to a Phase 2 citation. If a cell cannot be computed from published figures, write `not published` rather than estimate.
@@ -158,7 +155,7 @@ Rates are MXN or USD as Meta publishes them — state which, do not convert. Eve
 - **Stay on click-to-chat for v1** (the epic's expected outcome). State the number being declined per month at each bracket, name the trigger that would flip the decision (e.g. measured abandonment between part 1 and part N, or the seller rejecting multi-part sends — the sub-question left open at WhatsApp II/III), and confirm Story 4 proceeds **as written**: AC 5 and AC 6 stand, `react-hook-form` remains the only new dependency, no backend.
 - **Migrate in Story 4.** State the chosen mechanism and framing, and list what Story 4 must be re-planned around: AC 5/AC 6 removed, a server route with a server-only secret, template approval as a prerequisite, the cart clear now tied to an observable delivery result (revisits UI III/VI), and Story 5 AC 3's "never sent to any provider" statement narrowed to analytics providers only. Per line 239: **re-plan Story 4, do not patch its existing plan.**
 
-Also record, regardless of verdict, the question the epic left with the seller (WhatsApp II/III): is receiving 2-3 sequential messages acceptable? If the user can answer it during the spike, record it; it is the single business input most likely to change the verdict later.
+Also record, regardless of verdict, that the seller accepts 2-3 sequential messages (user, 2026-09-13) — close the WhatsApp II/III sub-question in the epic with that date.
 
 **Epic bookkeeping (same file):**
 
@@ -194,7 +191,7 @@ Every AC here is documentary, so every row is `Cannot validate` by dev-server ch
 | AC1 — Direction fit answered first, per framing, cited | Phase 1 | none — prose only | Cannot validate | Manual: three framings, each with a dated Meta citation and a verdict |
 | AC2 — Five mechanisms assessed per "What to establish" | Phase 1 (rows 1-2), Phase 2 (rows 3-5) | none — prose only | Cannot validate | Manual: one block per row; On-Prem is one line |
 | AC3 — Five non-price questions answered + ledger | Phase 3 | none — prose only | Cannot validate | Manual: five entries + two-column ledger |
-| AC4 — Cost table at 50/500, every figure cited and dated, Mexico rate | Phase 4 | none — prose only | Cannot validate | Manual: no uncited number; `not published` where absent |
+| AC4 — Cost table at 50/100, every figure cited and dated, Mexico rate | Phase 4 | none — prose only | Cannot validate | Manual: no uncited number; `not published` where absent |
 | AC5 — Stay/migrate recommendation, disprovable, Story 4 AC 5/6 fate | Phase 4 | none — prose only | Cannot validate | Manual read |
 | AC6 — Appended to the epic, no code, Overview/Next Steps updated | Phase 4 | `git status --porcelain` shows only the epic (+ `docs/improvement.md` on migrate) | Cannot validate | The git check proves "no code"; the rest is a manual read |
 
@@ -207,11 +204,7 @@ Every AC here is documentary, so every row is `Cannot validate` by dev-server ch
 
 ## Open Questions / Out Of Scope
 
-**Inputs the spike needs from the user (non-blocking — defaults recorded above):**
-
-1. Realistic monthly quote volume — default 50 and 500.
-2. Whether `222 441 7330` runs in the WhatsApp Business app today — default: both branches written.
-3. Whether the seller accepts 2-3 sequential messages for a large quote (WhatsApp II/III sub-question) — default: recorded as still open.
+**Inputs from the user — all answered 2026-09-13, recorded under Assumptions:** volume < 100/month; seller uses the WhatsApp Business app on the number; sequential messages are acceptable. No open inputs remain.
 
 **Deliberately excluded, though adjacent:**
 
