@@ -48,14 +48,17 @@ For each phase in the plan:
 3. Run the phase's **dev-server validation** yourself (see Step 5). Do not hand this to the user.
 4. Fix failures before moving to the next phase.
 5. Update any implementation checklist in the planning doc if the plan includes one.
-6. **Kill any dev server you started before ending the phase.** Never leave it running while waiting for sign-off.
-7. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Always. Do not auto-continue across phase boundaries even if the plan does not say to pause. While waiting, summarize the completed phase (files touched, what was built, what was verified, dev-server validation results) and ask for sign-off. The only sign-off is `cnp`: **commit** the phase's changes (one commit scoped to the phase, conventional message), then start the next phase. Anything else (including "continue" or "go") is not sign-off; ask.
-8. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
+6. **Update the plan's AC Validation Summary.** For every AC row that names this phase, set Status from the dev-server validation you just ran: `Validated` (check passed), `Failed` (check ran and did not pass), or `Cannot validate` (check could not run, e.g. missing Strapi env, manual-only; Notes must say why). Never leave a row for this phase as `Not validated`.
+   - If any row is `Failed`: stop before asking for sign-off. Tell the user which AC failed, the exact check and output, your diagnosis, and the action you propose (fix in this phase, adjust the plan, or defer with a recorded reason). Do not pick one yourself; wait for the user's decision, then apply it and re-run the check.
+   - If any row is `Cannot validate`: report it in the phase summary with the reason and what the user must verify manually instead.
+7. **Kill any dev server you started before ending the phase.** Never leave it running while waiting for sign-off.
+8. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Always. Do not auto-continue across phase boundaries even if the plan does not say to pause. While waiting, summarize the completed phase (files touched, what was built, what was verified, AC Validation Summary rows touched and their status) and ask for sign-off. The only sign-off is `cnp`: **commit** the phase's changes (one commit scoped to the phase, conventional message), then start the next phase. Anything else (including "continue" or "go") is not sign-off; ask.
+9. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
     - Stop and obtain user approval before making the change. Do not silently expand the scope.
     - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
     - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
     - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
-9. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
+10. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
 
 ## Step 4 - Apply repo conventions while implementing
 
@@ -106,6 +109,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - `pnpm build` when production behavior changed
   - Dev-server validation of every route the story touches, end to end
 - If the planning doc has an implementation checklist, check off completed items or call out deferred items in the report.
+- Confirm no AC Validation Summary row is still `Not validated`. Every `Failed` row must have a user-decided action recorded in Notes; every `Cannot validate` row must name what covers it instead.
 - Review `docs/improvement.md` against the completed plan. Update it when Step 1 identified an applicable entry; otherwise state that no update was needed in the final report.
 - If React/Next.js files changed, review only the touched files against `vercel-react-best-practices` before declaring done.
 - When the plan's source research doc is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, update `ai-research/epics/<epic-name>.epic.md` only after all planned work and verification pass. Update the epic's existing completion-status section, or append `## Epic Completion Status` when absent. Include:
@@ -130,13 +134,14 @@ End the turn with:
 
 1. Files created / modified / deleted.
 2. Phase status and what was completed.
-3. Typecheck / build / lint / dev-server / manual verification status with exact commands run.
-4. Whether `ai-skills/REPO_CONTEXT.md` was updated and why.
-5. Deferred follow-ups.
-6. Epic completion update, when applicable: percentage, story overview, and next steps.
-7. Out-of-scope implementation changes recorded, when applicable.
-8. Whether `docs/improvement.md` was updated and why.
-9. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
+3. AC Validation Summary: count of Validated / Failed / Cannot validate rows, and the user-decided action for each Failed row.
+4. Typecheck / build / lint / dev-server / manual verification status with exact commands run.
+5. Whether `ai-skills/REPO_CONTEXT.md` was updated and why.
+6. Deferred follow-ups.
+7. Epic completion update, when applicable: percentage, story overview, and next steps.
+8. Out-of-scope implementation changes recorded, when applicable.
+9. Whether `docs/improvement.md` was updated and why.
+10. Suggested next step, without committing, pushing, or opening a PR unless explicitly asked.
 
 ## Don'ts
 

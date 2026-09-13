@@ -134,8 +134,15 @@ The planning doc should include:
 2. **Acceptance Criteria** - copied from the research doc in order.
 3. **Affected files** - grouped by area: `src/app/**`, `src/app/api/**`, `src/features/**`, `src/components/**`, `src/shared/**`, `src/zustand/**`, docs/config if relevant.
 4. **Phases** - one section per phase with Changes Required, Success Criteria, and Verification Coverage.
-5. **Cross-cutting concerns** - only those implied by ACs, e.g. Strapi env vars, GraphQL response shape, server/client boundary, theme cookies, responsive UI.
-6. **Open Questions / Out-of-scope items** - unresolved items plus nearby changes deliberately excluded.
+5. **AC Validation Summary** - directly after the phases. One row per acceptance criterion, mapping it to the phase(s) that implement it and the exact dev-server validation check (route + expected result) from those phases that proves it. `/implement` updates the Status column after each phase; the plan writes every row as `Not validated`.
+
+   | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
+   | --- | --- | --- | --- | --- |
+   | AC1 - ... | Phase 2 | `GET /cotizar` 200, contains `Subtotal` | Not validated | |
+
+   Allowed Status values: `Not validated`, `Validated`, `Failed`, `Cannot validate` (Notes must say why and what covers it instead, e.g. manual click-through). An AC whose only proof is manual must be marked `Cannot validate` up front, not left for the implementer to discover.
+6. **Cross-cutting concerns** - only those implied by ACs, e.g. Strapi env vars, GraphQL response shape, server/client boundary, theme cookies, responsive UI.
+7. **Open Questions / Out-of-scope items** - unresolved items plus nearby changes deliberately excluded.
 
 ## Step 8 - Capture planning insights
 
