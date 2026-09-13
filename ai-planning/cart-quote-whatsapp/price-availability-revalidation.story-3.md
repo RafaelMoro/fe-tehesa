@@ -3,7 +3,7 @@
 **Source research:** `ai-research/cart-quote-whatsapp/price-availability-revalidation.story-3.md`
 **Epic:** `ai-research/epics/cart-quote-whatsapp.epic.md` (Story 3)
 **Research status:** the doc's own header still reads *"Awaiting human sign-off"*. Every open question inside it is answered and dated 2026-08-01, and the user asked for this plan directly — planning proceeded on that basis. **Confirm sign-off before `/implement`.**
-**Date:** 2026-08-01
+**Date:** 2026-08-01 · **Revised:** 2026-09-13 — added per-phase dev-server validation and the AC Validation Summary required by the current `/plan` / `/implement` workflow; moved every `curl`-reachable check out of Manual Validations. Re-verified on 2026-09-13 that nothing in the plan is implemented yet (`SEARCH_TERM_PATTERN` still narrow, no `revalidate/` route, no `useQuoteRevalidation.ts`).
 
 ## What Planning Verified In The Code
 
@@ -241,6 +241,22 @@ The file already mocks `@/app/apollo-client` with a `queryMock` (`:31-39`). Add 
 - `pnpm test -- __tests__/catalog/_utils.test.ts`
 - `pnpm test -- __tests__/shared/global.lib.test.ts`
 
+**Dev-server validation** (`pnpm dev`, `.env.local` with real Strapi creds; pick real ids from `GET /api/catalog/products?page=1` → `data[].documentId` and `GET /api/catalog/variants?documentId=<product>` → `data[].documentId`)
+- `GET /api/catalog/revalidate` → 200, body exactly `{"success":true,"data":{"variants":[],"products":[]}}`; dev log shows no Strapi error (both adapters early-returned).
+- `GET /api/catalog/revalidate?variantIds=&productIds=` → same 200 empty envelope (blank is `[]`, not `CAT_VAL_007`).
+- `GET /api/catalog/revalidate?variantIds=<v1>,<v2>&productIds=<p1>` → 200, `success:true`, `data.variants` has 2 entries each with `documentId`, `diameter`, `pricing` (object with `price`, or `null`), `data.products[0].name` is a string. Must not be `CAT_ERR_001`.
+- **Batch size (was M1):** collect 11+ real variant ids (several products if needed), `GET /api/catalog/revalidate?variantIds=<11+ ids>` → `data.variants.length` equals the requested count (`| jq '.data.variants | length'`). **Exactly 10 means `pagination` was dropped** (Strapi Contract IX) — treat as a phase failure.
+- `?variantIds=bad!id` → 400, `code: "CAT_VAL_007"`, `message: "Invalid id list: id contains unsafe characters"`.
+- `?variantIds=a,,b` and `?variantIds=a,` → 400, `CAT_VAL_007`, `Invalid id list: empty segment`.
+- `?variantIds=<31 chars of a>` → 400, `CAT_VAL_007`, `Invalid id list: id over max length`.
+- `?productIds=<101 comma-joined ids>` → 400, `CAT_VAL_007`, `Invalid id list: 101 ids, max 100`.
+- `?variantIds=<id>&productIds=bad!id` → 400 `CAT_VAL_007` (second list is validated too).
+- **Missing env (route half of old M3):** start `pnpm dev` with `STRAPI_HOST` unset → `GET /api/catalog/revalidate?variantIds=<id>` → 400, `CAT_ENV_001`. Restore env afterwards.
+- Regression on the shared parser: `GET /api/catalog/products?page=1`, `GET /api/catalog/variants?documentId=<p1>`, `GET /api/catalog/search?q=broca` all still 200 `success:true` (`readValidatedParams` now parses two extra params on every route).
+- Dev log: no unhandled rejections, no `CAT_ERR_001` on any valid call above.
+
+**Manual** — none. Everything in this phase is reachable over HTTP.
+
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
@@ -311,6 +327,17 @@ A synthetic `foo/bar` would pass a strip that mangles `1/2" Punta Bristol Cromad
 - `pnpm exec tsc --noEmit`
 - `pnpm lint`
 - `pnpm test` — **the full suite, not a targeted run.** This phase changes a constant read by SEO and pagination code.
+
+**Dev-server validation**
+- `GET /api/catalog/search?q=1%2F2%22%20Punta%20Bristol%20Cromado` → 200 `success:true` (today this is 400 `CAT_VAL_006`). Same for `q=135%C2%B0`, `q=%23`, `q=Dado%20Cuadro%201%22`.
+- `GET /api/catalog/search?q=%3Cscript%3E` → 400, `CAT_VAL_006`, `Invalid search term: unsafe characters`. Same for `q=a%25b` and `q=%60`.
+- `GET /api/catalog/search?q=Punta%20Bristol%20Cromado` → 200, `data` non-empty and a `name` contains `Punta Bristol Cromado` — the target `Buscar alternativa` lands on (AC 8 acceptance test, route half).
+- `curl -s -o /dev/null -w '%{http_code} %{redirect_url}' '/?mode=name&q=1%2F2%22&page=1'` → `200` with **no** redirect (today: `307` to `/?page=1` via `redirectToBase`). Body contains `noindex` and the rendered term.
+- `curl -s -o /dev/null -w '%{http_code} %{redirect_url}' '/?mode=name&q=%3Cscript%3E&page=1'` → still `307` → `/?page=1` (rejection path unchanged).
+- `GET /?mode=name&q=Punta%20Bristol%20Cromado&page=1` → 200, body contains `Punta Bristol Cromado` and not the empty-state copy.
+- Unchanged surfaces: `GET /` 200, `GET /?page=2` 200, `GET /?mode=category&category=<live name>&page=1` 200, `GET /sitemap.xml` 200 and `GET /robots.txt` 200 — no server-log errors.
+
+**Manual** — none in this phase (typing into the shipped search box is exercised as M10 after Phase 4).
 
 ### Verification Coverage
 
@@ -433,6 +460,14 @@ Same harness as `QuotePage.test.tsx` (seed `localStorage`, render through `Provi
 - `pnpm test -- __tests__/quote`
 - `pnpm build`
 
+**Dev-server validation**
+- `GET /cotizar` → 200, no server-log error, body still contains the Story 2 heading and empty-list copy; body contains **neither** `Comprobando precios` **nor** `No pudimos comprobar los precios` (the hook is gated on `mounted`, so SSR renders no banner).
+- `GET /api/catalog/revalidate?variantIds=<v1>&productIds=<p1>` → 200 `success:true` (the route the hook calls is still healthy after the client wiring).
+- `pnpm build` in Success Criteria doubles as the server/client-boundary check: `useQuoteRevalidation.ts` must not pull `global.lib.ts` into the client bundle (build fails on a `"use server"` import from a client file).
+- Dev log after loading `/cotizar` in a browser with a seeded cart: exactly one `GET /api/catalog/revalidate?…` line, none after pressing a stepper (this is the log half of M12; the browser is needed to seed `localStorage`).
+
+**Manual** — hydration warnings appear only in the browser console: open `/cotizar` once with an empty cart and once with a seeded cart, confirm none. Everything else in this phase is Jest (`revalidation.test.tsx`).
+
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
@@ -530,6 +565,14 @@ Cases, one per former manual step:
 - `pnpm test`
 - `pnpm build`
 
+**Dev-server validation**
+- `GET /cotizar` → 200, no server-log error; body contains none of the five-state strings (`ya no está disponible`, `no tiene precio actual`, `precio comprobado`, `TOTAL ACTUAL`) — they render only after the client check.
+- `GET /?mode=name&q=Punta%20Bristol%20Cromado&page=1` → 200 containing `Punta Bristol Cromado` — the exact `href` `buildProductSearchHref` emits for `1/2" Punta Bristol Cromado`, so the anchor's target is proven to resolve before anyone clicks it.
+- `GET /api/catalog/revalidate?variantIds=<v1>,<v2>&productIds=<p1>` → 200 (unchanged; row rendering must not have touched the route).
+- Dev log while running the manual list below: no unhandled rejections, no `CAT_ERR_001`.
+
+**Manual** — the Manual Validations list after this phase (row states need live Strapi edits, clicks, layout, assistive tech).
+
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
@@ -540,14 +583,30 @@ Cases, one per former manual step:
 
 ---
 
+## AC Validation Summary
+
+`/implement` updates Status after each phase. Allowed values: `Not validated`, `Validated`, `Failed`, `Cannot validate`.
+
+| AC | Phase(s) | Dev-server check that proves it | Status | Notes |
+| --- | --- | --- | --- | --- |
+| AC1 - single round trip, batched ids, no request on empty list | Phase 1, Phase 3 | `GET /api/catalog/revalidate?variantIds=<v1>,<v2>&productIds=<p1>` 200 with both arrays in one envelope; 11+ ids all returned; dev log shows one `/api/catalog/revalidate` line per `/cotizar` load with a seeded cart and none on stepper press | Not validated | Route half is `curl`; the empty-cart-issues-nothing half is `revalidation.test.tsx` + M12 |
+| AC2 - changed price: struck previous, `TOTAL ACTUAL`, subtotal on current, cents comparison | Phase 3, Phase 4 | none — rendered client-side after the fetch | Cannot validate | Covered by `revalidation.test.tsx` (changed price + `648.9` vs `648.90` case) and M4 |
+| AC3 - variant-gone vs product-gone states, both excluded, neither auto-removed | Phase 3, Phase 4 | none — rendered client-side after the fetch | Cannot validate | Covered by `revalidation.test.tsx` (variant gone, product gone, precedence) and M5, M6, M11 |
+| AC4 - failure never blocks: banner + `Reintentar`, snapshot prices, `precio sin confirmar`, controls work | Phase 1, Phase 3, Phase 4 | With `STRAPI_HOST` unset: `GET /api/catalog/revalidate?variantIds=<id>` 400 `CAT_ENV_001` **and** `GET /cotizar` still 200 | Not validated | Proves the degradation path exists; banner copy, affix and working controls are `revalidation.test.tsx` + M3 |
+| AC5 - ephemeral state only; no persisted field, no schema bump, no migrate/rehydrate change | Phase 3 | none — no runtime surface | Cannot validate | Proof is `git diff --stat` showing `cart.store.ts` and `cart.constants.ts` untouched, plus `pnpm exec tsc --noEmit` |
+| AC6 - id lists validated at the boundary, `CAT_*` envelope | Phase 1 | `?variantIds=bad!id`, `a,,b`, `a,`, 31-char id, 101 ids each → 400 `CAT_VAL_007` with the matching message; blank → 200 `[]` | Not validated | |
+| AC7 - variant with `pricing: null` → fifth state, stepper kept, only `Quitar` | Phase 3, Phase 4 | none — rendered client-side after the fetch | Cannot validate | Covered by `revalidation.test.tsx` (no-price case) and M7 |
+| AC8 - `Buscar alternativa` reaches a filtered search; widened allowlist | Phase 2, Phase 4 | `GET /api/catalog/search?q=1%2F2%22%20Punta%20Bristol%20Cromado` 200; `/?mode=name&q=1%2F2%22&page=1` 200 with no redirect; `/?mode=name&q=Punta%20Bristol%20Cromado&page=1` 200 containing the product; `q=%3Cscript%3E` still 400 `CAT_VAL_006` | Not validated | The click itself is M9; the href string is `quote.utils.test.ts` + `revalidation.test.tsx` |
+
+---
+
 ## Manual Validations
 
-Run once, after Phase 4, with `.env.local` pointed at a Strapi you can edit. Every step below is something Jest cannot prove: live Strapi behaviour, real navigation, real layout, real assistive tech. Nothing here duplicates an automated case.
+Run once, after Phase 4, with `.env.local` pointed at a Strapi you can edit. Every step below is something neither Jest nor `curl` can prove: live Strapi edits, real clicks, real layout, real assistive tech. Anything reachable over HTTP lives in the phase dev-server validation above (the former M1 batch-size and M2 route checks are now Phase 1 dev-server steps; the numbering below is kept so earlier references still resolve).
 
 **Live Strapi contract**
-- **M1 — Batch size.** Seed a cart with 11+ lines whose variants exist, load `/cotizar`, inspect the `/api/catalog/revalidate` response in the Network tab: **every** requested id comes back. Exactly 10 means `pagination` was dropped (Strapi Contract IX) — lines 11+ would read `ya no está disponible` and silently leave the subtotal.
-- **M2 — Route by hand.** `GET /api/catalog/revalidate?variantIds=<two real ids>&productIds=<one real id>` returns both arrays populated with the expected `diameter` / `pricing` / `name` shapes.
-- **M3 — Missing env.** Unset `STRAPI_HOST`, reload `/cotizar` → the failure banner, snapshot prices, working controls.
+- **M1 / M2** — moved to Phase 1 dev-server validation.
+- **M3 — Missing env (page half).** With `STRAPI_HOST` unset (route already proven 400 `CAT_ENV_001` in Phase 1), open `/cotizar` with a seeded cart → the failure banner with the UI II copy, snapshot prices with `precio sin confirmar`, stepper / `Quitar` / `Elegir medida` all working.
 
 **Live data → line states** (edit in Strapi, reload `/cotizar`)
 - **M4 — Changed price.** Change a variant's `pricing.price` → struck previous price above the current one, `TOTAL ACTUAL`, subtotal uses the current price. Restore the price → row renders exactly as before.
@@ -562,7 +621,7 @@ Run once, after Phase 4, with `.env.local` pointed at a Strapi you can edit. Eve
 - **M11 — `Elegir otra medida`.** Opens the existing drawer, a chosen size replaces the gone line in place, and focus returns to the row on close.
 
 **Network**
-- **M12 — One round trip.** Loading `/cotizar` with a seeded cart issues exactly one request to `/api/catalog/revalidate`; pressing a stepper issues none; `Reintentar` (with Strapi stopped) issues exactly one more. An empty cart issues zero.
+- **M12 — One round trip.** In the browser Network tab (the dev log only shows server hits; an empty cart never reaches the server): loading `/cotizar` with a seeded cart issues exactly one request to `/api/catalog/revalidate`; pressing a stepper issues none; `Reintentar` (with Strapi stopped) issues exactly one more. An empty cart issues zero.
 
 **Layout** (desktop + 390px, light + dark)
 - **M13 — Comps.** Compare against `comps/brief-3/desktop-seven-state-1-brief-3.png` and `mobile-seven-state-{1,2,3}-brief-3.png`: the gone row at 390px fits two actions plus two explanation lines without overflow; gone rows are muted with no tint; the no-size row remains the only tinted row.
