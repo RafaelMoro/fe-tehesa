@@ -168,7 +168,7 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 
 ## Workflow Skills
 
-`ai-skills/<skill>/` is the single source of truth for every skill and command, edited in one place and reused everywhere: `.claude/skills/<skill>`, `.opencode/skill/<skill>`, and `.opencode/command/<skill>.md` are symlinks into it. Editing an `ai-skills/<skill>/COMMAND.md` and running `pnpm sync:prompts` regenerates `.github/prompts/<skill>.prompt.md` and `ai-skills/<skill>/SKILL.md` (this repo keeps `SKILL.md` and `COMMAND.md` byte-identical).
+`ai-skills/<skill>/` is the single source of truth for every skill and command, edited in one place and reused everywhere: `.claude/skills/<skill>`, `.opencode/skill/<skill>`, `.opencode/command/<skill>.md`, and `.github/prompts/<skill>.prompt.md` are all symlinks into it. Editing `ai-skills/<skill>/COMMAND.md` and running `pnpm sync:prompts` regenerates `ai-skills/<skill>/SKILL.md` (this repo keeps `SKILL.md` and `COMMAND.md` byte-identical) — `.github/prompts` needs no regeneration since it's a direct symlink to `COMMAND.md`.
 
 Seven skills are configured:
 
