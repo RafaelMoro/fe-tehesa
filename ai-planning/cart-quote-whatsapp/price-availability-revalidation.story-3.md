@@ -61,6 +61,7 @@ Copied in order from the research doc.
 **`__tests__/`**
 - `catalog/revalidate/route.test.ts` — Create
 - `catalog/_utils.test.ts` — Modify: re-point `:362`, add widened-allowlist cases
+- `shared/global.lib.test.ts` — Modify: `fetchVariantsByIds` / `fetchProductsByIds` cases against the existing `queryMock`
 - `quote/quote.utils.test.ts` — Modify: checks-aware totals, `buildProductSearchHref`
 - `quote/revalidation.test.tsx` — Create
 - `quote/QuotePage.test.tsx` — Modify: hoist `mockFetch` to file scope
@@ -224,6 +225,13 @@ Edge cases:
 - `Promise.all` rejects on the first failure, which is correct: one banner, one failure state (the "one route" decision).
 - **URL length is not a problem** — 200 ids × ~24 chars ≈ 5 KB, same-origin, well inside Node's 16 KB header budget. Recorded so nobody re-derives a POST from it.
 
+**`__tests__/shared/global.lib.test.ts`** — Modify
+
+The file already mocks `@/app/apollo-client` with a `queryMock` (`:31-39`). Add a `describe` for the two new adapters, in the style of the existing `fetchProductVariants` cases:
+- `fetchVariantsByIds([])` and `fetchProductsByIds([])` resolve `[]` and `queryMock` is **not called**.
+- With ids, `queryMock` is called with `{ query: GET_VARIANTS_BY_IDS | GET_PRODUCTS_BY_IDS, variables: { filters: { documentId: { in: ids } }, pagination: { page: 1, pageSize: REVALIDATE_MAX_IDS } } }` — assert `variables` with `toEqual`, not `toMatchObject`, so a dropped `pagination` key fails.
+- `{ data: {} }` resolves `[]`; a `queryMock` rejection **propagates** (`rejects.toThrow`) — the no-local-try/catch contract.
+
 ### Success Criteria
 
 **Automated**
@@ -231,20 +239,17 @@ Edge cases:
 - `pnpm lint`
 - `pnpm test -- __tests__/catalog/revalidate`
 - `pnpm test -- __tests__/catalog/_utils.test.ts`
-
-**Manual**
-- With `.env.local` set, `GET /api/catalog/revalidate?variantIds=<two real ids>&productIds=<one real id>` returns both arrays populated.
-- `?variantIds=` (empty) and no params at all both return `{ success: true, data: { variants: [], products: [] } }`.
-- `?variantIds=bad!id` returns `CAT_VAL_007`.
-- **The one check only live Strapi can make:** send 11+ real variant ids and confirm **all** come back. A response of exactly 10 means `pagination` was dropped.
+- `pnpm test -- __tests__/shared/global.lib.test.ts`
 
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 |---|---|---|
 | `src/app/api/catalog/_utils.ts` | absent/empty → `[]`; empty segment; over-cap count; bad pattern; over-length id; order preserved | `pnpm test -- __tests__/catalog/_utils.test.ts` |
-| `src/app/api/catalog/revalidate/route.ts` | env guard; both lists absent → empty success; each `CAT_VAL_007` cause; ids forwarded verbatim to the adapters; adapter rejection → `CAT_ERR_001` | `pnpm test -- __tests__/catalog/revalidate` |
-| `src/shared/lib/global.lib.ts` | explicit `pageSize: REVALIDATE_MAX_IDS` on both operations; empty ids issues no query; no local try/catch | `pnpm exec tsc --noEmit` + the 11-id manual check above |
+| `src/app/api/catalog/revalidate/route.ts` | env guard; no params and `?variantIds=` → `{ variants: [], products: [] }` success; each `CAT_VAL_007` cause (`bad!id`, `a,,b`, trailing comma, over-length, over-count); ids forwarded verbatim to the adapters; adapter rejection → `CAT_ERR_001` | `pnpm test -- __tests__/catalog/revalidate` |
+| `src/shared/lib/global.lib.ts` | explicit `pageSize: REVALIDATE_MAX_IDS` on both operations; empty ids issues no query; rejection propagates | `pnpm test -- __tests__/shared/global.lib.test.ts` |
+
+The mock proves the variables are *sent*; only live Strapi proves they are *honoured*. That one check is listed under Manual Validations (M1).
 
 ---
 
@@ -288,7 +293,7 @@ export const buildProductSearchHref = (productName: string): string | null
 
 The assertion `?q=tehesa%2F` (forward slash) becomes legal input. **Re-point it at a still-rejected character** — `<` (`%3C`) — do not delete it. It is the only assertion in the suite that the allowlist rejects anything at all; deleting it converts the allowlist into decoration.
 
-Add: `"`, `/`, `°`, `#` each accepted; `1/2" Punta Bristol Cromado` round-trips through `readValidatedParams`.
+Add: `"`, `/`, `°`, `#` each accepted; `1/2" Punta Bristol Cromado` round-trips through `readValidatedParams` (`?q=1%2F2%22%20Punta%20Bristol%20Cromado`); `<script>` still rejected with `CAT_VAL_006`.
 
 **`__tests__/quote/quote.utils.test.ts`** — Modify
 
@@ -307,15 +312,11 @@ A synthetic `foo/bar` would pass a strip that mangles `1/2" Punta Bristol Cromad
 - `pnpm lint`
 - `pnpm test` — **the full suite, not a targeted run.** This phase changes a constant read by SEO and pagination code.
 
-**Manual**
-- Type `1/2"` into the catalog search box → a filtered result, **not** a silent redirect to page 1 of everything.
-- Type `<script>` → still rejected with the search-term validation message.
-
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 |---|---|---|
-| `src/shared/constants/catalog.constants.ts` | `"` `/` `°` `#` accepted; `<` `>` `%` backtick still rejected; the two regexes stay complements | `pnpm test -- __tests__/catalog/_utils.test.ts` |
+| `src/shared/constants/catalog.constants.ts` | `"` `/` `°` `#` accepted; `<` `>` `%` backtick and `<script>` still rejected; the two regexes stay complements; `1/2" Punta Bristol Cromado` round-trips | `pnpm test -- __tests__/catalog/_utils.test.ts` |
 | `src/features/QuotePage/quote.utils.ts` | longest-safe-segment on three real names + the all-stripped `null` case | `pnpm test -- __tests__/quote/quote.utils.test.ts` |
 | `__tests__/catalog/pagination-urls.test.ts`, `__tests__/seo/*` | touch `mode=name` but assert no pattern case — expect them to **pass untouched** | `pnpm test` |
 
@@ -415,6 +416,15 @@ Hoist `originalFetch` (`:240`), the `jsonResponse` helper (`:249`), `mockFetch` 
 
 Note the default mock resolves with empty arrays, which resolves **every** line to `product-gone`. Existing tests asserting priced rows must either seed matching products in the mock or assert before resolution — decide per test while hoisting.
 
+**`__tests__/quote/revalidation.test.tsx`** — Create (Phase 4 extends it)
+
+Same harness as `QuotePage.test.tsx` (seed `localStorage`, render through `Providers`, the hoisted `mockFetch`). Phase 3 cases — every former manual step, made executable:
+- Seeded cart → `findByRole("status")` with `Comprobando precios…`; after the mock resolves the status node is gone (`queryByText` → `null`). The `Aumentar …` buttons are enabled throughout (assert before and after resolution).
+- Press `Aumentar` after resolution → `fetchMock` still called **once**, and that call's URL matches `/api/catalog/revalidate?…`.
+- Mock rejects → `findByRole("alert")` contains **both** UI II lines verbatim; snapshot price still rendered via `formatNumberToCurrency`; `Aumentar` changes the subtotal; `Quitar` removes the line; `Reintentar` → `fetchMock` called **twice**. Second attempt resolves → alert gone.
+- Empty `localStorage` → after mount `fetchMock` **not called**.
+- Request URL: variant ids deduped, product ids deduped, product ids include the ones from variant lines (seed two lines sharing a `productDocumentId`, assert the query string with `URLSearchParams`).
+
 ### Success Criteria
 
 **Automated**
@@ -423,19 +433,13 @@ Note the default mock resolves with empty arrays, which resolves **every** line 
 - `pnpm test -- __tests__/quote`
 - `pnpm build`
 
-**Manual** (desktop + 390px)
-- Load `/cotizar` with a seeded cart → `Comprobando precios…` appears, then clears. Quantity steppers stay usable throughout.
-- Press a quantity stepper after the check → **no second network request** (Network tab).
-- Stop Strapi (or block the route) and reload → the failure banner, snapshot prices, working steppers, working `Quitar`, and `Reintentar` refires the request.
-- `/cotizar` with an empty cart → **zero** requests to `/api/catalog/revalidate`.
-
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 |---|---|---|
 | `src/features/QuotePage/quote.utils.ts` | current price wins over snapshot; gone lines contribute nothing; **no-price lines contribute nothing while still counting in `productCount`/`pieceCount`**; counts unchanged by gone lines; cents arithmetic across a changed price; one-arg call unchanged | `pnpm test -- __tests__/quote/quote.utils.test.ts` |
-| `src/features/QuotePage/useQuoteRevalidation.ts` | no request on an empty cart; a quantity edit does not refire; `Reintentar` refires; product-gone beats variant-gone; **`pricing: null` yields `no-price`, not `variant-gone`** | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
-| `src/features/QuotePage/QuotePage.tsx` | banner announces once per transition; failure banner carries the **UI II** copy; controls stay enabled while checking and after failure | same, plus the manual steps |
+| `src/features/QuotePage/useQuoteRevalidation.ts` | no request on an empty cart; a quantity edit does not refire (one `fetch` call); `Reintentar` refires (two calls); deduped ids and all product ids in the URL; product-gone beats variant-gone; **`pricing: null` yields `no-price`, not `variant-gone`** | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
+| `src/features/QuotePage/QuotePage.tsx` | `role="status"` present only while checking; `role="alert"` present only after failure and carries the **UI II** copy; steppers and `Quitar` work while checking and after failure; snapshot prices shown on failure | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
 
 ---
 
@@ -509,10 +513,14 @@ const changed = check?.kind === "priced"
 
 Use the comps' own annotation set as the matrix — `incluida`, `excluida` ×2, `cuenta el actual`, `no bloquea`, `precios guardados` — plus the uncomped fifth state. Reuse `QuotePage.test.tsx`'s harness (seed the cart into `localStorage`, render through `Providers`); do not build a second one.
 
-Three cases worth naming, because they are the ones a reasonable implementation gets wrong **silently**:
-- a variant returned **with** `pricing: null` produces `no-price`, **not** `variant-gone` — presence versus absence;
-- a `no-price` line keeps counting toward `N productos · N piezas` while contributing nothing to the subtotal;
-- the affix takes **three** values across `pageStatus` — assert `precio guardado` *before* the request resolves and `precio sin confirmar` *after* it fails. A test that only checks the failed path passes against a two-value implementation.
+Cases, one per former manual step:
+- **Changed price:** mock returns the line's variant with a different `price` → `Precio anterior` sr-only text present, previous and current values both via `formatNumberToCurrency`, `El precio cambió al comprobar la lista.` rendered, column header `TOTAL ACTUAL`, subtotal equals current price × quantity. Mock returns the same price expressed as `648.9` against a `648.90` snapshot → none of that renders (cents comparison).
+- **Variant gone:** variant id omitted, product present → `La medida <diameter> ya no está disponible.` + `Esta línea no se incluye en el subtotal.`; `queryByRole("button", { name: /Aumentar/ })` is `null` for that line; no price text for that line; subtotal excludes it; `N productos · N piezas` still counts it. `Elegir otra medida de <lineLabel>` opens the existing drawer (mock `/api/catalog/variants` as `QuotePage.test.tsx:269-312` does); closing it returns focus to that button.
+- **Product gone:** product id omitted → `Este producto ya no está disponible.`; `Buscar alternativa para <lineLabel>` is a link whose `href` is `/?mode=name&q=Punta%20Bristol%20Cromado&page=1` for `1/2" Punta Bristol Cromado`; for an all-stripped name no `Buscar alternativa` link exists at all (`queryByRole("link")` → `null`, never `href="#"`). Precedence: a variant-less line whose product is gone reads `Este producto ya no está disponible.`, not `Sin variante seleccionada`.
+- **No price:** variant returned **with** `pricing: null` → `Esta medida no tiene precio actual.` + the two follow-up lines, stepper **present**, no price text, `Quitar` is the **only** button for that line, subtotal excludes it, counts include it. Presence versus absence — this is the case a reasonable implementation gets wrong silently.
+- **All gone/unpriced:** subtotal reads `$0.00` under `Subtotal estimado (líneas con precio)`.
+- **Affix, three values:** `precio guardado` before the request resolves, `precio comprobado` after success, `precio sin confirmar` after failure. A test that only checks the failed path passes against a two-value implementation.
+- **Focus on stepper unmount:** focus an `Aumentar` button, then resolve a mock that makes that line `variant-gone` → `document.activeElement` is the list region. Repeat with focus on the `Vaciar lista` button → focus is unchanged.
 
 ### Success Criteria
 
@@ -522,21 +530,48 @@ Three cases worth naming, because they are the ones a reasonable implementation 
 - `pnpm test`
 - `pnpm build`
 
-**Manual** (desktop + 390px, light + dark)
-- Seed a cart, change a price in Strapi, reload → struck previous price above the current one, `TOTAL ACTUAL`, subtotal reflects the **current** price.
-- Unpublish a variant → that row reads `La medida … ya no está disponible.`, has no stepper and no price, drops out of the subtotal, and stays in `N productos · N piezas`.
-- `Elegir otra medida` opens the existing drawer and returns focus to the button that opened it.
-- **AC 8 acceptance test:** on a product named `1/2" Punta Bristol Cromado`, `Buscar alternativa` lands on a filtered search result, not page 1 of everything.
-- A variant with an empty `pricing` component keeps its stepper, shows no price, and offers only `Quitar`.
-- Every line gone or unpriced → the subtotal reads `$0.00` under `Subtotal estimado (líneas con precio)`. **Verify it reads sensibly** rather than assuming; Story 2's rule is never a bare `$0.00` presented as a total.
-
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 |---|---|---|
-| `src/features/QuotePage/QuoteLineRow.tsx` | five states; branch precedence (product-gone first); three affix values; cents comparison; gone rows have no stepper and no price; no-price row keeps its stepper | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
-| accessibility | per-line accessible names on all three new actions; `Precio anterior` sr-only text; focus lands deliberately when a stepper unmounts | manual screen-reader/keyboard pass |
-| `buildProductSearchHref` consumer | real fastener name reaches a search; `null` renders no action rather than `href="#"` | `pnpm test` + the AC 8 manual check |
+| `src/features/QuotePage/QuoteLineRow.tsx` | five states; branch precedence (product-gone first); three affix values; cents comparison; gone rows have no stepper and no price; no-price row keeps its stepper and offers only `Quitar`; all-gone subtotal label | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
+| accessibility | per-line accessible names on all three new actions (`getByRole` with the full name); `Precio anterior` sr-only text; focus moves to the list region only when the focused stepper unmounts; drawer returns focus to `Elegir otra medida` | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
+| `buildProductSearchHref` consumer | `1/2" Punta Bristol Cromado` link `href` is the encoded `mode=name` search URL; `null` renders no link rather than `href="#"` | `pnpm test -- __tests__/quote/revalidation.test.tsx` |
+
+---
+
+## Manual Validations
+
+Run once, after Phase 4, with `.env.local` pointed at a Strapi you can edit. Every step below is something Jest cannot prove: live Strapi behaviour, real navigation, real layout, real assistive tech. Nothing here duplicates an automated case.
+
+**Live Strapi contract**
+- **M1 — Batch size.** Seed a cart with 11+ lines whose variants exist, load `/cotizar`, inspect the `/api/catalog/revalidate` response in the Network tab: **every** requested id comes back. Exactly 10 means `pagination` was dropped (Strapi Contract IX) — lines 11+ would read `ya no está disponible` and silently leave the subtotal.
+- **M2 — Route by hand.** `GET /api/catalog/revalidate?variantIds=<two real ids>&productIds=<one real id>` returns both arrays populated with the expected `diameter` / `pricing` / `name` shapes.
+- **M3 — Missing env.** Unset `STRAPI_HOST`, reload `/cotizar` → the failure banner, snapshot prices, working controls.
+
+**Live data → line states** (edit in Strapi, reload `/cotizar`)
+- **M4 — Changed price.** Change a variant's `pricing.price` → struck previous price above the current one, `TOTAL ACTUAL`, subtotal uses the current price. Restore the price → row renders exactly as before.
+- **M5 — Unpublished variant.** Unpublish a variant → `La medida … ya no está disponible.`, no stepper, no price, excluded from the subtotal, still counted in `N productos · N piezas`. Republish → row returns to priced.
+- **M6 — Unpublished product.** Unpublish a product → `Este producto ya no está disponible.` on **every** line of that product, including variant lines (product-gone beats variant-gone).
+- **M7 — Empty pricing component.** Clear a variant's `pricing` component → `Esta medida no tiene precio actual.`, stepper present, no price, only `Quitar`.
+- **M8 — Everything gone.** With every line gone or unpriced, confirm `$0.00` under `Subtotal estimado (líneas con precio)` reads sensibly rather than as a bare total.
+
+**Navigation**
+- **M9 — AC 8 acceptance test.** On a product named `1/2" Punta Bristol Cromado`, click `Buscar alternativa` → a filtered search result for `Punta Bristol Cromado`, not page 1 of everything. Middle-click opens it in a new tab.
+- **M10 — Shipped search box.** Type `1/2"` into the catalog search → a filtered result, not a silent redirect to page 1. Type `<script>` → the search-term validation message.
+- **M11 — `Elegir otra medida`.** Opens the existing drawer, a chosen size replaces the gone line in place, and focus returns to the row on close.
+
+**Network**
+- **M12 — One round trip.** Loading `/cotizar` with a seeded cart issues exactly one request to `/api/catalog/revalidate`; pressing a stepper issues none; `Reintentar` (with Strapi stopped) issues exactly one more. An empty cart issues zero.
+
+**Layout** (desktop + 390px, light + dark)
+- **M13 — Comps.** Compare against `comps/brief-3/desktop-seven-state-1-brief-3.png` and `mobile-seven-state-{1,2,3}-brief-3.png`: the gone row at 390px fits two actions plus two explanation lines without overflow; gone rows are muted with no tint; the no-size row remains the only tinted row.
+- **M14 — Banner copy.** The failure banner's second line is the UI II text, **not** the comp's `Mostramos los precios guardados; puedes continuar con tu solicitud.`
+- **M15 — Resize.** Rows reflow between breakpoints on window resize without reload (CSS breakpoints, not `useMediaQuery`).
+
+**Assistive tech**
+- **M16 — Announcements.** With a screen reader: `Comprobando precios…` announces once, the failure banner announces once, neither re-announces on a stepper press; `Precio anterior` is read before the struck value; each recovery action reads with its line name (`Elegir otra medida de …`, `Buscar alternativa para …`).
+- **M17 — Keyboard.** Tab through a gone row: recovery action, then `Quitar`; no focus lands on a hidden or `aria-disabled` element; when a focused stepper disappears on check completion, focus lands on the list region, not `<body>`.
 
 ---
 
