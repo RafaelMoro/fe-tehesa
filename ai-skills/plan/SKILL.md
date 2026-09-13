@@ -110,11 +110,11 @@ Do not tell implementers to run `pnpm install` unless the plan intentionally cha
 
 There is no test runner configured. Add a table like this and keep it honest:
 
-| Area/File                          | Coverage/check areas                                            | Verification reference                                            |
-| ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `src/features/Home/Home.tsx`       | search/filter/pagination interaction required by ACs            | dev-server `curl` of `/` + manual click-through                   |
+| Area/File                          | Coverage/check areas                                            | Verification reference                                |
+| ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+| `src/features/Home/Home.tsx`       | search/filter/pagination interaction required by ACs            | dev-server `curl` of `/` + manual click-through       |
 | `src/shared/lib/global.lib.ts`     | Strapi variables, return shapes, error behavior in scope        | `pnpm exec tsc --noEmit` + dev-server `curl` of the calling route |
-| `src/app/api/preferences/route.ts` | required theme payload, success/error response shape if touched | dev-server `curl -X POST` valid + invalid payload                 |
+| `src/app/api/preferences/route.ts` | required theme payload, success/error response shape if touched | dev-server `curl -X POST` valid + invalid payload      |
 
 If the story explicitly adds a test framework, plan only the minimum test setup required by that story. Jest 30 + Testing Library are already configured; do not reinvent them. Do not invent Vitest, Playwright, or other test frameworks.
 

@@ -1,4 +1,5 @@
 ---
+name: pr-describer
 description: Write a PR description and title options from the current branch changes for fe-tehesa.
 ---
 

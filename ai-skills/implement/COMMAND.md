@@ -1,4 +1,5 @@
 ---
+name: implement
 description: Execute an approved Tehesa planning doc phase by phase and report results.
 ---
 
@@ -47,13 +48,14 @@ For each phase in the plan:
 3. Run the phase's **dev-server validation** yourself (see Step 5). Do not hand this to the user.
 4. Fix failures before moving to the next phase.
 5. Update any implementation checklist in the planning doc if the plan includes one.
-6. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Do not auto-continue across phase boundaries even if the plan does not say to pause. The user must say "continue", "go", or otherwise approve the next phase. While waiting, summarize the completed phase (files touched, what was built, what was verified, dev-server validation results) and ask for sign-off.
-7. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
+6. **Kill any dev server you started before ending the phase.** Never leave it running while waiting for sign-off.
+7. **Stop at the end of each phase and wait for explicit user sign-off before starting the next phase.** Always. Do not auto-continue across phase boundaries even if the plan does not say to pause. While waiting, summarize the completed phase (files touched, what was built, what was verified, dev-server validation results) and ask for sign-off. The only sign-off is `cnp`: **commit** the phase's changes (one commit scoped to the phase, conventional message), then start the next phase. Anything else (including "continue" or "go") is not sign-off; ask.
+8. **Out-of-scope implementation changes:** the plan is the source of truth, but implementation can surface a real obstacle (missing dependency, test-environment limitation, third-party contract gap, or necessary fix) that requires code outside the approved scope. When that happens:
     - Stop and obtain user approval before making the change. Do not silently expand the scope.
     - After the approved change is implemented, append a `## Out-of-scope implementation changes` section to the planning doc and its source research story. Group entries by phase and state the changed files, what changed, why it was needed, user approval, and verification. Keep entries concise and factual.
     - If the source research story is `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, add the same concise entry under the matching story heading in `ai-research/epics/<epic-name>.epic.md` so the epic tracks it too.
     - Do not edit earlier sections to hide the change; the approved plan and research stay intact and the additions are appended.
-8. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
+9. **Unit-test-driven robustness changes:** if writing or fixing tests reveals a source-code change needed to make behavior more robust, and that source change was not already explicit in the approved plan, treat it as an out-of-scope implementation change.
 
 ## Step 4 - Apply repo conventions while implementing
 
@@ -140,7 +142,7 @@ End the turn with:
 
 - Do not start implementation without an approved planning doc unless the user explicitly bypasses the workflow.
 - Do not skip planned verification.
-- Do not push, force-push, commit, or open a PR without explicit approval.
+- Do not push, force-push, commit, or open a PR without explicit approval. At a phase boundary, `cnp` is the only approval to commit and continue.
 - Do not add features beyond the plan. If something seems missing, stop and ask.
 - Do not remove pre-existing console statements unless planned.
 - Do not edit `CHANGELOG.md` or package version unless explicitly asked.

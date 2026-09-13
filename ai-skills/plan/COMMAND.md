@@ -1,4 +1,5 @@
 ---
+name: plan
 description: Convert a Tehesa research doc into an implementation plan under ai-planning/.
 ---
 
