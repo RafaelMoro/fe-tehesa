@@ -1,6 +1,6 @@
 # Repository Context - fe-tehesa
 
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-09-13
 
 A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
 
@@ -242,12 +242,14 @@ Values are expected in `.env.local` for local development. Without them, Apollo 
 
 ## Prompt Sync
 
-`scripts/sync-opencode-commands.mjs` discovers every `.opencode/command/*.md` file and copies it to both generated targets:
+`ai-skills/<skill>/` is the single source of truth for every skill (`research`, `plan`, `implement`, `unit-test`, `check-design`, `task-effort-estimator`, `pr-describer`). `.claude/skills/<skill>`, `.opencode/skill/<skill>`, and `.opencode/command/<skill>.md` are symlinks into it — edit only `ai-skills/<skill>/COMMAND.md` (and, since this repo keeps them identical, mirror the edit into `SKILL.md`, or just run the sync).
+
+`scripts/sync-opencode-commands.mjs` discovers every `.opencode/command/*.md` file (resolved through the symlinks above) and copies it to both generated targets:
 
 - `.github/prompts/<command>.prompt.md`
-- `.claude/skills/<command>/SKILL.md`
+- `.claude/skills/<command>/SKILL.md` (resolves through the `.claude/skills/<command>` symlink into `ai-skills/<command>/SKILL.md`)
 
-Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit either generated copy.
+Edit `ai-skills/<command>/COMMAND.md` first and run `pnpm sync:prompts`; do not hand-edit either generated copy.
 
 ## CI And Release Workflow
 
@@ -265,7 +267,7 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 - Aliases: Jest mirrors `tsconfig.json` (`^@/(.*)$` → `src/$1`) and adds `^@__tests__/(.*)$` → `__tests__/$1` for the test helper. Both must be listed in `tsconfig.json` `paths` for TypeScript to resolve them.
 - Coverage: emitted via `pnpm test`; no threshold is enforced. Report writes to `coverage/` which is explicitly gitignored by `.gitignore` (`/coverage`) and also ignored by `eslint.config.mjs`; do not commit it.
 - CI: `pnpm lint` + `pnpm test --coverage` run on every pull request and on pushes to `develop` via `.github/workflows/test.yml`. The coverage artifact is uploaded with `if-no-files-found: error`.
-- Authoring and repair: canonical rules live in `docs/UNIT_TESTING_GUIDELINES.md`. The OpenCode `unit-test` skill (`.opencode/skills/unit-test/SKILL.md`) and the `/unit-test` command (`.opencode/command/unit-test.md`, synced to `.github/prompts/unit-test.prompt.md`) cover create and fix flows without requiring an approved plan.
+- Authoring and repair: canonical rules live in `docs/UNIT_TESTING_GUIDELINES.md`. The `unit-test` skill (`ai-skills/unit-test/SKILL.md`, symlinked into `.claude/skills/unit-test` and `.opencode/skill/unit-test`) and the `/unit-test` command (`ai-skills/unit-test/COMMAND.md`, symlinked as `.opencode/command/unit-test.md` and synced to `.github/prompts/unit-test.prompt.md`) cover create and fix flows without requiring an approved plan.
 
 ## Styling And UI
 
@@ -304,8 +306,8 @@ Edit the OpenCode command first and run `pnpm sync:prompts`; do not hand-edit ei
 | `DESIGN.md`                                                                                | Visual design system tokens + rationale; lint with `pnpm design:lint`.                                                                                                                              |
 | `docs/UNIT_TESTING_GUIDELINES.md`                                                          | Canonical Jest/Testing Library authoring rules; the only full copy of test policy.                                                                                                                  |
 | `docs/ANALYTICS_EVENT_CONTRACT.md`                                                         | PLP analytics event contract (spec only; no analytics code ships yet). Requires product/marketing sign-off before an instrumentation story starts.                                                 |
-| `.opencode/skills/unit-test/SKILL.md`                                                      | Thin discoverable skill that points to the guide and the `/unit-test` command.                                                                                                                      |
-| `.opencode/command/*.md`                                                                  | OpenCode command sources. Edit these, then run `pnpm sync:prompts` to regenerate matching GitHub prompts and Claude skills.                                                                         |
+| `ai-skills/*/SKILL.md`, `ai-skills/*/COMMAND.md`                                           | Source of truth for every skill/command (`research`, `plan`, `implement`, `unit-test`, `check-design`, `task-effort-estimator`, `pr-describer`). `.claude/skills/<name>`, `.opencode/skill/<name>`, and `.opencode/command/<name>.md` are symlinks into this folder. Edit `ai-skills/<name>/COMMAND.md`, then run `pnpm sync:prompts` to regenerate `.github/prompts/*.prompt.md` and `ai-skills/<name>/SKILL.md`. |
+| `ai-skills/REPO_CONTEXT.md`                                                                | This file. Moved here from the repo root so it lives alongside the rest of the agent tooling.                                                                                                       |
 | `package.json`                                                                             | Scripts and dependencies.                                                                                                                                                                           |
 | `next.config.ts`                                                                           | Minimal Next config.                                                                                                                                                                                |
 | `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |

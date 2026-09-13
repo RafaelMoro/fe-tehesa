@@ -18,7 +18,7 @@ Parse `$ARGUMENTS` and the conversation for the research doc path.
 Read in order:
 
 1. **The research document** provided by the user, or selected recursively from `ai-research/`. This is the source of truth for scope, affected files, ACs, and open questions. If the research doc is not sign-offed, stop and ask the user.
-2. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
+2. `ai-skills/REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
 3. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 4. `package.json` - dependencies and scripts (`pnpm dev | build | start | lint | test | test:watch | sync:prompts`).
 5. Relevant executable config if the story touches it: `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.js`.
@@ -42,7 +42,7 @@ The plan covers **only** what the story explicitly asks for. Every file, helper,
 
 1. A specific acceptance criterion.
 2. A direct technical prerequisite of an acceptance criterion.
-3. A repo convention from `REPO_CONTEXT.md` or `AGENTS.md`.
+3. A repo convention from `ai-skills/REPO_CONTEXT.md` or `AGENTS.md`.
 4. A research-doc finding the user explicitly accepted.
 
 If an item does not trace to one of those, it is out of scope.
@@ -133,9 +133,9 @@ The planning doc should include:
 
 ## Step 8 - Capture planning insights
 
-If planning reveals a verified, broadly useful, non-obvious repo fact, add it to `REPO_CONTEXT.md`. Skip story-specific details.
+If planning reveals a verified, broadly useful, non-obvious repo fact, add it to `ai-skills/REPO_CONTEXT.md`. Skip story-specific details.
 
-If you update `.opencode/command/plan.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
+If you update `ai-skills/plan/COMMAND.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 9 - Present for review
 
@@ -151,7 +151,7 @@ Do **not** start implementing. Wait for human sign-off.
 
 ## Don'ts
 
-- Do not write source files or tests while planning, except the planning doc and optional verified `REPO_CONTEXT.md` note.
+- Do not write source files or tests while planning, except the planning doc and optional verified `ai-skills/REPO_CONTEXT.md` note.
 - Do not run tests, builds, lint, typecheck, `pnpm install`, or package manager changes during planning.
 - Do not include full code implementations.
 - Do not repeat the research doc wholesale; link to it and plan the work.
