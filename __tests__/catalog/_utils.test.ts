@@ -274,7 +274,7 @@ describe("catalog _utils", () => {
 
     it("rejects an unsafe category name pattern with CAT_VAL_003", () => {
       const { categoryName } = readValidatedParams(
-        requestWith("?category=cat%2F1"),
+        requestWith("?category=cat%3C1"),
       )
       expect(categoryName.ok).toBe(false)
       if (categoryName.ok) {
@@ -366,7 +366,47 @@ describe("catalog _utils", () => {
     })
 
     it("rejects a search term with unsafe characters using the pattern message", () => {
-      const { searchTerm } = readValidatedParams(requestWith("?q=tehesa%2F"))
+      const { searchTerm } = readValidatedParams(requestWith("?q=tehesa%3C"))
+      expect(searchTerm).toEqual({
+        ok: false,
+        error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN },
+      })
+    })
+
+    it("accepts a double quote", () => {
+      const { searchTerm } = readValidatedParams(requestWith('?q=1%22'))
+      expect(searchTerm).toEqual({ ok: true, value: '1"' })
+    })
+
+    it("accepts a forward slash", () => {
+      const { searchTerm } = readValidatedParams(requestWith("?q=1%2F2"))
+      expect(searchTerm).toEqual({ ok: true, value: "1/2" })
+    })
+
+    it("accepts a degree sign", () => {
+      const { searchTerm } = readValidatedParams(requestWith("?q=135%C2%B0"))
+      expect(searchTerm).toEqual({ ok: true, value: "135°" })
+    })
+
+    it("accepts a hash", () => {
+      const { searchTerm } = readValidatedParams(requestWith("?q=%23"))
+      expect(searchTerm).toEqual({ ok: true, value: "#" })
+    })
+
+    it("round-trips a full product-style term with fraction, quote, and words", () => {
+      const { searchTerm } = readValidatedParams(
+        requestWith("?q=1%2F2%22%20Punta%20Bristol%20Cromado"),
+      )
+      expect(searchTerm).toEqual({
+        ok: true,
+        value: '1/2" Punta Bristol Cromado',
+      })
+    })
+
+    it("still rejects <script> with CAT_VAL_006", () => {
+      const { searchTerm } = readValidatedParams(
+        requestWith("?q=%3Cscript%3E"),
+      )
       expect(searchTerm).toEqual({
         ok: false,
         error: { code: CAT_VAL_006, message: MSG_CAT_VAL_006_PATTERN },

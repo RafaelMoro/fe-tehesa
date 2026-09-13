@@ -1,4 +1,7 @@
-import { getQuoteTotals } from "@/features/QuotePage/quote.utils"
+import {
+  buildProductSearchHref,
+  getQuoteTotals,
+} from "@/features/QuotePage/quote.utils"
 import type { CartLine } from "@/shared/types/global.types"
 
 const pricedLine = (overrides: Partial<CartLine> = {}): CartLine =>
@@ -71,5 +74,37 @@ describe("getQuoteTotals", () => {
 
     expect(totals.pieceCount).toBe(10)
     expect(totals.productCount).toBe(2)
+  })
+})
+
+describe("buildProductSearchHref", () => {
+  it("keeps a fraction-and-quote product name whole, since / and \" are now legal", () => {
+    expect(buildProductSearchHref('1/2" Punta Bristol Cromado')).toBe(
+      "/?mode=name&q=1%2F2%22%20Punta%20Bristol%20Cromado&page=1",
+    )
+  })
+
+  it("keeps a degree-sign product name whole", () => {
+    expect(buildProductSearchHref("Broca AAV 135° Split Point")).toBe(
+      "/?mode=name&q=Broca%20AAV%20135%C2%B0%20Split%20Point&page=1",
+    )
+  })
+
+  it("keeps a mid-string quote product name whole", () => {
+    expect(
+      buildProductSearchHref('Dado Cuadro 1" Llanta Trasera Capuchon'),
+    ).toBe(
+      "/?mode=name&q=Dado%20Cuadro%201%22%20Llanta%20Trasera%20Capuchon&page=1",
+    )
+  })
+
+  it("returns null when nothing survives the strip", () => {
+    expect(buildProductSearchHref("***")).toBeNull()
+  })
+
+  it("takes the longest safe segment when a name contains truly unsafe characters", () => {
+    expect(buildProductSearchHref("Foo * Bar Baz")).toBe(
+      "/?mode=name&q=Bar%20Baz&page=1",
+    )
   })
 })

@@ -44,5 +44,10 @@ export const PRODUCT_PAGE_MAX = Math.ceil(
 export const DOCUMENT_ID_MAX_LENGTH = 30
 export const DOCUMENT_ID_PATTERN = /^[A-Za-z0-9_-]+$/
 export const SEARCH_TERM_MAX_LENGTH = 100
-export const SEARCH_TERM_PATTERN = /^[\p{L}\p{N}\s\-_.,&()]+$/u
+const SEARCH_TERM_CHARS = String.raw`\p{L}\p{N}\s\-_.,&()"\/°#`
+export const SEARCH_TERM_PATTERN = new RegExp(`^[${SEARCH_TERM_CHARS}]+$`, "u")
+export const SEARCH_TERM_UNSAFE_PATTERN = new RegExp(
+  `[^${SEARCH_TERM_CHARS}]+`,
+  "u",
+)
 export const REVALIDATE_MAX_IDS = CART_MAX_LINES

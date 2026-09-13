@@ -321,6 +321,8 @@ Add: `"`, `/`, `°`, `#` each accepted; `1/2" Punta Bristol Cromado` round-trips
 
 A synthetic `foo/bar` would pass a strip that mangles `1/2" Punta Bristol Cromado` into `1`.
 
+**Implementation note (resolved during `/implement`, confirmed with the user):** the "longest safe segment" split in `buildProductSearchHref` uses `SEARCH_TERM_UNSAFE_PATTERN` — the complement of the **widened** allowlist, per "Split productName on SEARCH_TERM_UNSAFE_PATTERN." Since `"`, `/`, `°` are now legal, none of them are split points any more, so `1/2" Punta Bristol Cromado` passes through **unchanged** as `q=1%2F2%22%20Punta%20Bristol%20Cromado`, not stripped to `q=Punta%20Bristol%20Cromado` as one example in the original test-case list implied. That example was internally inconsistent with the widened-pattern instruction (no single split rule satisfies "strip `1/2\"`" and "keep `Broca AAV 135° Split Point`/`Dado Cuadro 1\" …` whole" at the same time). `__tests__/quote/quote.utils.test.ts` was written to the corrected, consistent behavior; the strip still fires for truly unsafe characters (`*`, `\`, etc.), and AC 8's actual acceptance test (lands on a filtered search, not page 1) is unaffected either way — confirmed live against the real product named `1/2" Punta Bristol Cromado`.
+
 ### Success Criteria
 
 **Automated**
@@ -596,7 +598,7 @@ Cases, one per former manual step:
 | AC5 - ephemeral state only; no persisted field, no schema bump, no migrate/rehydrate change | Phase 3 | none — no runtime surface | Cannot validate | Proof is `git diff --stat` showing `cart.store.ts` and `cart.constants.ts` untouched, plus `pnpm exec tsc --noEmit` |
 | AC6 - id lists validated at the boundary, `CAT_*` envelope | Phase 1 | `?variantIds=bad!id`, `a,,b`, `a,`, 31-char id, 101 ids each → 400 `CAT_VAL_007` with the matching message; blank → 200 `[]` | Validated | All six curl checks matched exactly; missing-env → `CAT_ENV_001` also confirmed |
 | AC7 - variant with `pricing: null` → fifth state, stepper kept, only `Quitar` | Phase 3, Phase 4 | none — rendered client-side after the fetch | Cannot validate | Covered by `revalidation.test.tsx` (no-price case) and M7 |
-| AC8 - `Buscar alternativa` reaches a filtered search; widened allowlist | Phase 2, Phase 4 | `GET /api/catalog/search?q=1%2F2%22%20Punta%20Bristol%20Cromado` 200; `/?mode=name&q=1%2F2%22&page=1` 200 with no redirect; `/?mode=name&q=Punta%20Bristol%20Cromado&page=1` 200 containing the product; `q=%3Cscript%3E` still 400 `CAT_VAL_006` | Not validated | The click itself is M9; the href string is `quote.utils.test.ts` + `revalidation.test.tsx` |
+| AC8 - `Buscar alternativa` reaches a filtered search; widened allowlist | Phase 2, Phase 4 | `GET /api/catalog/search?q=1%2F2%22%20Punta%20Bristol%20Cromado` 200; `/?mode=name&q=1%2F2%22&page=1` 200 with no redirect; `/?mode=name&q=Punta%20Bristol%20Cromado&page=1` 200 containing the product; `q=%3Cscript%3E` still 400 `CAT_VAL_006` | Validated | Route half fully confirmed against live Strapi data (real product `1/2" Punta Bristol Cromado` found via search, no redirect on `mode=name`, `<script>`/`%`/backtick still rejected). Note: per user-resolved ambiguity, `buildProductSearchHref` keeps the whole product name (incl. `1/2"`) rather than stripping it — the click itself is still M9; the href string is `quote.utils.test.ts` + `revalidation.test.tsx` (Phase 4) |
 
 ---
 

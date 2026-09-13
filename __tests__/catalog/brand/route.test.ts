@@ -72,7 +72,7 @@ describe("GET /api/catalog/brand", () => {
   it("rejects an invalid brand name with CAT_VAL_004", async () => {
     setEnv()
 
-    const res = await GET(requestWith("?brand=bad%2Fname"))
+    const res = await GET(requestWith("?brand=bad%3Cname"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,
