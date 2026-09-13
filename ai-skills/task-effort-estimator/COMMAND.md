@@ -142,4 +142,4 @@ Show the arithmetic behind totals. End with the likely total effort and the most
 - Do not convert person-days directly into dates without team capacity, holidays, and availability.
 - Do not claim backend feasibility when the research document does not establish the contract or repository access.
 
-If you update this command, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
+If you update `ai-skills/task-effort-estimator/COMMAND.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.

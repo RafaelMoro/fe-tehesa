@@ -1,3 +1,9 @@
+## v0.29.0 (2026-09-13)
+
+### Pull Requests
+[#36](https://github.com/RafaelMoro/fe-tehesa/pull/36) | Add AI skills
+
+
 ## v0.28.0 (2026-08-01)
 
 ### Pull Requests

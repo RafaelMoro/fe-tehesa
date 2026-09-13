@@ -19,38 +19,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## High-Level Architecture
 
-**fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog. It fetches paginated products from Strapi via GraphQL, supports client-side search/filtering, and opens a drawer for variant pricing.
+**fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog. It fetches paginated products from Strapi via GraphQL, supports client-side search/filtering, opens a drawer for variant pricing, and now has a `/cotizar` quote page backed by a persisted cart.
 
 ```
 Browser (page?=..., theme cookie)
   ↓
 Next.js App Router (src/app)
-  ├─ Server: src/app/page.tsx fetches products + taxonomy + theme
+  ├─ Server: src/app/page.tsx (/, catalog) and src/app/cotizar/page.tsx (/cotizar, quote shell)
   ├─ Routes: /api/preferences (theme), /api/catalog/* (product queries)
-  ├─ Providers: NextThemesProvider (dark mode), HeroUI provider
+  ├─ Providers: NextThemesProvider (dark mode), HeroUI provider, CartStoreProvider + Toast.Provider (providers.tsx)
   └─ Apollo Client factory (per-request) → Strapi
         │
   Client (src/features + src/components)
   ├─ Home (search, filter dropdowns, pagination)
   ├─ ProductListing (grid, search input, filters)
-  ├─ ProductVariantsDrawer (variants + prices)
+  ├─ ProductVariantsDrawer (variants + prices; optional upgrade mode for /cotizar's "Elegir medida")
   ├─ CatalogSearchDrawer (name search + category/brand filters)
+  ├─ QuotePage (/cotizar line list, subtotal, clear-list confirmation)
   └─ ProductCard (shared, mobile-aware)
         │
   Shared (src/shared)
   ├─ lib/global.lib.ts ("use server", server actions for Strapi reads + theme cookie)
   ├─ queries/global.queries.ts (GraphQL operations)
-  ├─ constants (catalog error codes, theme cookie key, validation rules)
-  ├─ types (Product, Variant, Theme, pagination types)
-  ├─ utils (currency formatting, catalog API envelope wrapper)
+  ├─ constants (catalog error codes, theme cookie key, cart bounds, validation rules)
+  ├─ types (Product, Variant, Theme, pagination, cart line types)
+  ├─ utils (currency formatting, catalog API envelope wrapper, SEO metadata/JSON-LD builders)
   ├─ hooks (useMediaQuery)
-  └─ ui/atoms + ui/organisms (ToggleDarkMode, Header, etc.)
+  └─ ui/atoms + ui/organisms (ToggleDarkMode, CartCount, QuantityStepper, Header, etc.)
         │
   State (src/zustand)
-  └─ Provider-wraps-store pattern for theme state (SSR-safe)
+  ├─ change-theme store/provider (SSR-safe, currently zero consumers — ToggleDarkMode uses next-themes directly)
+  └─ cart store/provider — SSR-safe, persists to localStorage via zustand/persist with rehydrate validation
 ```
 
-**Key flow invariant:** Server components in `src/app/page.tsx` call `"use server"` actions in `src/shared/lib/global.lib.ts`, which create a **per-request Apollo Client** against Strapi. Clients never import `global.lib.ts` directly. Route handlers wrap server actions in thin HTTP envelopes.
+**Key flow invariant:** Server components in `src/app/page.tsx` call `"use server"` actions in `src/shared/lib/global.lib.ts`, which create a **per-request Apollo Client** against Strapi. Clients never import `global.lib.ts` directly. Route handlers wrap server actions in thin HTTP envelopes. The cart (`/cotizar`) is client-only Zustand state persisted to `localStorage`; it is not synced to Strapi — there is no order/cart/quote content type in the backend.
+
+See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a summary, kept only roughly in sync).
 
 ## Tech Stack
 
@@ -70,19 +74,21 @@ Next.js App Router (src/app)
 | `src/app/page.tsx` | Catalog page — parses URL, fetches server data, renders Home |
 | `src/app/api/catalog/*` | HTTP route handlers (thin wrappers over server actions) |
 | `src/app/api/preferences/` | POST endpoint for theme cookie persistence |
+| `src/app/cotizar/page.tsx` | Quote route `/cotizar` — server shell + `generateMetadata` (`noindex, follow`) around the `"use client"` `QuotePage` feature |
+| `src/app/providers.tsx` | Client provider: mounts `CartStoreProvider` and HeroUI's `Toast.Provider` |
 | `src/app/robots.ts` | `GET /robots.txt` — disallows `/api/`, points to the sitemap |
 | `src/app/sitemap.ts` | `GET /sitemap.xml` — base pages + live category/brand URLs; degrades to base pages if Strapi is unreachable |
-| `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination |
+| `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination, QuotePage |
 | `src/components/` | Shared ProductCard (only) |
 | `src/shared/lib/global.lib.ts` | Server actions for Strapi reads + theme cookie (the "use server" seam) |
 | `src/shared/queries/` | GraphQL operations |
-| `src/shared/types/` | Domain types (Product, Variant, Theme, pagination, taxonomy) |
-| `src/shared/constants/` | Catalog error codes, theme cookie key, validation rules, pagination bounds, SEO copy/origin (`seo.constants.ts`) |
+| `src/shared/types/` | Domain types (Product, Variant, Theme, pagination, taxonomy, cart line types) |
+| `src/shared/constants/` | Catalog error codes, theme cookie key, cart bounds (`cart.constants.ts`), validation rules, pagination bounds, SEO copy/origin (`seo.constants.ts`) |
 | `src/shared/utils/` | Pure helpers (currency format, catalog API client envelope wrapper, SEO metadata/JSON-LD builders in `seo.utils.ts`) |
-| `src/shared/ui/atoms` | Atomic UI (ToggleDarkMode, etc.) |
-| `src/shared/ui/organisms` | Composed UI (Header) |
-| `src/zustand/store/` | Vanilla Zustand theme store |
-| `src/zustand/provider/` | SSR-safe theme store provider (wraps-store pattern) |
+| `src/shared/ui/atoms` | Atomic UI (ToggleDarkMode, QuantityStepper, CartCount, etc.) |
+| `src/shared/ui/organisms` | Composed UI (Header — renders `CartCount`, rendered once from the root layout) |
+| `src/zustand/store/` | Vanilla Zustand stores: theme (`change-theme.store.ts`) and cart (`cart.store.ts`, `zustand/persist` to `localStorage`) |
+| `src/zustand/provider/` | SSR-safe store providers (wraps-store pattern), one per store |
 
 ## Data Flow And Catalog Behavior
 
@@ -162,15 +168,19 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 
 ## Workflow Skills
 
-Five OpenCode skills are configured in `.claude/skills/` (synced from `.opencode/command/` via `pnpm sync:prompts`):
+`ai-skills/<skill>/` is the single source of truth for every skill and command, edited in one place and reused everywhere: `.claude/skills/<skill>`, `.opencode/skill/<skill>`, `.opencode/command/<skill>.md`, and `.github/prompts/<skill>.prompt.md` are all symlinks into it. Editing `ai-skills/<skill>/COMMAND.md` and running `pnpm sync:prompts` regenerates `ai-skills/<skill>/SKILL.md` (this repo keeps `SKILL.md` and `COMMAND.md` byte-identical) — `.github/prompts` needs no regeneration since it's a direct symlink to `COMMAND.md`.
+
+Seven skills are configured:
 
 - `/research` — investigate a story, write findings to `ai-research/`
 - `/plan` — convert research doc into implementation steps under `ai-planning/`
 - `/implement` — execute an approved plan phase by phase
 - `/unit-test` — create or fix Jest tests without an approved plan
-- `/task-effort-estimator` — estimate story effort from a research doc
+- `/check-design` — file completed design screenshots for a research brief into `comps/`
+- `/task-effort-estimator` — estimate story or epic effort from a research doc
+- `/pr-describer` — write a PR title/description from the current branch's changes
 
-Use `/research` to kick off a feature or bug investigation. It reads `REPO_CONTEXT.md`, `AGENTS.md`, and project structure to give future instances context. After research, `/plan` creates an implementation plan. Then `/implement` executes it phase by phase with verification gates.
+Use `/research` to kick off a feature or bug investigation. It reads `ai-skills/REPO_CONTEXT.md`, `AGENTS.md`, and project structure to give future instances context. After research, `/plan` creates an implementation plan. Then `/implement` executes it phase by phase with verification gates.
 
 ## External References
 
@@ -180,7 +190,7 @@ Use `/research` to kick off a feature or bug investigation. It reads `REPO_CONTE
 
 ## See Also
 
-- `REPO_CONTEXT.md` — detailed architecture, data flow, open questions, key files
+- `ai-skills/REPO_CONTEXT.md` — detailed architecture, data flow, open questions, key files (moved here from the repo root; this is the current canonical path)
 - `AGENTS.md` — compact commands, env, architecture, release workflow
 - `docs/IMPLEMENTATION_GUIDELINES.md` — control flow, object literals, error messages (must read before implementing)
 - `docs/UNIT_TESTING_GUIDELINES.md` — Jest/Testing Library rules (canonical, not duplicated elsewhere)

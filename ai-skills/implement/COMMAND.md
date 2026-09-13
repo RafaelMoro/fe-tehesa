@@ -19,7 +19,7 @@ Read in order:
 
 1. **The planning document** provided by the user, or selected recursively from `ai-planning/`. This is the source of truth for implementation; do not invent changes that are not in the plan.
 2. `docs/IMPLEMENTATION_GUIDELINES.md` - project-wide implementation guidelines. Apply them throughout; they override defaults when in conflict.
-3. `REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
+3. `ai-skills/REPO_CONTEXT.md` - architecture map, catalog data flow, theme/cookie flow, conventions, CI, and open questions.
 4. `AGENTS.md` - compact commands, env, app structure, test status, styling, and PR/release guidance.
 5. `package.json` - dependencies and scripts.
 6. The research doc the plan references, usually `ai-research/{story-name}.story.md`, `ai-research/<epic-name>/<story-name>.story-<story-number>.md`, or `ai-research/epics/<epic-name>.epic.md`, for ACs and assumptions.
@@ -59,12 +59,12 @@ For each phase in the plan:
 These are non-negotiable. If the plan violates one, stop and ask because the plan may be wrong.
 
 - **File layout**: domain UI belongs in `src/features/<Feature>/`; shared UI/code belongs in `src/shared/{ui,hooks,lib,utils,constants,types,queries}`; App Router pages and route handlers belong under `src/app/**`; `src/components` currently only contains shared `ProductCard`.
-- **Existing domains**: `Home`, `ProductListing`, and `ProductVariantsDrawer`.
+- **Existing domains**: `Home`, `ProductListing`, `ProductVariantsDrawer`, `CatalogSearchDrawer`, `Pagination`, and `QuotePage` (/cotizar).
 - **Path alias**: use `@/*` for `src/*` imports. Do not use deep relative imports for app code when the alias applies.
 - **Server vs client**: add `"use client"` only to files that use React hooks, browser APIs, router hooks, event handlers, Zustand hooks, HeroUI hooks, or client-only UI behavior. Do not add it to route handlers or server-only libs.
 - **Data access**: preserve the Apollo/Strapi pattern in `src/shared/lib/global.lib.ts` and `src/app/apollo-client.ts` unless the approved plan explicitly changes it.
 - **Env vars**: Strapi reads require `STRAPI_HOST` and `STRAPI_API_TOKEN`.
-- **Pagination**: `src/app/page.tsx` intentionally clamps catalog pages to `1..5`; do not replace this unless planned.
+- **Pagination**: `src/app/page.tsx` intentionally clamps catalog pages to `1..7` (derived from `KNOWN_PRODUCT_TOTAL = 333` / `PRODUCT_PAGE_SIZE = 50`); do not replace this unless planned.
 - **State strategy**: use local React state, cookies/server actions, next-themes, and the existing Zustand provider/store pattern. Do not add another state library.
 - **Theme**: use `POST /api/preferences`, `saveThemeCookie()`, `THEME_COOKIE_KEY`, `NextThemesProvider`, and `ChangeThemeStoreProvider` rather than writing cookies directly from clients.
 - **API routes**: existing route handler is `/api/preferences`; keep `NextResponse.json` style unless intentionally changing it.
@@ -88,7 +88,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
 
 ## Step 6 - Final steps before declaring done
 
-- Update `REPO_CONTEXT.md` if you added or changed a broadly useful structural fact: route handler inventory, feature domain, shared helper, env var, cross-cutting convention, or non-obvious gotcha.
+- Update `ai-skills/REPO_CONTEXT.md` if you added or changed a broadly useful structural fact: route handler inventory, feature domain, shared helper, env var, cross-cutting convention, or non-obvious gotcha.
 - Run the final verification appropriate for the change. Prefer focused checks first, then broader checks when warranted:
   - `pnpm exec tsc --noEmit`
   - `pnpm lint`
@@ -103,7 +103,7 @@ If verification fails, fix the implementation or adjust the plan only with user 
   - An overall completion percentage calculated as completed acceptance criteria divided by total acceptance criteria across the epic, with the `completed/total` basis shown. Count only verified criteria; do not estimate partial progress.
   - A short, prioritized `Next Steps` list containing only remaining or blocked work and its prerequisite where applicable.
   - Do not mark the epic complete unless every acceptance criterion is verified complete. Do not update the epic for partial or failed implementation.
-- If you update `.opencode/command/implement.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
+- If you update `ai-skills/implement/COMMAND.md`, run `pnpm sync:prompts` afterward so its GitHub prompt and Claude skill stay in sync.
 
 ## Step 7 - Capture follow-ups
 
@@ -111,7 +111,7 @@ If implementation surfaces something outside the plan and it is not blocking:
 
 - Note it as a deferred follow-up in the final report.
 - Do not start a new story to address it without going through `/research` again.
-- Add to `REPO_CONTEXT.md` only if it is verified, broadly useful, and not story-specific.
+- Add to `ai-skills/REPO_CONTEXT.md` only if it is verified, broadly useful, and not story-specific.
 
 ## Step 8 - Present for review
 
@@ -120,7 +120,7 @@ End the turn with:
 1. Files created / modified / deleted.
 2. Phase status and what was completed.
 3. Typecheck / build / lint / manual verification status with exact commands run.
-4. Whether `REPO_CONTEXT.md` was updated and why.
+4. Whether `ai-skills/REPO_CONTEXT.md` was updated and why.
 5. Deferred follow-ups.
 6. Epic completion update, when applicable: percentage, story overview, and next steps.
 7. Out-of-scope implementation changes recorded, when applicable.
