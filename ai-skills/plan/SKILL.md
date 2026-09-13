@@ -1,4 +1,5 @@
 ---
+name: plan
 description: Convert a Tehesa research doc into an implementation plan under ai-planning/.
 ---
 
@@ -96,7 +97,12 @@ Each phase needs:
   - `pnpm lint` for lint verification.
   - `pnpm build` for full production verification when server/client integration or data fetching changed.
   - `pnpm test` and `pnpm test -- <relative test path>` when the story includes tests. No coverage threshold; treat the test command as the verification step.
-- **Manual** - specific user-facing steps when UI behavior is affected, including mobile/desktop when responsive behavior matters.
+- **Dev-server validation** - required for every phase. The implementer starts `pnpm dev` themselves and validates the phase against the running app, so list exactly what to check:
+  - The routes to hit (e.g. `/`, `/?mode=category&category=<name>&page=1`, `/cotizar`, `/api/catalog/products?page=1`) and the expected HTTP status.
+  - What the response must contain: rendered text/markup for pages, `{ success, data | code, message }` envelopes for API routes, error codes for invalid input.
+  - What must not appear: server-log errors, hydration warnings, `CAT_ERR_*` on valid input.
+  - Skip only when the phase touches nothing reachable at runtime (pure types/constants); say so explicitly.
+- **Manual** - only what cannot be checked from the dev server with `curl` (clicks, drawers, localStorage state, mobile/desktop layout). Keep this list short; anything reachable over HTTP belongs in dev-server validation.
 
 Do not tell implementers to run `pnpm install` unless the plan intentionally changes dependencies.
 
@@ -104,11 +110,11 @@ Do not tell implementers to run `pnpm install` unless the plan intentionally cha
 
 There is no test runner configured. Add a table like this and keep it honest:
 
-| Area/File                          | Coverage/check areas                                            | Verification reference                                |
-| ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
-| `src/features/Home/Home.tsx`       | search/filter/pagination interaction required by ACs            | manual browser check + `pnpm lint` / `pnpm build`     |
-| `src/shared/lib/global.lib.ts`     | Strapi variables, return shapes, error behavior in scope        | `pnpm exec tsc --noEmit` + targeted manual data check |
-| `src/app/api/preferences/route.ts` | required theme payload, success/error response shape if touched | manual API call or integration check + `pnpm build`   |
+| Area/File                          | Coverage/check areas                                            | Verification reference                                            |
+| ---------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `src/features/Home/Home.tsx`       | search/filter/pagination interaction required by ACs            | dev-server `curl` of `/` + manual click-through                   |
+| `src/shared/lib/global.lib.ts`     | Strapi variables, return shapes, error behavior in scope        | `pnpm exec tsc --noEmit` + dev-server `curl` of the calling route |
+| `src/app/api/preferences/route.ts` | required theme payload, success/error response shape if touched | dev-server `curl -X POST` valid + invalid payload                 |
 
 If the story explicitly adds a test framework, plan only the minimum test setup required by that story. Jest 30 + Testing Library are already configured; do not reinvent them. Do not invent Vitest, Playwright, or other test frameworks.
 
@@ -152,7 +158,7 @@ Do **not** start implementing. Wait for human sign-off.
 ## Don'ts
 
 - Do not write source files or tests while planning, except the planning doc and optional verified `ai-skills/REPO_CONTEXT.md` note.
-- Do not run tests, builds, lint, typecheck, `pnpm install`, or package manager changes during planning.
+- Do not run tests, builds, lint, typecheck, the dev server, `pnpm install`, or package manager changes during planning. Dev-server validation is specified here and executed by `/implement`.
 - Do not include full code implementations.
 - Do not repeat the research doc wholesale; link to it and plan the work.
 - Do not add phases for tooling-only concerns like formatting, CI release, changelog, or version bumps.
