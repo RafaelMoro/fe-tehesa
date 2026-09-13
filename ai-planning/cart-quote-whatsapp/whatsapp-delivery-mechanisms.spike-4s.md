@@ -188,12 +188,12 @@ Every AC here is documentary, so every row is `Cannot validate` by dev-server ch
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 |---|---|---|---|---|
-| AC1 — Direction fit answered first, per framing, cited | Phase 1 | none — prose only | Cannot validate | Manual: three framings, each with a dated Meta citation and a verdict |
-| AC2 — Five mechanisms assessed per "What to establish" | Phase 1 (rows 1-2), Phase 2 (rows 3-5) | none — prose only | Cannot validate | Manual: one block per row; On-Prem is one line |
-| AC3 — Five non-price questions answered + ledger | Phase 3 | none — prose only | Cannot validate | Manual: five entries + two-column ledger |
-| AC4 — Cost table at 50/100, every figure cited and dated, Mexico rate | Phase 4 | none — prose only | Cannot validate | Manual: no uncited number; `not published` where absent |
-| AC5 — Stay/migrate recommendation, disprovable, Story 4 AC 5/6 fate | Phase 4 | none — prose only | Cannot validate | Manual read |
-| AC6 — Appended to the epic, no code, Overview/Next Steps updated | Phase 4 | `git status --porcelain` shows only the epic (+ `docs/improvement.md` on migrate) | Cannot validate | The git check proves "no code"; the rest is a manual read |
+| AC1 — Direction fit answered first, per framing, cited | Phase 1 | none — prose only | Validated | Three framings written with verdicts, cited to Meta docs (pricing, overview, send-messages), dated 2026-09-13. Framing A viable, gate passed |
+| AC2 — Five mechanisms assessed per "What to establish" | Phase 1 (rows 1-2), Phase 2 (rows 3-5) | none — prose only | Validated | One block per row (click-to-chat, WhatsApp Business app, Cloud API, Twilio + 360dialog as BSPs, On-Premises one-liner with sunset date) |
+| AC3 — Five non-price questions answered + ledger | Phase 3 | none — prose only | Validated | Five numbered entries (exclusivity, verification, 24h window, opt-in, ledger) each cited; two-column gains/costs table present |
+| AC4 — Cost table at 50/100, every figure cited and dated, Mexico rate | Phase 4 | none — prose only | Validated | Table present; Mexico per-message rate is `not published` (CSV not fetchable from this environment) rather than estimated, per the plan's rule; BSP figures cited and dated |
+| AC5 — Stay/migrate recommendation, disprovable, Story 4 AC 5/6 fate | Phase 4 | none — prose only | Validated | Recommendation: stay on click-to-chat; disprovable trigger named (batch abandonment or seller rejecting sequential sends); AC 5/AC 6 stand |
+| AC6 — Appended to the epic, no code, Overview/Next Steps updated | Phase 4 | `git status --porcelain` shows only the epic (+ `docs/improvement.md` on migrate) | Validated | `git status --porcelain` shows only `ai-research/epics/cart-quote-whatsapp.epic.md` modified; recommendation is "stay," so `docs/improvement.md` correctly left untouched; Story Overview, Overall Completion note, Next Steps, and WhatsApp V all updated |
 
 ## Cross-Cutting Concerns
 
