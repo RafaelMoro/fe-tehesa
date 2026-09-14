@@ -3,7 +3,7 @@
 **Source research:** `ai-research/epics/cart-quote-whatsapp.epic.md`, "Story 5: Analytics Contract Extension For The Cart Funnel" (lines 263-272), plus Persistence II (line 727) and the Spike 4S opt-in note (line 625) for the PII wording.
 **Research status:** epic header still reads "Awaiting human sign-off," but Stories 1-4 and Spike 4S were planned and implemented from it; this is the last story. **Confirm sign-off before `/implement`.**
 **Date:** 2026-09-13
-**Story type:** documentation-only. No source files, no tests, no dependencies. `docs/ANALYTICS_EVENT_CONTRACT.md` stays a spec — nothing here adds `track()`, a provider, or any instrumentation code.
+**Story type:** documentation-only, plus one Story 4 bug fix pulled in by the user (2026-09-13, see Phase 0). `docs/ANALYTICS_EVENT_CONTRACT.md` stays a spec — nothing here adds `track()`, a provider, or any instrumentation code.
 
 **Assumptions:**
 
@@ -20,14 +20,24 @@ Copied from the epic, in order:
 3. The contract states explicitly that the buyer's name and email are **never** sent to any provider — the adapter's mandatory PII redaction (`ANALYTICS_EVENT_CONTRACT.md:75`) is a backstop, not the control.
 4. `docs/improvement.md` "Cart feature follow-up" is updated to reflect what shipped.
 
+Added during planning (user decision, 2026-09-13):
+
+5. A multi-part quote carries the **same** quote reference on every part across re-renders of `WhatsappCta` — the reference is generated once per mount, not once per render. (Restores Story 4 AC 5, which the current code breaks; see Phase 0.)
+
 ## Affected Files
+
+**`src/features/QuotePage/`**
+- `WhatsappCta.tsx` (modify) — AC 5: hold the quote reference in component state.
+
+**`__tests__/cart/`**
+- `WhatsappCta.test.tsx` (modify) — AC 5: assert a stable reference across a re-render.
 
 **docs**
 - `docs/ANALYTICS_EVENT_CONTRACT.md` (modify) — AC 1, 2, 3.
 - `docs/improvement.md` (modify) — AC 4.
 - `ai-research/epics/cart-quote-whatsapp.epic.md` (modify) — Story 5 completion status, per the close-out convention every prior story followed (`266f5c9`).
 
-No `src/**`, `__tests__/**`, or config changes.
+No config or dependency changes.
 
 ## Real trigger sites (verified 2026-09-13)
 
@@ -44,6 +54,42 @@ The contract cites file:line for every trigger. These are the current ones; the 
 | Open a WhatsApp part | `src/features/QuotePage/WhatsappCta.tsx:77` | `markOpened`, called from the single-part anchor (`:88`) and each multi-part anchor (`:142`) | `openedParts` is per-mount React state |
 
 Cart mutations that are deliberately **not** events (name them in the contract so nobody wires them ad hoc): `upgradeLine` (`Elegir medida` replaces a line in place), `setLineQuantity`, `archiveAndClearLines` (`Empezar una nueva cotización` — post-lead housekeeping, not a removal), `restoreLastQuote` / `dismissLastQuote`, `setContact` / `clearContact`.
+
+## Phase 0 — Stable quote reference per mount (AC 5)
+
+Root cause: `buildQuoteMessages(lines, contact, reference = generateQuoteReference())` (`src/shared/utils/whatsapp-message.utils.ts:149-152`) is called on every render of `WhatsappCta` (`WhatsappCta.tsx:74`) with the default argument. `generateQuoteReference` has a random 4-hex suffix, so any re-render — including the `setOpenedParts` state update in `markOpened` — produces a new reference. Part 1 and part 2 of a multi-part quote therefore carry different references; the seller cannot reassemble them.
+
+### Changes Required
+
+**`src/features/QuotePage/WhatsappCta.tsx`** (modify)
+
+- Near `:47` (`openedParts` state): add `const [reference] = useState(() => generateQuoteReference())`. Import `generateQuoteReference` from `@/shared/utils/whatsapp-message.utils` (already the module imported at `:8-11`).
+- `:74`: `buildQuoteMessages(effectiveLines, validContact, reference)`.
+- Keep the `useState` **above** the early `return`s (`:53-72`) — hooks order. One new reference per mount of `WhatsappCta` is the intended lifetime: `QuotePage` mounts it once per visit, and `Empezar una nueva cotización` clears the list, which unmounts it via the empty-state branch, so the next quote gets a fresh reference.
+- Do not change `buildQuoteMessages`' signature or its default; the pure builder and its tests stay as they are.
+
+**`__tests__/cart/WhatsappCta.test.tsx`** (modify)
+
+- Add one case in the existing multi-part `describe`: render a cart that splits into ≥2 parts, read the reference out of part 1's `href` (decode, match `/TH-\d{6}-[0-9A-F]{4}/`), click `Abrir parte 1`, then assert part 2's `href` (and part 1's re-rendered `href`) contain the identical reference. Reuse the fixtures the existing forced-split case already uses. Follow `docs/UNIT_TESTING_GUIDELINES.md`.
+
+### Success Criteria
+
+**Automated**
+- `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` — new case passes; all existing cases unchanged.
+- `pnpm test -- __tests__/cart/whatsapp-message.utils.test.ts` — untouched, still green.
+- `pnpm exec tsc --noEmit`, `pnpm lint`.
+
+**Dev-server validation**
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/cotizar` → `200`, no compile/runtime error in the server log. (`QuotePage` SSRs a skeleton behind its mounted guard, so the CTA itself is not in the HTML — the runtime check is that the route still builds and renders.)
+
+**Manual**
+- Seed a cart large enough to split (≥ ~12 accented-name lines), fill contact, open part 1, then hover/inspect part 2's link: the `TH-…` reference in both decoded `text=` params matches.
+
+### Verification Coverage
+
+| Area/File | Coverage/check areas | Verification reference |
+|---|---|---|
+| `src/features/QuotePage/WhatsappCta.tsx` | reference stable across `markOpened` re-render | `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` |
 
 ## Phase 1 — Extend `docs/ANALYTICS_EVENT_CONTRACT.md` (AC 1, 2, 3)
 
@@ -75,7 +121,7 @@ Cart mutations that are deliberately **not** events (name them in the contract s
    - `firstName`, `lastName`, `email` — collected by `ContactForm`, persisted in the cart store's `contact` slice, interpolated into the WhatsApp message — are **never** a parameter on any event. No event in this contract has a field for them, and none may be added.
    - The adapter's redaction pass (`:75`) is a backstop for free-text fields like `search_term`; it is **not** the control for contact details. The control is that the fields do not exist in the payload types — with the discriminated union (`:73`), adding one is a visible diff in a type, not a runtime accident.
    - Scope of "never sent to any provider" = analytics providers. Per Spike 4S (epic line 625), a future WhatsApp Cloud API migration would transmit those same details through Tehesa's own server as a *non-analytics* path; that is out of this contract's jurisdiction and would need its own privacy review (LFPDPPP) — say so in one sentence so nobody reads this contract as covering it.
-   - No quote reference in any payload either: `generateQuoteReference` is random and (see Open Questions) currently regenerates per render, so it is not a stable join key.
+   - No quote reference in any payload either: it is a random per-visit handle for the seller conversation, not a join key, and pushing it to a provider adds a pseudo-identifier for no report.
 
 4. **Reliability caveats** (`:60-68`): add two bullets — `view_cart.value` is a snapshot price, and `line_count` on cart events is the persisted-line count (`CART_MAX_LINES` bound), not a product count.
 
@@ -116,7 +162,7 @@ Do **not** touch the primary/secondary tables, the adapter contract, or the App 
 
 **`ai-research/epics/cart-quote-whatsapp.epic.md`** (modify — close-out convention, same shape as Stories 1-4)
 
-- Add a `### Story 5: Analytics Contract Extension — Complete` block above the "Epic Story Overview" table: AC 1-4 → the section of the contract / improvement.md that satisfies each, dated.
+- Add a `### Story 5: Analytics Contract Extension — Complete` block above the "Epic Story Overview" table: AC 1-4 → the section of the contract / improvement.md that satisfies each, dated; plus the AC 5 fix, noted as a Story 4 defect found and closed in this story (same "out-of-scope correction" style Story 4's block uses).
 - "Epic Story Overview" (`:1004-1011`): Story 5 row → `Complete`.
 - "Overall Completion" (`:1015-1017`): `36 / 36`; replace "The epic is not complete — Story 5 remains." with the epic-complete statement. Remaining work is only the deferred manual QA already listed for Stories 3 and 4.
 - "Next Steps" (`:1024`): strike item 4 as done, same `~~…~~ **Done, 2026-09-13.**` pattern as items 1 and 3.
@@ -147,18 +193,17 @@ Do **not** touch the primary/secondary tables, the adapter contract, or the App 
 | AC2 — four more reserved-name events, flat payloads | Phase 1 | n/a — docs only | Cannot validate | Proof is the 5-row grep and a read against the ≤40/≤25/≤100 limits |
 | AC3 — name/email never sent; redaction is a backstop | Phase 1 | n/a — docs only | Cannot validate | Proof is the "never analytics data" subsection and no contact field in any table row |
 | AC4 — `docs/improvement.md` reflects what shipped | Phase 2 | n/a — docs only | Cannot validate | Proof is the two `cart funnel` greps |
+| AC5 — same quote reference on every part across re-renders | Phase 0 | `GET /cotizar` 200 (route still renders); proof is `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` | Not validated | The CTA is behind the mounted guard, so the reference itself is only observable in jsdom / manually |
 
 ## Cross-cutting concerns
 
 - **PII.** The only trust-boundary content in this story is the sentence that keeps contact details out of payloads. It is the control; write it as a prohibition, not a recommendation.
 - **GA4 limits.** Reserved names and ≤40-char params are the whole reason this is "keep reserved names" rather than `cart_*`. `remove_from_cart` (16), `begin_checkout` (14), `generate_lead` (13) all fit.
-- **No code.** If the implementer feels the urge to add a `track()` call "while here" — don't. The contract's Status block says no code ships by this doc, and that stays true.
+- **No analytics code.** Phase 0 is the only source change and it is a Story 4 bug fix. If the implementer feels the urge to add a `track()` call "while here" — don't. The contract's Status block says no code ships by this doc, and that stays true.
 
 ## Open Questions / Out-of-scope
 
-**Found during planning — not this story's, needs a decision:**
-
-- **`generateQuoteReference` regenerates on every `WhatsappCta` render.** `buildQuoteMessages(effectiveLines, validContact)` (`WhatsappCta.tsx:74`) takes the reference as a defaulted third argument, and the default calls `generateQuoteReference()`, which has a random 4-hex suffix. `markOpened` sets state → re-render → part 2's URL carries a **different** reference from part 1, breaking Story 4 AC 5 ("every part carries … the same reference") and the seller's ability to reassemble a multi-part quote. The existing unit test passes because it calls the builder once. Fix shape: hold the reference in `useState(() => generateQuoteReference())` (or `useMemo` keyed on nothing) in `WhatsappCta` and pass it explicitly. One-line fix plus one test asserting two renders share a reference — but it is a Story 4 bug, so it should land as its own patch, not smuggled into a docs PR. **This is why no payload carries `quote_reference`.**
+**Found during planning — pulled into scope (Phase 0, user decision 2026-09-13):** the per-render quote reference bug in `WhatsappCta`. Recorded there, not here.
 
 **Out of scope, deliberately:**
 
