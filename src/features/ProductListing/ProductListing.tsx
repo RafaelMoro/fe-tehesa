@@ -34,14 +34,16 @@ export const ProductListing = ({
         </p>
         <div className="mt-6 flex flex-col items-center gap-3">
           {onOpenCatalogSearch && (
-            <Button size="lg" variant="primary" onPress={onOpenCatalogSearch}>
-              Buscar en todo el catálogo
-              <RiArrowRightLine aria-hidden="true" />
-            </Button>
+            <>
+              <Button size="lg" variant="primary" onPress={onOpenCatalogSearch}>
+                Buscar en todo el catálogo
+                <RiArrowRightLine aria-hidden="true" />
+              </Button>
+              <p className="text-xs text-muted mt-8">
+                La búsqueda incluirá productos fuera de la selección actual.
+              </p>
+            </>
           )}
-          <p className="text-xs text-muted mt-8">
-            La búsqueda incluirá productos fuera de la selección actual.
-          </p>
           {onClearLocalFilter && (
             <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
               Limpiar filtros
