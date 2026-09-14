@@ -47,9 +47,9 @@ category pages exist. This story adds the first of those pages — the index —
 1. **Header entry point.** On every route and at every breakpoint, the `Categorías` dropdown (≥ `md`) and the mobile
    menu's `Categorías` accordion end with a `Ver todas las categorías` row that is a real `next/link` anchor to
    `/categorias`, separated from the disabled items above it (border-top + tinted background per the comp), in light
-   and dark. Selecting it closes the dropdown / drawer. The existing category items stay `isDisabled`. When the
-   taxonomy is empty (Strapi failure) the dropdown/accordion is not rendered at all — unchanged from today — so the row
-   is not rendered either.
+   and dark. Selecting it closes the dropdown / drawer. The row is **not rendered while on `/categorias`** (UI V).
+   The existing category items stay `isDisabled`. When the taxonomy is empty (Strapi failure) the dropdown/accordion
+   is not rendered at all — unchanged from today — so the row is not rendered either.
 2. **Active state.** On `/categorias` the desktop `Categorías` trigger carries the same active underline
    (`border-b-2 border-[#4DF527]`) that `Productos` carries on `/`, and `Productos` is not underlined. In the mobile
    menu the `Categorías` accordion trigger is highlighted (tint + inset green bar per `header.dc.html`'s
@@ -60,7 +60,7 @@ category pages exist. This story adds the first of those pages — the index —
    is the live `categories.length`), the WhatsApp panel (`Cotizar ahora` → `buildWhatsappUrl(WHATSAPP_NUMBER,
    WHATSAPP_HEADER_MESSAGE)`, `target="_blank" rel="noopener noreferrer"`; the whole panel is hidden when
    `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset), a `N categorías` counter, and one `<article>` card per category in a
-   `repeat(auto-fill, minmax(270px, 1fr))` grid, in the order Strapi returns them. Zero categories renders an empty
+   `repeat(auto-fill, minmax(270px, 1fr))` grid, sorted A→Z by name on the frontend (Catalog behavior I). Zero categories renders an empty
    state (`No hay categorías disponibles por ahora.`) instead of an empty grid; a Strapi failure propagates to
    `src/app/error.tsx` like `/` does.
 4. **Card anatomy.** Each card shows the initial-letter badge (`aria-hidden`), the product-count pill
@@ -72,7 +72,7 @@ category pages exist. This story adds the first of those pages — the index —
    `CATEGORIES_DESCRIPTION` in `seo.constants.ts`), canonical `/categorias`, `robots: index, follow`; `sitemap.ts`
    lists `/categorias` among the base pages (so it survives a Strapi outage); the page renders a `BreadcrumbList`
    JSON-LD via `toJsonLdHtml`. `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, and `pnpm test` pass; new tests
-   cover AC1–AC2 (row href, dropdown/drawer close on select, active underline on `/categorias`) and AC3–AC4 (card
+   cover AC1–AC2 (row href, row absent on `/categorias`, dropdown/drawer close on select, active underline on `/categorias`) and AC3–AC4 (card
    count, disabled CTA, empty state, WhatsApp panel hidden when the number is unset) plus the sitemap entry.
 
 ### Task breakdown (for the planner)
@@ -167,9 +167,10 @@ shown inside `pagina-categorias.dc.html`'s stale mobile menu.
   toggle and the desktop input go with it; the `N categorías` counter stays.
 - **D5 — Header of record is `header.dc.html`.** Decided (user): ignore the inline header in
   `pagina-categorias.dc.html` (no footer row, theme toggle in the mobile menu instead of the footer).
-- **D6 — Card order = Strapi order.** Assumed: `GET_CATEGORIES` passes no `sort`; Strapi has no order field. The comp
-  lists alphabetically, which is what Strapi returns today. Add `sort: ["name:asc"]` only if the live order drifts —
-  see Catalog behavior I.
+- **D6 — Card order = frontend A→Z.** Decided (user): `GET_CATEGORIES` stays unsorted; `/categorias` sorts by name
+  with `localeCompare("es")`. The header's dropdown order is untouched.
+- **D8 — Footer row hidden on `/categorias`.** Decided (user): `Header`/`MobileMenu` pass `pathname` down and skip
+  the row when it equals `/categorias`.
 - **D7 — `/categorias` is `index, follow` and in the sitemap.** Assumed: it is a real content page, unlike `/cotizar`
   (`noindex`). Listed as a base page so a taxonomy outage never drops it.
 
@@ -276,8 +277,10 @@ No new dependencies. Env: `STRAPI_HOST`/`STRAPI_API_TOKEN` (page data), `NEXT_PU
 
 - I: Question: Is Strapi's default category order (creation order, effectively alphabetical today) acceptable, or
   should the query add `sort: ["name:asc"]` so the page and dropdown always match the comp's alphabetical list?
-  Status: pending
-  Context: D6 assumes Strapi order; a one-line `sort` arg would lock it in and also change the header's order.
+  Status: answered
+  Answer: Keep the query as is (no `sort` arg, Strapi default order); the **frontend sorts A→Z** for the page grid.
+  Context: sort in `/categorias` with `localeCompare("es")` so accents don't misorder (`Extracción`, `Perforación`,
+  `Sujeción`); the header keeps its current order — unchanged in this story.
 
 ### UI/product decisions
 
@@ -295,9 +298,10 @@ No new dependencies. Env: `STRAPI_HOST`/`STRAPI_API_TOKEN` (page data), `NEXT_PU
   Answer: dropped (D4).
 - V: Question: Should the `Ver todas las categorías` row also appear when the page is already `/categorias`, or be
   hidden there?
-  Status: pending
-  Context: the comp's stale page header omits it, but that header is not of record (D5). Assumed **always shown**
-  (simplest, consistent), the trigger's underline already signals the current page.
+  Status: answered
+  Answer: **Hidden on `/categorias`.** The row renders only when `pathname !== "/categorias"`; elsewhere it is always
+  present.
+  Context: the comp's stale page header omits it; the trigger's underline signals the current page there.
 
 ### Theme/persistence
 
@@ -309,5 +313,7 @@ No new dependencies. Env: `STRAPI_HOST`/`STRAPI_API_TOKEN` (page data), `NEXT_PU
 
 - I: Question: Does `__tests__/shared/Header.test.tsx` need a `useRouter` mock if the dropdown row uses `useRouter`
   for client navigation instead of `MenuItem href`?
-  Status: pending
-  Context: the current mock only covers `usePathname`/`useSearchParams`; a `next/link` row needs no router mock.
+  Status: answered
+  Answer: Use a `next/link`-style anchor for the row (no `useRouter`), so the existing mock is enough and no router
+  mock is added.
+  Context: the current mock only covers `usePathname`/`useSearchParams`.
