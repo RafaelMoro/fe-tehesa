@@ -77,7 +77,7 @@ hover (gray-300 border + `0 8px 24px rgba(17,24,39,.08)`, 200ms), focus (2px out
    plain `<img>` block above the kicker at 4/3 (`sm`+) / 16/9 (`<sm`) with the given `alt`; when absent nothing renders — no
    placeholder, no "Foto del producto" text, no reserved height. No query, type, or server-action change is made
    for images in this story.
-5. **Dark mode + skeleton.** The card is legible in dark mode using the token mapping in D6 (no light-only hex
+5. **Dark mode + skeleton.** The card matches the comp's "Tema oscuro" section per the D6 table (no light-only hex
    leaks; `pnpm design:lint` still passes). `ProductCardSkeleton` mirrors the new anatomy (kicker line + pill,
    name, chip, price lines, two full-width buttons) so `/` does not shift when data lands. `pnpm lint`,
    `pnpm exec tsc --noEmit`, `pnpm build`, and `pnpm test` pass.
@@ -89,8 +89,8 @@ hover (gray-300 border + `0 8px 24px rgba(17,24,39,.08)`, 200ms), focus (2px out
   grid classes in `ProductListing.tsx` and `src/app/loading.tsx` together (they must match).
 - **Phase 2 — tests.** Update `__tests__/product-listing/ProductCard.test.tsx` assertions (`Hasta` → `hasta`,
   pill text, chip presence/absence, image prop present/absent) via `/unit-test`. Add nothing for hover/shadow.
-- **Phase 3 — dark-mode pass.** Verify both themes at ~390px and ~1440px with `pnpm dev`; adjust D6 tokens if a
-  contrast issue shows up. Manual clicks only for the drawer/add flows (they are already unit-tested).
+- **Phase 3 — dark-mode pass.** Verify both themes at ~390px and ~1440px with `pnpm dev` against the comp's
+  "Tema oscuro" cards; only the dark hover (unspecified in the comp) is a judgment call. Manual clicks only for the drawer/add flows (they are already unit-tested).
 
 ## Design Agent Handoff
 
@@ -115,7 +115,7 @@ finished that way.
 | Product card, with image | `src/components/ProductCard.tsx` | image present (4/3, 16/9 mobile) | comp grid card with `showImages=true`; ships **disabled** |
 | Card skeleton | `src/components/ProductCardSkeleton.tsx` | loading | derived from anatomy (no comp) |
 | Card grid | `src/features/ProductListing/ProductListing.tsx`, `src/app/loading.tsx` | 1 / 2 / auto-fill columns | comp breakpoint table — D4 |
-| Dark theme, all of the above | same files | dark | **not in comp** — D6 |
+| Dark theme, all of the above | same files | dark (desktop / tablet / mobile) | comp "Tema oscuro" section + role table — D6 |
 
 ### Rules that override design instinct
 
@@ -191,11 +191,32 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
   `next/core-web-vitals` flags `<img>` with `@next/next/no-img-element` as a **warning**, not an error — add a
   one-line `eslint-disable-next-line` with the reason (no `remotePatterns`/host known yet) so `pnpm lint` stays
   clean.
-- **D6 — Dark mode.** *Decided (assumption, comp is light-only):* card surface = HeroUI `bg-surface` (dark
-  `#0A0A0A`-ish default), border `border-gray-800`, hover border `gray-700`, no shadow in dark; name `gray-50`,
-  secondary text `gray-400`, category `primary-200` (`#4DF527`, as `--accent-soft-foreground` already does in
-  `.dark`), pill `bg-gray-800 text-gray-400`, brand chip `border-gray-700 text-gray-300`, image ground
-  `bg-gray-800`. Primary button unchanged (green on dark is the header story's precedent). Verify in Phase 3.
+- **D6 — Dark mode.** *Decided (comp, added 2026-09-14):* `PLP.dc.html` now carries a "Tema oscuro" section
+  (desktop 3-col, tablet, mobile) plus a `Rol / Claro / Oscuro` table. Every dark value is a `DESIGN.md` token, so
+  the comp **matches the design system**; `DESIGN.md` itself defines only `background-dark`/`foreground-dark` and
+  "Tailwind grays for dark mode", so the comp is the first place the per-role dark mapping is written down:
+
+  | Role | Light | Dark (comp) | `DESIGN.md` token | Tailwind |
+  | --- | --- | --- | --- | --- |
+  | Page background | `#FFFFFF` | `#0A0A0A` | `background-dark` | (already the app's dark body) |
+  | Card surface | `#FFFFFF` | `#111827` | `gray-900` | `dark:bg-gray-900` |
+  | Card border | `#E5E7EB` | `#1F2937` | `gray-800` | `dark:border-gray-800` |
+  | Name / primary text | `#111827` | `#EDEDED` | `foreground-dark` | `dark:text-[#EDEDED]` or `dark:text-foreground` |
+  | Min price | `#111827` | `#FFFFFF` | — (not a token; comp's own table says `#EDEDED`) | use `foreground-dark`, same as the name |
+  | Secondary text (`Desde`, `MXN`, `hasta`, pill text) | `#6B7280` | `#9CA3AF` | `gray-400` | `dark:text-gray-400` |
+  | Category kicker | `#23890C` | `#B4FE99` | `primary-100` | `dark:text-primary-100` |
+  | Variant pill bg | `#F3F4F6` | `#1F2937` | `gray-800` | `dark:bg-gray-800` |
+  | Brand chip border / text | `#E5E7EB` / `#374151` | `#374151` / `#E5E7EB` | `gray-700` / `gray-200` | `dark:border-gray-700 dark:text-gray-200` |
+  | Image ground | `#F3F4F6` | `#1F2937` | `gray-800` | `dark:bg-gray-800` |
+  | Primary action | `#4DF527` / `#0D3401` | unchanged | `primary-200` / `on-primary` | no `dark:` classes |
+  | Secondary action border / text | `#E5E7EB` / `#125D03` | `#374151` / `#B4FE99` | `gray-700` / `primary-100` | `dark:border-gray-700 dark:text-primary-100`; mobile ghost keeps `#B4FE99` text |
+
+  Gaps the comp leaves (assumptions): no dark **hover** → border `gray-700`, no shadow; no dark **secondary hover**
+  → keep D9's `primary-800` fill + white text (reads fine on `gray-900`). Two repo gotchas: (1) HeroUI's dark
+  `--accent-soft-foreground` is remapped to `#4DF527` (`primary-200`) in `src/app/globals.css`, but the comp's
+  green text in dark is `primary-100` — set `dark:text-primary-100` explicitly instead of leaning on HeroUI's
+  accent-soft color; (2) HeroUI `Card`'s dark `bg-surface` is not `gray-900` — set `dark:bg-gray-900
+  dark:border-gray-800` explicitly (or use a plain `<article>`). `DESIGN.md` needs no edit.
 - **D7 — Focus ring.** *Decided:* keep HeroUI's global `--focus` (`#4DF527`) rather than the comp's `#24AD02` —
   one ring color app-wide beats a per-card override.
 - **D8 — `MXN` split.** *Decided (user, 2026-09-14):* split. `formatNumberToCurrency` returns `"$350.92 MXN"`;
@@ -341,10 +362,17 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
 
 ### Theme/persistence
 
-- I: Question: Is the dark palette in D6 acceptable, given the comp is light-only?
+- I: Question: Is the dark palette in D6 acceptable, given the comp was light-only?
+  Status: answered
+  Answer: Superseded — the user added dark variants to `PLP.dc.html` (2026-09-14). Verified against `DESIGN.md`:
+  every dark hex is a documented token (`background-dark`, `foreground-dark`, `gray-400/700/800/900`,
+  `primary-100/200`); the only off-token value is the price digits at `#FFFFFF`, which the comp's own role table
+  lists as `#EDEDED` — use `foreground-dark`. D6 now holds the per-role table. Hover in dark is still unspecified
+  (assumption recorded in D6); Phase 3 verifies by eye.
+- II: Question: The comp's dark card surface is `gray-900` (`#111827`) on a `#0A0A0A` page. Should the whole app's
+  dark surfaces (drawer, hero aside, header) move to that too, or is it card-only for now?
   Status: pending
-  Context: Derived from `DESIGN.md` neutrals and the existing `.dark { --accent-soft-foreground: #4df527 }`
-  remap; the header story set the precedent of green-on-dark for accents. Phase 3 verifies by eye.
+  Context: Card-only is assumed for this story; app-wide surface alignment would be its own story.
 
 ### Verification
 
