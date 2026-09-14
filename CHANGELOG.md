@@ -1,3 +1,9 @@
+## v0.33.1 (2026-09-14)
+
+### Pull Requests
+[#42](https://github.com/RafaelMoro/fe-tehesa/pull/42) | Enhance header rest of changes
+
+
 ## v0.33.0 (2026-09-14)
 
 ### Pull Requests
