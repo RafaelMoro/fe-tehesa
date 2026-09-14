@@ -4,6 +4,7 @@
 import {
   fetchBrands,
   fetchCategories,
+  fetchCategoryProductCounts,
   fetchProductsByIds,
   fetchProductVariants,
   fetchProducts,
@@ -27,6 +28,7 @@ import {
 import type {
   FetchBrandsResponse,
   FetchCategoriesResponse,
+  FetchCategoryProductCountsResponse,
   FetchProductsByIdsResponse,
   FetchProductsResponse,
   FetchSingleProductResponse,
@@ -145,6 +147,29 @@ describe("Apollo adapters", () => {
     const result = await fetchCategories()
     expect(result).toEqual(categories)
     expect(queryMock).toHaveBeenCalledWith({ query: GET_CATEGORIES })
+  })
+
+  it("fetchCategoryProductCounts sends indexed id variables and maps totals back by index", async () => {
+    queryMock.mockResolvedValue(
+      ok<FetchCategoryProductCountsResponse>({
+        c0: { pageInfo: { total: 7 } },
+        c1: { pageInfo: { total: 0 } },
+      }),
+    )
+
+    const result = await fetchCategoryProductCounts(["a", "b"])
+    expect(result).toEqual([7, 0])
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: { id0: "a", id1: "b" },
+      }),
+    )
+  })
+
+  it("fetchCategoryProductCounts returns [] and does not call the client when customIds is empty", async () => {
+    const result = await fetchCategoryProductCounts([])
+    expect(result).toEqual([])
+    expect(queryMock).not.toHaveBeenCalled()
   })
 
   it("fetchBrands sends GET_BRANDS without variables", async () => {
