@@ -13,6 +13,7 @@ import type {
   Product,
   ProductVariantUI,
 } from "@/shared/types/global.types"
+import { ContactSection } from "./ContactSection"
 import { QuoteLineRow } from "./QuoteLineRow"
 import { getQuoteTotals } from "./quote.utils"
 import { useQuoteRevalidation } from "./useQuoteRevalidation"
@@ -255,6 +256,7 @@ export const QuotePage = () => {
           <span className="text-xl font-bold">{formattedSubtotal}</span>
         </div>
       </div>
+      <ContactSection />
       <AlertDialog>
         <AlertDialog.Trigger>
           <Button variant="danger">Vaciar lista</Button>
