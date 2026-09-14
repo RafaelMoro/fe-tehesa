@@ -937,6 +937,20 @@ Awaiting human sign-off.
 
 ## Epic Completion Status
 
+**Updated 2026-09-13, after implementing Story 4** (`ai-planning/cart-quote-whatsapp/contact-form-whatsapp-cta.story-4.md`).
+
+### Story 4: Contact Form And The WhatsApp `Cotizar` CTA — Complete
+
+Implemented against the planning doc's 11 acceptance criteria (1, 1b, 1c, 1d, 2, 3, 4, 5, 6, 7, 8) across 6 phases, both open questions this planning session pulled in (durable recovery — Open Question V; clear-only-on-explicit-action — Open Question VI) resolved as written.
+
+- AC 1 / AC 1b / AC 1c (form half) / AC 1d — `src/features/QuotePage/ContactForm.tsx` (`react-hook-form`, the epic's one sanctioned new dependency) and `ContactSection.tsx` (collapsed read-only summary vs. expanded form gate, "Usar otros datos"/"Cancelar cambios", confirmed "Olvidar mis datos"). The shared validator (`src/shared/utils/contact-validation.utils.ts`) is consumed by the RHF form, the cart store's rehydrate sanitize, and `WhatsappCta`'s send gate — one validator, three consumers, per AC 1c. `__tests__/cart/ContactSection.test.tsx`, `__tests__/cart/contact-validation.test.ts`.
+- AC 2 / AC 3 / AC 5 (logic) / AC 7 — `src/shared/utils/whatsapp-message.utils.ts`: `sanitizeForWhatsapp`, `generateQuoteReference`, `buildQuoteMessages` (pure, Option A wording, greedy line-boundary splitting against `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`), `buildWhatsappUrl`. `__tests__/cart/whatsapp-message.utils.test.ts` covers escaping, the exact one-part template, subtotal exclusion, and a forced split (line-boundary only, `Parte N de M` + shared reference on every part, part 1 alone carrying contact/subtotal, continuous numbering).
+- AC 4 / AC 5 (UI) / AC 6 — `src/features/QuotePage/WhatsappCta.tsx`: a real anchor when the effective cart, contact, and `NEXT_PUBLIC_WHATSAPP_NUMBER` are all valid, a non-focusable `aria-disabled` span with an explanatory message otherwise; a multi-part quote renders a re-openable stepper (never "sent", only "opened") instead of a single CTA. `__tests__/cart/WhatsappCta.test.tsx`.
+- AC 8 — the cart store's recovery slice (`lastQuoteLines`, `archiveAndClearLines`/`restoreLastQuote`/`dismissLastQuote` in `src/zustand/store/cart.store.ts`), the archive trigger firing only from `WhatsappCta`'s all-opened `Empezar una nueva cotización`, and `QuotePage.tsx`'s recovery empty-state (`Restaurar lista` beside `Empezar una nueva cotización`). `__tests__/cart/cart.store.test.ts`, `__tests__/quote/QuotePage.test.tsx` (recovery block).
+- **Out-of-scope implementation correction (Phase 4, user-approved via phase sign-off):** HeroUI v3's `TextField` manages its own controlled value internally, so a prefilled RHF-registered `Input`'s `defaultValue` must be set on the surrounding `TextField`, not the `Input` itself — the plan's stated verified fact about HeroUI's `Input` API was accurate for event wiring but incomplete for prefill. See the planning doc's "Out-of-scope implementation changes" section.
+
+Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (36 suites, 365 passed, 1 pre-existing unrelated skip), `pnpm build` all pass. Dev-server validation (`curl /cotizar`, `/`, `/api/catalog/products`) ran clean at 200 with no compile/runtime errors for every phase and the final pass. The plan's suggested curl-grep checks for phase-specific copy (contact heading, disabled-CTA text) don't hold given `QuotePage`'s pre-existing mounted-guard, which SSRs only a skeleton regardless of cart/contact/config state — confirmed this is not a regression (the same is already true for the pre-existing "Tu lista está vacía" text). Manual click-through (form fill/prefill/forget, single and multi-part WhatsApp send, restore/dismiss after archive) is deferred to the user per this workflow's rule against claiming unrun manual verification.
+
 **Updated 2026-09-13, after implementing Story 3** (`ai-planning/cart-quote-whatsapp/price-availability-revalidation.story-3.md`).
 
 ### Story 3: Price And Availability Revalidation On `/cotizar` — Complete
@@ -993,18 +1007,18 @@ Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (30 suites, 256
 | Story 2: Quote page (`/cotizar`) — line review and subtotal | Complete | See above | None |
 | Story 3: Price/availability revalidation on `/cotizar` | Complete | See above | Manual browser/live-Strapi/assistive-tech QA (M1-M17) deferred to the user |
 | Spike 4S: WhatsApp delivery mechanisms | Complete | Spike 4S Outcome section | None |
-| Story 4: Contact form and the WhatsApp `Cotizar` CTA | Not started | — | Unblocked — proceed as written (stay on click-to-chat); depends on Story 2/3 for line data to build the message |
+| Story 4: Contact form and the WhatsApp `Cotizar` CTA | Complete | See above | Manual click-through (form, single/multi-part send, restore/dismiss) deferred to the user |
 | Story 5: Analytics contract extension | Not started | — | Documentation-only; can run independently once trigger sites are final |
 
 ### Overall Completion
 
-**21 / 37** acceptance criteria verified complete (Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, and Story 3's 8 ACs — grown from this section's original 4 during research/planning, so the epic total grows by 4 to 37; Stories 4-5 contribute 0 of their remaining combined ACs) ≈ **57%**. Spike 4S is documentary and carries no acceptance criteria in this count — its completion doesn't move the percentage, note it here so nobody recounts.
+**32 / 36** acceptance criteria verified complete — Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, Story 3's 8 ACs (grown from this section's original 4 during research/planning), Story 4's 11 ACs (unchanged from this section's original count — the planning session's Open Question V/VI resolutions extended AC 8's scope but did not add a new numbered AC), and Story 5's remaining 4 ACs ≈ **89%**. (This recomputes the basis directly from each story's current AC list rather than carrying forward the prior "21/37" figure, which no longer reconciles digit-for-digit against the individual story counts above — not worth a forensic audit here, just noting the denominator changed for a traceable reason.) Spike 4S is documentary and carries no acceptance criteria in this count — its completion doesn't move the percentage.
 
-The epic is not complete — Stories 4 and 5 remain.
+The epic is not complete — Story 5 remains.
 
 ### Next Steps
 
 1. ~~Run Spike 4S (WhatsApp delivery mechanism pricing)~~ **Done, 2026-09-13 — recommendation: stay on click-to-chat.** See "Spike 4S Outcome" above and Open Question "WhatsApp V."
 2. Complete Story 3's manual QA (M1-M17: live Strapi edits, real clicks, 390px layout in light/dark, screen reader) before merge.
-3. Plan and implement Story 4 (contact form + WhatsApp CTA) as written — Spike 4S confirmed click-to-chat, so AC 5/AC 6 stand unchanged; Story 3 has already settled the revalidated-price shape it builds the message from.
-4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 once Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist).
+3. ~~Plan and implement Story 4 (contact form + WhatsApp CTA)~~ **Done, 2026-09-13.** See "Story 4" above; manual click-through (form fill/prefill/forget, single/multi-part WhatsApp send, restore/dismiss after archive) still deferred to the user before merge, same as Story 3's M1-M17.
+4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 now that Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist; Story 4's CTA gives `begin_checkout`/`generate_lead` their real trigger site too).

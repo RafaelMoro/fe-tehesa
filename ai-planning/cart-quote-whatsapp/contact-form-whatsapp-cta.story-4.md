@@ -314,17 +314,19 @@ No new component file — this is small enough to stay inline in `QuotePage.tsx`
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 |---|---|---|---|---|
-| AC1 — RHF, required/length/email per field | Phase 4 | `curl /cotizar` 200, contains contact heading | Not validated | Interaction proof is manual + `ContactSection.test.tsx` |
-| AC1b — collapsed vs expanded, prefill + focus | Phase 4 | n/a — client state | Not validated | Manual + `ContactSection.test.tsx` |
-| AC1c — shared validator, rehydrate + message-build time | Phase 1 (validator), Phase 4 (form consumer), Phase 5 (message-build consumer via `validateContact` gate) | n/a | Not validated | `contact-validation.test.ts` + `ContactSection.test.tsx` + `WhatsappCta.test.tsx` |
-| AC1d — olvidar mis datos | Phase 4 | n/a | Not validated | Manual + `ContactSection.test.tsx` |
-| AC2 — escaping | Phase 3 | n/a — pure function | Not validated | `whatsapp-message.utils.test.ts` |
-| AC3 — message content, Option A wording | Phase 3 | n/a | Not validated | `whatsapp-message.utils.test.ts` |
-| AC4 — anchor vs disabled span, env var | Phase 5 | `curl /cotizar` with `NEXT_PUBLIC_WHATSAPP_NUMBER` unset, grep for the disabled-state copy | Not validated | Regression-checkable via curl since the copy is server-rendered |
-| AC5 — split threshold, part 1 contract | Phase 3 (logic), Phase 5 (UI) | n/a | Not validated | `whatsapp-message.utils.test.ts` forced-split case |
-| AC6 — multi-part stepper, opened/re-sendable | Phase 5 | n/a | Not validated | Manual + `WhatsappCta.test.tsx` |
-| AC7 — pure `buildQuoteMessages`, test coverage | Phase 3 | n/a | Not validated | `whatsapp-message.utils.test.ts` |
-| AC8 — clear on `Empezar una nueva cotización`, recovery | Phase 2 (store), Phase 5 (archive trigger), Phase 6 (recovery UI) | n/a | Not validated | Manual end-to-end + `cart.store.test.ts` + `QuotePage.recovery.test.ts` |
+| AC1 — RHF, required/length/email per field | Phase 4 | `curl /cotizar` 200; the named "grep for contact heading" check does not hold — see AC4 note | Validated | `ContactForm`/`ContactSection` behavior covered by `ContactSection.test.tsx` (required/length/email errors with exact Spanish copy); full suite + build green |
+| AC1b — collapsed vs expanded, prefill + focus | Phase 4 | n/a — client state | Validated | `ContactSection.test.tsx`: no-contact→form, valid-contact→summary, "Usar otros datos" prefill, "Cancelar cambios" discard |
+| AC1c — shared validator, rehydrate + message-build time | Phase 1 (validator), Phase 4 (form consumer), Phase 5 (message-build consumer via `validateContact` gate) | n/a | Validated | `contact-validation.test.ts`, `ContactSection.test.tsx` (partial-survivor prefill via the component's own defensive re-validation, since the store's rehydrate boundary is already all-or-nothing), `WhatsappCta.test.tsx` (missing/invalid contact disables the CTA) |
+| AC1d — olvidar mis datos | Phase 4 | n/a | Validated | `ContactSection.test.tsx` — confirm dialog round-trip clears contact, form re-shown |
+| AC2 — escaping | Phase 3 | n/a — pure function | Validated | `whatsapp-message.utils.test.ts` — control chars, markdown chars stripped; normal Spanish text (accents, °, ") preserved |
+| AC3 — message content, Option A wording | Phase 3 | n/a | Validated | `whatsapp-message.utils.test.ts` — exact template match against the epic's literal example |
+| AC4 — anchor vs disabled span, env var | Phase 5 | `curl /cotizar` with `NEXT_PUBLIC_WHATSAPP_NUMBER` unset — 200, clean dev log | Validated | The plan's "grep the SSR shell for the disabled copy" doesn't hold: `QuotePage`'s pre-existing mounted-guard SSRs only its skeleton regardless of cart/contact/config state (confirmed the same is already true for the pre-existing "Tu lista está vacía" text, so this is not a regression). Covered instead by `WhatsappCta.test.tsx`'s three disabled-state cases (missing env var, invalid contact, zero effective lines) |
+| AC5 — split threshold, part 1 contract | Phase 3 (logic), Phase 5 (UI) | n/a | Validated | `whatsapp-message.utils.test.ts` forced-split case: line-boundary split, `Parte N de M` + same reference on every part, part 1 alone carries contact/subtotal, continuous numbering, every part's measured encoded length ≤ `WHATSAPP_URL_MAX_ENCODED_LENGTH` |
+| AC6 — multi-part stepper, opened/re-sendable | Phase 5 | n/a | Validated | `WhatsappCta.test.tsx` — N links in order, click marks opened and re-clickable, "Empezar una nueva cotización" appears only once all opened and fires exactly once |
+| AC7 — pure `buildQuoteMessages`, test coverage | Phase 3 | n/a | Validated | `buildQuoteMessages` under `src/shared/utils/whatsapp-message.utils.ts`; full matrix in `whatsapp-message.utils.test.ts` |
+| AC8 — clear on `Empezar una nueva cotización`, recovery | Phase 2 (store), Phase 5 (archive trigger), Phase 6 (recovery UI) | n/a | Validated | `cart.store.test.ts` (archive/restore/dismiss), `WhatsappCta.test.tsx` (archive trigger fires once on all-opened), `QuotePage.test.tsx` recovery block (restore round-trips exact lines, dismiss doesn't restore, plain vs. recovery empty-state selection) |
+
+**Manual click-through remains open for the user** — every phase summary above gave a checklist (form fill/prefill/forget, single and multi-part WhatsApp send, restore/dismiss after archive). Automated coverage validates the underlying behavior; the click-through is the user's own confirmation of the real HeroUI/WhatsApp interaction, not a blocking gap.
 
 ## Cross-Cutting Concerns
 
