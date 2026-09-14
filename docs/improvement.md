@@ -56,7 +56,7 @@ Found during Story 4 (SEO) research on 2026-07-27.
 
 - Investigate graphql on the server using api from next js
 - Change the title and meta description of SEO of the page as the current we have is for the landing.
-- Analytics: Story 5 defines the vendor-neutral event contract in `docs/ANALYTICS_EVENT_CONTRACT.md` (planned, not yet implemented). GA4 is the recommended first provider; choose any second provider during contract sign-off, then implement instrumentation in a separate story without adding a provider dependency prematurely.
+- Analytics: `docs/ANALYTICS_EVENT_CONTRACT.md` now covers the PLP search events and the cart funnel (`add_to_cart`, `remove_from_cart`, `view_cart`, `begin_checkout`, `generate_lead`; cart epic Story 5, 2026-09-13). Still spec-only, no code shipped; GA4 remains the recommended first provider; instrumentation is a separate story.
 - Show a notification error when the theme is changed but the cookie persistance failed
 - Remove the dead `change-theme` Zustand store/provider (`src/zustand/store/change-theme.store.ts`, `src/zustand/provider/change-theme.provider.tsx`). Noticed during cart epic Story 2 planning and implementation (`ai-planning/cart-quote-whatsapp/quote-page-line-review.story-2.md`): `useChangeThemeStore` has zero consumers — `ToggleDarkMode` uses next-themes directly — and the store is kept alive only by `ChangeThemeStoreProvider` in `src/app/page.tsx`. Not touched during Story 2 to keep the story's scope to the quote page; safe to delete in a follow-up cleanup.
 
@@ -85,6 +85,7 @@ Deferred from Story 4 (`ai-research/stories/plp-seo-readiness.story4.md`, open q
 - `internalId` still rides on every cart line as seller-facing display text (never rendered, never a key), exactly as this entry anticipated.
 - Both `Agregar al carrito` CTAs are wired: the drawer footer adds one line per selected variant to the new Zustand cart store (`src/zustand/store/cart.store.ts`, persisted to `localStorage`); the card's tertiary `Agregar y elegir después` adds a variant-less product-level line. A third case this entry didn't anticipate — `variantCount === 1` products — got its own single-CTA `Agregar 1 pieza` card branch.
 - Cart totals reuse `formatNumberToCurrency`, as recommended here.
+- The cart funnel is specified in `docs/ANALYTICS_EVENT_CONTRACT.md` from the shipped trigger sites (Story 5, 2026-09-13); no instrumentation ships.
 
 ### Quote recovery after the WhatsApp hand-off (resolved)
 

@@ -206,4 +206,51 @@ describe("WhatsappCta — multi-part", () => {
 
     expect(onArchiveAndClear).toHaveBeenCalledTimes(1)
   })
+
+  it("keeps the same quote reference on every part across a re-render", async () => {
+    const user = userEvent.setup()
+    mockWhatsappNumber = "522224417330"
+
+    render(
+      <WhatsappCta
+        lines={manyLines}
+        checks={{}}
+        contact={contact}
+        onArchiveAndClear={jest.fn()}
+      />,
+    )
+
+    const partLinks = screen.getAllByRole("link", {
+      name: /Abrir parte \d+ de \d+ en WhatsApp/,
+    })
+    expect(partLinks.length).toBeGreaterThan(1)
+
+    const referenceOf = (href: string): string => {
+      const text = decodeURIComponent(new URL(href).searchParams.get("text") ?? "")
+      const match = text.match(/TH-\d{6}-[0-9A-F]{4}/)
+      if (!match) {
+        throw new Error("No quote reference found in message text")
+      }
+      return match[0]
+    }
+
+    const referenceBefore = referenceOf(partLinks[0].getAttribute("href")!)
+    const referenceOfSecondPartBefore = referenceOf(
+      partLinks[1].getAttribute("href")!,
+    )
+    expect(referenceOfSecondPartBefore).toEqual(referenceBefore)
+
+    await user.click(partLinks[0])
+
+    const partLinksAfter = screen.getAllByRole("link", {
+      name: /Abrir parte \d+ de \d+ en WhatsApp|Volver a abrir/,
+    })
+    const referenceAfter = referenceOf(partLinksAfter[0].getAttribute("href")!)
+    const referenceOfSecondPartAfter = referenceOf(
+      partLinksAfter[1].getAttribute("href")!,
+    )
+
+    expect(referenceAfter).toEqual(referenceBefore)
+    expect(referenceOfSecondPartAfter).toEqual(referenceBefore)
+  })
 })

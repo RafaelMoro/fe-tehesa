@@ -8,6 +8,7 @@
 
 Source research: `ai-research/stories/plp-analytics-conversion-readiness.story5.md`
 Epic: `ai-research/epics/plp-functionality-seo.epic.md` (Story 5)
+Cart funnel source: `ai-research/epics/cart-quote-whatsapp.epic.md` (Story 5)
 
 ## Naming convention
 
@@ -37,13 +38,37 @@ Submit and results-viewed are split because the submit handler navigates to a se
 | `product_detail_opened` | `src/features/Home/Home.tsx:259` `handleProductClick` | `product_id` (`customId` when present), `product_doc_id` (`documentId`), `product_name`, `category`, `brand`, `variant_count`, `min_price`, `max_price`, `list_mode`, `list_page`, `list_position` (int), `search_term` (optional) | `product_id` conditional (only when `customId` present); `min_price`/`max_price` conditional (omitted when null); `search_term` conditional; rest required |
 | `product_variants_selected` | Drawer selection change, `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` | `product_id`, `selected_variant_count`, `selected_pieces`, `selected_total`, `currency` (`"MXN"`) | All required |
 
-### Conversion (blocked)
+### Conversion (cart funnel)
 
-| Event | Trigger | Payload | Status |
+| Event | Trigger | Payload | Required / conditional |
 |---|---|---|---|
-| `add_to_cart` | `Agregar al carrito`, `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx:228-238` | `product_id`, `selected_variant_count`, `selected_pieces`, `value` (numeric total), `currency` (`"MXN"`), `origin` (`"variants_drawer" \| "product_card"`) | **Blocked on the cart story.** The drawer CTA currently only closes the drawer; `ProductCard`'s second CTA has its handler commented out. Wire both origins once the cart exists. |
+| `add_to_cart` | The three add sites below, **after** the store call returns and only when `result.rejected` is `false` | `origin` (`"variants_drawer" \| "product_card"`), `product_doc_id`, `product_name` (≤100), `line_count` (int, lines in this add — N from the drawer, 1 from the card), `added_line_count` (int, `result.added`), `incremented_line_count` (int, `result.incremented`), `pieces` (int, sum of quantities in this add), `has_variant` (bool, `false` only for `Agregar y elegir después`), `variant_doc_ids` (string, comma-joined, capped at 10 — same cap rule as `product_ids`), `value` (number, MXN), `currency` (`"MXN"`) | `value` and `variant_doc_ids` conditional — omitted for the variant-less line; rest required |
+| `remove_from_cart` | `handleRemove` (`origin: "line_remove"`) and the `Vaciar lista` confirmation (`origin: "clear_list"`) | `origin`, `product_doc_id`, `variant_doc_id`, `quantity` (int), `line_count` (int), `pieces` (int), `value` (number, MXN), `currency` | `line_remove`: `product_doc_id` + `quantity` required, `variant_doc_id`/`value` conditional (absent on a variant-less line), `line_count`/`pieces` omitted. `clear_list`: `line_count` + `pieces` + `value` required (whole list), product/variant fields omitted |
+| `view_cart` | `QuotePage`'s `mounted` effect, once per mount, after `localStorage` rehydration | `line_count` (int), `pieces` (int), `unpriced_line_count` (int), `value` (number, snapshot subtotal of priced lines), `currency`, `is_empty` (bool) | All required |
+| `begin_checkout` | `markOpened` — the **first** part opened in this mount (`openedParts.size` goes 0 → 1) | `part_count` (int), `line_count` (int), `pieces` (int), `unpriced_line_count` (int), `value` (number, effective subtotal after revalidation), `currency` | All required |
+| `generate_lead` | `markOpened` — the call that makes `openedParts.size === part_count` for the first time. A one-part quote fires `begin_checkout` and `generate_lead` on the same click | `part_count` (int), `line_count` (int), `pieces` (int), `value` (number), `currency` | All required |
 
-`add_to_cart` deliberately keeps GA4's reserved event name so the ecommerce report works with no mapping. No placeholder conversion event is invented in its place.
+Real trigger sites for `add_to_cart` (all three fire only after the store call returns and `result.rejected` is `false`):
+
+- **Add from drawer** — `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx:122` `handleAdd`, non-upgrade branch, after `addVariantLines` returns (`:147`). One call adds N variant lines; `result` carries `added`/`incremented`/`rejected`. `origin: "variants_drawer"`.
+- **Add from card, variant-less** — `src/components/ProductCard.tsx:41` `handleAddProductLine`, after `addProductLine` (`:42`). The line has `unitPrice: null`. `origin: "product_card"`, `has_variant: false`.
+- **Add from card, single variant** — `src/components/ProductCard.tsx:58` `handleAddSingleVariant`, after `addVariantLines` (`:72`). Preceded by a `/api/catalog/variants` fetch; a fetch failure is not an add. `origin: "product_card"`, `has_variant: true`.
+
+Rules:
+
+- All five keep GA4's reserved names so the ecommerce funnel report works with no mapping; the neutral payload never carries GA4's nested `items` — the GA4 adapter expands `variant_doc_ids` / `product_doc_id` into `items`, exactly as it already does for `product_ids`.
+- `value` is a decimal in MXN units, derived from the same integer-cents arithmetic as `getQuoteTotals` (`src/features/QuotePage/quote.utils.ts`), divided once. Never a float sum. `view_cart` reports the snapshot price (revalidation is async and may not have returned); `begin_checkout`/`generate_lead` report the effective price via `getEffectiveLines`.
+- `add_to_cart` fires on an increment too (dedupe onto an existing line) — `added_line_count: 0, incremented_line_count: N` is a valid payload. A cart-full rejection (`result.rejected`) fires nothing; a single-variant fetch failure fires nothing.
+- `internalId` never enters any payload. It is seller-facing display text, non-unique, and a long digit run would trip the redaction pass anyway.
+- **Opened is not sent.** `begin_checkout` and `generate_lead` measure that a `wa.me` link was opened; the browser cannot observe whether the buyer sent the message. Re-opening a part fires neither event. Funnel reports must label the last step "abrió WhatsApp", not "envió".
+- Cart mutations that are deliberately **not** events (so nobody wires them ad hoc): `upgradeLine` (`Elegir medida` replaces a line in place), `setLineQuantity`, `archiveAndClearLines` (`Empezar una nueva cotización` — post-lead housekeeping, not a removal), `restoreLastQuote` / `dismissLastQuote`, `setContact` / `clearContact`.
+
+## Buyer contact details are never analytics data
+
+- `firstName`, `lastName`, `email` — collected by `ContactForm`, persisted in the cart store's `contact` slice, interpolated into the WhatsApp message — are **never** a parameter on any event. No event in this contract has a field for them, and none may be added.
+- The adapter's redaction pass ("Adapter contract" → "PII redaction pass" below) is a backstop for free-text fields like `search_term`; it is **not** the control for contact details. The control is that the fields do not exist in the payload types — with the discriminated union, adding one is a visible diff in a type, not a runtime accident.
+- Scope of "never sent to any provider" = analytics providers. A future WhatsApp Cloud API migration would transmit those same details through Tehesa's own server as a *non-analytics* path; that is out of this contract's jurisdiction and would need its own privacy review (LFPDPPP) — this contract does not cover it.
+- No quote reference in any payload either: it is a random per-visit handle for the seller conversation, not a join key, and pushing it to a provider adds a pseudo-identifier for no report.
 
 ### Deferred (named only, no cost analysis)
 
@@ -66,6 +91,8 @@ The submit handler (`handleCatalogNameSearchSubmit`) navigates to a server-rende
 - **`min_price` / `max_price` / `variant_count` are denormalized Strapi columns with no lifecycle sync** (known defects on a small number of products, see `docs/improvement.md`). Analytics inherits that defect — treat these fields as indicative, not authoritative.
 - **`search_type` on `catalog_search_submitted` is always `"name"` today.** Category/brand selection goes through `catalog_filter_selected` instead, because `searchMode` in `CatalogSearchDrawer` is never lifted to `Home`.
 - **The 500 ms drawer-close delay (`DRAWER_CLOSE_DELAY_MS`) and 250 ms dropdown-close delay (`DROPDOWN_CLOSE_DELAY_MS`)** sit between the user action and the navigation (`src/features/Home/Home.tsx:34-35`). Events must fire at the handler, never after the delay — a fast route change can otherwise drop them.
+- **`view_cart.value` is a snapshot price.** It reports the persisted subtotal before `useQuoteRevalidation` returns; a price change from Strapi lands only in the later `begin_checkout`/`generate_lead` values, not a corrected `view_cart`.
+- **`line_count` on cart events is the persisted-line count** (bounded by `CART_MAX_LINES`), not a product count — one product can occupy multiple lines when added with different variants.
 
 ## Adapter contract
 
@@ -95,7 +122,7 @@ Client-side navigations (`router.push`, `next/link`) do **not** fire GA4's autom
   - A session-replay tool (Clarity/Hotjar) accepts this contract's flat payloads as-is.
   - A product-analytics tool (PostHog/Amplitude) accepts richer payloads and needs no compromise.
   - Meta Pixel would need an event-name mapping (`Search`, `ViewContent`, `AddToCart`) inside its own adapter.
-- **Keep `add_to_cart` GA4-reserved-named** and blocked on the cart story rather than inventing a placeholder conversion event.
+- **The cart funnel events are specified but stay in the *secondary* tier.** The first instrumentation story still ships only the three primary search events; the funnel ships as its own follow-up once GA4 is live.
 
 ## Decisions log
 
@@ -104,6 +131,7 @@ Client-side navigations (`router.push`, `next/link`) do **not** fire GA4's autom
 - **Disclosure, not consent gate.** The user is informed analytics runs; `track()` is always pass-through. See "Adapter contract" above.
 - **`search_term` sent verbatim**, behind the adapter's PII guard (redact email/phone-shaped values before dispatch).
 - **`product_ids` capped as a flat string at 10 IDs.** The GA4 adapter expands the capped list into `items`; the neutral payload never depends on the vendor feature.
+- **Cart funnel events specified 2026-09-13** from the shipped trigger sites (cart epic Story 5). `origin` on `add_to_cart` has exactly two values, and the single-variant card add is `product_card`, same as the variant-less card add.
 
 **Still open — for product/marketing sign-off:**
 

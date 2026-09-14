@@ -8,6 +8,7 @@ import { validateContact } from "@/shared/utils/contact-validation.utils"
 import {
   buildQuoteMessages,
   buildWhatsappUrl,
+  generateQuoteReference,
 } from "@/shared/utils/whatsapp-message.utils"
 import type { CartContact, CartLine } from "@/shared/types/global.types"
 import { getEffectiveLines, type LineChecks } from "./quote.utils"
@@ -45,6 +46,7 @@ export const WhatsappCta = ({
   onArchiveAndClear,
 }: WhatsappCtaProps) => {
   const [openedParts, setOpenedParts] = useState<Set<number>>(new Set())
+  const [reference] = useState(() => generateQuoteReference())
 
   const effectiveLines = getEffectiveLines(lines, checks)
   const validContact = validateContact(contact).contact
@@ -71,7 +73,7 @@ export const WhatsappCta = ({
     )
   }
 
-  const messages = buildQuoteMessages(effectiveLines, validContact)
+  const messages = buildQuoteMessages(effectiveLines, validContact, reference)
   const urls = messages.map((message) => buildWhatsappUrl(waNumber, message))
 
   const markOpened = (index: number) => {
