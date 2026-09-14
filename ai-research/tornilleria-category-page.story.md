@@ -44,8 +44,8 @@ paged 50 at a time with no way to narrow by subcategory. This story adds:
   `/categorias` card CTA `Ver categoría` for Tornillería, become real links to `/categorias/tornilleria`. All other
   categories stay disabled (D4).
 
-**Out of scope (explicitly):** a generic `/categorias/[slug]` route; a `subcategory` GraphQL filter or a subcategory
-option in `CatalogSearchDrawer` ("wide search") — the user will enhance that drawer later; per-subcategory URLs or
+**Out of scope (explicitly):** a generic `/categorias/[slug]` route; a subcategory option in `CatalogSearchDrawer`
+("wide search") — the user will enhance that drawer later (the GraphQL filter itself ships now, Strapi contract IV); per-subcategory URLs or
 `?sub=` query state; product images; changing `/?mode=category` behaviour; a brand index.
 
 ### Acceptance criteria
@@ -290,9 +290,13 @@ drawer/card add-to-cart flows work without wiring.
   Context: page-based `pageSize` was observed capped at 100 on 2026-09-14 (REPO_CONTEXT, categories-page Strapi III),
   though `pageSize: 200` returned 107 rows in the subagent's session — the cap is unconfirmed, hence paging.
 - IV: Question: Should the frontend also add a `subcategory` GraphQL filter for the wide-search drawer?
-  Status: pending
-  Context: deferred by the user ("enhance the wide search drawer later"). `StringFilterInput` `eq` works, so it is a
-  straightforward follow-up story.
+  Status: answered
+  Answer: Yes — add it to the GraphQL call now (user, 2026-09-14): the new `GET_ALL_PRODUCTS_BY_CATEGORY` query and
+  `fetchAllProductsByCategory` accept an optional `subcategory` (`filters: { subcategory: { eq: $subcategory } }`,
+  omitted when not given). This story's page still filters in memory and passes no subcategory; the wide-search
+  drawer UI that will consume it is a later story.
+  Context: `StringFilterInput` `eq` verified live. Keep the action's signature `(customId, subcategory?)` so the
+  drawer story only adds a route param + UI, not a new query.
 
 ### Catalog behavior
 
