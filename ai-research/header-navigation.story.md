@@ -29,14 +29,14 @@ site header:
 - **Dark theme** is fully specified in the comp (desktop + mobile): header surface `#0B1A02`, borders `#1E3608`,
   the green `#4DF527` unchanged, active item `#B4FE99`, and the toggle shows a **sun** in dark mode.
 
-Category/brand items are placeholder `#` anchors for now (D4): dedicated category and brand pages are planned, and
-the header will link to them once they exist. The header adds no new catalog mode.
+Category/brand items are rendered disabled for now (D4): dedicated category and brand pages are planned, and the
+header will link to them once they exist. The header adds no new catalog mode.
 
 ### Acceptance criteria
 
 1. **Desktop nav.** At ≥ 768px (D3) the header renders the wordmark (links to `/`), `Productos` (links to `/`, shows the
    active underline only on `/`), and `Categorías` / `Marcas` triggers. Each trigger opens a dropdown listing every
-   live category / brand from Strapi as a placeholder anchor (`href="#"`, click prevented — D4) until the dedicated
+   live category / brand from Strapi as a **disabled item** (D4 — no `href="#"`, no navigation) until the dedicated
    category/brand pages ship; the entry matching the current URL's `category`/`brand` is highlighted; the dropdown closes on outside click, `Escape`, and item
    selection. The cart badge and the theme toggle stay to the right and keep their current behavior.
 2. **Mobile side menu.** Below 768px the nav row collapses to wordmark + lupa + cart + hamburger. The hamburger
@@ -100,8 +100,8 @@ withheld "for the time being"; the wordmark is a placeholder decision, see D1).
 
 - **The cart badge at `0` stays neutral.** The comp draws the badge green with `cartCount = 3`; the cart epic
   (Story 1, AC 7) decided `0` is styled neutrally so it reads as "empty", not as an unread notification. Keep that.
-- **Category/brand items do not navigate yet (D4)** — placeholder `#` anchors with `preventDefault`. When the
-  dedicated pages land, link by taxonomy `name`, never `customId`, matching the existing URL contract.
+- **Category/brand items do not navigate yet (D4)** — disabled items, never `href="#"`. When the dedicated pages
+  land, link by taxonomy `name`, never `customId`, matching the existing URL contract.
 - **No new search UI.** The comp's inline mobile search input is superseded by the user's decision that the lupa
   opens the existing `CatalogSearchDrawer` (D2).
 - **Never present the WhatsApp link as a cart action.** It opens a conversation with a short prefilled text; it does
@@ -115,8 +115,8 @@ desktop nav from `md` (768px) where it fits. Use Tailwind `md:`/`lg:` classes to
 would hydrate-mismatch a layout-level component). Render both nav variants and hide with CSS, or render one drawer
 whose trigger is `md:hidden`.
 
-**Accessibility.** Desktop triggers carry `aria-expanded`; dropdown items render as anchors (placeholder `#` for now, D4) so the
-markup does not change when real hrefs arrive. Mobile hamburger: `aria-label="Menú"`, `aria-expanded`. The
+**Accessibility.** Desktop triggers carry `aria-expanded`; dropdown items are disabled (`isDisabled` / `aria-disabled="true"`, D4) and become real
+anchors when the category/brand pages exist. Mobile hamburger: `aria-label="Menú"`, `aria-expanded`. The
 side menu is a dialog with a focus trap and focus return (HeroUI `Drawer` gives this). Accordion headers are buttons
 with `aria-expanded`. Active category/brand link gets `aria-current="page"`. Icon-only controls (`Buscar`, `Carrito`
 via `CartCount`'s sr-only text, `Cambiar tema`, `Cerrar`) have Spanish accessible names. Touch targets ≥ 44px on
@@ -146,7 +146,7 @@ globally (D14); analytics events.
 | D1 | Brand slot = 3px green bar + "Tehesa" wordmark linking to `/`; `<Image>` and `themeFetched` prop dropped. | User: "let's not show the current logo"; comp draws the wordmark. | settled 2026-09-14 |
 | D2 | Mobile lupa opens the existing `CatalogSearchDrawer`; the comp's inline collapsing input is not built. | User answer; avoids a second search UI with its own validation. | settled 2026-09-14 |
 | D3 | Desktop nav from `md` (768px) — tablet shows the desktop nav if it fits; the planner verifies at 768px and falls back to `lg` for any piece that does not (the two-part utility-bar sentence is the likely one; it may use the mobile one-liner until `lg`). | User: "show what desktop nav does if it fits on tablet". | settled 2026-09-14 |
-| ~~D4~~ | ~~Dropdown/accordion items are real links to `buildModeUrl(mode, name, 1)`.~~ **Superseded:** items are placeholder anchors (`href="#"`) until the dedicated category/brand pages exist; active highlight still derives from `useSearchParams` when the URL is in category/brand mode. | User (2026-09-14): dedicated brand/category pages are coming; "for now, just show an anchor linking to #". Deliberate, temporary exception to the repo's never-`href="#"` rule (`Home.tsx` pagination) — the anchor must `preventDefault` so it does not scroll to top, and gets no `aria-current` unless it matches the URL. | settled 2026-09-14 |
+| ~~D4~~ | ~~Dropdown/accordion items are real links to `buildModeUrl(mode, name, 1)`.~~ **Superseded:** items are rendered **disabled, never `href="#"`** — HeroUI `Dropdown.Item isDisabled` on desktop, and the repo's pagination precedent (`<span aria-disabled="true">`, non-focusable) inside the mobile accordions — until the dedicated category/brand pages exist. Active highlight still derives from `useSearchParams` when the URL is in category/brand mode. | User (2026-09-14): dedicated brand/category pages are coming; items must not navigate yet, and the repo's never-`href="#"` rule (`Home.tsx` pagination) is kept. Disabled items are announced as such and cannot scroll/push history. | settled 2026-09-14 |
 | D5 | Only one mobile accordion section open at a time (comp `mSection`). | Comp behavior; 16 categories + 7 brands both open would exceed the 720px frame. | settled |
 | D6 | Utility bar copy + prefilled WhatsApp text: three tone options proposed below; **option A chosen**. | User asked for three tones, picked A. | settled 2026-09-14 |
 | D7 | Cart badge keeps `0`-neutral / `1+`-green styling and the `Ver mi lista, N artículos` name; only colors move to the comp's green. | Cart epic Story 1 AC 7 overrides the comp's static `3`. | settled |
@@ -186,7 +186,7 @@ The prefilled text must pass `sanitizeForWhatsapp` (no `*_~\``, no control chars
 | Theme toggle | `src/shared/ui/atoms/ToggleDarkMode.tsx` | Green filled round button; `RiMoonLine` in light, `RiSunLine` in dark; a text-label variant (`Cambiar tema`) for the side-menu footer. |
 | Search drawer seam | `src/features/Home/Home.tsx`, `src/features/Home/useCatalogSearch.ts`, `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx` | The drawer's `useOverlayState` lives inside `Home`; the header must be able to open it (see below). |
 | WhatsApp | `src/shared/constants/whatsapp.constants.ts`, `src/shared/utils/whatsapp-message.utils.ts` | Reuse `WHATSAPP_NUMBER` + `buildWhatsappUrl` + `sanitizeForWhatsapp`; add one constant for the prefilled text. No new utility. |
-| URL builders | `src/features/Pagination/utils.pagination.ts` | Not needed now (D4: `#` placeholders). `buildModeUrl(mode, value, page)` is the builder to use when real category/brand pages exist. |
+| URL builders | `src/features/Pagination/utils.pagination.ts` | Not needed now (D4: disabled items). `buildModeUrl(mode, value, page)` is the builder to use when real category/brand pages exist. |
 | Tests | `__tests__/cart/CartCount.test.tsx` (`describe("Header")` renders `<Header themeFetched="light" />` and asserts `getByRole("button")` is unique — both break), new `__tests__/shared/Header.test.tsx` | See "Tests". |
 | Docs | `ai-skills/REPO_CONTEXT.md` (layout invariant, `Header` description, `useMediaQuery` note), `CLAUDE.md` architecture summary | Keep in sync after implementation. |
 
@@ -205,10 +205,10 @@ The prefilled text must pass `sanitizeForWhatsapp` (no `*_~\``, no control chars
   `ProductVariantsDrawer` is the other precedent), `accordion` / `disclosure` (mobile sections). There is **no**
   `navbar` component in HeroUI v3 — the header row is plain Tailwind flex.
 - **Anchors for navigation.** `Home.tsx` renders pagination as `next/link` anchors styled with HeroUI slot classes
-  (`pagination__link`, `buttonVariants()`), never `href="#"`. D4 makes a deliberate temporary exception for the
-  dropdown/accordion items (`href="#"` + `preventDefault`). react-aria-components' `MenuItem` accepts `href` and
-  renders an `<a>`; verify at plan time that HeroUI's `Dropdown.Item`/`Menu.Item` forwards it so swapping in real
-  hrefs later is a one-line change.
+  (`pagination__link`, `buttonVariants()`), never `href="#"`. D4 keeps that rule: dropdown/accordion items are disabled
+  (`Dropdown.Item isDisabled`; `<span aria-disabled="true">` rows in the accordions) until real pages exist.
+  react-aria-components' `MenuItem` accepts `href` and renders an `<a>`; verify at plan time that HeroUI's
+  `Dropdown.Item`/`Menu.Item` forwards it so the later swap to real links is a one-line change.
 - **Cart badge mounted-guard.** `CartCount` renders `0` until mounted to avoid a hydration mismatch with
   `localStorage`; the same guard applies to anything in the header that reads the cart or the theme
   (`ToggleDarkMode` returns `null` until mounted — note that this leaves an empty 40px slot on first paint; the comp
@@ -294,8 +294,8 @@ the "useSearchParams should be wrapped in a suspense boundary" error.
 
 - **Strapi down at layout level** → empty taxonomy → dropdown triggers either hidden or rendered disabled with no
   items (planner picks; hiding avoids an empty popover). Must not throw.
-- **`href="#"` placeholders (D4)** must not scroll the page to top or push a `#` history entry — `preventDefault`
-  on click; keyboard Enter on a RAC menu item fires the same handler.
+- **Disabled items (D4)**: a dropdown of 16 disabled entries is still readable (RAC keeps disabled items in the
+  collection, skipped by arrow navigation but announced); nothing scrolls or pushes history.
 - **Long category names** (57 chars) wrap inside the 350px desktop menu and the 320px drawer; rows use `min-height`
   not fixed `height`.
 - **`CartCount` count at `0`** stays neutral (D7); `99+` must not widen the 390px row.
@@ -369,8 +369,8 @@ the "useSearchParams should be wrapped in a suspense boundary" error.
 - II: Question: Do dropdown links need client-side navigation (`next/link` / RAC `RouterProvider`) or is a full-page
   `<a>` acceptable?
   Status: answered
-  Answer: Neither yet — dedicated brand and category pages are planned; for now each item is an anchor linking to
-  `#` (D4). Revisit when those pages exist.
+  Answer: Neither yet — dedicated brand and category pages are planned; for now items are rendered disabled, never
+  `href="#"` (D4, repo rule kept). Revisit when those pages exist.
   Context: `Home.tsx` uses `router.push` for catalog navigation and `next/link` for pagination; `buildModeUrl` is
   the builder to reach for when real hrefs arrive.
 
