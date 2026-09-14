@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Browser (page?=..., theme cookie)
   ↓
 Next.js App Router (src/app)
-  ├─ Server: src/app/page.tsx (/, catalog) and src/app/cotizar/page.tsx (/cotizar, quote shell)
+  ├─ Server: src/app/page.tsx (/, catalog), src/app/cotizar/page.tsx (/cotizar, quote shell), and src/app/categorias/page.tsx (/categorias, category index)
   ├─ Routes: /api/preferences (theme), /api/catalog/* (product queries)
   ├─ Providers: NextThemesProvider (dark mode), HeroUI provider, CartStoreProvider + Toast.Provider (providers.tsx)
   └─ Apollo Client factory (per-request) → Strapi
@@ -38,6 +38,7 @@ Next.js App Router (src/app)
   ├─ ProductVariantsDrawer (variants + prices; optional upgrade mode for /cotizar's "Elegir medida")
   ├─ CatalogSearchDrawer (name search + category/brand filters)
   ├─ QuotePage (/cotizar line list, subtotal, clear-list confirmation)
+  ├─ CategoriesPage (/categorias breadcrumb, hero + WhatsApp panel, category grid)
   └─ ProductCard (shared, mobile-aware)
         │
   Shared (src/shared)
@@ -77,10 +78,11 @@ See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a
 | `src/app/api/catalog/*` | HTTP route handlers (thin wrappers over server actions) |
 | `src/app/api/preferences/` | POST endpoint for theme cookie persistence |
 | `src/app/cotizar/page.tsx` | Quote route `/cotizar` — server shell + `generateMetadata` (`noindex, follow`) around the `"use client"` `QuotePage` feature |
+| `src/app/categorias/page.tsx` | Categories index route `/categorias` — server component, `generateMetadata` (`index, follow`), fetches `fetchCategories()` + `fetchCategoryProductCounts()` (degrades to no pill on count failure), renders `BreadcrumbList` JSON-LD + the `CategoriesPage` feature |
 | `src/app/providers.tsx` | Client provider: mounts `CartStoreProvider` and HeroUI's `Toast.Provider` |
 | `src/app/robots.ts` | `GET /robots.txt` — disallows `/api/`, points to the sitemap |
-| `src/app/sitemap.ts` | `GET /sitemap.xml` — base pages + live category/brand URLs; degrades to base pages if Strapi is unreachable |
-| `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination, QuotePage |
+| `src/app/sitemap.ts` | `GET /sitemap.xml` — base pages (incl. `/categorias`) + live category/brand URLs; degrades to base pages if Strapi is unreachable |
+| `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination, QuotePage, CategoriesPage |
 | `src/components/` | Shared ProductCard (only) |
 | `src/shared/lib/global.lib.ts` | Server actions for Strapi reads + theme cookie (the "use server" seam) |
 | `src/shared/queries/` | GraphQL operations |
@@ -88,7 +90,7 @@ See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a
 | `src/shared/constants/` | Catalog error codes, theme cookie key, cart bounds (`cart.constants.ts`), validation rules, pagination bounds, SEO copy/origin (`seo.constants.ts`) |
 | `src/shared/utils/` | Pure helpers (currency format, catalog API client envelope wrapper, SEO metadata/JSON-LD builders in `seo.utils.ts`) |
 | `src/shared/ui/atoms` | Atomic UI (ToggleDarkMode, QuantityStepper, CartCount, etc.) |
-| `src/shared/ui/organisms` | Composed UI: `Header` (sticky, every route — utility bar + WhatsApp link, desktop nav with disabled category/brand dropdowns, mobile lupa/cart/hamburger; rendered once from the root layout) and `MobileMenu` (right-side drawer it renders below `md:`) |
+| `src/shared/ui/organisms` | Composed UI: `Header` (sticky, every route — utility bar + WhatsApp link, desktop nav with disabled category/brand dropdowns ending in a `Ver todas las categorías` link to `/categorias` (hidden there; the trigger gets an active underline + `(actual)` on that route), mobile lupa/cart/hamburger; rendered once from the root layout) and `MobileMenu` (right-side drawer it renders below `md:`, same footer row + active-state treatment on its `Categorías` accordion) |
 | `src/zustand/store/` | Vanilla Zustand stores: theme (`change-theme.store.ts`) and cart (`cart.store.ts`, `zustand/persist` to `localStorage`) |
 | `src/zustand/provider/` | SSR-safe store providers (wraps-store pattern), one per store |
 
@@ -139,8 +141,9 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 - `generateMetadata` in `src/app/page.tsx` derives title/description/canonical/robots per URL from `buildCatalogMetadata` (`src/shared/utils/seo.utils.ts`), which parses `searchParams` via the pure `parseCatalogParams` in `src/features/Pagination/utils.pagination.ts` — it never fetches products (Apollo clients are per-call with no dedupe).
 - Canonicals fold `/` and `/?page=1` together and never carry the transient `notice=end` param. `?mode=name&q=` URLs are `noindex, follow`; base/category/brand URLs are `index, follow`.
 - JSON-LD (`WebSite`+`SearchAction`, per-page `ItemList`, category/brand `BreadcrumbList`) is built by `buildCatalogJsonLd` and injected in the page body (needs product data, so it can't live in `generateMetadata`); `toJsonLdHtml` escapes `<` before writing into `<script type="application/ld+json">` — this is a trust boundary since product/taxonomy strings come from Strapi.
-- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes serving `/robots.txt` and `/sitemap.xml`. The sitemap's page list derives from `PRODUCT_PAGE_MAX` (inherits the `KNOWN_PRODUCT_TOTAL` staleness) and lists one URL per live category/brand; it never emits `lastModified` (no timestamp field exists) and degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`.
+- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes serving `/robots.txt` and `/sitemap.xml`. The sitemap's page list derives from `PRODUCT_PAGE_MAX` (inherits the `KNOWN_PRODUCT_TOTAL` staleness), adds a static `/categorias` base-page entry, and lists one URL per live category/brand; it never emits `lastModified` (no timestamp field exists) and degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`.
 - Base-mode and filtered-mode pagination controls in `src/features/Home/Home.tsx` render as real `next/link` anchors (crawlable) when a target exists, or a non-focusable `<span aria-disabled="true">` otherwise — never `href="#"`.
+- `/categorias` has its own literal `generateMetadata` (`CATEGORIES_TITLE`/`CATEGORIES_DESCRIPTION` in `seo.constants.ts`, canonical `/categorias`, `index, follow`) and renders a `BreadcrumbList` JSON-LD via `toJsonLdHtml`, same trust-boundary pattern as `/`.
 
 ## Conventions And Gotchas
 

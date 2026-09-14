@@ -34,11 +34,12 @@ describe("sitemap", () => {
 
     const result = await sitemap()
 
-    const basePageCount = PRODUCT_PAGE_MAX - PRODUCT_PAGE_MIN + 1
+    const basePageCount = PRODUCT_PAGE_MAX - PRODUCT_PAGE_MIN + 1 + 1
     expect(result).toHaveLength(
       basePageCount + categories.length + brands.length,
     )
     expect(result.some((entry) => entry.url.endsWith("/"))).toBe(true)
+    expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
     expect(
       result.some((entry) => entry.url.includes("mode=category")),
     ).toBe(true)
@@ -59,8 +60,9 @@ describe("sitemap", () => {
 
     const result = await sitemap()
 
-    const basePageCount = PRODUCT_PAGE_MAX - PRODUCT_PAGE_MIN + 1
+    const basePageCount = PRODUCT_PAGE_MAX - PRODUCT_PAGE_MIN + 1 + 1
     expect(result).toHaveLength(basePageCount)
     expect(result.some((entry) => entry.url.includes("mode="))).toBe(false)
+    expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
   })
 })
