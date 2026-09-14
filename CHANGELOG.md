@@ -1,3 +1,9 @@
+## v0.32.0 (2026-09-14)
+
+### Pull Requests
+[#39](https://github.com/RafaelMoro/fe-tehesa/pull/39) | Story 5: Analytics Contract Extension For The Cart Funnel
+
+
 ## v0.31.0 (2026-09-14)
 
 ### Pull Requests
