@@ -13,10 +13,9 @@ import {
   CART_SCHEMA_VERSION,
   CART_STORAGE_KEY,
   CART_TEXT_MAX_LENGTH,
-  CONTACT_EMAIL_PATTERN,
-  CONTACT_TEXT_MAX_LENGTH,
   NO_VARIANT_KEY,
 } from "@/shared/constants/cart.constants"
+import { validateContact } from "@/shared/utils/contact-validation.utils"
 import type {
   CartContact,
   CartLine,
@@ -120,34 +119,6 @@ export const isValidCartLine = (value: unknown): value is CartLine => {
   return true
 }
 
-const sanitizeContact = (value: unknown): CartContact | null => {
-  if (typeof value !== "object" || value === null) {
-    return null
-  }
-
-  const candidate = value as Record<string, unknown>
-
-  if (
-    !isNonEmptyString(candidate.firstName, CONTACT_TEXT_MAX_LENGTH) ||
-    !isNonEmptyString(candidate.lastName, CONTACT_TEXT_MAX_LENGTH)
-  ) {
-    return null
-  }
-
-  if (
-    !isNonEmptyString(candidate.email, CONTACT_TEXT_MAX_LENGTH) ||
-    !CONTACT_EMAIL_PATTERN.test(candidate.email)
-  ) {
-    return null
-  }
-
-  return {
-    firstName: candidate.firstName,
-    lastName: candidate.lastName,
-    email: candidate.email,
-  }
-}
-
 export const sanitizeCartState = (value: unknown): CartState => {
   if (typeof value !== "object" || value === null) {
     return { ...defaultCartState }
@@ -161,7 +132,7 @@ export const sanitizeCartState = (value: unknown): CartState => {
 
   return {
     lines,
-    contact: sanitizeContact(candidate.contact),
+    contact: validateContact(candidate.contact).contact,
   }
 }
 
