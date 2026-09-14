@@ -1,3 +1,9 @@
+## v0.35.0 (2026-09-14)
+
+### Pull Requests
+[#44](https://github.com/RafaelMoro/fe-tehesa/pull/44) | Add categories page route with product count per category
+
+
 ## v0.34.0 (2026-09-14)
 
 ### Pull Requests
