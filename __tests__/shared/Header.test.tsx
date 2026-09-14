@@ -1,4 +1,4 @@
-import { render, screen, userEvent, within } from "@__tests__/test-utils"
+import { render, screen, userEvent, waitFor, within } from "@__tests__/test-utils"
 import { Header } from "@/shared/ui/organisms/Header"
 import type { TaxonomyItem } from "@/shared/types/global.types"
 
@@ -104,5 +104,78 @@ describe("Header", () => {
       (await screen.findAllByRole("link", { name: "Ver mi lista, 0 artículos" })).length,
     ).toBeGreaterThan(0)
     expect(screen.getAllByRole("button", { name: "Cambiar tema" }).length).toBeGreaterThan(0)
+  })
+
+  it("opens the mobile side menu and returns focus to the hamburger on close", async () => {
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const hamburger = screen.getByRole("button", { name: "Menú" })
+    expect(hamburger).toHaveAttribute("aria-expanded", "false")
+
+    await user.click(hamburger)
+
+    expect(hamburger).toHaveAttribute("aria-expanded", "true")
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    expect(dialog).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Cerrar" }))
+
+    expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
+    await waitFor(() => expect(hamburger).toHaveFocus())
+  })
+
+  it("closes the side menu on Escape and returns focus to the hamburger", async () => {
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const hamburger = screen.getByRole("button", { name: "Menú" })
+    await user.click(hamburger)
+    await screen.findByRole("dialog", { name: "Menú" })
+
+    await user.keyboard("{Escape}")
+
+    expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
+    await waitFor(() => expect(hamburger).toHaveFocus())
+  })
+
+  it("lists disabled taxonomy rows inside the side menu and highlights the active one", async () => {
+    useSearchParamsMock.mockReturnValue(
+      new URLSearchParams("mode=brand&brand=Urrea"),
+    )
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+
+    await user.click(within(dialog).getByRole("button", { name: "Marcas" }))
+
+    for (const brand of brands) {
+      const row = within(dialog).getByText(brand.name)
+      expect(row).toHaveAttribute("aria-disabled", "true")
+    }
+    expect(within(dialog).getByText("Urrea")).toHaveAttribute("aria-current", "page")
+    expect(within(dialog).queryByRole("link", { name: "Urrea" })).not.toBeInTheDocument()
+  })
+
+  it("shows the lupa button on / and dispatches the search-open event", async () => {
+    const listener = jest.fn()
+    window.addEventListener("tehesa:open-catalog-search", listener)
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const lupa = screen.getByRole("button", { name: "Buscar" })
+    await user.click(lupa)
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    window.removeEventListener("tehesa:open-catalog-search", listener)
+  })
+
+  it("hides the lupa button on routes other than /", () => {
+    usePathnameMock.mockReturnValue("/cotizar")
+    render(<Header categories={categories} brands={brands} />)
+
+    expect(screen.queryByRole("button", { name: "Buscar" })).not.toBeInTheDocument()
   })
 })

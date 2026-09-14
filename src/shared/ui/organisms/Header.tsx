@@ -2,10 +2,12 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Button, Dropdown } from "@heroui/react"
-import { RiArrowDownSLine } from "@remixicon/react"
+import { RiArrowDownSLine, RiSearchLine } from "@remixicon/react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { CartCount } from "../atoms/CartCount"
+import { MobileMenu } from "./MobileMenu"
+import { CATALOG_SEARCH_OPEN_EVENT } from "@/shared/constants/catalog.constants"
 import type { TaxonomyItem } from "@/shared/types/global.types"
 
 interface HeaderProps {
@@ -106,8 +108,27 @@ export const Header = ({ categories, brands }: HeaderProps) => {
           />
         </nav>
         <div className="flex items-center gap-1 md:hidden">
+          {isCatalog && (
+            <Button
+              isIconOnly
+              aria-label="Buscar"
+              className="size-11"
+              onPress={() =>
+                window.dispatchEvent(new Event(CATALOG_SEARCH_OPEN_EVENT))
+              }
+            >
+              <RiSearchLine className="size-5" />
+            </Button>
+          )}
           <CartCount />
-          <ToggleDarkMode />
+          <MobileMenu
+            categories={categories}
+            brands={brands}
+            isCatalog={isCatalog}
+            activeCategory={activeCategory}
+            activeBrand={activeBrand}
+            whatsappUrl={null}
+          />
         </div>
         <div className="hidden items-center gap-2 md:flex">
           <CartCount />
