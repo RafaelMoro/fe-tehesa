@@ -152,7 +152,7 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 - **GraphQL schema:** Infer from `src/shared/queries/global.queries.ts` and TypeScript types. Confirm Strapi contract before normalizing fields or changing query shapes.
 - **Category/brand lists:** Currently hardcoded in `src/shared/types/global.types.ts` (there's a TODO questioning this). Catalog API validation uses the live Strapi taxonomy, not the hardcoded arrays.
 - **HeroUI v3 ESM resolution:** `@heroui/react` is ESM-only; Jest cannot resolve it by name. `jest.config.ts` maps it to its `dist/index.js`, and `next.config.ts` lists HeroUI + dependencies in `transpilePackages` for SWC. When adding a new ESM-only client package, add it to both.
-- **Catalog images:** Currently commented out; implementation references localhost Strapi URLs. Treat image support as unfinished.
+- **Catalog images:** Strapi has no media field. `ProductCard` accepts an optional `image?: { src; alt }` prop that nothing currently passes.
 - **Console statements:** Do not remove pre-existing `console.log/warn/error` unless explicitly planned.
 
 ## Implementation And Testing
