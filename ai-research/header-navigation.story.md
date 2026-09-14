@@ -23,7 +23,7 @@ site header:
   WhatsApp click-to-chat action.
 - **Desktop (≥ 1024px):** green-bar + "Tehesa" wordmark (no logo image), a `Productos` link, `Categorías` and
   `Marcas` dropdowns listing the live Strapi taxonomy, then cart badge and theme toggle on the right.
-- **Mobile (< 1024px, see D3):** wordmark, a lupa that opens the existing catalog-wide search drawer, the cart badge,
+- **Mobile (< 768px, see D3):** wordmark, a lupa that opens the existing catalog-wide search drawer, the cart badge,
   and a hamburger that opens a right-side menu with `Productos`, `Categorías`/`Marcas` accordions, and a footer with
   `Solicitar cotización` (same WhatsApp action) and `Cambiar tema`.
 - **Dark theme** is fully specified in the comp (desktop + mobile): header surface `#0B1A02`, borders `#1E3608`,
@@ -34,24 +34,24 @@ Selecting a category/brand navigates to the existing URL contract (`/?mode=categ
 
 ### Acceptance criteria
 
-1. **Desktop nav.** At ≥ 1024px the header renders the wordmark (links to `/`), `Productos` (links to `/`, shows the
+1. **Desktop nav.** At ≥ 768px (D3) the header renders the wordmark (links to `/`), `Productos` (links to `/`, shows the
    active underline only on `/`), and `Categorías` / `Marcas` triggers. Each trigger opens a dropdown listing every
    live category / brand from Strapi as a real link to the matching `/?mode=…&page=1` URL; the entry matching the
    current URL's `category`/`brand` is highlighted; the dropdown closes on outside click, `Escape`, and item
    selection. The cart badge and the theme toggle stay to the right and keep their current behavior.
-2. **Mobile side menu.** Below 1024px the nav row collapses to wordmark + lupa + cart + hamburger. The hamburger
+2. **Mobile side menu.** Below 768px the nav row collapses to wordmark + lupa + cart + hamburger. The hamburger
    (`aria-expanded`) opens a right-side drawer (backdrop, `Escape`/backdrop/`Cerrar` close, focus trapped and
    returned to the trigger) with `Productos`, `Categorías` and `Marcas` accordions (one open at a time, `aria-expanded`
    on each header) listing the same links as AC1, and a footer with `Solicitar cotización` and `Cambiar tema`. Every
    tappable row/button is ≥ 44px tall.
 3. **Lupa opens the existing drawer.** On `/`, the mobile lupa opens the already-implemented `CatalogSearchDrawer`
    (`Búsqueda ampliada`) — no second search UI is built. On routes where that drawer is not mounted (`/cotizar`) the
-   lupa is either hidden or navigates to `/` (see Open Question UI-II).
+   lupa is hidden (D11).
 4. **Utility bar → WhatsApp.** The utility bar renders the chosen copy (D6) on desktop and the one-line variant on
    mobile; its link and the side-menu `Solicitar cotización` button open `https://wa.me/<NEXT_PUBLIC_WHATSAPP_NUMBER>?text=<prefilled>`
    in a new tab (`target="_blank" rel="noopener noreferrer"`), built with the existing `buildWhatsappUrl`. When
-   `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset the link degrades (Open Question UI-III) and never throws.
-5. **Resilience + theme.** The header renders on every route, in light and dark per the comp's token mapping, and a
+   `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset the link and the side-menu button are hidden (D12) and nothing throws.
+5. **Resilience + theme.** The header is sticky (D10), renders on every route, in light and dark per the comp's token mapping, and a
    Strapi taxonomy failure at layout level degrades to a header without dropdown items (no `global-error`, `pnpm build`
    still passes). Existing `Header`/`CartCount` tests are updated and new tests cover AC1–AC4 behaviors that are
    testable in jsdom (link hrefs, `aria-expanded`, active item, drawer open/close, WhatsApp href, unset-number case).
@@ -110,10 +110,10 @@ withheld "for the time being"; the wordmark is a placeholder decision, see D1).
 ### Implementation-facing constraints
 
 **Responsive.** The comp labels desktop `≥ 1024px` and mobile `< 768px`, leaving 768–1023 undefined; D3 assigns the
-mobile layout to everything below `lg` (1024px). Use Tailwind `lg:` classes to switch layouts, **not**
+desktop nav from `md` (768px) where it fits. Use Tailwind `md:`/`lg:` classes to switch layouts, **not**
 `useMediaQuery` (`src/shared/hooks/useMediaQuery.tsx` is synchronous, non-reactive, returns `false` on the server, and
 would hydrate-mismatch a layout-level component). Render both nav variants and hide with CSS, or render one drawer
-whose trigger is `lg:hidden`.
+whose trigger is `md:hidden`.
 
 **Accessibility.** Desktop triggers carry `aria-expanded`; dropdown items are links (`<a href>`), not `onAction`-only
 menu items, so they are crawlable and middle-clickable. Mobile hamburger: `aria-label="Menú"`, `aria-expanded`. The
@@ -127,7 +127,7 @@ active-item text `primary-700 #125D03` on `#F5FFEF`; dark surfaces `#0B1A02` / `
 `#244310`, active `#B4FE99` on `#16300A`. Note the known gap: HeroUI's `--primary-*` is still blue, so existing
 surfaces (`CartCount`, `CatalogHero`) use explicit Tailwind `emerald-*` classes. The header is the first surface where
 the comp's exact green matters; see Open Question UI-IV before choosing between explicit hex/`emerald` classes and the
-global remap. Run `pnpm design:lint` only if `DESIGN.md` itself changes.
+global remap — **decided (D14): explicit classes, header only.** Run `pnpm design:lint` only if `DESIGN.md` itself changes.
 
 **Content.** All copy is Spanish. Category names come from Strapi (16 today; longest is 57 characters —
 "Herramientas de diagnóstico de electricidad y electrónica" — which wraps to two lines in the 350px dropdown and the
@@ -135,9 +135,9 @@ global remap. Run `pnpm design:lint` only if `DESIGN.md` itself changes.
 There is no ordering field on either type (verified 2026-09-14 by `backend-research`): sort by `name` client-side or
 accept Strapi's default order.
 
-**Out of scope.** Logo image (kept in `public/`, not rendered); tablet-specific layout; sticky header; a mega-menu
+**Out of scope.** Logo image (kept in `public/`, not rendered); a tablet-specific third layout; a mega-menu
 with product counts; removing the catalog page's own dropdowns/`CatalogHero`; remapping HeroUI `--primary-*`
-globally (unless UI-IV decides otherwise); analytics events.
+globally (D14); analytics events.
 
 ### Decision record
 
@@ -145,13 +145,18 @@ globally (unless UI-IV decides otherwise); analytics events.
 |---|---|---|---|
 | D1 | Brand slot = 3px green bar + "Tehesa" wordmark linking to `/`; `<Image>` and `themeFetched` prop dropped. | User: "let's not show the current logo"; comp draws the wordmark. | settled 2026-09-14 |
 | D2 | Mobile lupa opens the existing `CatalogSearchDrawer`; the comp's inline collapsing input is not built. | User answer; avoids a second search UI with its own validation. | settled 2026-09-14 |
-| D3 | Breakpoint is a single `lg` (1024px) switch; 768–1023 gets the mobile layout. | Comp leaves the band undefined; mobile layout degrades better than desktop nav at 800px with 57-char category names. | assumed — confirm |
+| D3 | Desktop nav from `md` (768px) — tablet shows the desktop nav if it fits; the planner verifies at 768px and falls back to `lg` for any piece that does not (the two-part utility-bar sentence is the likely one; it may use the mobile one-liner until `lg`). | User: "show what desktop nav does if it fits on tablet". | settled 2026-09-14 |
 | D4 | Dropdown/accordion items are real links to `buildModeUrl(mode, name, 1)`; active item derived from `useSearchParams`. | Existing URL contract; crawlable; the sitemap already lists these URLs. | settled |
 | D5 | Only one mobile accordion section open at a time (comp `mSection`). | Comp behavior; 16 categories + 7 brands both open would exceed the 720px frame. | settled |
-| D6 | Utility bar copy + prefilled WhatsApp text: **three tone options proposed below; user picks one.** | User asked for three tones. | pending |
+| D6 | Utility bar copy + prefilled WhatsApp text: three tone options proposed below; **option A chosen**. | User asked for three tones, picked A. | settled 2026-09-14 |
 | D7 | Cart badge keeps `0`-neutral / `1+`-green styling and the `Ver mi lista, N artículos` name; only colors move to the comp's green. | Cart epic Story 1 AC 7 overrides the comp's static `3`. | settled |
 | D8 | Theme toggle shows moon in light, sun in dark (comp §Tema oscuro); the `/api/preferences` cookie flow is unchanged. | Comp; the "next state" icon convention. | settled |
-| D9 | Utility bar is always rendered (comp's `showUtilityBar` prop is a preview toggle, not a runtime feature). | No consumer would turn it off. | assumed — confirm |
+| D9 | Utility bar (the dark strip above the nav row) is always rendered (comp's `showUtilityBar` prop is a preview toggle, not a runtime feature). | No consumer would turn it off. | pending — user asked what "utility bar" means; see UI-VI |
+| D10 | Header is sticky (`position: sticky; top: 0`), utility bar included. | User decision. | settled 2026-09-14 |
+| D11 | Mobile lupa is hidden on `/cotizar` (only rendered where `Home` mounts the search drawer). | User decision. | settled 2026-09-14 |
+| D12 | WhatsApp link/button is hidden when `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset; the tagline stays. | User decision. | settled 2026-09-14 |
+| D13 | Copy option **A** ships. | User decision. | settled 2026-09-14 |
+| D14 | The comp's green is applied with explicit classes scoped to the header only; no HeroUI `--primary-*` remap. | User: "only use that emerald color background for the header". | settled 2026-09-14 |
 
 #### D6 — three copy options (utility bar + WhatsApp prefilled text)
 
@@ -237,8 +242,8 @@ layout's copy with the page without (2).
 
 - **(a) Cross-tree open signal.** A tiny client store (Zustand, provider-wraps-store pattern like `cart.provider.tsx`)
   or a `CustomEvent` on `window` that `Home` subscribes to and calls `catalogSearchDrawerState.open()`. Smallest
-  change to `Home`; the header stays ignorant of the drawer. On `/cotizar` nobody listens, so the lupa must be hidden
-  or navigate to `/` (UI-II).
+  change to `Home`; the header stays ignorant of the drawer. On `/cotizar` nobody listens, so the lupa is hidden there (D11) — the
+  header knows via `usePathname()`.
 - **(b) Lift the drawer into the layout.** The drawer needs taxonomy (the header already has it) and the navigation
   handlers currently in `Home` (`handleCategorySelect`, `handleBrandSelect`, `handleCatalogNameSearchSubmit`, the
   close-then-navigate delays, `pageFeedback` reset). Lifting means moving `useCatalogSearch` and those handlers out
@@ -291,50 +296,58 @@ the "useSearchParams should be wrapped in a suspense boundary" error.
   not fixed `height`.
 - **`CartCount` count at `0`** stays neutral (D7); `99+` must not widen the 390px row.
 - **Theme toggle before mount** renders nothing today; the comp reserves 40/44px — reserve the slot.
-- **`/cotizar`**: `Productos` not active; `CartCount` carries `aria-current="page"` (existing); lupa per UI-II.
+- **`/cotizar`**: `Productos` not active; `CartCount` carries `aria-current="page"` (existing); lupa hidden (D11).
+- **Sticky header (D10)**: needs a `z-index` below the drawers/toast (`z-50`/`z-[60]`) but above page content; `/cotizar`'s focus-to-list-region scroll and `Home`'s `window.scrollTo({ top: 0 })` should land below the sticky bar (use `scroll-margin-top` on the targets or accept the overlap — planner's call).
 - **Drawer stacking**: `Toast.Provider` is `z-[60]` because HeroUI overlays are `z-50`; a second `Drawer` (side menu)
   is another `z-50` portal — a toast fired while the menu is open still stacks above it. The catalog search drawer and
   the side menu should never be open simultaneously (the lupa is outside the menu, so this is naturally true).
 - **Mobile keyboard** is not a concern here (no input in the header after D2).
 - **Existing test coupling**: `__tests__/cart/CartCount.test.tsx` mocks `next/navigation` with only `usePathname`;
   the new header also calls `useSearchParams` (and possibly `useRouter`) — the mock must grow, and jsdom has no
-  layout, so `lg:` visibility cannot be asserted; test both variants by role/name, not by visibility.
+  layout, so `md:` visibility cannot be asserted; test both variants by role/name, not by visibility.
 
 ## Open Questions
 
 ### UI/product decisions
 
 - I: Question: D3 — is a single `lg` (1024px) breakpoint acceptable, so 768–1023 (tablet) uses the mobile header?
-  Status: pending
+  Status: answered
+  Answer: No — show the desktop nav on tablet if it fits. Desktop layout from `md` (768px); the planner verifies at 768px and keeps only the pieces that do not fit (likely the two-part utility-bar sentence) on the mobile variant until `lg`.
   Context: The comp says desktop ≥ 1024 and mobile < 768 and shows nothing for the band between. Desktop nav with
   `Productos · Categorías · Marcas` + wordmark + two icons fits at 768px in principle, but the 350px dropdown and the
   utility bar's two-part sentence do not.
 - II: Question: On `/cotizar`, where `CatalogSearchDrawer` is not mounted, should the mobile lupa be hidden, or
   navigate to `/` (and then open the drawer)?
-  Status: pending
+  Status: answered
+  Answer: Hide it on `/cotizar`.
   Context: Option (a) in "Search drawer seam" only works where `Home` is mounted. Hiding is simplest and honest;
   navigating-then-opening needs a query flag or a one-shot store value that `Home` consumes on mount.
 - III: Question: When `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset, should the utility-bar link (and the side-menu button)
   fall back to a `/cotizar` link, render as a non-focusable `aria-disabled` span (the `WhatsappCta` pattern), or be
   hidden?
-  Status: pending
+  Status: answered
+  Answer: Hide the link (and the side-menu button); keep the tagline.
   Context: `WhatsappCta` renders a disabled span with an explanatory message; the utility bar has no room for a
   message. Recommendation: hide the link (keep the tagline) — a dead link in a header is worse than no link.
 - IV: Question: Should this story use explicit green classes (hex/`emerald-*`, the `CartCount`/`CatalogHero`
   precedent) or is it the moment to remap HeroUI's `--primary-*` variables to the `DESIGN.md` scale?
-  Status: pending
+  Status: answered
+  Answer: Explicit green classes, scoped to the header only. No global remap in this story.
   Context: `DESIGN.md` and `ai-skills/REPO_CONTEXT.md` (Open Questions) both call the remap "a pending deliberate
   change". The header's filled green toggle/hamburger is the first primary-colored control that must match the comp
   exactly. Remapping changes every HeroUI `primary` button in the app at once — larger blast radius than this story.
   Recommendation: explicit classes now; remap as its own story.
 - V: Question: D6 — which of the three copy options (A/B/C) ships?
-  Status: pending
+  Status: answered
+  Answer: A.
   Context: See the D6 table. Recommendation: A.
 - VI: Question: D9 — is the utility bar always on (no runtime toggle)?
   Status: pending
+  Explanation: "Utility bar" = the thin dark strip (`#0F2001`) rendered *above* the white nav row in the comp — "Soluciones para ferretería e instalación industrial · ¿Necesitas una medida especial? Solicitar cotización" on desktop, "¿Medida especial? Cotizar" on mobile. It is not the hamburger menu. The comp has a `showUtilityBar` preview toggle; the question is whether the app ever hides that strip. Assumed: always shown.
   Context: The comp's `showUtilityBar` is a preview prop; nothing in the app would flip it.
 - VII: Question: Should the header be sticky?
-  Status: pending
+  Status: answered
+  Answer: Yes, sticky (utility bar included).
   Context: The comp does not specify; today's header scrolls away. Sticky interacts with the `/cotizar` page's
   focus-to-list-region behavior and with the drawers' backdrops. Recommendation: not sticky in this story.
 
