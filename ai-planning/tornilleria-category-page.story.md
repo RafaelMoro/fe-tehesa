@@ -8,8 +8,8 @@
 
 - **`Product.subcategory` is optional (`subcategory?: string | null`)**, not required `string | null` as the research wrote it. Only `GET_ALL_PRODUCTS_BY_CATEGORY` selects the field; every other query, every `Product` literal, and every existing test fixture would otherwise need a `subcategory: null` line for no behavioural gain. Matches the existing `minPrice?`/`variantCount?` convention.
 - **Breadcrumb crumb `Tornillería` is a hardcoded constant** (`TORNILLERIA_CATEGORY_NAME`), not the live Strapi name. The route, H1, and metadata are already hardcoded (D2/D6); the only "live" source would be `products[0].category.name`, which is undefined on an empty set and would still need the literal as a fallback. The header's active-row match stays live (it already holds the taxonomy).
-- **Error boundary = `src/app/categorias/error.tsx`, unchanged.** The research says failures propagate "to `src/app/error.tsx` like `/categorias` does", but `/categorias` actually propagates to its own `src/app/categorias/error.tsx`, and a nested `/categorias/tornilleria` route is caught by that same boundary (nearest `error.tsx` wins). Its copy reads "No pudimos cargar las categorías" / "Ir al catálogo". Accepted as-is: it is a working boundary with a retry; a page-specific `error.tsx` is listed under Open Questions. Same for `src/app/categorias/loading.tsx` (category-card skeletons + "Cargando categorías…" while the product fetch runs).
-- **SEO copy is literal and plan-authored** (research gave the constant names only): `TORNILLERIA_TITLE = "Tornillería y fijación industrial en Puebla | Tehesa"`, `TORNILLERIA_DESCRIPTION = "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza por WhatsApp."`. Edit at implement time if the user prefers other wording.
+- **The route gets its own `error.tsx` and `loading.tsx`** (decided by the user, 2026-09-14). The research says failures propagate "to `src/app/error.tsx` like `/categorias` does", but a nested `/categorias/tornilleria` route is caught by the nearest boundary — `src/app/categorias/error.tsx` ("No pudimos cargar las categorías") and `src/app/categorias/loading.tsx` (category-card skeletons) — whose copy is wrong for a product page. Phase 2 adds `src/app/categorias/tornilleria/{error,loading}.tsx` with product copy.
+- **SEO copy (user, 2026-09-14):** `TORNILLERIA_TITLE = "Tornillería y Fijación Industrial en Puebla | Tehesa"`, `TORNILLERIA_DESCRIPTION = "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy."`. H1 stays `Tornillería y fijación industrial` (lowercase, per the comp).
 - **Header dropdown rows with `href` are react-aria link items** (full-page navigation, menu closes on select) — the same mechanism and the same accepted trade-off as the existing `Ver todas las categorías` row (categories-page plan, assumption 1). Mobile rows are `next/link` (client-side) like `Productos`.
 - **`Ver todas las categorías` stays visible on `/categorias/tornilleria`**; it is hidden only on `/categorias` itself. The `Categorías` trigger/accordion underline uses `pathname.startsWith("/categorias")`.
 - **`DropdownCategories` is reused for subcategories unchanged**, including its `aria-label="Dropdown menu categories"` (research: acceptable). No `ariaLabel` prop is added.
@@ -28,6 +28,7 @@
 
 **`src/app/**`**
 - `src/app/categorias/tornilleria/page.tsx` — Create (Phase 2)
+- `src/app/categorias/tornilleria/error.tsx`, `src/app/categorias/tornilleria/loading.tsx` — Create (Phase 2)
 - `src/app/sitemap.ts` — Modify (Phase 3)
 
 **`src/features/**`**
@@ -53,7 +54,7 @@
 
 **Tests (`__tests__/**`)**
 - `__tests__/shared/global.lib.test.ts`, `__tests__/product-listing/ProductCard.test.tsx` — Modify (Phase 1)
-- `__tests__/category-page/CategoryPage.test.tsx`, `__tests__/seo/tornilleria-metadata.test.ts` — Create (Phase 2)
+- `__tests__/category-page/CategoryPage.test.tsx`, `__tests__/seo/tornilleria-metadata.test.ts`, `__tests__/app/tornilleria-error.test.tsx` — Create (Phase 2)
 - `__tests__/shared/Header.test.tsx`, `__tests__/categories/CategoriesPage.test.tsx`, `__tests__/seo/sitemap.test.ts` — Modify (Phase 3)
 
 **Docs**
@@ -176,7 +177,15 @@ Everything below the route: types, constants, query, server action, and the `Pro
 **`src/app/categorias/tornilleria/page.tsx`** — Create (server component, mirrors `src/app/categorias/page.tsx`)
 - `export const generateMetadata = (): Metadata => ({ title: TORNILLERIA_TITLE, description: TORNILLERIA_DESCRIPTION, alternates: { canonical: "/categorias/tornilleria" }, robots: { index: true, follow: true } })`.
 - `breadcrumbJsonLd`: `BreadcrumbList` with 3 `ListItem`s — `Inicio` (`SITE_URL`), `Categorías` (`${SITE_URL}/categorias`), `TORNILLERIA_CATEGORY_NAME` (`${SITE_URL}${CATEGORY_PAGE_HREFS[TORNILLERIA_CATEGORY_ID]}`).
-- `export default async function TornilleriaRoute()`: `const products = await fetchAllProductsByCategory(TORNILLERIA_CATEGORY_ID)` — no try/catch (AC1: failure reaches the nearest `error.tsx`). Render the JSON-LD `<script>` via `toJsonLdHtml` and `<main className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-4 md:p-5"><CategoryPage products={products} /></main>`.
+- `export default async function TornilleriaRoute()`: `const products = await fetchAllProductsByCategory(TORNILLERIA_CATEGORY_ID)` — no try/catch (AC1: failure reaches the route's own `error.tsx` below). Render the JSON-LD `<script>` via `toJsonLdHtml` and `<main className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-4 md:p-5"><CategoryPage products={products} /></main>`.
+
+**`src/app/categorias/tornilleria/error.tsx`** — Create, `"use client"` (copy of `src/app/categorias/error.tsx`, same `<main>`/`<section role="alert">` markup)
+- Copy: heading `No pudimos cargar los productos de Tornillería`, body `Ocurrió un problema al consultar los productos de esta categoría. Intenta nuevamente en unos segundos.`, buttons `Intentar de nuevo` (`reset`) and `Ver todas las categorías` (`window.location.assign("/categorias")`). Kicker line `No se pudo completar la carga` unchanged.
+
+**`src/app/categorias/tornilleria/loading.tsx`** — Create (copy the shape of `src/app/categorias/loading.tsx`)
+- Same `<main>` + breadcrumb/hero/counter `Skeleton`s as the categories loader, then a filter-row placeholder (three `Skeleton`s `h-10`, stacked below `lg`) and a product grid using `ProductListing`'s grid classes with 9 `ProductCardSkeleton`s (`@/components/ProductCardSkeleton`, already used by `src/app/loading.tsx`). `<p className="sr-only" role="status">Cargando productos...</p>`.
+
+**`__tests__/app/tornilleria-error.test.tsx`** — Create (copy of `categorias-error.test.tsx`): heading `No pudimos cargar los productos de Tornillería`, `Intentar de nuevo` calls `reset` once.
 
 **`__tests__/seo/tornilleria-metadata.test.ts`** — Create (`@jest-environment node`, copy of `categories-metadata.test.ts`): title/description constants, canonical `/categorias/tornilleria`, `{ index: true, follow: true }`.
 
@@ -194,7 +203,7 @@ Everything below the route: types, constants, query, server action, and the `Pro
 
 **Automated**
 - `pnpm exec tsc --noEmit`
-- `pnpm test -- __tests__/category-page __tests__/seo/tornilleria-metadata.test.ts __tests__/categories/CategoriesPage.test.tsx __tests__/home/Home.test.tsx`
+- `pnpm test -- __tests__/category-page __tests__/seo/tornilleria-metadata.test.ts __tests__/app/tornilleria-error.test.tsx __tests__/categories/CategoriesPage.test.tsx __tests__/home/Home.test.tsx`
 
 **Dev-server validation** (`H=localhost:3000`)
 - `curl -s -o /dev/null -w "%{http_code}" $H/categorias/tornilleria` → `200`.
@@ -210,13 +219,14 @@ Everything below the route: types, constants, query, server action, and the `Pro
 - Zero matches shows the "No hay coincidencias" card with only `Limpiar filtros`.
 - `Explorar las N variantes` opens the drawer; `Agregar 1 pieza` / `Agregar y elegir después` add lines (cart count increments).
 - Hero is 2-column at ≥1024px, stacked below; filter controls full-width below `sm`.
-- Strapi failure (optional): set an invalid `STRAPI_API_TOKEN`, restart `pnpm dev`, `GET /categorias/tornilleria` renders the `categorias/error.tsx` boundary with `Intentar de nuevo`.
+- Strapi failure: set an invalid `STRAPI_API_TOKEN`, restart `pnpm dev`, `GET /categorias/tornilleria` renders the route's own boundary (`No pudimos cargar los productos de Tornillería`, `Intentar de nuevo`, `Ver todas las categorías`) — not the categories copy. Throttle the network to see the product-grid skeleton + `Cargando productos...` status.
 
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 | --- | --- | --- |
 | `src/app/categorias/tornilleria/page.tsx` | 200, full set, JSON-LD, metadata, no pagination | dev-server `curl` above + `tornilleria-metadata.test.ts` |
+| `src/app/categorias/tornilleria/{error,loading}.tsx` | product copy, retry, skeleton | `tornilleria-error.test.tsx` + manual bad-token / throttled load |
 | `src/features/CategoryPage/CategoryPage.tsx` | structure, counter, derived options, stacked filters, clear, empty states, panel gating, drawer open | `pnpm test -- __tests__/category-page` + manual click-through |
 | `WhatsappPanel.tsx` / `CategoriesPage.tsx` | `/categorias` unchanged | `CategoriesPage.test.tsx` + `curl /categorias` |
 | `SearchInput.tsx`, `ProductListing.tsx` | `/` unchanged | `Home.test.tsx` + `curl /?page=1` |
@@ -256,7 +266,7 @@ Everything below the route: types, constants, query, server action, and the `Pro
 **`__tests__/seo/sitemap.test.ts`** — Modify: `basePageCount` adds `Object.keys(CATEGORY_PAGE_HREFS).length`; assert an entry ends with `/categorias/tornilleria` in both the full and the degraded case.
 
 **`CLAUDE.md`** — Modify: add `src/app/categorias/tornilleria/page.tsx` to the Directory Layout table and `CategoryPage` to the features list/architecture block; one line in "SEO Surface" for the new literal metadata + sitemap entry; note `Product.subcategory` (Tornillería-only) under Conventions.
-**`ai-skills/REPO_CONTEXT.md`** — Modify: route row for `categorias/tornilleria/page.tsx`, `features/CategoryPage/` row, `fetchAllProductsByCategory` in Data Flow (paging by `pageCount`, `pageSize: 100`, optional `subcategory` filter), `CATEGORY_PAGE_HREFS` in the `ui/organisms` Header row, sitemap note, and a gotcha: routes nested under `src/app/categorias/` are caught by `categorias/error.tsx` + `categorias/loading.tsx`.
+**`ai-skills/REPO_CONTEXT.md`** — Modify: route row for `categorias/tornilleria/page.tsx`, `features/CategoryPage/` row, `fetchAllProductsByCategory` in Data Flow (paging by `pageCount`, `pageSize: 100`, optional `subcategory` filter), `CATEGORY_PAGE_HREFS` in the `ui/organisms` Header row, sitemap note, and a gotcha: routes nested under `src/app/categorias/` are caught by `categorias/error.tsx` + `categorias/loading.tsx` unless they ship their own (the Tornillería route does).
 
 ### Success Criteria
 
@@ -292,7 +302,7 @@ Everything below the route: types, constants, query, server action, and the `Pro
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 | --- | --- | --- | --- | --- |
-| AC1 — Route + data (fetch-all by `pageInfo`, `subcategory` selected, no pagination, error propagation, empty state) | 1, 2 | `GET /categorias/tornilleria` 200; `grep -c "<article"` = 107; no `Página anterior`/`Siguiente`; kicker labels present | Not validated | Paging loop + empty set proved by `global.lib.test.ts`; error propagation goes to `categorias/error.tsx` (see Assumptions) — optional manual bad-token check |
+| AC1 — Route + data (fetch-all by `pageInfo`, `subcategory` selected, no pagination, error propagation, empty state) | 1, 2 | `GET /categorias/tornilleria` 200; `grep -c "<article"` = 107; no `Página anterior`/`Siguiente`; kicker labels present | Not validated | Paging loop + empty set proved by `global.lib.test.ts`; error propagation to the route's own `error.tsx` is a manual bad-token check + `tornilleria-error.test.tsx` |
 | AC2 — Page structure (breadcrumb, hero, panel, counter) | 2 | Body contains `aria-label="Ruta"`, `aria-current="page"`, `<h1>…Tornillería y fijación industrial`, `Categoría`, `Cotizar ahora`, `107 productos` | Not validated | Filtered/singular counter + 2-col layout are manual/`CategoryPage.test.tsx` |
 | AC3 — Frontend filters | 2 | Body contains `Buscar tornillos, tuercas, pernos...`, `Filtrar subcategorías`, `Filtrar marcas`; idle body lacks `Limpiar filtros` and `Buscar en todo el catálogo` | Not validated | Stacking/clear/zero-match are interactions: `CategoryPage.test.tsx` + manual click-through |
 | AC4 — Card + drawer | 1, 2 | `grep -o "Tornillería / [^<]*" \| sort \| uniq -c` shows 10 labels on `/categorias/tornilleria`; `grep -c "Tornillería / "` = 0 on `/?page=1` | Not validated | Drawer/add flows: `ProductCard.test.tsx`, `CategoryPage.test.tsx`, manual |
@@ -302,7 +312,7 @@ Everything below the route: types, constants, query, server action, and the `Pro
 
 - **Env:** `STRAPI_HOST`/`STRAPI_API_TOKEN` (data), `NEXT_PUBLIC_WHATSAPP_NUMBER` (panel hidden when unset — never throws), `NEXT_PUBLIC_SITE_URL` (canonical, JSON-LD, sitemap).
 - **Server/client boundary:** the route is a server component; `CategoryPage` is `"use client"` because it owns state and imports `ProductVariantsDrawer` (which has no directive) and `ProductCard`. `WhatsappPanel` is hook-free so it works in both worlds. The client never imports `global.lib.ts`.
-- **Nested route inheritance:** `/categorias/tornilleria` inherits `src/app/categorias/{error,loading}.tsx` and the layout's `force-dynamic`.
+- **Nested route boundaries:** `/categorias/tornilleria` ships its own `error.tsx`/`loading.tsx` (otherwise `src/app/categorias/{error,loading}.tsx` would catch it with category copy); it inherits the layout's `force-dynamic`.
 - **Strapi contract:** `products_connection` + explicit `pagination` on every page (omitting it returns 10 rows silently); `pageSize: 100` with a `pageCount` loop, never one oversized page; `subcategory` filter is a `StringFilterInput` `eq` and the key is omitted when unused.
 - **Trust boundary:** breadcrumb JSON-LD goes through `toJsonLdHtml`; product/brand strings render as React text only.
 - **Responsive:** class-only (`sm:`/`lg:`); no `useMediaQuery`.
@@ -310,10 +320,7 @@ Everything below the route: types, constants, query, server action, and the `Pro
 
 ## Open Questions / Out-of-scope
 
-**Open (default chosen, flip at sign-off):**
-- Error boundary copy: `/categorias/tornilleria` failures render `categorias/error.tsx` ("No pudimos cargar las categorías"). Adding `src/app/categorias/tornilleria/error.tsx` with product-specific copy is a ~40-line addition if wanted; not planned.
-- Loading state: the inherited `categorias/loading.tsx` shows category-card skeletons + "Cargando categorías…" during the product fetch. A product-grid skeleton is not planned.
-- SEO literals (`TORNILLERIA_TITLE`/`_DESCRIPTION`) are plan-authored — confirm wording.
+**Resolved at sign-off (user, 2026-09-14):** route-specific `error.tsx` + `loading.tsx` are in Phase 2; SEO title/description literals fixed (see Assumptions); H1 unchanged.
 
 **Out of scope (per research):** generic `/categorias/[slug]`; subcategory UI in `CatalogSearchDrawer` or a route param for it (the GraphQL filter ships in `fetchAllProductsByCategory` only); `?sub=` URL state; enabling links for the other 15 categories; product images; per-subcategory SEO pages; `/?mode=category` changes; brand index.
 
