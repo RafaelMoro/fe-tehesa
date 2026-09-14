@@ -999,6 +999,18 @@ Implemented and verified against every acceptance criterion in this doc's Story 
 
 Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (30 suites, 256 passed, 1 pre-existing unrelated skip), `pnpm build` all pass (`/` and `/cotizar` both render as dynamic routes now that the root layout awaits `getThemePreference()` — a deliberate, documented consequence of moving `Header` there). Manual browser QA (dev server + live Strapi, the hydration-flash check specifically) is deferred to the user per this workflow's rule against starting the dev server.
 
+### Story 5: Analytics Contract Extension — Complete
+
+Implemented against every acceptance criterion in the planning doc's Story 5 section (`ai-planning/cart-quote-whatsapp/analytics-contract-extension.story-5.md`), documentation-only plus one Story 4 bug fix pulled into scope:
+
+- AC 1 (`add_to_cart` moves out of "Conversion (blocked)" with both `origin` values resolved to real trigger sites) — `docs/ANALYTICS_EVENT_CONTRACT.md`, "Conversion (cart funnel)" table, citing `ProductVariantsDrawer.tsx:122` (drawer) and `ProductCard.tsx:41`/`:58` (card, both origins `product_card`).
+- AC 2 (`remove_from_cart`, `view_cart`, `begin_checkout`, `generate_lead` specified with flat payloads, GA4 reserved names) — same table, four additional rows plus the "Rules" list beneath it.
+- AC 3 (buyer name/email never sent to any provider; redaction is a backstop, not the control) — `docs/ANALYTICS_EVENT_CONTRACT.md`, "Buyer contact details are never analytics data" subsection.
+- AC 4 (`docs/improvement.md` "Cart feature follow-up" reflects what shipped) — `docs/improvement.md` FE analytics bullet rewritten and a bullet appended to "Cart feature follow-up," both dated 2026-09-13.
+- AC 5 / Story 4 defect found and closed in this story: `WhatsappCta.tsx` called `buildQuoteMessages` with its random default reference on every render, so a multi-part quote's parts carried different `TH-…` references after any re-render (e.g. `markOpened`'s state update) — this broke Story 4 AC 5's "consistent" requirement. Fixed by holding the reference in `useState(() => generateQuoteReference())`, generated once per mount. `__tests__/cart/WhatsappCta.test.tsx` — new case asserts the reference is identical across all parts before and after a click-driven re-render (7/7 tests passed).
+
+Verification: `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` (7/7 passed), `pnpm test -- __tests__/cart/whatsapp-message.utils.test.ts` (10/10, unchanged), `pnpm exec tsc --noEmit`, `pnpm lint` all pass. Dev-server validation: `GET /cotizar` → `200`, clean compile, no runtime errors. No `track()`, provider, or analytics dependency shipped — the contract stays documentation-only.
+
 ### Epic Story Overview
 
 | Story | Status | Evidence | Remaining work / blocker |
@@ -1008,17 +1020,17 @@ Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (30 suites, 256
 | Story 3: Price/availability revalidation on `/cotizar` | Complete | See above | Manual browser/live-Strapi/assistive-tech QA (M1-M17) deferred to the user |
 | Spike 4S: WhatsApp delivery mechanisms | Complete | Spike 4S Outcome section | None |
 | Story 4: Contact form and the WhatsApp `Cotizar` CTA | Complete | See above | Manual click-through (form, single/multi-part send, restore/dismiss) deferred to the user |
-| Story 5: Analytics contract extension | Not started | — | Documentation-only; can run independently once trigger sites are final |
+| Story 5: Analytics contract extension | Complete | See above | None |
 
 ### Overall Completion
 
-**32 / 36** acceptance criteria verified complete — Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, Story 3's 8 ACs (grown from this section's original 4 during research/planning), Story 4's 11 ACs (unchanged from this section's original count — the planning session's Open Question V/VI resolutions extended AC 8's scope but did not add a new numbered AC), and Story 5's remaining 4 ACs ≈ **89%**. (This recomputes the basis directly from each story's current AC list rather than carrying forward the prior "21/37" figure, which no longer reconciles digit-for-digit against the individual story counts above — not worth a forensic audit here, just noting the denominator changed for a traceable reason.) Spike 4S is documentary and carries no acceptance criteria in this count — its completion doesn't move the percentage.
+**36 / 36** acceptance criteria verified complete — Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, Story 3's 8 ACs (grown from this section's original 4 during research/planning), Story 4's 11 ACs (unchanged from this section's original count — the planning session's Open Question V/VI resolutions extended AC 8's scope but did not add a new numbered AC), and Story 5's 4 ACs ≈ **100%**. Spike 4S is documentary and carries no acceptance criteria in this count. AC 5 added during Story 5 planning (the `WhatsappCta` reference fix) is a Story 4 defect closed in this story, not a new numbered AC against this denominator.
 
-The epic is not complete — Story 5 remains.
+The epic is complete. Remaining work is the deferred manual QA already listed for Stories 3 and 4 (M1-M17 and the WhatsApp CTA click-through), not tracked against acceptance criteria.
 
 ### Next Steps
 
 1. ~~Run Spike 4S (WhatsApp delivery mechanism pricing)~~ **Done, 2026-09-13 — recommendation: stay on click-to-chat.** See "Spike 4S Outcome" above and Open Question "WhatsApp V."
 2. Complete Story 3's manual QA (M1-M17: live Strapi edits, real clicks, 390px layout in light/dark, screen reader) before merge.
 3. ~~Plan and implement Story 4 (contact form + WhatsApp CTA)~~ **Done, 2026-09-13.** See "Story 4" above; manual click-through (form fill/prefill/forget, single/multi-part WhatsApp send, restore/dismiss after archive) still deferred to the user before merge, same as Story 3's M1-M17.
-4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 now that Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist; Story 4's CTA gives `begin_checkout`/`generate_lead` their real trigger site too).
+4. ~~Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5~~ **Done, 2026-09-13.** See "Story 5" above.
