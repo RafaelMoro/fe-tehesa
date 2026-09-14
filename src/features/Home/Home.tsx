@@ -17,6 +17,7 @@ import {
   TaxonomyItem,
 } from "@/shared/types/global.types"
 import {
+  CATALOG_SEARCH_OPEN_EVENT,
   KNOWN_PRODUCT_TOTAL,
   PRODUCT_PAGE_SIZE,
 } from "@/shared/constants/catalog.constants"
@@ -139,6 +140,12 @@ export const Home = ({
     setLocalBrand(null)
     setPageFeedback(initialCatalogFeedback)
   }, [initialCatalogFeedback, products])
+
+  useEffect(() => {
+    const open = () => catalogSearchDrawerState.open()
+    window.addEventListener(CATALOG_SEARCH_OPEN_EVENT, open)
+    return () => window.removeEventListener(CATALOG_SEARCH_OPEN_EVENT, open)
+  }, [catalogSearchDrawerState])
 
   const navigateTo = (url: string) => {
     startRouteTransition(() => {

@@ -51,3 +51,5 @@ export const SEARCH_TERM_UNSAFE_PATTERN = new RegExp(
   "u",
 )
 export const REVALIDATE_MAX_IDS = CART_MAX_LINES
+
+export const CATALOG_SEARCH_OPEN_EVENT = "tehesa:open-catalog-search"

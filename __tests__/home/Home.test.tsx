@@ -10,6 +10,7 @@ import {
 } from "@__tests__/test-utils"
 import { Home } from "@/features/Home/Home"
 import type { Product, TaxonomyItem } from "@/shared/types/global.types"
+import { CATALOG_SEARCH_OPEN_EVENT } from "@/shared/constants/catalog.constants"
 
 const pushMock = jest.fn()
 
@@ -208,6 +209,16 @@ describe("Home - URL-backed catalog modes", () => {
     await user.click(screen.getByRole("button", { name: "Limpiar búsqueda" }))
 
     expect(pushMock).toHaveBeenCalledWith("/?page=1")
+  })
+
+  it("opens the wide-search drawer when the header dispatches the open event", async () => {
+    renderHome()
+
+    window.dispatchEvent(new Event(CATALOG_SEARCH_OPEN_EVENT))
+
+    expect(
+      await screen.findByRole("dialog", { name: "Búsqueda ampliada" }),
+    ).toBeInTheDocument()
   })
 })
 

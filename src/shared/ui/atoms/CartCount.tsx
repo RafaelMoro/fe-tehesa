@@ -23,7 +23,7 @@ export const CartCount = () => {
     <Link
       href="/cotizar"
       aria-current={pathname === "/cotizar" ? "page" : undefined}
-      className="relative flex size-11 items-center justify-center"
+      className="relative flex size-11 items-center justify-center md:size-10"
     >
       <RiShoppingCart2Line aria-hidden="true" className="size-6" />
       <span
@@ -31,7 +31,7 @@ export const CartCount = () => {
         className={`absolute right-0 bottom-0 flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${
           count === 0
             ? "border border-default-200 bg-default-100 text-muted"
-            : "bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950"
+            : "bg-[#4DF527] text-[#0D3401]"
         }`}
       >
         {countLabel}
