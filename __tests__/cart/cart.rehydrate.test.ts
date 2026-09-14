@@ -72,12 +72,16 @@ describe("sanitizeCartState", () => {
   })
 
   it("returns empty state for a non-object value", () => {
-    expect(sanitizeCartState("truncated")).toEqual({ lines: [], contact: null })
+    expect(sanitizeCartState("truncated")).toEqual({
+      lines: [],
+      contact: null,
+      lastQuoteLines: null,
+    })
   })
 
   it("returns empty lines when lines is not an array", () => {
     expect(sanitizeCartState({ lines: "not-an-array", contact: null })).toEqual(
-      { lines: [], contact: null },
+      { lines: [], contact: null, lastQuoteLines: null },
     )
   })
 
@@ -109,6 +113,41 @@ describe("sanitizeCartState", () => {
   it("throws nothing on undefined or arrays", () => {
     expect(() => sanitizeCartState(undefined)).not.toThrow()
     expect(() => sanitizeCartState([1, 2, 3])).not.toThrow()
+  })
+
+  it("drops a tampered lastQuoteLines to null", () => {
+    const state = sanitizeCartState({
+      lines: [],
+      contact: null,
+      lastQuoteLines: "not-an-array",
+    })
+
+    expect(state.lastQuoteLines).toBeNull()
+  })
+
+  it("keeps only valid lines in an oversized lastQuoteLines and caps at CART_MAX_LINES", () => {
+    const lines = Array.from({ length: CART_MAX_LINES + 10 }, (_, index) => ({
+      ...validLine,
+      variantDocumentId: `variant-${index}`,
+    }))
+
+    const state = sanitizeCartState({
+      lines: [],
+      contact: null,
+      lastQuoteLines: [...lines, { ...validLine, quantity: -1 }],
+    })
+
+    expect(state.lastQuoteLines).toHaveLength(CART_MAX_LINES)
+  })
+
+  it("keeps a valid lastQuoteLines", () => {
+    const state = sanitizeCartState({
+      lines: [],
+      contact: null,
+      lastQuoteLines: [validLine],
+    })
+
+    expect(state.lastQuoteLines).toEqual([validLine])
   })
 })
 

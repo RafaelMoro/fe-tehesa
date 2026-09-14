@@ -26,6 +26,7 @@ import type {
 export type CartState = {
   lines: CartLine[]
   contact: CartContact | null
+  lastQuoteLines: CartLine[] | null
 }
 
 export type CartAddResult = {
@@ -45,6 +46,9 @@ export type CartActions = {
   setLineQuantity: (key: string, quantity: number) => void
   removeLine: (key: string) => void
   upgradeLine: (key: string, line: CartVariantLine) => CartUpgradeResult
+  archiveAndClearLines: () => void
+  restoreLastQuote: () => void
+  dismissLastQuote: () => void
 }
 
 export type CartStore = CartState & CartActions
@@ -52,6 +56,7 @@ export type CartStore = CartState & CartActions
 export const defaultCartState: CartState = {
   lines: [],
   contact: null,
+  lastQuoteLines: null,
 }
 
 export const cartLineKey = (
@@ -130,9 +135,15 @@ export const sanitizeCartState = (value: unknown): CartState => {
     ? candidate.lines.slice(0, CART_MAX_LINES).filter(isValidCartLine)
     : []
 
+  const sanitizedLastQuoteLines = Array.isArray(candidate.lastQuoteLines)
+    ? candidate.lastQuoteLines.slice(0, CART_MAX_LINES).filter(isValidCartLine)
+    : []
+
   return {
     lines,
     contact: validateContact(candidate.contact).contact,
+    lastQuoteLines:
+      sanitizedLastQuoteLines.length > 0 ? sanitizedLastQuoteLines : null,
   }
 }
 
@@ -288,6 +299,21 @@ export const createCartStore = (initState: CartState = defaultCartState) => {
           set({ lines: nextLines })
           return "merged"
         },
+        archiveAndClearLines: () => {
+          const currentLines = get().lines
+          if (currentLines.length === 0) {
+            return
+          }
+          set({ lines: [], lastQuoteLines: currentLines })
+        },
+        restoreLastQuote: () => {
+          const lastQuoteLines = get().lastQuoteLines
+          if (lastQuoteLines === null) {
+            return
+          }
+          set({ lines: lastQuoteLines, lastQuoteLines: null })
+        },
+        dismissLastQuote: () => set({ lastQuoteLines: null }),
       }),
       {
         name: CART_STORAGE_KEY,
