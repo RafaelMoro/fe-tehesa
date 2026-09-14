@@ -5,6 +5,7 @@ import {
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
 } from "@/shared/constants/catalog.constants"
+import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
 import { SITE_URL } from "@/shared/constants/seo.constants"
 import {
   buildBasePagePath,
@@ -16,6 +17,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (let page = PRODUCT_PAGE_MIN; page <= PRODUCT_PAGE_MAX; page += 1) {
     basePages.push({
       url: `${SITE_URL}${buildBasePagePath(page)}`,
+    })
+  }
+  basePages.push({
+    url: `${SITE_URL}/categorias`,
+  })
+  for (const href of Object.values(CATEGORY_PAGE_HREFS)) {
+    basePages.push({
+      url: `${SITE_URL}${href}`,
     })
   }
 

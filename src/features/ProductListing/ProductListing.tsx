@@ -34,14 +34,16 @@ export const ProductListing = ({
         </p>
         <div className="mt-6 flex flex-col items-center gap-3">
           {onOpenCatalogSearch && (
-            <Button size="lg" variant="primary" onPress={onOpenCatalogSearch}>
-              Buscar en todo el catálogo
-              <RiArrowRightLine aria-hidden="true" />
-            </Button>
+            <>
+              <Button size="lg" variant="primary" onPress={onOpenCatalogSearch}>
+                Buscar en todo el catálogo
+                <RiArrowRightLine aria-hidden="true" />
+              </Button>
+              <p className="text-xs text-muted mt-8">
+                La búsqueda incluirá productos fuera de la selección actual.
+              </p>
+            </>
           )}
-          <p className="text-xs text-muted mt-8">
-            La búsqueda incluirá productos fuera de la selección actual.
-          </p>
           {onClearLocalFilter && (
             <Button size="sm" variant="tertiary" onPress={onClearLocalFilter}>
               Limpiar filtros
@@ -57,7 +59,7 @@ export const ProductListing = ({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] lg:gap-5">
       {products.map((product) => (
         <ProductCard
           key={product.documentId}

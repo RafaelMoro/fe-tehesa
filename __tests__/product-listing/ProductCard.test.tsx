@@ -56,11 +56,89 @@ describe("ProductCard", () => {
       documentId: "uncategorized-1",
       category: null,
       brand: { name: "Acme" },
+      variantCount: 3,
     }
 
     render(<ProductCard product={product} handleProductClick={jest.fn()} />)
 
     expect(screen.getByText("Acme")).toBeInTheDocument()
+    expect(screen.getAllByText("3 variantes")).toHaveLength(2)
+  })
+
+  it("renders no brand chip when brand is null", () => {
+    const product: Product = {
+      name: "Branded-less Tire",
+      documentId: "branded-less-1",
+      category: { name: "Tubes" },
+      brand: null,
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.queryByText("Acme")).not.toBeInTheDocument()
+    expect(screen.getByText("Tubes")).toBeInTheDocument()
+  })
+
+  it("renders the subcategory label in the kicker when subcategory is set", () => {
+    const product: Product = {
+      name: "Tornillo hex",
+      documentId: "tornillo-1",
+      category: { name: "Tornillería" },
+      brand: null,
+      subcategory: "tornillos",
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.getByText("Tornillería / Tornillos")).toBeInTheDocument()
+  })
+
+  it("renders the raw subcategory value when it has no known label", () => {
+    const product: Product = {
+      name: "Unknown sub",
+      documentId: "unknown-sub-1",
+      category: { name: "Tornillería" },
+      brand: null,
+      subcategory: "zzz",
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.getByText("Tornillería / zzz")).toBeInTheDocument()
+  })
+
+  it("renders no image when the image prop is absent", () => {
+    const product: Product = {
+      name: "Imageless Tire",
+      documentId: "imageless-1",
+      category: { name: "Tubes" },
+      brand: { name: "Acme" },
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.queryByRole("img")).not.toBeInTheDocument()
+  })
+
+  it("renders the image with its alt text when the image prop is present", () => {
+    const product: Product = {
+      name: "Imaged Tire",
+      documentId: "imaged-1",
+      category: { name: "Tubes" },
+      brand: { name: "Acme" },
+    }
+
+    render(
+      <ProductCard
+        product={product}
+        handleProductClick={jest.fn()}
+        image={{ src: "https://example.test/tire.jpg", alt: "Llanta 205/55" }}
+      />,
+    )
+
+    expect(
+      screen.getByRole("img", { name: "Llanta 205/55" }),
+    ).toHaveAttribute("src", "https://example.test/tire.jpg")
   })
 
   it("shows zero variant count and zero price range, keeping the standard footer", () => {
@@ -85,9 +163,9 @@ describe("ProductCard", () => {
     expect(screen.getByText("Desde").parentElement).toHaveTextContent(
       "$0.00 MXN",
     )
-    expect(screen.getByText("Hasta").parentElement).toHaveTextContent(
-      "$0.00 MXN",
-    )
+    expect(screen.getByText(/^hasta /)).toHaveTextContent("hasta $0.00 MXN")
+    expect(screen.getAllByText("0 variantes")).toHaveLength(2)
+    expect(screen.getByText("Tubes")).toBeInTheDocument()
   })
 
   it("shows a single price and one CTA when the product has one variant", () => {
@@ -109,13 +187,14 @@ describe("ProductCard", () => {
       "$704.03 MXN",
     )
     expect(screen.queryByText("Desde")).not.toBeInTheDocument()
-    expect(screen.queryByText("Hasta")).not.toBeInTheDocument()
+    expect(screen.queryByText(/^hasta /)).not.toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Agregar 1 pieza" }),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Agregar y elegir después" }),
     ).not.toBeInTheDocument()
+    expect(screen.getAllByText("1 variante")).toHaveLength(2)
   })
 
   it("hides the price block when the price range is missing", () => {
@@ -132,6 +211,7 @@ describe("ProductCard", () => {
 
     expect(screen.queryByText("Desde")).not.toBeInTheDocument()
     expect(screen.queryByText("Precio")).not.toBeInTheDocument()
+    expect(screen.queryByText(/^hasta /)).not.toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Ver variantes" }),
     ).toBeInTheDocument()

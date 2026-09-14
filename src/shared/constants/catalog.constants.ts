@@ -36,6 +36,7 @@ export const MSG_CAT_ERR_001 = "Upstream catalog error"
 
 export const PRODUCT_PAGE_SIZE = 50
 export const VARIANT_PAGE_SIZE = 100
+export const ALL_PRODUCTS_PAGE_SIZE = 100
 export const PRODUCT_PAGE_MIN = 1
 export const KNOWN_PRODUCT_TOTAL = 333
 export const PRODUCT_PAGE_MAX = Math.ceil(
@@ -51,3 +52,5 @@ export const SEARCH_TERM_UNSAFE_PATTERN = new RegExp(
   "u",
 )
 export const REVALIDATE_MAX_IDS = CART_MAX_LINES
+
+export const CATALOG_SEARCH_OPEN_EVENT = "tehesa:open-catalog-search"

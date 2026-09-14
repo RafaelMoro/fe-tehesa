@@ -5,7 +5,9 @@ import createApolloClient from "@/app/apollo-client"
 import type {
   FetchBrandsResponse,
   FetchCategoriesResponse,
+  FetchCategoryProductCountsResponse,
   FetchProductsByIdsResponse,
+  FetchProductsConnectionResponse,
   FetchProductsResponse,
   FetchSingleProductResponse,
   FetchVariantsByIdsResponse,
@@ -21,8 +23,13 @@ import {
   THEME_COOKIE_KEY,
   type AppTheme,
 } from "../constants/global.constants"
-import { REVALIDATE_MAX_IDS } from "../constants/catalog.constants"
 import {
+  ALL_PRODUCTS_PAGE_SIZE,
+  REVALIDATE_MAX_IDS,
+} from "../constants/catalog.constants"
+import {
+  buildCategoryProductCountsQuery,
+  GET_ALL_PRODUCTS_BY_CATEGORY,
   GET_BRANDS,
   GET_CATEGORIES,
   GET_PRODUCT_VARIANTS,
@@ -37,7 +44,8 @@ import {
 /**
  * Adapter error-handling contract — applies to every Apollo-backed helper below
  * (`fetchProducts`, `fetchProductsByCategory`, `fetchProductsByBrand`,
- * `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`).
+ * `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`,
+ * `fetchCategoryProductCounts`, `fetchAllProductsByCategory`).
  *
  * None of them wraps the Apollo call in a local try/catch. The reason is the
  * "throw at the boundary, catch at the edge" pattern: every catalog route handler
@@ -237,6 +245,66 @@ export const fetchCategories = async (): Promise<TaxonomyItem[]> => {
     query: GET_CATEGORIES,
   })
   return res?.data?.categories ?? []
+}
+
+export const fetchCategoryProductCounts = async (
+  customIds: string[],
+): Promise<number[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
+  if (customIds.length === 0) {
+    return []
+  }
+  const client = createApolloClient()
+  const res = await client.query<FetchCategoryProductCountsResponse>({
+    query: buildCategoryProductCountsQuery(customIds.length),
+    variables: Object.fromEntries(customIds.map((id, i) => [`id${i}`, id])),
+  })
+  return customIds.map((_, i) => res.data![`c${i}`].pageInfo.total)
+}
+
+export const fetchAllProductsByCategory = async (
+  customId: string,
+  subcategory?: string,
+): Promise<Product[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
+  const client = createApolloClient()
+  const filters = {
+    category: {
+      customId: {
+        eq: customId,
+      },
+    },
+    ...(subcategory
+      ? {
+          subcategory: {
+            eq: subcategory,
+          },
+        }
+      : {}),
+  }
+
+  const firstPage = await client.query<FetchProductsConnectionResponse>({
+    query: GET_ALL_PRODUCTS_BY_CATEGORY,
+    variables: {
+      filters,
+      pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+    },
+  })
+  const pageCount = firstPage.data?.products_connection?.pageInfo.pageCount ?? 1
+  const products = [...(firstPage.data?.products_connection?.nodes ?? [])]
+
+  for (let page = 2; page <= pageCount; page++) {
+    const res = await client.query<FetchProductsConnectionResponse>({
+      query: GET_ALL_PRODUCTS_BY_CATEGORY,
+      variables: {
+        filters,
+        pagination: { page, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+      },
+    })
+    products.push(...(res.data?.products_connection?.nodes ?? []))
+  }
+
+  return products
 }
 
 export const fetchBrands = async (): Promise<TaxonomyItem[]> => {

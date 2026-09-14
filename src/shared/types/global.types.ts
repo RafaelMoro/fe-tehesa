@@ -31,10 +31,18 @@ export type Product = {
   variantCount?: number
   hasOneProductVariant?: boolean
   product_variants?: ProductVariant[]
+  subcategory?: string | null
 }
 
 export interface FetchProductsResponse {
   products: Product[]
+}
+
+export interface FetchProductsConnectionResponse {
+  products_connection: {
+    pageInfo: { pageCount: number }
+    nodes: Product[]
+  } | null
 }
 export interface FetchSingleProductResponse {
   product: Product
@@ -48,6 +56,13 @@ export type TaxonomyItem = {
 export interface FetchCategoriesResponse {
   categories: TaxonomyItem[]
 }
+
+export type FetchCategoryProductCountsResponse = Record<
+  string,
+  { pageInfo: { total: number } }
+>
+
+export type CategoryWithCount = TaxonomyItem & { productCount: number | null }
 
 export interface FetchBrandsResponse {
   brands: TaxonomyItem[]

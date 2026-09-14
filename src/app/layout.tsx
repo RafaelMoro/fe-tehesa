@@ -4,7 +4,8 @@ import "./globals.css"
 import { Providers } from "./providers"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { Header } from "@/shared/ui/organisms/Header"
-import { getThemePreference } from "@/shared/lib/global.lib"
+import { fetchBrands, fetchCategories } from "@/shared/lib/global.lib"
+import type { TaxonomyItem } from "@/shared/types/global.types"
 import {
   SITE_DESCRIPTION,
   SITE_LOCALE,
@@ -43,12 +44,27 @@ export const metadata: Metadata = {
   },
 }
 
+// The header fetches taxonomy per request and reads useSearchParams, so every
+// route must stay dynamic (this replaces the getThemePreference() cookie read
+// that previously forced dynamic rendering).
+export const dynamic = "force-dynamic"
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const themeFetched = await getThemePreference()
+  let categories: TaxonomyItem[] = []
+  let brands: TaxonomyItem[] = []
+  try {
+    // ponytail: duplicates page.tsx's taxonomy query on /; React.cache() module if it shows in Strapi logs.
+    ;[categories, brands] = await Promise.all([fetchCategories(), fetchBrands()])
+  } catch (error) {
+    console.warn(
+      "layout: failed to fetch category/brand taxonomy, rendering header without dropdown items",
+      error,
+    )
+  }
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -57,7 +73,7 @@ export default async function RootLayout({
       >
         <Providers>
           <NextThemesProvider attribute="class" defaultTheme="light">
-            <Header themeFetched={themeFetched} />
+            <Header categories={categories} brands={brands} />
             {children}
           </NextThemesProvider>
         </Providers>

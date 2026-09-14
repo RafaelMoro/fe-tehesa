@@ -1,27 +1,22 @@
-import { Card, Skeleton } from "@heroui/react"
+import { Skeleton } from "@heroui/react"
 
 export const ProductCardSkeleton = () => (
-  <Card className="h-full gap-0 overflow-hidden">
-    <Card.Header className="flex flex-col gap-3 px-5 pt-5 pb-4">
+  <div className="flex h-full flex-col gap-3.5 rounded-[14px] border border-gray-200 bg-white p-4 max-sm:p-3.5 dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex items-center justify-between gap-2">
       <Skeleton className="h-3 w-2/5 rounded" />
-      <Skeleton className="h-7 w-4/5 rounded" />
-      <Skeleton className="h-4 w-1/3 rounded" />
-    </Card.Header>
-    <Card.Content className="border-t border-default-200 px-5 py-4">
-      <div className="grid grid-cols-2 divide-x divide-default-200">
-        <div className="flex flex-col gap-2 pr-4">
-          <Skeleton className="h-3 w-1/2 rounded" />
-          <Skeleton className="h-6 w-4/5 rounded" />
-        </div>
-        <div className="flex flex-col gap-2 pl-4">
-          <Skeleton className="h-3 w-1/2 rounded" />
-          <Skeleton className="h-6 w-4/5 rounded" />
-        </div>
-      </div>
-    </Card.Content>
-    <Card.Footer className="flex gap-3">
-      <Skeleton className="h-10 flex-1 rounded" />
-      <Skeleton className="h-10 flex-1 rounded" />
-    </Card.Footer>
-  </Card>
+      <Skeleton className="h-5 w-20 rounded-full" />
+    </div>
+    <Skeleton className="h-[23px] w-4/5 rounded" />
+    <Skeleton className="h-[23px] w-3/5 rounded" />
+    <Skeleton className="h-5 w-24 rounded-full" />
+    <div className="mt-auto flex flex-col gap-1">
+      <Skeleton className="h-3 w-12 rounded" />
+      <Skeleton className="h-7 w-1/2 rounded" />
+      <Skeleton className="h-3 w-1/3 rounded" />
+    </div>
+    <div className="flex flex-col gap-2">
+      <Skeleton className="h-11 w-full rounded-[10px] md:h-10" />
+      <Skeleton className="h-11 w-full rounded-[10px] md:h-10" />
+    </div>
+  </div>
 )

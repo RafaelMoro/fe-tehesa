@@ -1,3 +1,33 @@
+## v0.36.0 (2026-09-14)
+
+### Pull Requests
+[#45](https://github.com/RafaelMoro/fe-tehesa/pull/45) | Add Tornillería category page with entry points
+
+
+## v0.35.0 (2026-09-14)
+
+### Pull Requests
+[#44](https://github.com/RafaelMoro/fe-tehesa/pull/44) | Add categories page route with product count per category
+
+
+## v0.34.0 (2026-09-14)
+
+### Pull Requests
+[#43](https://github.com/RafaelMoro/fe-tehesa/pull/43) | Redesign ProductCard with new responsive anatomy and dark mode support
+
+
+## v0.33.1 (2026-09-14)
+
+### Pull Requests
+[#42](https://github.com/RafaelMoro/fe-tehesa/pull/42) | Enhance header rest of changes
+
+
+## v0.33.0 (2026-09-14)
+
+### Pull Requests
+[#41](https://github.com/RafaelMoro/fe-tehesa/pull/41) | Rebuild header with utility bar, navigation dropdowns, and mobile side menu
+
+
 ## v0.32.0 (2026-09-14)
 
 ### Pull Requests
