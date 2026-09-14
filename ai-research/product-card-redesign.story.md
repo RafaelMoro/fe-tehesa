@@ -71,10 +71,10 @@ hover (gray-300 border + `0 8px 24px rgba(17,24,39,.08)`, 200ms), focus (2px out
    price, both actions 44px, secondary without border. From `sm` up it uses the tablet/desktop layout: 16px
    padding, pill in the kicker row, `hasta` on its own line, secondary outlined; actions are 44px below `md` and
    40px from `md` (HeroUI `size="lg"` does exactly this). The grid is 1 column below `sm`, 2 columns `sm`–`lg`, and
-   `auto-fill, minmax(280px, 1fr)` (or 3 columns, D4) from `lg`, gap 16px/20px. Layout switches are CSS-only — no
+   `auto-fill, minmax(280px, 1fr)` from `lg` (4 columns at 1400px, D4), gap 16px/20px. Layout switches are CSS-only — no
    `useMediaQuery` (SSR-false, hydration mismatch).
-4. **Image slot.** `ProductCard` accepts an optional image prop (shape in D5). When present it renders the image
-   block above the kicker at 4/3 (`sm`+) / 16/9 (`<sm`) with `alt` text; when absent nothing renders — no
+4. **Image slot.** `ProductCard` accepts an optional `image?: { src; alt }` prop (D5). When present it renders a
+   plain `<img>` block above the kicker at 4/3 (`sm`+) / 16/9 (`<sm`) with the given `alt`; when absent nothing renders — no
    placeholder, no "Foto del producto" text, no reserved height. No query, type, or server-action change is made
    for images in this story.
 5. **Dark mode + skeleton.** The card is legible in dark mode using the token mapping in D6 (no light-only hex
@@ -159,14 +159,14 @@ remapped to `#4DF527` in `src/app/globals.css`; the comp draws `#24AD02` (`prima
 | Min price | 21 / 600 / -0.015em / gray-900 (20px `<sm`) + `MXN` 12 / 400 / gray-500 | `formatNumberToCurrency(minPrice)` — **check whether it already appends `MXN`** (it does today: tests assert `"$0.00 MXN"`); the comp splits number and currency into two spans, so either split the formatted string or keep it whole (D8) |
 | `hasta` line | 12 / 400 / gray-500 | `text-xs text-gray-500` |
 | Primary | 40/44px, 10px radius, `#4DF527` fill, `#0D3401` text, 14 / 500, arrow-right | `Button variant="primary" size="lg" fullWidth className="rounded-[10px]"` + `RiArrowRightLine` (HeroUI base is `rounded-3xl`, override) |
-| Secondary | same height, outline gray-200 / text `#125D03` / 14 / 400; hover fills `#0F4804` with white text; ghost `<sm` | `Button variant="outline" size="lg" fullWidth className="rounded-[10px] font-normal text-primary-700 max-sm:border-0"` — HeroUI's outline hover is a gray mix, the comp's is `primary-800` fill (D9) |
+| Secondary | same height, outline gray-200 / text `#125D03` / 14 / 400; hover fills `#0F4804` with white text; ghost `<sm` | `Button variant="outline" size="lg" fullWidth className="rounded-[10px] font-normal text-primary-700 max-sm:border-0 hover:bg-primary-800 hover:text-white hover:border-primary-800"` (D9) |
 
 **Content constraints.** Prices go through `formatNumberToCurrency` (`src/shared/utils/global.utils.ts`); never
 hand-format. `N variantes` uses `product.variantCount` verbatim (the existing `Explorar las 0 variantes` test
 fixture shows `0` is a legal value and must still render). The comp's `Explorar 25 variantes` drops today's `las`
 (`Explorar las 25 variantes`) — D10.
 
-**Out of scope.** Product images in Strapi, `next.config.ts` `images.remotePatterns`, the `Product` type/query
+**Out of scope.** Product images in Strapi, `next/image`/`remotePatterns` wiring, the `Product` type/query
 changes an image field will need; the "Tres variantes propuestas" designs; hero/filters/drawer restyling; the
 1.8s "Agregado al carrito" secondary-label swap drawn in the comp's state table (D11); analytics events.
 
@@ -179,16 +179,18 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
 - **D3 — Breakpoint mapping.** *Decided (assumption):* comp "Móvil <600" → Tailwind `<sm` (640); "Tablet 600–1023"
   → `sm`–`lg`; "Escritorio ≥1024" → `lg`. Button height flips at `md` because that is where HeroUI's `size="lg"`
   flips, one breakpoint earlier than the comp's 1024 — accepted for zero custom height CSS.
-- **D4 — Grid.** *Decided (assumption):* replace `grid-cols-1 lg:grid-cols-3 gap-4` with
+- **D4 — Grid.** *Decided (user, 2026-09-14):* replace `grid-cols-1 lg:grid-cols-3 gap-4` with
   `grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 lg:gap-5` in both
-  `ProductListing.tsx` and `loading.tsx`. If auto-fill yields 4 narrow columns at 1440px that the user dislikes,
-  fall back to `lg:grid-cols-3`. Open Questions › UI I.
-- **D5 — Image slot contract.** *Decided (assumption):* an optional prop on `ProductCard`,
-  `image?: { src: string; alt: string }`, rendered with `next/image` (`fill` + `object-cover`) inside a
-  `aspect-[4/3] max-sm:aspect-video rounded-[10px] overflow-hidden bg-gray-100` wrapper only when present. Nothing
-  is added to `Product`, the GraphQL queries, or `global.lib.ts`; `ProductListing` never passes it this story. When
-  Strapi ships media, the follow-up story maps `product.image.url` → this prop and adds the host to
-  `next.config.ts` `images.remotePatterns`. Open Questions › UI II.
+  `ProductListing.tsx` and `loading.tsx`. Four columns at 1400px content width is the intended result.
+- **D5 — Image slot contract.** *Decided (user, 2026-09-14):* an optional prop on `ProductCard`,
+  `image?: { src: string; alt: string }`, rendered as a **plain `<img>`** (not `next/image`) with
+  `object-cover size-full` inside an `aspect-[4/3] max-sm:aspect-video rounded-[10px] overflow-hidden bg-gray-100`
+  wrapper, only when the prop is present — presence of data is the switch, there is no boolean `showImages`-style
+  flag. Nothing is added to `Product`, the GraphQL queries, or `global.lib.ts`; `ProductListing` never passes it
+  this story. When Strapi ships media, the follow-up story maps `product.image.url` → this prop. Note:
+  `next/core-web-vitals` flags `<img>` with `@next/next/no-img-element` as a **warning**, not an error — add a
+  one-line `eslint-disable-next-line` with the reason (no `remotePatterns`/host known yet) so `pnpm lint` stays
+  clean.
 - **D6 — Dark mode.** *Decided (assumption, comp is light-only):* card surface = HeroUI `bg-surface` (dark
   `#0A0A0A`-ish default), border `border-gray-800`, hover border `gray-700`, no shadow in dark; name `gray-50`,
   secondary text `gray-400`, category `primary-200` (`#4DF527`, as `--accent-soft-foreground` already does in
@@ -196,17 +198,18 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
   `bg-gray-800`. Primary button unchanged (green on dark is the header story's precedent). Verify in Phase 3.
 - **D7 — Focus ring.** *Decided:* keep HeroUI's global `--focus` (`#4DF527`) rather than the comp's `#24AD02` —
   one ring color app-wide beats a per-card override.
-- **D8 — `MXN` split.** *Open:* `formatNumberToCurrency` returns `"$350.92 MXN"` as one string; the comp renders the
-  number at 21px and `MXN` at 12px. Either split on the last space in the card (cheap, but couples the card to the
-  formatter's output shape) or render the whole string at 21px and skip the two-tone. Open Questions › UI III.
-- **D9 — Secondary hover.** *Decided (assumption):* keep HeroUI's outline hover (gray mix) instead of the comp's
-  `primary-800` fill + white text. `DESIGN.md` › `button-secondary-hover` documents the `primary-800` target, so if
-  the user wants it, it is `hover:bg-primary-800 hover:text-white hover:border-primary-800` on the one button.
-- **D10 — CTA copy.** *Open:* comp says `Explorar 25 variantes`; code and tests say `Explorar las 25 variantes`.
-  Copy is declared unchanged above; flagging because the comp differs. Open Questions › UI IV.
-- **D11 — "Agregado al carrito" label swap.** *Decided (assumption):* skip. The app already confirms adds with
-  `toast.success(...)` via `Toast.Provider`; a second, timer-based confirmation on the button is redundant and adds
-  a `setTimeout` to clean up. Open Questions › UI V.
+- **D8 — `MXN` split.** *Decided (user, 2026-09-14):* split. `formatNumberToCurrency` returns `"$350.92 MXN"`;
+  the card renders the number at 21px / 600 and `MXN` at 12px / gray-500 as two spans sharing one parent (so the
+  existing `toHaveTextContent("$0.00 MXN")` assertions on the label's parent still hold). Cheapest route: split
+  the formatted string on its last space inside the card; do not change the formatter (it is shared by the quote
+  page and WhatsApp message).
+- **D9 — Secondary hover.** *Decided (user, 2026-09-14):* follow the comp / `DESIGN.md` › `button-secondary-hover`:
+  `hover:bg-primary-800 hover:text-white hover:border-primary-800` on the one outline button (HeroUI's default
+  gray-mix hover is overridden). Mobile ghost variant: hover is irrelevant on touch; keep the same classes.
+- **D10 — CTA copy.** *Decided (user, 2026-09-14):* keep `Explorar las N variantes` (code/tests); the comp's
+  `Explorar 25 variantes` is not adopted. Copy is unchanged across the card.
+- **D11 — "Agregado al carrito" label swap.** *Decided (user, 2026-09-14):* skip; rely on the existing
+  `toast.success(...)` via `Toast.Provider`. No timer-based label state on the button.
 
 ## Technical Research
 
@@ -253,10 +256,9 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
 
 ### Dependencies / integration points
 
-- No new dependencies. `next/image` (for the image slot, D5), `@remixicon/react`, `@heroui/react`, Tailwind v4 are
-  all installed.
-- `next.config.ts` has **no** `images` block today; it is not needed until a real remote image URL is passed
-  (out of scope).
+- No new dependencies. The image slot is a plain `<img>` (D5); `@remixicon/react`, `@heroui/react`, Tailwind v4
+  are all installed.
+- `next.config.ts` has **no** `images` block and none is needed: the slot uses `<img>`, not `next/image` (D5).
 - Env: none new. `STRAPI_HOST`/`STRAPI_API_TOKEN` as usual for `pnpm dev`.
 
 ### Edge cases and constraints
@@ -304,29 +306,31 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
 
 - I: Question: Desktop grid — `auto-fill, minmax(280px, 1fr)` as the comp says (4 columns at 1400px content
   width), or keep 3 fixed columns?
-  Status: pending
-  Context: D4 assumes auto-fill; `ProductListing.tsx` and `loading.tsx` must change together. Cheap to flip.
+  Status: answered
+  Answer: Auto-fill — 4 columns at 1400px content width (user, 2026-09-14). D4.
+  Context: `ProductListing.tsx` and `loading.tsx` must change together.
 - II: Question: Image prop shape — `image?: { src; alt }` on `ProductCard` (D5), or a `renderImage?: ReactNode`
   slot? Any preference for how the future Strapi story hands it in?
-  Status: pending
-  Context: `{ src, alt }` keeps `next/image` inside the card (one place to set sizes/aspect); a `ReactNode` slot is
-  more flexible but pushes aspect-ratio/`fill` knowledge to every caller. Recommendation: `{ src, alt }`.
+  Status: answered
+  Answer: `image?: { src; alt }` rendered as a plain `<img>` — no `next/image`, no boolean flag prop; the block
+  exists only when the prop is present. Aspect ratio 4/3 (`sm`+) / 16/9 (`<sm`) as recommended (user, 2026-09-14).
+  D5.
+  Context: `@next/next/no-img-element` is a lint warning; disable it on that line with a reason.
 - III: Question: Split `formatNumberToCurrency`'s `"$350.92 MXN"` into a 21px number + 12px `MXN` (comp), or render
   it whole at 21px?
-  Status: pending
-  Context: D8. Splitting on the last space is one line but couples the card to the formatter's output; the
-  existing tests assert the joined `"$0.00 MXN"` text on the label's parent, which still passes either way if both
-  spans share the parent.
+  Status: answered
+  Answer: Split — number at 21px, `MXN` at 12px gray, two spans under one parent (user, 2026-09-14). D8.
+  Context: Existing tests assert the joined `"$0.00 MXN"` on the label's parent and still pass.
 - IV: Question: Keep `Explorar las N variantes` (code/tests) or adopt the comp's `Explorar N variantes`?
-  Status: pending
-  Context: D10. Pure copy; the doc assumes copy is unchanged.
+  Status: answered
+  Answer: Keep `Explorar las N variantes` (user, 2026-09-14). D10.
 - V: Question: Implement the comp's 1.8s `Agregado al carrito` label swap on the secondary button, or rely on the
   existing toast?
-  Status: pending
-  Context: D11 assumes skip (toast already confirms). If wanted it is a `useState` + `setTimeout` with cleanup.
+  Status: answered
+  Answer: Rely on the existing toast; no label swap (user, 2026-09-14). D11.
 - VI: Question: Secondary hover — HeroUI outline default (gray) or the comp/`DESIGN.md` `primary-800` fill + white?
-  Status: pending
-  Context: D9 assumes default; the override is three classes.
+  Status: answered
+  Answer: Comp design — `primary-800` fill + white text on hover (user, 2026-09-14). D9.
 
 ### Catalog behavior
 
