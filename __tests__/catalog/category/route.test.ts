@@ -72,7 +72,7 @@ describe("GET /api/catalog/category", () => {
   it("rejects an invalid category name with CAT_VAL_003", async () => {
     setEnv()
 
-    const res = await GET(requestWith("?category=bad%2Fname"))
+    const res = await GET(requestWith("?category=bad%3Cname"))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({
       success: false,

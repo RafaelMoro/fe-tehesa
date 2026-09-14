@@ -1,3 +1,63 @@
+## v0.32.0 (2026-09-14)
+
+### Pull Requests
+[#39](https://github.com/RafaelMoro/fe-tehesa/pull/39) | Story 5: Analytics Contract Extension For The Cart Funnel
+
+
+## v0.31.0 (2026-09-14)
+
+### Pull Requests
+[#38](https://github.com/RafaelMoro/fe-tehesa/pull/38) | Feat/story 4 cart epic
+
+
+## v0.30.0 (2026-09-13)
+
+### Pull Requests
+[#37](https://github.com/RafaelMoro/fe-tehesa/pull/37) | Story 3 | Feat: add price/availability revalidation flow with line state management
+
+
+## v0.29.0 (2026-09-13)
+
+### Pull Requests
+[#36](https://github.com/RafaelMoro/fe-tehesa/pull/36) | Add AI skills
+
+
+## v0.28.0 (2026-08-01)
+
+### Pull Requests
+[#35](https://github.com/RafaelMoro/fe-tehesa/pull/35) | Add cart feature | Story 2 | Add quote page, line review and subtotal
+
+
+## v0.27.0 (2026-08-01)
+
+### Pull Requests
+[#34](https://github.com/RafaelMoro/fe-tehesa/pull/34) | Add cart feature | Story 1 | Cart persistence, state and add-to-cart wiring
+
+
+## v0.26.0 (2026-07-30)
+
+### Pull Requests
+[#33](https://github.com/RafaelMoro/fe-tehesa/pull/33) | PLP functionality | Story 5 | Analytics and conversion readiness
+
+
+## v0.25.0 (2026-07-30)
+
+### Pull Requests
+[#32](https://github.com/RafaelMoro/fe-tehesa/pull/32) | PLP Functionality | Story 4 | PLP SEO Readiness
+
+
+## v0.24.0 (2026-07-28)
+
+### Pull Requests
+[#31](https://github.com/RafaelMoro/fe-tehesa/pull/31) | PLP Functionality | Story 3 | Improve product detail signal on cards
+
+
+## v0.23.1 (2026-07-27)
+
+### Pull Requests
+[#30](https://github.com/RafaelMoro/fe-tehesa/pull/30) | Improve skills and add task effort estimator skill
+
+
 ## v0.23.0 (2026-07-13)
 
 ### Pull Requests

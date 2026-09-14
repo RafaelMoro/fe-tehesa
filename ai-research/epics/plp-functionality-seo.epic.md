@@ -549,3 +549,107 @@ Explanation: Manual QA uses the live Strapi instance behind the existing config.
 - Current SEO work can improve root metadata and paginated behavior, but crawlable category/brand/product SEO needs routes or URL strategy not present today.
 - Analytics should start as an event contract, not a dependency, because no provider is selected.
 - The primary conversion event in this epic is the `Agregar al carrito` drawer action; the full cart/checkout flow lives in a separate story.
+
+## Epic Completion Status (audited 2026-07-30)
+
+Overall: **88% complete** (22/25 verified acceptance criteria: Story 1 6/6, Story 2 5/5, Story 3 3/5, Story 4 4/5, Story 5 4/4; Story 1a has no separately numbered epic-level ACs). Stories 1, 1a, 2, and 5 are shipped. Story 3 remains partial only on the image sub-scope, blocked on backend. Story 4 (SEO Readiness) implemented all 6 phases on 2026-07-30; 4 of its 5 ACs are code-verified (automated tests, `pnpm build`, `pnpm design:lint`), AC3's manual SSR curl verification against a real `pnpm build && pnpm start` is the one item still pending user confirmation — see the story's status below. Story 5 (Analytics And Conversion Readiness) shipped its documentation-only deliverable on 2026-07-30 — a committed event contract with no code, dependency, or provider script, as scoped.
+
+| Story | Status | Verified evidence | Remaining / blocker |
+|-------|--------|--------------------|----------------------|
+| 1 - Search and filtering | Complete | `src/features/Home/Home.tsx`, `src/features/CatalogSearchDrawer/`, tests in `__tests__/home/`, `__tests__/catalog/` | None |
+| 1a - Catalog API route | Complete | `src/app/api/catalog/*`, `__tests__/catalog/*` | None |
+| 2 - Pagination, loading, navigation | Complete | `src/app/page.tsx`, `src/app/loading.tsx` | `Mostrando X-Y de 333 productos` still claims a hardcoded total (known caveat) |
+| 3 - Product detail signals | Partial (3/5) | `ProductCard.tsx`, `ProductVariantsDrawer.tsx`, `formatNumberToCurrency` | Image sub-scope blocked — no image field in Strapi |
+| 4 - SEO readiness | Complete (4/5 code-verified; AC3 manual SSR check pending) | `src/app/layout.tsx`, `src/app/page.tsx` (`generateMetadata`, JSON-LD), `src/app/robots.ts`, `src/app/sitemap.ts`, `src/shared/utils/seo.utils.ts`, `src/features/Home/Home.tsx` anchor pagination; `pnpm test` (178 tests, 1 pre-existing skip), `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm design:lint` all clean | AC3's `curl` checks against a real `pnpm build && pnpm start` (product names in initial HTML, crawlable `<a href>` links, canonical present, robots directive, JSON-LD block) — plan requires this to be run for real, not inferred; not yet confirmed by the user |
+| 5 - Analytics and conversion readiness | Complete | `docs/ANALYTICS_EVENT_CONTRACT.md`, `CLAUDE.md`/`REPO_CONTEXT.md` index entries; `git diff package.json` empty, `grep -rn "gtag\|dataLayer" src/` empty | Contract requires product/marketing sign-off before an instrumentation story starts (not a code gap) |
+
+### Story 1 - Search And Filtering: DONE
+
+Split during planning into 1a (catalog API), 1b (filter state and feedback), and 1c (catalog-wide search). All three have research and planning docs and are implemented.
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| 1. Active inputs visible and clearable | Done | `src/features/Home/Home.tsx:306-334` renders the active-filter summary; `Limpiar filtros` (local) and `Limpiar búsqueda` (catalog-wide) are separate controls |
+| 2. Spanish empty copy | Done | `src/features/ProductListing/ProductListing.tsx:22-57` |
+| 3. Explicit category/brand model | Done | Local filters stack (`applyLocalFilters`, `Home.tsx:152-179`); catalog-wide search is single-mode via `?mode=` |
+| 4. Loading and failure states | Done | `isBusy` disables controls; `pageFeedback` renders `role="alert"`/`role="status"`; `src/app/loading.tsx` + `src/components/ProductCardSkeleton.tsx`; `src/app/error.tsx` |
+| 5. Filter vs catalog search separated | Done | Inline `SearchInput` + dropdowns for visible results; `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx` for catalog-wide with `BUSCAR POR` mode selector |
+| 6. Input cleansing before Strapi | Done | `SEARCH_TERM_PATTERN` allowlist, `SEARCH_TERM_MAX_LENGTH`, `DIGITS_ONLY` page parsing, `DOCUMENT_ID_PATTERN` in `src/shared/constants/catalog.constants.ts` and `src/features/Pagination/utils.pagination.ts` |
+
+Nice-to-haves: URL sync shipped. Result summary shipped (with a caveat, see below). Per-input helper text was implemented as a popover (`Home.tsx:316-332`) instead of a static helper line — acceptable variant, not a gap.
+
+### Story 1a - Catalog API Route: DONE
+
+All seven routes exist under `src/app/api/catalog/` (`products`, `category`, `brand`, `categories`, `brands`, `variants`, `search`) with shared `_utils.ts` envelope/validation helpers and full test coverage in `__tests__/catalog/`. Server actions in `src/shared/lib/global.lib.ts` are preserved and still serve `page.tsx`; only the variants drawer consumes the HTTP route.
+
+### Story 2 - Pagination, Loading, Navigation: DONE
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| 1. `?page=N` without a 5-page ceiling | Done | `PRODUCT_PAGE_MAX = Math.ceil(333 / 50)` = 7; strict digits-only parsing with redirect-to-base on invalid input |
+| 2. Loading feedback | Done | `useTransition` + `isRoutePending`, `src/app/loading.tsx` skeleton grid |
+| 3. Pagination adapted under filters | Done | Numbered pagination for base mode; Anterior/Página N/Siguiente for `name`/`category`/`brand` (`Home.tsx:362-427`) |
+| 4. Back/forward predictable | Done | All navigation is `router.push` with full URL state |
+| 5. Empty/failed pages not broken | Done | `page.tsx:37-42` redirects empty page >1; `notice=end` shows `No hay más resultados.` |
+
+Next-page inference uses `products.length === 50` as specified (`page.tsx:57`).
+
+**Caveat to resolve:** `Home.tsx:365` renders `Mostrando X-Y de 333 productos` from the hardcoded `KNOWN_PRODUCT_TOTAL`. The epic explicitly said not to claim totals the API does not provide, and this number silently rots when the catalog changes. Either fetch the real count, or soften the copy to `Mostrando X-Y`.
+
+### Story 3 - Product Detail Signals: PARTIAL (~75%), implemented 2026-07-27
+
+| AC | Status | Evidence / gap |
+|----|--------|----------------|
+| 1. Card shows all backend signals | Partial | `ProductCard.tsx` shows category, brand, name, variant count, and min/max price (single `Precio` when `hasOneProductVariant === true`). The dead `internalId`-as-`Modelo` branch was deleted (it never rendered in production — no list query selected `product_variants`). Image still missing — no `next/image` usage anywhere in the catalog |
+| 2. Image and no-image card states | **Not started** | Still blocked: Strapi has no product image field yet (open question Strapi III) |
+| 3. Drawer loading/empty/error | Done | `ProductVariantsDrawer.tsx:143-147`, unchanged |
+| 4. Prices sorted and formatted | Done | Sorted ascending by numeric price. Currency now renders `$1,234.50 MXN` via `formatNumberToCurrency` in `src/shared/utils/global.utils.ts` |
+| 5. Spanish drawer labels | Done | `Cerrar`, `Seleccionar variantes`, `Agregar N al carrito` |
+
+Story 3 (`ai-planning/stories/plp-product-detail-signals.story3.md`) implemented Phases 1-3: the MXN currency format, the `hasOneProductVariant`-gated single-price card branch, deletion of the `Modelo` branch, and `internalId` retention (not rendered) on each drawer-mapped variant for the upcoming cart feature. Verified via `pnpm test` (138 tests, 1 pre-existing skip), `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, and `pnpm design:lint`, all clean.
+
+Story 3's AC4 (a repeatable catalog-integrity check) was reassigned to the backend during planning — data integrity for `minPrice`/`maxPrice`/`variantCount`/`hasOneProductVariant` is a Strapi lifecycle-hook concern, not frontend code. See `docs/improvement.md` and `ai-planning/stories/plp-product-detail-signals.story3.md:180-209`. Three known content defects (zero-variant / null-price products) are documented there for correction in Strapi admin.
+
+Remaining gap in this story is entirely the image sub-scope (AC1 partial, AC2 not started), still blocked on Strapi exposing a product image field.
+
+Note: `Agregar al carrito` exists in both the card (`ProductCard.tsx`, handler commented out) and the drawer footer (`ProductVariantsDrawer.tsx:229-238`, currently just closes). Both are intentionally inert until the separate cart story lands.
+
+### Story 4 - SEO Readiness: COMPLETE (4/5 code-verified; AC3 manual SSR check pending), implemented 2026-07-30
+
+`ai-planning/stories/plp-seo-readiness.story4.md` implemented all 6 phases: production root metadata (`src/app/layout.tsx`, `src/shared/constants/seo.constants.ts`), per-URL `generateMetadata` built from a pure parser (`parseCatalogParams`/`buildCanonicalPath` in `src/features/Pagination/utils.pagination.ts`, `buildCatalogMetadata` in `src/shared/utils/seo.utils.ts`), crawlable `next/link` pagination anchors in `src/features/Home/Home.tsx` (real `href` when a target exists, non-focusable `<span aria-disabled="true">` otherwise — never `href="#"`), `src/app/robots.ts` + `src/app/sitemap.ts` (sitemap degrades to base pages only if the Strapi taxonomy fetch fails), and JSON-LD (`WebSite`+`SearchAction`, per-page `ItemList`, category/brand `BreadcrumbList`) via `buildCatalogJsonLd`/`toJsonLdHtml`. Verified via `pnpm test` (178 tests across 23 suites, 1 pre-existing skip, all new SEO/pagination tests passing), `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build` (including a build with `STRAPI_HOST`/`STRAPI_API_TOKEN` unset to confirm the sitemap degrade path), and `pnpm design:lint`, all clean.
+
+| AC | Status | Evidence / gap |
+|----|--------|-----|
+| 1. Production Spanish metadata | Done | `src/app/layout.tsx` sets `metadataBase`, title, description, OG/Twitter from `seo.constants.ts`; `// TODO` and `Tehesa MVP` placeholder removed |
+| 2. Paginated URL SEO strategy | Done | `generateMetadata` in `page.tsx` → `buildCatalogMetadata`; per-mode titles, self-canonicals (never carrying `notice=end`), explicit `robots` per the policy table; `__tests__/seo/seo.utils.test.ts` covers every row |
+| 3. Server-rendered crawlable content | Implemented, code-verified; manual SSR check pending | Pagination controls are real SSR'd `<a href>` anchors (`__tests__/home/Home.test.tsx`); `pnpm build` succeeds. The plan's `curl`-based check against `pnpm build && pnpm start` (product names in initial HTML, crawlable page links, canonical without `notice`, robots meta on name mode, JSON-LD block, `/robots.txt` + `/sitemap.xml` responding) is explicitly required by the plan to be run for real — not yet confirmed by the user |
+| 4. Filter/search URL strategy decided | Done | Category/brand URLs are `index, follow` and sitemap-listed; `?mode=name&q=` is `noindex, follow`; `robots.txt` does not disallow `?mode=name` so its `noindex` is still crawled |
+| 5. Structured data | Done | `buildCatalogJsonLd` emits `WebSite`+`SearchAction` (base mode), per-page `ItemList` (omitted when empty, `offers` omitted when price is null), and `BreadcrumbList` (category/brand); `toJsonLdHtml` escapes `<` as the trust boundary; `robots.ts`/`sitemap.ts` ship no fabricated fields |
+
+Deliberately out of scope, each recorded in `docs/improvement.md`: `Organization`/`LocalBusiness` JSON-LD (no business data), OG/Twitter images (no asset), a WhatsApp CTA (lands with the cart feature), Search Console verification meta tag (verified by DNS instead), and `products_connection` adoption for a live sitemap page count / the `de 333` copy fix (Catalog Behavior I, option I — SEO only, deliberately deferred).
+
+### Story 5 - Analytics And Conversion Readiness: COMPLETE (4/4), implemented 2026-07-30
+
+`ai-planning/stories/plp-analytics-conversion-readiness.story5.md` implemented both phases: `docs/ANALYTICS_EVENT_CONTRACT.md` (event catalogue, reliability caveats, adapter contract, disclosure/PII-guard model, `page_view` gap, edge cases, recommendations, decisions log) and one-line index entries in `CLAUDE.md` ("See Also") and `REPO_CONTEXT.md` ("Key Files"). As scoped, this story ships **no code** — `src/**` and `package.json` are untouched.
+
+| AC | Status | Evidence |
+|----|--------|----------|
+| 1. Product defines which PLP interactions matter | Done | Event catalogue (Primary/Secondary/Conversion tables) in `docs/ANALYTICS_EVENT_CONTRACT.md`, each row citing its `file:line` trigger |
+| 2. Event names and payloads documented before any dependency | Done | Naming convention + payload tables + "Reliability caveats" section |
+| 3. Adapter addable later without vendor coupling | Done | "Adapter contract" section: single `track()` entry point, discriminated union, provider registry, PII redaction choke point, disclosure model, client-only guard |
+| 4. No new analytics package until a provider is selected | Done | `git diff package.json` empty; `grep -rn "gtag\|dataLayer" src/` empty |
+
+The `Agregar al carrito` conversion event is specified and explicitly marked blocked on the separate cart story (plan AC5, folded into the epic's AC1 scope). Second analytics provider and `catalog_search_mode_changed` remain open, deferred to product/marketing sign-off — tracked in the doc's "Decisions log," not a gap in this story's scope.
+
+### Pending Work Summary, Highest Value First
+
+1. **Story 4 AC3 manual SSR verification.** Code is implemented and automated-test-verified; run the plan's `curl` checks against a real `pnpm build && pnpm start` to close out AC3 (see `ai-planning/stories/plp-seo-readiness.story4.md`, Phase 6 verification table).
+2. **Story 4 post-deploy checklist (outside this repo).** Once `NEXT_PUBLIC_SITE_URL` is set to the real domain: create the Google Search Console property, verify by DNS `TXT`, submit `/sitemap.xml`, confirm pages 2-7 are indexed and `?mode=name` URLs are excluded as `noindex`.
+3. **Product total claim** (Story 2 caveat). Decide between a real count and softened copy.
+4. **Story 5 sign-off.** Get product/marketing sign-off on `docs/ANALYTICS_EVENT_CONTRACT.md` before starting the instrumentation story; resolve the second-provider and `catalog_search_mode_changed` open items at the same time.
+5. **Story 3 image-aware cards.** Stays blocked until Strapi exposes an image field and the Next image host is confirmed.
+6. **Backend follow-up from Story 3 AC4** (not this repo). A `product-variant` lifecycle hook to keep `minPrice`/`maxPrice`/`variantCount`/`hasOneProductVariant` in sync, plus correcting the three known defective products. Tracked in `docs/improvement.md`.
+
+### Docs Coverage Gap
+
+`ai-research/stories/` and `ai-planning/` contain docs for stories 1, 1a, 1b, 1c, 2, 3, 4, and 5.

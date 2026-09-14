@@ -13,6 +13,7 @@ export const GET_PRODUCTS = gql`
       maxPrice
       minPrice
       variantCount
+      hasOneProductVariant
       documentId
     }
   }
@@ -22,6 +23,7 @@ export const GET_PRODUCT_VARIANTS = gql`
   query Product($documentId: ID!, $pagination: PaginationArg) {
     product(documentId: $documentId) {
       product_variants(pagination: $pagination) {
+        documentId
         internalId
         diameter
         pricing {
@@ -43,6 +45,7 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
       name
       documentId
       variantCount
+      hasOneProductVariant
       brand {
         name
       }
@@ -70,6 +73,7 @@ export const GET_PRODUCTS_BY_BRAND = gql`
         name
       }
       variantCount
+      hasOneProductVariant
     }
   }
 `
@@ -85,12 +89,40 @@ export const GET_PRODUCTS_BY_NAME = gql`
       maxPrice
       documentId
       variantCount
+      hasOneProductVariant
       category {
         name
       }
       brand {
         name
       }
+    }
+  }
+`
+
+export const GET_VARIANTS_BY_IDS = gql`
+  query GetVariantsByIds(
+    $filters: ProductVariantFiltersInput
+    $pagination: PaginationArg
+  ) {
+    productVariants(filters: $filters, pagination: $pagination) {
+      documentId
+      diameter
+      pricing {
+        price
+      }
+    }
+  }
+`
+
+export const GET_PRODUCTS_BY_IDS = gql`
+  query GetProductsByIds(
+    $filters: ProductFiltersInput
+    $pagination: PaginationArg
+  ) {
+    products(filters: $filters, pagination: $pagination) {
+      documentId
+      name
     }
   }
 `

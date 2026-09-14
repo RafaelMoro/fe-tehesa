@@ -29,6 +29,7 @@ export type Product = {
   minPrice?: number
   maxPrice?: number
   variantCount?: number
+  hasOneProductVariant?: boolean
   product_variants?: ProductVariant[]
 }
 
@@ -60,6 +61,7 @@ export interface PaginationProps {
 }
 
 export type ProductVariant = {
+  documentId: string
   internalId?: string
   diameter: string
   pricing: {
@@ -67,8 +69,62 @@ export type ProductVariant = {
   }
 }
 
+export type RevalidatedVariant = {
+  documentId: string
+  diameter: string
+  pricing: {
+    price: number
+  } | null
+}
+
+export type RevalidatedProduct = {
+  documentId: string
+  name: string
+}
+
+export type RevalidateData = {
+  variants: RevalidatedVariant[]
+  products: RevalidatedProduct[]
+}
+
+export interface FetchVariantsByIdsResponse {
+  productVariants: RevalidatedVariant[]
+}
+
+export interface FetchProductsByIdsResponse {
+  products: RevalidatedProduct[]
+}
+
 export type ProductVariantUI = {
+  documentId: string
+  internalId?: string
   diameter: string
   price: number
   priceFormatted: string
+}
+
+export type CartVariantLine = {
+  productDocumentId: string
+  productName: string
+  quantity: number
+  variantDocumentId: string
+  internalId?: string
+  diameter: string
+  unitPrice: number
+}
+
+export type CartProductLine = {
+  productDocumentId: string
+  productName: string
+  quantity: number
+  variantDocumentId: null
+  unitPrice: null
+}
+
+export type CartLine = CartVariantLine | CartProductLine
+
+export type CartContact = {
+  firstName: string
+  lastName: string
+  email: string
 }

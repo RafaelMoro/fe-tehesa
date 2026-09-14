@@ -1,7 +1,14 @@
-import { Button, useOverlayState } from "@heroui/react"
+import { useEffect } from "react"
+import { Button, toast, useOverlayState } from "@heroui/react"
 import { render, screen, userEvent } from "@__tests__/test-utils"
 import { ProductVariantsDrawer } from "@/features/ProductVariantsDrawer/ProductVariantsDrawer"
-import type { Product } from "@/shared/types/global.types"
+import { useCartStore } from "@/zustand/provider/cart.provider"
+import { CART_MAX_LINES } from "@/shared/constants/cart.constants"
+import type {
+  CartVariantLine,
+  Product,
+  ProductVariantUI,
+} from "@/shared/types/global.types"
 import type { CatalogEnvelope } from "@/shared/utils/catalog-api.utils"
 
 const product: Product = {
@@ -17,19 +24,66 @@ const secondProduct: Product = {
   documentId: "doc-2",
 }
 
-const DrawerHarness = ({ product }: { product: Product }) => {
+const DrawerHarness = ({
+  product,
+  prefillLines,
+}: {
+  product: Product
+  prefillLines?: CartVariantLine[]
+}) => {
   const state = useOverlayState()
+  const addVariantLines = useCartStore((store) => store.addVariantLines)
+  const lineCount = useCartStore((store) => store.lines.length)
+
+  useEffect(() => {
+    if (prefillLines) {
+      addVariantLines(prefillLines)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <>
       <Button onPress={state.open}>Abrir detalles</Button>
       <ProductVariantsDrawer product={product} state={state} />
+      <span>{lineCount} líneas en el carrito</span>
+    </>
+  )
+}
+
+const UpgradeDrawerHarness = ({
+  initialQuantity,
+  onConfirmVariant,
+}: {
+  initialQuantity?: number
+  onConfirmVariant: (variant: ProductVariantUI, quantity: number) => void
+}) => {
+  const state = useOverlayState()
+  const lineCount = useCartStore((store) => store.lines.length)
+
+  return (
+    <>
+      <Button onPress={state.open}>Abrir detalles</Button>
+      <ProductVariantsDrawer
+        product={product}
+        state={state}
+        initialQuantity={initialQuantity}
+        onConfirmVariant={onConfirmVariant}
+      />
+      <span>{lineCount} líneas en el carrito</span>
     </>
   )
 }
 
 const originalFetch = globalThis.fetch
 const originalConsoleError = console.error
+const originalResizeObserver = globalThis.ResizeObserver
+
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
 
 const jsonResponse = <T,>(body: CatalogEnvelope<T>) =>
   ({
@@ -50,9 +104,17 @@ const mockFetch = () => {
   return fetchMock
 }
 
+beforeEach(() => {
+  localStorage.clear()
+  globalThis.ResizeObserver =
+    MockResizeObserver as unknown as typeof ResizeObserver
+})
+
 afterEach(() => {
   globalThis.fetch = originalFetch
   console.error = originalConsoleError
+  globalThis.ResizeObserver = originalResizeObserver
+  toast.clear()
 })
 
 describe("ProductVariantsDrawer", () => {
@@ -129,15 +191,25 @@ describe("ProductVariantsDrawer", () => {
     )
   })
 
-  it("renders sorted selectable variants with USD formatting", async () => {
+  it("renders sorted selectable variants with MXN formatting", async () => {
     const user = userEvent.setup()
     const fetchMock = mockFetch()
     fetchMock.mockResolvedValue(
       jsonResponse({
         success: true,
         data: [
-          { diameter: "Grande", pricing: { price: 30 } },
-          { diameter: "Pequeña", pricing: { price: 10 } },
+          {
+            documentId: "var-002",
+            internalId: "VAR-002",
+            diameter: "Grande",
+            pricing: { price: 30 },
+          },
+          {
+            documentId: "var-001",
+            internalId: "VAR-001",
+            diameter: "Pequeña",
+            pricing: { price: 10 },
+          },
         ],
       }),
     )
@@ -148,9 +220,11 @@ describe("ProductVariantsDrawer", () => {
     expect(
       await screen.findByRole("checkbox", { name: /Pequeña/ }),
     ).toBeInTheDocument()
-    expect(screen.getByText("$10.00")).toBeInTheDocument()
+    expect(screen.getByText("$10.00 MXN")).toBeInTheDocument()
     expect(screen.getByText("Grande")).toBeInTheDocument()
-    expect(screen.getByText("$30.00")).toBeInTheDocument()
+    expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
+    expect(screen.queryByText("VAR-001")).not.toBeInTheDocument()
+    expect(screen.queryByText("VAR-002")).not.toBeInTheDocument()
   })
 
   it("updates the selected count and total", async () => {
@@ -159,7 +233,7 @@ describe("ProductVariantsDrawer", () => {
     fetchMock.mockResolvedValue(
       jsonResponse({
         success: true,
-        data: [{ diameter: "Pequeña", pricing: { price: 10 } }],
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
       }),
     )
 
@@ -173,16 +247,16 @@ describe("ProductVariantsDrawer", () => {
     expect(screen.getByText("1 variante · 1 pieza")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Agregar 1 al carrito" })).toBeEnabled()
 
-    const quantity = screen.getByRole("spinbutton", {
-      name: "Cantidad de Pequeña",
+    const increment = screen.getByRole("button", {
+      name: "Aumentar Cantidad de Pequeña",
     })
-    await user.clear(quantity)
-    await user.type(quantity, "3")
+    await user.click(increment)
+    await user.click(increment)
 
     expect(screen.getByText(/1 variante/)).toHaveTextContent(
       "1 variante · 3 piezas",
     )
-    expect(screen.getByText("$30.00")).toBeInTheDocument()
+    expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
   })
 
   it("clears old rows on close and refetches on reopen", async () => {
@@ -193,7 +267,7 @@ describe("ProductVariantsDrawer", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           success: true,
-          data: [{ diameter: "Primera", pricing: { price: 20 } }],
+          data: [{ documentId: "var-primera", diameter: "Primera", pricing: { price: 20 } }],
         }),
       )
       .mockReturnValueOnce(secondRequest.promise)
@@ -229,7 +303,7 @@ describe("ProductVariantsDrawer", () => {
     secondRequest.resolve(
       jsonResponse({
         success: true,
-        data: [{ diameter: "Actual", pricing: { price: 15 } }],
+        data: [{ documentId: "var-actual", diameter: "Actual", pricing: { price: 15 } }],
       }),
     )
     expect(await screen.findByText("Actual")).toBeInTheDocument()
@@ -237,9 +311,194 @@ describe("ProductVariantsDrawer", () => {
     firstRequest.resolve(
       jsonResponse({
         success: true,
-        data: [{ diameter: "Vieja", pricing: { price: 5 } }],
+        data: [{ documentId: "var-vieja", diameter: "Vieja", pricing: { price: 5 } }],
       }),
     )
     expect(screen.queryByText("Vieja")).not.toBeInTheDocument()
+  })
+
+  it("adds one line per selected variant and closes the drawer", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    await user.click(checkbox)
+
+    await user.click(
+      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+    )
+
+    expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
+    expect(screen.queryByRole("checkbox", { name: /Pequeña/ })).not.toBeInTheDocument()
+  })
+
+  it("increments an existing line instead of appending a duplicate", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+    const prefillLines: CartVariantLine[] = [
+      {
+        productDocumentId: "doc-1",
+        productName: "Tire A",
+        quantity: 2,
+        variantDocumentId: "var-001",
+        diameter: "Pequeña",
+        unitPrice: 10,
+      },
+    ]
+
+    render(<DrawerHarness product={product} prefillLines={prefillLines} />)
+    expect(await screen.findByText("1 líneas en el carrito")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    await user.click(checkbox)
+    await user.click(
+      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+    )
+
+    expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
+  })
+
+  it("refuses the add at the 100-line cap, shows the limit message, and keeps the drawer open", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-overflow", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+    const prefillLines: CartVariantLine[] = Array.from(
+      { length: CART_MAX_LINES },
+      (_, index) => ({
+        productDocumentId: "doc-1",
+        productName: "Tire A",
+        quantity: 1,
+        variantDocumentId: `var-existing-${index}`,
+        diameter: "Pequeña",
+        unitPrice: 10,
+      }),
+    )
+
+    render(<DrawerHarness product={product} prefillLines={prefillLines} />)
+    expect(
+      await screen.findByText(`${CART_MAX_LINES} líneas en el carrito`),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    await user.click(checkbox)
+    await user.click(
+      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+    )
+
+    expect(
+      await screen.findByText(
+        `Tu lista llegó al máximo de ${CART_MAX_LINES} productos.`,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("checkbox", { name: /Pequeña/ }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(`${CART_MAX_LINES} líneas en el carrito`),
+    ).toBeInTheDocument()
+  })
+})
+
+describe("ProductVariantsDrawer upgrade mode", () => {
+  it("starts the stepper at initialQuantity and labels the CTA Elegir esta medida", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(
+      <UpgradeDrawerHarness initialQuantity={4} onConfirmVariant={jest.fn()} />,
+    )
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await screen.findByRole("checkbox", { name: /Pequeña/ })
+
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toHaveValue("4")
+    expect(
+      screen.getByRole("button", { name: "Elegir esta medida" }),
+    ).toBeDisabled()
+  })
+
+  it("single-selects: choosing a second variant deselects the first", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [
+          { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          { documentId: "var-002", diameter: "Grande", pricing: { price: 30 } },
+        ],
+      }),
+    )
+
+    render(<UpgradeDrawerHarness onConfirmVariant={jest.fn()} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const first = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    const second = screen.getByRole("checkbox", { name: /Grande/ })
+
+    await user.click(first)
+    expect(first).toBeChecked()
+
+    await user.click(second)
+    expect(second).toBeChecked()
+    expect(first).not.toBeChecked()
+  })
+
+  it("confirming calls onConfirmVariant with the variant and current quantity, and adds no cart line", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+    const onConfirmVariant = jest.fn()
+
+    render(
+      <UpgradeDrawerHarness
+        initialQuantity={2}
+        onConfirmVariant={onConfirmVariant}
+      />,
+    )
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
+    await user.click(checkbox)
+
+    await user.click(
+      screen.getByRole("button", { name: "Elegir esta medida" }),
+    )
+
+    expect(onConfirmVariant).toHaveBeenCalledTimes(1)
+    expect(onConfirmVariant).toHaveBeenCalledWith(
+      expect.objectContaining({ documentId: "var-001", diameter: "Pequeña" }),
+      2,
+    )
+    expect(screen.getByText("0 líneas en el carrito")).toBeInTheDocument()
   })
 })

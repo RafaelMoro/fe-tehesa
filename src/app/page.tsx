@@ -1,12 +1,9 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { Home } from "@/features/Home/Home"
 import { CatalogPageLayout } from "@/features/Home/CatalogPageLayout"
-import {
-  fetchBrands,
-  fetchCategories,
-  getThemePreference,
-} from "@/shared/lib/global.lib"
+import { fetchBrands, fetchCategories } from "@/shared/lib/global.lib"
 import {
   PRODUCT_PAGE_MAX,
   PRODUCT_PAGE_MIN,
@@ -18,6 +15,17 @@ import {
 } from "@/features/Pagination/utils.pagination"
 import type { MainPageSearchParams } from "@/features/Pagination/types.pagination"
 import { ChangeThemeStoreProvider } from "@/zustand/provider/change-theme.provider"
+import {
+  buildCatalogJsonLd,
+  buildCatalogMetadata,
+  toJsonLdHtml,
+} from "@/shared/utils/seo.utils"
+
+export const generateMetadata = async ({
+  searchParams,
+}: {
+  searchParams: Promise<MainPageSearchParams>
+}): Promise<Metadata> => buildCatalogMetadata(await searchParams)
 
 export default async function MainPage({
   searchParams,
@@ -27,11 +35,10 @@ export default async function MainPage({
   const params = await searchParams
   const selection = getCatalogSelection(params)
 
-  const [products, categories, brands, themeFetched] = await Promise.all([
+  const [products, categories, brands] = await Promise.all([
     selection.fetchProducts(),
     fetchCategories(),
     fetchBrands(),
-    getThemePreference(),
   ])
 
   if (selection.page > PRODUCT_PAGE_MIN && products.length === 0) {
@@ -43,7 +50,13 @@ export default async function MainPage({
 
   return (
     <ChangeThemeStoreProvider>
-      <CatalogPageLayout themeFetched={themeFetched}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: toJsonLdHtml(buildCatalogJsonLd(selection, products)),
+        }}
+      />
+      <CatalogPageLayout>
         <Home
           products={products}
           currentPage={selection.page}

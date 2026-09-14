@@ -1,6 +1,6 @@
 # Unit Testing Guidelines
 
-Canonical rules for authoring and repairing Jest tests in `fe-tehesa`. This is the only full copy of the policy; skills, commands, `AGENTS.md`, and `REPO_CONTEXT.md` link to it instead of repeating it.
+Canonical rules for authoring and repairing Jest tests in `fe-tehesa`. This is the only full copy of the policy; skills, commands, `AGENTS.md`, and `ai-skills/REPO_CONTEXT.md` link to it instead of repeating it.
 
 ## Stack And Commands
 

@@ -9,7 +9,7 @@ import { CatalogPageLayout } from "@/features/Home/CatalogPageLayout"
 
 export default function Error({ reset }: { reset: () => void }) {
   return (
-    <CatalogPageLayout themeFetched="light">
+    <CatalogPageLayout>
       <CatalogHero statusText="No pudimos cargar los productos." isDisabled />
       <CatalogDisabledFilters />
       <section

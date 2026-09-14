@@ -11,3 +11,4 @@ Before writing any code, read `docs/IMPLEMENTATION_GUIDELINES.md` and follow it 
 
 When the implementation touches React or Next.js code, load `vercel-react-best-practices` before writing code and use it while implementing. After edits, do one focused pass over the touched React/Next.js files for missed performance or Server/Client boundary issues.
 
+After a plan backed by an epic story is fully implemented and verified, update its epic research document. Record a verified acceptance-criteria completion percentage, a status table for every story, and prioritized remaining next steps. Do not update the epic for partial or failed work, and do not estimate progress.

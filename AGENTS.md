@@ -14,6 +14,7 @@ Compact guidance for OpenCode sessions working in this repo.
 ## Environment
 
 - `STRAPI_HOST` and `STRAPI_API_TOKEN` must be set (see `.env.local`, gitignored). Without them, Apollo queries in server components silently fail / return empty.
+- `NEXT_PUBLIC_SITE_URL` (optional) — absolute production origin for `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000`; never required.
 - Node 22 in CI.
 
 ## Architecture
@@ -25,6 +26,7 @@ Compact guidance for OpenCode sessions working in this repo.
 - UI stack: **HeroUI v3** (`@heroui/react`, formerly NextUI) + Tailwind v4 via `@tailwindcss/postcss`. `darkMode: "class"`. For HeroUI docs, prefer the `heroui-react` MCP (configured in `opencode.json`); fallback to the LLM docs at https://heroui.com/react/llms.txt. Note: `tailwind.config.js` `content` only lists HeroUI's theme dist — Tailwind v4 auto-detects app content; do not break this.
 - Directory layout: `src/features/<Feature>/` (scoped UI), `src/shared/{constants,data,hooks,lib,queries,types,ui,utils}` (cross-cutting). `src/shared/ui` is split into `atoms` and `organisms`. `src/components` only holds the shared `ProductCard`.
 - Base catalog pagination derives 7 pages from `KNOWN_PRODUCT_TOTAL = 333` and `PRODUCT_PAGE_SIZE = 50`; filtered modes keep Previous/current/Next until Strapi exposes filtered totals.
+- SEO: `src/app/page.tsx` exports `generateMetadata` (delegates to `buildCatalogMetadata` in `src/shared/utils/seo.utils.ts`, never fetches products) and renders per-page JSON-LD in the body. `src/app/robots.ts` / `src/app/sitemap.ts` serve `/robots.txt` and `/sitemap.xml`; the sitemap degrades to base pages only if the Strapi taxonomy fetch fails. Pagination controls in `Home.tsx` are real `next/link` anchors, not JS-only buttons.
 
 ## Release / PR workflow (CI-enforced)
 

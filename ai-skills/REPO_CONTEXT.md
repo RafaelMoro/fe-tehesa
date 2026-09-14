@@ -1,0 +1,390 @@
+# Repository Context - fe-tehesa
+
+**Last Updated:** 2026-09-13
+
+A living reference for AI agents and developers working in this repository. It documents the app wiring, module boundaries, data flow, and conventions that are not obvious from a single file read.
+
+> Treat this file as a map, not a contract. The ground truth is the code.
+
+## Overview
+
+`fe-tehesa` is a Next.js 15 App Router MVP for the Tehesa product catalog. It renders a paginated catalog, supports client-side search over the current result set, fetches filtered product lists by category or brand from Strapi, and opens a drawer with product variant pricing.
+
+**Tech stack:**
+
+- Next.js 15 App Router + React 19 + TypeScript strict mode.
+- pnpm lockfile with `.npmrc` hoisting for `@heroui/*` packages.
+- Tailwind v4 through `@tailwindcss/postcss` plus `tailwind.config.js` for `darkMode: "class"`.
+- HeroUI (`@heroui/react`) for UI primitives.
+- Apollo Client v4 + GraphQL for Strapi reads.
+- next-themes for class-based light/dark theme mode.
+- Zustand vanilla store + provider pattern for theme state.
+- `react-hook-form` (added Story 4, `/cotizar`'s contact form) — the epic's one sanctioned new dependency; no resolver package (`zod`/`yup`).
+- Remix Icon React, Framer Motion, and `clsx` for icons, motion support, and class composition.
+- Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) via `next/jest`. Tests live in root `__tests__/` (not co-located). See "Testing" below.
+
+## High-Level Architecture
+
+```text
+Browser
+  │  page query string (?page=...) + theme preference cookie
+  ▼
+Next.js App Router
+  ├── src/app/               root layout, providers, home page, API route handlers
+  ├── src/features/          catalog UI: Home, ProductListing, filters, variants drawer
+  ├── src/components/        shared ProductCard component
+  ├── src/shared/            constants, hooks, lib/server actions, GraphQL queries, types, utils, UI
+  └── src/zustand/           SSR-safe theme store provider + vanilla store
+         │
+         ▼
+Strapi GraphQL API via ApolloClient
+  ├── process.env.STRAPI_HOST
+  └── process.env.STRAPI_API_TOKEN as Bearer token
+```
+
+Key invariants:
+
+- `src/app/layout.tsx` is the root server layout, now `async`. It sets `lang="es"`, loads Google Geist fonts, `await`s `getThemePreference()`, wraps children in `Providers`, then wraps them in `NextThemesProvider` (`attribute="class"`, `defaultTheme="light"`) which renders `Header` (fed the fetched theme) before `{children}`. Awaiting `getThemePreference()` calls `cookies()`, which opts every route out of static rendering — deliberate, since `/` was already dynamic and `/cotizar` is `noindex` and client-state-driven.
+- `src/app/providers.tsx` is `"use client"` and mounts `CartStoreProvider` plus HeroUI's `Toast.Provider` (`placement="bottom end"`, `maxVisibleToasts={1}`, `className="z-[60]"` — the drawer overlay is also `z-50`, portals later, and would otherwise hide the toast for its exit animation). Every route gets the cart; `__tests__/test-utils.tsx` picks it up for free since it already wraps `render` in `Providers`.
+- `src/app/page.tsx` (`/`) and `src/app/cotizar/page.tsx` (`/cotizar`) are the two page routes. `page.tsx` awaits `searchParams` per Next 15, canonicalizes invalid catalog URLs with `redirect()`, fetches the selected product result set, categories, and brands in parallel (theme now lives in the root layout), and wraps the catalog in `ChangeThemeStoreProvider`. `cotizar/page.tsx` is a thin server shell (`generateMetadata` + one `<main>`) around the `"use client"` `QuotePage` feature component; `Header` no longer lives in `CatalogPageLayout` (which now only supplies `/`'s `<main>` wrapper) so each page route supplies exactly one `<main>`.
+- Base catalog pagination derives 7 pages from `KNOWN_PRODUCT_TOTAL = 333` and `PRODUCT_PAGE_SIZE = 50` in `src/shared/constants/catalog.constants.ts`; replace the total source when Strapi exposes live pagination metadata.
+- Server data access lives in `src/shared/lib/global.lib.ts` with the `"use server"` directive. It creates a new Apollo Client for each call through `src/app/apollo-client.ts`.
+- Client components no longer import server actions from `global.lib.ts` for catalog reads. URL-backed catalog navigation is server-rendered through `src/app/page.tsx`; route handlers still wrap server actions for other client API consumers such as product variants.
+- Theme persistence is cookie-backed through `POST /api/preferences` -> `saveThemeCookie()`. The cookie key is `tehesa-theme` in `src/shared/constants/global.constants.ts`.
+- The Zustand theme store follows the provider-wraps-store pattern under `src/zustand/provider` and `src/zustand/store`. Keep stores request-safe by creating them inside provider refs, not module-level singletons.
+- A Zustand cart store (`src/zustand/store/cart.store.ts` + `src/zustand/provider/cart.provider.tsx`) follows the same provider-wraps-store pattern and persists to `localStorage` (`tehesa-cart`) via `zustand/persist`, with an explicit `version` (`CART_SCHEMA_VERSION = 2` as of Story 4) `/migrate` (drop-on-mismatch) and rehydrate-time validation (`sanitizeCartState`/`isValidCartLine`, and `validateContact` from `contact-validation.utils.ts` for `contact`) — `localStorage` is a trust boundary, so a truncated/tampered blob drops the offending line (or the whole contact, all-or-nothing) rather than throwing or repairing it. Lines are keyed by `` `${productDocumentId}:${variantDocumentId ?? "no-variant"}` `` (never `internalId`, which is neither required nor unique on `product_variant`), capped at 100 lines, enforced as an all-or-nothing batch on add. Mutation actions: `addVariantLines`/`addProductLine` (add-or-increment), `clearLines`/`setContact`/`clearContact`, `setLineQuantity` (clamps to `1..100`, ignores `NaN`/non-finite input), `removeLine`, `upgradeLine(key, line)` — which replaces a line **at its existing array index** (never via the `Map`-rebuild `addLines` path, which would move it to the end) and returns `"upgraded" | "merged" | "missing"`; on an `"merged"` collision the surviving row is the *existing* priced line (its position is kept, the variant-less row is dropped, quantities sum clamped to `CART_MAX_QUANTITY`) — and, since Story 4, a `lastQuoteLines: CartLine[] | null` recovery slot with `archiveAndClearLines` (snapshots `lines` into it then empties the cart, no-op if already empty), `restoreLastQuote` (round-trips it back into `lines`, clears the slot), and `dismissLastQuote` (clears the slot without restoring) — this is what backs `/cotizar`'s "Restaurar lista" offer after a WhatsApp hand-off, since the browser can never confirm the message was actually sent.
+
+## Directory Layout
+
+### `src/app/`
+
+| Path                              | Purpose                                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout.tsx`                      | Root layout (`async`); Google Geist fonts, global styles, HeroUI and theme setup, renders `Header` inside `NextThemesProvider`.                                        |
+| `page.tsx`                        | Catalog route `/`; parses canonical catalog URL state, server-fetches the selected products + taxonomy, and renders `Home`.                                            |
+| `cotizar/page.tsx`                | Quote route `/cotizar`; server shell + `generateMetadata` (`noindex, follow`, canonical `/cotizar`), renders the `"use client"` `QuotePage` feature component.         |
+| `loading.tsx`                     | Minimal route fallback with accessible Spanish loading status.                                                                                                          |
+| `error.tsx`                       | Client error boundary with Spanish catalog recovery copy and retry.                                                                                                     |
+| `providers.tsx`                   | Client provider: mounts `CartStoreProvider` and HeroUI's `Toast.Provider`.                                                                                             |
+| `apollo-client.ts`                | Apollo Client factory for Strapi GraphQL.                                                                                                                              |
+| `robots.ts`                       | `GET /robots.txt` — disallows `/api/`, points to `/sitemap.xml`. Never disallows `?mode=name` (its `noindex` must still be crawled to be read).                        |
+| `sitemap.ts`                      | `GET /sitemap.xml` — base pages `/` + `/?page=2..7` plus one URL per live category/brand. No `lastModified`/`changeFrequency`/`priority`. Degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`. |
+| `api/preferences/route.ts`        | Saves theme preference cookie via `POST /api/preferences`.                                                                                                             |
+| `api/catalog/_utils.ts`           | Shared catalog route helpers: `validateCatalogEnv`, envelope `success`/`failure`, and `readValidatedParams` for `page`/`pageSize`/category name/brand name/`documentId`. |
+| `api/catalog/products/route.ts`   | `GET /api/catalog/products?page=&pageSize=` -> paged products.                                                                                                         |
+| `api/catalog/category/route.ts`   | `GET /api/catalog/category?category=&pageSize=` -> products filtered by a live Strapi category name.                                                                   |
+| `api/catalog/brand/route.ts`      | `GET /api/catalog/brand?brand=&pageSize=` -> products filtered by a live Strapi brand name.                                                                            |
+| `api/catalog/categories/route.ts` | `GET /api/catalog/categories` -> dynamic category taxonomy from Strapi.                                                                                                |
+| `api/catalog/brands/route.ts`     | `GET /api/catalog/brands` -> dynamic brand taxonomy from Strapi.                                                                                                       |
+| `api/catalog/variants/route.ts`   | `GET /api/catalog/variants?documentId=&pageSize=` -> product variants.                                                                                                 |
+| `api/catalog/search/route.ts`     | `GET /api/catalog/search?q=&pageSize=50` -> products whose `name` contains the validated term.                                                                         |
+| `api/catalog/revalidate/route.ts` | `GET /api/catalog/revalidate?variantIds=&productIds=` -> one batched `{ variants, products }` envelope for `/cotizar`'s price/availability check (Story 3).           |
+| `hero.ts`                         | HeroUI-related setup file.                                                                                                                                             |
+| `globals.css`                     | Tailwind/global CSS.                                                                                                                                                   |
+
+### `src/features/`
+
+| Domain                   | Purpose                                                                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Home/`                  | Main client catalog controller: search, category/brand filters, pagination, drawer state. Owns the `useCatalogSearch` hook for catalog-wide name search state. |
+| `ProductListing/`        | Product grid plus `SearchInput`, `DropdownCategories`, and `DropdownBrands`.                                                                                   |
+| `ProductVariantsDrawer/` | HeroUI drawer that fetches, sorts, and displays product variants/prices. Two optional props, `initialQuantity` and `onConfirmVariant`, put it in single-select "upgrade mode" (`isUpgradeMode = onConfirmVariant !== undefined`) for `/cotizar`'s `Elegir medida`: checking a variant deselects any other, the stepper starts at `initialQuantity`, the CTA reads `Elegir esta medida`, and confirming calls `onConfirmVariant(variant, quantity)` instead of touching the cart store. Both props are optional and additive — `/`'s default (multi-select, adds to the store) is unchanged. |
+| `CatalogSearchDrawer/`   | HeroUI drawer (right placement) with name-search form plus the catalog-wide category/brand dropdowns.                                                          |
+| `Pagination/`            | Feature-local URL parsing/building helpers and catalog pagination types used by `src/app/page.tsx`. `utils.pagination.ts` also exports the pure `parseCatalogParams` (no redirect side effect) and the canonical-URL builders `buildCanonicalPath`/`buildBasePagePath`/`buildModeUrl` consumed by `seo.utils.ts`, `sitemap.ts`, and `Home.tsx`'s anchor pagination. |
+| `QuotePage/`             | `/cotizar`'s client feature: `QuotePage.tsx` (hydration-gated line list/empty-state/subtotal/`Vaciar lista` confirmation/upgrade-drawer wiring, Story 3's checking/failed banners and stepper-unmount focus handling, and Story 4's `ContactSection`/`WhatsappCta` wiring plus a recovery empty-state branch when `lastQuoteLines` is present), `QuoteLineRow.tsx` (five line states — priced incl. changed-price, variant-less, variant-gone, product-gone, no-price), `quote.utils.ts` (`getQuoteTotals` and `getEffectiveLines`, both taking optional `LineChecks`; `buildProductSearchHref`), `useQuoteRevalidation.ts` (batches one `/api/catalog/revalidate` call per mount, exposes `pageStatus`/`checks`/`retry`), `ContactForm.tsx` (Story 4, `react-hook-form` three-field form — see the HeroUI `TextField` gotcha below), `ContactSection.tsx` (Story 4, collapsed read-only summary vs. expanded form gate, "Usar otros datos"/"Cancelar cambios"/"Olvidar mis datos"), `WhatsappCta.tsx` (Story 4, real anchor vs. `aria-disabled` span, multi-part stepper with component-local `openedParts`, fires `archiveAndClearLines` on `Empezar una nueva cotización`). |
+
+### `src/shared/`
+
+| Subdir         | Purpose                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `constants`    | Cross-cutting constants such as the theme cookie key, `CAT_*`/`MSG_CAT_*` catalog error codes, SEO copy/origin (`seo.constants.ts`), cart constants (`cart.constants.ts`: storage key, schema version — now `2`, quantity/line bounds, contact text/email bounds), and WhatsApp constants (`whatsapp.constants.ts`, Story 4: `WHATSAPP_NUMBER` from `NEXT_PUBLIC_WHATSAPP_NUMBER`, `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`, control-char/markdown-char patterns, `QUOTE_REFERENCE_PREFIX`). |
+| `hooks`        | Reusable client hooks; currently `useMediaQuery`.                                                              |
+| `lib`          | Server actions for Strapi reads and theme cookie persistence.                                                  |
+| `queries`      | GraphQL operations for products, filtered products, variants (now including `documentId`), categories, and brands. |
+| `types`        | Product, variant (now with `documentId`), app theme, error, pagination, category, brand, `TaxonomyItem`, and cart (`CartLine`/`CartVariantLine`/`CartProductLine`/`CartContact`) types.             |
+| `ui/atoms`     | Reusable atomic UI: `ToggleDarkMode`, `QuantityStepper` (HeroUI `NumberField` composition, bounded `1..100`, Spanish `Aumentar`/`Disminuir` labels, guards `onChange` against React Aria's cleared-input `NaN`), `CartCount` (mounted-guard badge, a real `next/link` to `/cotizar` with accessible name `Ver mi lista, N artículos` and `aria-current="page"` only on `/cotizar`; imports `usePathname` from `next/navigation`, the only reason it needs a router mock in tests). |
+| `ui/organisms` | Reusable composed UI such as `Header` (renders `CartCount` beside `ToggleDarkMode`; now rendered once, from the root layout, not from `CatalogPageLayout`).           |
+| `utils`        | Pure helpers such as currency formatting, the catalog API client (`fetchCatalog`, `catalogErrorToSpanish`), SEO metadata/JSON-LD builders (`seo.utils.ts`: `buildCatalogMetadata`, `buildCatalogJsonLd`, `toJsonLdHtml`), `contact-validation.utils.ts` (Story 4: `isValidContactName`/`isValidContactEmail`/`validateContact` — the one shared validator consumed by the cart store's rehydrate sanitize, `ContactForm`, and `WhatsappCta`'s send gate), and `whatsapp-message.utils.ts` (Story 4: `sanitizeForWhatsapp`, `generateQuoteReference`, `buildQuoteMessages`, `buildWhatsappUrl` — pure, greedy line-boundary splitting against `WHATSAPP_URL_MAX_ENCODED_LENGTH`). |
+
+### `src/zustand/`
+
+| Path                                 | Purpose                                                          |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| `store/change-theme.store.ts`        | Vanilla Zustand theme store and React context.                   |
+| `provider/change-theme.provider.tsx` | Client provider that creates a per-provider store with `useRef`. |
+| `store/cart.store.ts`                | Vanilla Zustand cart store with `zustand/persist`, rehydrate validation, and add/increment/cap logic. |
+| `provider/cart.provider.tsx`         | Client provider that creates a per-provider cart store with `useRef`; exposes `useCartStore`. |
+
+## Data Flow
+
+Product reads are GraphQL queries against Strapi:
+
+- `fetchProducts(page)` calls `GET_PRODUCTS` with `pagination: { page, pageSize: 50 }`.
+- `fetchProductsByCategory(categoryName)` calls `GET_PRODUCTS_BY_CATEGORY` with a category `name contains` filter and `pageSize: 50`.
+- `fetchProductsByBrand(brandName)` calls `GET_PRODUCTS_BY_BRAND` with a brand `name contains` filter and `pageSize: 50`.
+- `fetchProductVariants({ documentId })` calls `GET_PRODUCT_VARIANTS` with `pageSize: 100` and returns `product.product_variants`.
+- `fetchCategories()` calls `GET_CATEGORIES` returning `TaxonomyItem[]` (`{ name, customId }`).
+- `fetchBrands()` calls `GET_BRANDS` returning `TaxonomyItem[]` (`{ name, customId }`).
+
+**`pagination` is mandatory on every collection query.** Strapi's GraphQL plugin applies no hard cap (`limit: 1000` returns 1000), but **omitting `pagination` returns only 10 records** — silently, with no error. The REST `maxLimit: 100` in the backend's `config/api.ts` does not apply to GraphQL, and `config/plugins.ts` sets no GraphQL limit at all. Every adapter above passes an explicit `pageSize`; a new one that forgets will return a confidently wrong first-10 result. Verified live 2026-08-01.
+
+Catalog data flow from the browser:
+
+```text
+Home.tsx (client) / ProductVariantsDrawer.tsx (client)
+  │  URL navigation for catalog products; fetch /api/catalog/variants for variants
+  ▼
+src/app/api/catalog/**/route.ts (Route Handler)
+  │  validate env + params, wrap result in { success, data } | { success: false, code, message }
+  ▼
+src/shared/lib/global.lib.ts ("use server")
+  │  createApolloClient() per call
+  ▼
+Strapi GraphQL (STRAPI_HOST + STRAPI_API_TOKEN)
+```
+
+`src/app/page.tsx` calls catalog server actions directly because it is a server component; it does not call internal HTTP API routes.
+
+Catalog behavior:
+
+- The server page fetches one page of 50 products for the selected URL mode and passes it to `Home` with mode, value, page, previous/next, and optional feedback state.
+- `Home` stores the current working set in `allProducts.current` and visible rows in `filteredProducts`.
+- Local visible-results search filters only the current working set in memory by product name. It does not query Strapi and does not reset the page to 1.
+- Catalog-wide name/category/brand modes are URL-backed: `/?mode=name&q=...&page=N`, `/?mode=category&category=...&page=N`, and `/?mode=brand&brand=...&page=N`. Browser reload/back/forward restore the server-selected result set.
+- Category and brand catalog-wide URLs and GraphQL filters use taxonomy names, not `customId`. Local visible filters still use `customId` for dropdown compatibility.
+- Base pagination renders numbered pages 1-7. Filtered modes render Previous/current-page/Next and infer Next from `products.length === 50`.
+- **Correction (2026-07-27, verified by live GraphQL introspection):** Strapi *does* expose pagination metadata. `products_connection(pagination: $pagination)` returns `pageInfo { total page pageSize pageCount }` alongside `nodes { ... }`, and it accepts the same `ProductFiltersInput` as `products`. Earlier notes here, in `AGENTS.md`, and in `ai-research/epics/plp-functionality-seo.epic.md:398-402` claim no metadata is available; that is wrong. `KNOWN_PRODUCT_TOTAL = 333`, the derived 7-page ceiling, and the response-length next-page inference are all workarounds for an assumption that no longer holds. Migrating to `products_connection` is a deliberate open decision, not a bug fix — see `ai-research/stories/plp-seo-readiness.story4.md` (Catalog Behavior I).
+- Strapi's Product content-type also has `description` (text) and a unique `customId`; no frontend query selects either. Genuinely absent **on Product**: image/media, `slug`, product-level SKU, `availability`/`stock`, `currency`. A `shared.seo` component (`metaTitle`, `metaDescription`, `shareImage`) exists in the backend but is attached to no content-type.
+- **`product_variant` contract (verified 2026-07-30, backend repo + live introspection):** fields are `product` (manyToOne relation), `diameter` (string, required), `quantity` (int, required, min 1), `material`, `packageQuantity`, `measurementUnit`, `screwHeadType` (enum), `fastenersComponents` (enum), `internalId` (string), `pricing` (`shared.pricing` component: `price` decimal required min 0, `pricePromotion` **string**), and `stock` (int). Only `internalId`, `diameter`, and `pricing.price` are selected today. Note that `stock`, `measurementUnit`, and `packageQuantity` *do* exist here even though the Product-level line above says availability is absent — the two content types differ.
+- **`internalId` is NOT required and NOT unique** on `product_variant`. It is display text (the seller's SKU), never a key. `productVariant.documentId` is `ID!` and is the stable identity — but no frontend query selects it. Anything matching or deduplicating variants must use `documentId`.
+- **Top-level variant queries exist:** `productVariant(documentId: ID!)`, `productVariants(filters: ProductVariantFiltersInput, pagination, sort, status)`, and `productVariants_connection(...)`. `{ documentId: { in: [...] } }` batches a set of variants in one request without going through `product(documentId:)`. The frontend only uses the nested `product { product_variants }` path today. **Correction (2026-08-01):** `documentId` is an `IDFilterInput`, not a `StringFilterInput` as earlier notes here and in `ai-research/epics/cart-quote-whatsapp.epic.md` (Strapi Contract II) record — an explicitly typed GraphQL variable must be `[ID!]`. `internalId` is a `StringFilterInput`.
+- **Strapi's GraphQL default page size is 10, and there is no server-side maximum (verified 2026-08-01, live).** Omitting `pagination` returns the first 10 records with no error and no indication of truncation; `pagination: { limit: 1000 }` returns 1000. The `maxLimit: 100` in the backend's `config/api.ts` is a **REST** setting and does not apply to GraphQL — `config/plugins.ts` configures no GraphQL limit at all. **Every collection query must pass an explicit `pagination`.** Every existing adapter in `global.lib.ts` does (`pageSize: 50` for products, `100` for variants), so this has never bitten — but a new query written without one silently returns 10 rows, which reads as "the rest of the records do not exist" to any caller that infers absence.
+- **A `documentId` in an `in` filter that matches no record is silently omitted from the results** — the query succeeds and the array is just shorter (verified 2026-08-01, live). This makes "asked for it, did not get it back" a sound deletion check, and it also makes a pagination-truncated response indistinguishable from a batch of real deletions.
+- **Draft & Publish is enabled on both `product` and `product-variant`**, and a query with no `status` argument returns published entries only (verified 2026-08-01). An unpublished record is therefore absent from results and, to any absence-means-deleted check, looks deleted.
+- **`productVariant.pricing` is nullable; `price` inside it is `Float!`** (verified 2026-08-01). There is no such thing as a null price — only a variant with no `pricing` component at all. `ProductVariantsDrawer.tsx:77` and `ProductCard.tsx:79` both dereference `variant.pricing.price` unguarded.
+- Strapi's full content-type list is `about`, `brand`, `category`, `global`, `product`, `product-variant`. There is no order, quote, cart, lead, customer, or contact-submission content type. Mutations are declared in the GraphQL schema; whether the API token's role permits them is stored in the database, not the repo, and is unverified.
+- Empty page 1 can render an empty state. Empty page `>1` redirects to the same mode/value page 1; speculative `notice=end` redirects back to the previous populated page and shows `No hay más resultados.`.
+- `src/app/loading.tsx` provides route loading feedback. `src/app/error.tsx` provides Spanish retry UI for server-rendered catalog failures.
+- `ProductVariantsDrawer` fetches variants when opened, formats prices with `formatNumberToCurrency`, and sorts by numeric price ascending.
+- `formatNumberToCurrency` renders `$1,234.50 MXN` (fixed business format via a plain decimal `Intl.NumberFormat` plus an explicit `$...MXN` template, not a locale currency formatter). Used by both `ProductCard` and `ProductVariantsDrawer`.
+- `ProductCard` now derives `isSingleVariant = product.variantCount === 1` and uses that single signal for **both** the price block (single `Precio` instead of `Desde`/`Hasta`) and the footer branch (one `Agregar 1 pieza` CTA instead of the two-CTA footer). `Product.hasOneProductVariant` still exists on the type/queries but the card no longer branches on it — two denormalized signals answering one question was a drift risk (cart epic Story 1, decision D2). `variantCount` of `null`/`0` (three known bad records, see `docs/improvement.md`) keeps the standard card.
+- `GET_PRODUCT_VARIANTS` now also selects `documentId` (`ProductVariant.documentId` / `ProductVariantUI.documentId`, both required). This is the cart's line-identity key — `internalId` is neither required nor unique on `product_variant` and was ruled out as a key during the cart epic's backend research. `ProductVariantsDrawer` keys its selection/quantity state and cart line composition by `documentId`, not array index (the variant array is re-fetched and re-sorted on every open) and not `internalId`.
+- Each variant mapped by `ProductVariantsDrawer` still retains `internalId` (via `ProductVariantUI.internalId`) purely as seller-facing display text carried onto the cart line for the future WhatsApp message; it is never rendered and never used as a key.
+
+## API Route Inventory
+
+| Route                     | Methods | Purpose                                                                                                                                |
+| ------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/preferences`        | `POST`  | Requires JSON `{ "theme": "light"                                                                                                      | "dark" }`; saves the `tehesa-theme` cookie and returns HTTP 201 `{ success: true, themeChangedTo }`. Invalid input (missing, null, non-string, unsupported, extra field, or malformed JSON) returns HTTP 400 with `PRF_VAL_001`. |
+| `/api/catalog/products`   | `GET`   | `?page=1..7&pageSize=50` (fixed). Returns paged products.                                                                              |
+| `/api/catalog/category`   | `GET`   | `?category=...&pageSize=50` (fixed). Validates category name against the live Strapi taxonomy; returns matching products.              |
+| `/api/catalog/brand`      | `GET`   | `?brand=...&pageSize=50` (fixed). Validates brand name against the live Strapi taxonomy; returns matching products.                    |
+| `/api/catalog/categories` | `GET`   | Dynamic category taxonomy list from Strapi.                                                                                            |
+| `/api/catalog/brands`     | `GET`   | Dynamic brand taxonomy list from Strapi.                                                                                               |
+| `/api/catalog/variants`   | `GET`   | `?documentId=...&pageSize=100` (fixed). Returns product variants.                                                                      |
+| `/api/catalog/search`     | `GET`   | `?q=...` (trimmed, allowlisted, capped at 100 chars). Returns products whose `name` contains the term. First page only, `pageSize=50`. |
+| `/api/catalog/revalidate` | `GET`   | `?variantIds=&productIds=` (comma-separated `DOCUMENT_ID_PATTERN` ids, each list optional and independently capped at `REVALIDATE_MAX_IDS = CART_MAX_LINES`). Batches one `productVariants(documentId: { in })` and one `products(documentId: { in })` query into `{ variants: RevalidatedVariant[], products: RevalidatedProduct[] }`. Both lists absent/blank → `{ variants: [], products: [] }` with **no Strapi query issued**. Malformed id → `CAT_VAL_007` (empty segment / over max length / unsafe pattern / over count, one message per cause). |
+
+Catalog routes share an envelope: `{ success: true, data }` for success, `{ success: false, code, message }` for failure. `code` is one of the `CAT_*` constants in `src/shared/constants/catalog.constants.ts` (`CAT_ENV_001`, `CAT_VAL_001..007`, `CAT_NF_001..003`, `CAT_ERR_001`). All catalog routes return `400` on any failure and require `STRAPI_HOST` + `STRAPI_API_TOKEN` at runtime; missing config is `CAT_ENV_001`. Route handlers wrap server actions in `src/shared/lib/global.lib.ts` and never call Apollo directly; the client never imports `global.lib.ts`. Clients parse envelopes through `fetchCatalog` + `catalogErrorToSpanish` in `src/shared/utils/catalog-api.utils.ts`. The `/api/catalog/search` route validates the `q` term (trim, allowlist of Unicode letters/numbers + ``` -_.,&()"/°# ```, max 100 chars) and returns `CAT_VAL_006` on invalid input; the internal `message` differentiates empty/length/pattern for server-side logs while the client receives the same `CAT_VAL_006` code.
+
+There are no auth, checkout, order, or backend proxy route handlers in this repo at the time of writing.
+
+## Theme And Cookies
+
+- Cookie key: `THEME_COOKIE_KEY = 'tehesa-theme'`.
+- `getThemePreference()` reads the cookie server-side and returns `Promise<AppTheme>`; missing, empty, or unsupported values fall back to `light` without mutating the cookie.
+- `saveThemeCookie(theme)` accepts `AppTheme` and validates at runtime; invalid values reject and do not call `cookies().set`. Valid writes use `httpOnly: true`, `secure: true`, `sameSite: "strict"`.
+- `NextThemesProvider` defaults to `light` (matches the cookie helper, the Zustand initial state, and `DEFAULT_THEME`).
+- `isAppTheme(value)` in `src/shared/constants/global.constants.ts` is the shared runtime guard reused by both the cookie helper and the preference route; the allowlist cannot drift between them.
+- Client theme UI should use the existing `ChangeThemeStoreProvider`, `useChangeThemeStore`, `ToggleDarkMode`, and `/api/preferences` flow rather than writing cookies directly.
+
+## Catalog Query String Parsing
+
+- All catalog and page-string parsers are strict digits-only: empty strings, decimals, signs, whitespace padding, numeric prefixes/suffixes, and mixed content are rejected before numeric conversion.
+- Product `page` accepts only `1..7`; wide-search `page` (category, brand, search) accepts any positive integer with no upper bound. Fixed `pageSize` values (`50` for products, `100` for variants) require the exact configured numeric string.
+- `src/app/page.tsx` canonicalizes malformed, nonpositive, out-of-range base pages, unknown modes, and missing/invalid mode values to `/?page=1` with `redirect()`.
+- Category and brand public params are decoded names, trimmed, capped at 100 characters, and constrained by `SEARCH_TERM_PATTERN`; document IDs remain limited to the existing safe pattern (`/^[A-Za-z0-9_-]+$/`) and 30-character maximum.
+- Search terms remain trimmed, required, maximum 100 characters, and constrained by the existing Unicode/punctuation allowlist.
+- **`SEARCH_TERM_PATTERN` was widened (Story 3, Phase 2)** to admit `"`, `/`, `°`, and `#`, fixing the silent `redirectToBase()` drop for product names/diameters containing those characters (previously 10.2% of product names, 56.3% of variant diameters). Both the pattern and its complement now derive from one source, `SEARCH_TERM_CHARS` in `catalog.constants.ts`: `SEARCH_TERM_PATTERN` (validates input) and `SEARCH_TERM_UNSAFE_PATTERN` (used by `buildProductSearchHref`, see below) can never drift apart. `_` remains allowlisted and is a SQL `LIKE` wildcard under `containsi` — pre-existing, unrelated to this widening. Genuinely unsafe characters (`<`, `>`, `%`, backtick, `*`, `\`) are still rejected.
+- Widening `SEARCH_TERM_PATTERN` also affects `parseTaxonomyName` (category/brand names reuse the same pattern) — any test asserting rejection with a character that's since become legal (e.g. `/`) needs re-pointing at a still-unsafe one, not deletion.
+
+## Category And Brand Upstream Errors
+
+- `fetchProductsByCategory` and `fetchProductsByBrand` have explicit `Promise<Product[]>` return types and no local try/catch. Rejected Apollo work propagates to the route's edge handler and becomes `CAT_ERR_001` (HTTP 400); a successful GraphQL response with a missing/null `products` field still returns `[]`.
+- The five other Apollo-backed helpers (`fetchProducts`, `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`) follow the same "throw at the boundary, catch at the edge" contract. The shared contract is documented in a JSDoc block at the top of `src/shared/lib/global.lib.ts`.
+
+## SEO And Metadata
+
+- `src/app/layout.tsx` sets production root metadata (`metadataBase`, title, description, OG/Twitter — no OG image, no verification meta tag) from `src/shared/constants/seo.constants.ts`.
+- `src/app/page.tsx` exports `generateMetadata`, which calls the pure `buildCatalogMetadata` (`src/shared/utils/seo.utils.ts`). It parses `searchParams` via `parseCatalogParams` only — it never fetches products and never calls `getCatalogSelection` (which can `redirect()`), because Apollo clients are per-call with no request-level dedupe and a fetch here would double every catalog query.
+- Per-URL policy: `/` and `/?page=1` canonicalize to `/` (duplicates by construction); base/category/brand pages are `index, follow`; `?mode=name&q=` is `noindex, follow`. Canonicals never carry the transient `notice=end` param. Titles never claim `de 7`/a total page count, since `PRODUCT_PAGE_MAX` is derived from the stale `KNOWN_PRODUCT_TOTAL`.
+- JSON-LD (`WebSite`+`SearchAction` on base mode, per-page `ItemList` of products, `BreadcrumbList` on category/brand modes) is built by `buildCatalogJsonLd` and rendered as a `<script type="application/ld+json">` in the page body (it needs product data, so it can't live in `generateMetadata`). `toJsonLdHtml` escapes `<` before serializing — the trust boundary for Strapi-sourced product/taxonomy strings. `Product` nodes carry no `image`, `url`, `@id`, `sku`, `availability`, or `description` (none exist in the Strapi contract selected today); `offers` is omitted entirely when `minPrice`/`maxPrice` is null.
+- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes (`/robots.txt`, `/sitemap.xml`). The sitemap lists base pages plus one URL per live category/brand (from `fetchCategories`/`fetchBrands`), never `?mode=name` URLs, and never a fabricated `lastModified`/`changeFrequency`/`priority`. Its taxonomy fetch degrades to base-pages-only on failure so a Strapi outage never fails `pnpm build`.
+- Pagination controls in `src/features/Home/Home.tsx` (numbered pages, base prev/next, filtered Anterior/Siguiente) are real `next/link` anchors when a target exists, or a non-focusable `<span aria-disabled="true">` otherwise — never `href="#"`. Styled via HeroUI's own `buttonVariants()`/`pagination__link` CSS classes so the visual language is unchanged.
+- Deliberately out of scope (tracked in `docs/improvement.md`): `Organization`/`LocalBusiness` JSON-LD (no business data in the repo), OG/Twitter images (no asset), Search Console verification meta tag (verified by DNS instead), and `products_connection` adoption for a live sitemap page count. (The WhatsApp CTA landed with Story 4 — see the `/cotizar` WhatsApp hand-off section below.)
+
+## Environment Variables
+
+Required for Strapi-backed catalog data:
+
+- `STRAPI_HOST` - Strapi GraphQL endpoint.
+- `STRAPI_API_TOKEN` - bearer token sent by Apollo Client.
+
+Optional:
+
+- `NEXT_PUBLIC_SITE_URL` - absolute production origin for `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000` when unset; never throws. First `NEXT_PUBLIC_*` variable in the repo.
+- `NEXT_PUBLIC_WHATSAPP_NUMBER` (Story 4) - the seller's WhatsApp click-to-chat number (`522224417330` per the epic's research; verify the `52…` vs `521…` variant resolves to the right chat before relying on it), read once at module scope in `src/shared/constants/whatsapp.constants.ts`. Unset renders `/cotizar`'s WhatsApp CTA as a non-focusable `aria-disabled` span with an explanatory message instead of throwing — same "never throw on unset" pattern as `NEXT_PUBLIC_SITE_URL`. Not yet listed in this repo's root `CLAUDE.md` "Required env vars" section as of Story 4 (docs-only follow-up, flagged but not actioned).
+
+Values are expected in `.env.local` for local development. Without them, Apollo queries from server components/actions can fail or return empty data.
+
+## Commands
+
+| Command                  | Purpose                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `pnpm dev`               | Start Next dev server with Turbopack.                                          |
+| `pnpm build`             | Production build with Turbopack; also runs type checking.                      |
+| `pnpm start`             | Start a built Next app.                                                        |
+| `pnpm lint`              | Run ESLint flat config extending `next/core-web-vitals` and `next/typescript`. |
+| `pnpm test`              | One-shot Jest run with coverage output (no threshold enforced).                |
+| `pnpm test:watch`        | Jest in watch mode.                                                            |
+| `pnpm exec tsc --noEmit` | Standalone TypeScript check; there is no package script for this.              |
+| `pnpm sync:prompts`      | Copy OpenCode commands to GitHub prompts and project Claude skills.            |
+| `pnpm design:lint`       | Validate `DESIGN.md` tokens and component contrast (exit 1 on errors).         |
+| `pnpm design:export`     | Emit `DESIGN.md` tokens as a Tailwind v4 `@theme` CSS block to stdout.         |
+
+## Prompt Sync
+
+`ai-skills/<skill>/` is the single source of truth for every skill (`research`, `plan`, `implement`, `unit-test`, `check-design`, `task-effort-estimator`, `pr-describer`). `.claude/skills/<skill>`, `.opencode/skill/<skill>`, `.opencode/command/<skill>.md`, and `.github/prompts/<skill>.prompt.md` are all symlinks into it — `.opencode/command/<skill>.md` and `.github/prompts/<skill>.prompt.md` point straight at `ai-skills/<skill>/COMMAND.md`; edit only `ai-skills/<skill>/COMMAND.md` (and, since this repo keeps them identical, mirror the edit into `SKILL.md`, or just run the sync).
+
+`scripts/sync-opencode-commands.mjs` discovers every `.opencode/command/*.md` file (resolved through the symlink above, so really every `ai-skills/*/COMMAND.md`) and copies it to the one remaining generated target:
+
+- `.claude/skills/<command>/SKILL.md` (resolves through the `.claude/skills/<command>` symlink into `ai-skills/<command>/SKILL.md`)
+
+`.github/prompts/<command>.prompt.md` is a symlink straight to `ai-skills/<command>/COMMAND.md`, not a generated copy — it needs no sync step.
+
+Edit `ai-skills/<command>/COMMAND.md` first and run `pnpm sync:prompts`; do not hand-edit the generated `SKILL.md` copy.
+
+## CI And Release Workflow
+
+- PRs target `develop`.
+- `check-label.yml` requires at least one of `major`, `minor`, or `patch` on pull requests. CI fails when none are present.
+- `develop-pipeline.yml` runs on closed PRs to `develop`; when merged, it checks labels, bumps `package.json` with `npm version --no-git-tag-version`, tags `vX.Y.Z`, pushes tags, and prepends a generated entry to `CHANGELOG.md`.
+- `test.yml` runs on `pull_request` and on pushes to `develop`. It checks out the repo, enables pnpm via Corepack, sets up Node 22 with pnpm caching, runs `pnpm install --frozen-lockfile`, then `pnpm lint` and `pnpm test --coverage`, and uploads the `coverage/` directory as an artifact (`if-no-files-found: error`). It does not duplicate label enforcement, release versioning, tagging, or changelog behavior.
+- Do not manually bump `package.json` version or edit `CHANGELOG.md` for normal PR work unless explicitly requested.
+
+## Testing
+
+- Framework: Jest 30 + Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`) wired through `next/jest.js` in `jest.config.ts`.
+- Discovery: tests live in root `__tests__/` (not co-located with source). Pattern is `__tests__/**/*.{test,spec}.{ts,tsx}`.
+- Setup: `jest.setup.ts` loads `@testing-library/jest-dom` once and shims `window.matchMedia` (the only browser shim). `__tests__/test-utils.tsx` re-exports Testing Library and wraps `render` in the existing `Providers` component from `@/app/providers`. The `Providers` component is currently pass-through; using it keeps the app-provider seam stable.
+- Aliases: Jest mirrors `tsconfig.json` (`^@/(.*)$` → `src/$1`) and adds `^@__tests__/(.*)$` → `__tests__/$1` for the test helper. Both must be listed in `tsconfig.json` `paths` for TypeScript to resolve them.
+- Coverage: emitted via `pnpm test`; no threshold is enforced. Report writes to `coverage/` which is explicitly gitignored by `.gitignore` (`/coverage`) and also ignored by `eslint.config.mjs`; do not commit it.
+- CI: `pnpm lint` + `pnpm test --coverage` run on every pull request and on pushes to `develop` via `.github/workflows/test.yml`. The coverage artifact is uploaded with `if-no-files-found: error`.
+- Authoring and repair: canonical rules live in `docs/UNIT_TESTING_GUIDELINES.md`. The `unit-test` skill (`ai-skills/unit-test/SKILL.md`, symlinked into `.claude/skills/unit-test` and `.opencode/skill/unit-test`) and the `/unit-test` command (`ai-skills/unit-test/COMMAND.md`, symlinked as `.opencode/command/unit-test.md` and `.github/prompts/unit-test.prompt.md`) cover create and fix flows without requiring an approved plan.
+
+## Styling And UI
+
+- Preserve HeroUI as the component system unless a task explicitly changes UI libraries.
+- `tailwind.config.js` currently only sets `darkMode: "class"`; Tailwind v4 auto-detects app content.
+- `darkMode: "class"` is required for next-themes/HeroUI dark mode behavior.
+- Existing UI copy is Spanish (`Catalogo de productos`, `Limpiar filtros`, `Ver detalles`, etc.). Preserve language consistency unless the task is localization-related.
+- `ProductCard` uses `useMediaQuery()` for mobile-aware card header/title layout.
+- HeroUI v3 `Button` ships exactly six variants — `primary`, `secondary`, `tertiary`, `ghost`, `outline`, `danger` (`@heroui/styles/dist/components/button/button.styles.js`). There is no `light`/`flat`/`bordered`/`solid`; those are NextUI/HeroUI v2 names and will silently fall through.
+- The installed `@heroui/react@^3.2.2` already includes `NumberField` (`Root`/`Group`/`Input`/`IncrementButton`/`DecrementButton` — a ready-made `− n +` stepper) and `Toast` (`Toast.Provider` plus a module-level imperative `toast()` / `toast.success()` / `toast.danger()` queue, `DEFAULT_TOAST_TIMEOUT = 4000`, `maxVisibleToasts` for stacking). Check `node_modules/@heroui/react/dist/components/` before writing either from scratch. Two gotchas: React Aria's `NumberField` emits `NaN` from `onChange` when the input is cleared, and its increment/decrement buttons carry English default `aria-label`s, so Spanish labels must be passed explicitly.
+- HeroUI v3 also ships `AlertDialog` (`Root`/`Trigger`/`Backdrop`/`Container`/`Dialog`/`Header`/`Heading`/`Body`/`Footer`/`Icon`/`CloseTrigger`) — the destructive-confirm primitive, so a confirmation never needs `window.confirm` or hand-written focus management. `Root` is React Aria's `DialogTrigger`, which supplies the focus trap and focus-return-to-trigger; `Dialog` sets `role="alertdialog"` and `Heading` carries `slot="title"`, so the dialog is named by its heading; `Container` takes `placement` (`auto`/`top`/`center`/`bottom`). Two gotchas: **`Backdrop` defaults `isKeyboardDismissDisabled = true`, so `Esc` does *not* close** unless you pass `isKeyboardDismissDisabled={false}` (`isDismissable` likewise defaults to `false`); and `CloseTrigger` renders an icon-only `CloseButton` with a hardcoded English `aria-label="Close"` that wins over any text child — for a named text action like `Cancelar`, use `Dialog`'s `({ close }) => …` render prop with a real `Button` instead.
+- HeroUI v3 `Pagination.Link` / `Pagination.Previous` / `Pagination.Next` render a `react-aria-components/Button` and accept no `href`; only `Pagination.Root` / `Content` / `Item` are polymorphic (`nav` / `ul` / `li`). Their styling comes from element-agnostic CSS classes (`.pagination__link` in `@heroui/styles/dist/components/pagination.css`, with `[data-active="true"]`, `[aria-disabled="true"]`, and `:focus-visible` rules), so an `<a className="pagination__link">` renders identically. That is the supported way to build crawlable pagination without leaving HeroUI's visual language.
+- **HeroUI v3 `TextField` + `react-hook-form`: `defaultValue` goes on `TextField`, not `Input`** (Story 4, `ContactForm.tsx`). `TextField` (built on `react-aria-components`) manages its own controlled `value` internally via `useTextField`/`useControlledState` and passes it down through context to `Input`, overriding any `defaultValue` set directly on `Input` — an RHF-`register()`ed, otherwise-uncontrolled `Input` silently renders empty. Set `defaultValue` on the surrounding `TextField`; typing still reaches RHF's tracked state normally (confirmed via `handleSubmit`), so no `Controller` is needed.
+
+## Conventions And Gotchas
+
+- Path alias: `@/*` maps to `./src/*`.
+- Add `"use client"` to files that use hooks, browser APIs, router hooks, Zustand hooks, HeroUI hooks, or client-only libraries.
+- Keep domain UI under `src/features/<Feature>/`; keep cross-cutting UI/helpers under `src/shared/`; `src/components` currently only contains `ProductCard`.
+- New state stores should follow the SSR-safe provider/store pattern already used under `src/zustand`.
+- Do not add TanStack Query, Redux, form libraries, auth flows, or test tooling unless the story explicitly requires them.
+- GraphQL schema knowledge is inferred from `src/shared/queries/global.queries.ts` and TypeScript types. Confirm backend/Strapi contract before normalizing fields or changing query shapes.
+- Product category and brand lists are hardcoded in `src/shared/types/global.types.ts`; there is a TODO questioning whether this should remain hardcoded. The catalog API uses the live Strapi taxonomy (`GET_CATEGORIES` / `GET_BRANDS`) for validation, not the hardcoded arrays.
+- Catalog API route handlers validate `STRAPI_HOST` + `STRAPI_API_TOKEN` before calling the Apollo client; a missing env var is `CAT_ENV_001`, never a leaked configuration error. Validation constants and `CAT_*` codes live in `src/shared/constants/catalog.constants.ts`; shared helpers (envelopes, param parsing) live in `src/app/api/catalog/_utils.ts`.
+- Apollo-backed helpers in `global.lib.ts` do not catch locally; route handlers or route error boundaries own failure mapping/recovery.
+- `useCatalogSearch` in `src/features/Home/useCatalogSearch.ts` now owns drawer input and validation state only. `Home` builds canonical URLs and treats server props as authoritative catalog state.
+- `useChangeThemeStore` has **zero consumers** (verified 2026-07-31). `ToggleDarkMode` uses next-themes directly, so the whole `change-theme` Zustand store/provider pair is dead code kept alive only by `ChangeThemeStoreProvider` in `page.tsx`. Do not treat it as the reference theme path; the provider/store *pattern* it demonstrates is still the one to copy (`cart.provider.tsx` does).
+- `ProductVariantsDrawer.tsx` carries **no `"use client"` directive** and works only because every importer is a client component. A new importer must be `"use client"` too.
+- Product image rendering in `ProductCard` is commented out and currently references localhost Strapi URLs. Treat image support as unfinished.
+- `@heroui/react` v3 is ESM-only and its `package.json` `exports['.']` exposes only an `import` entry (no `default`/`require`). Jest in CJS mode cannot resolve it through the package name. `jest.config.ts` maps `^@heroui/react$` to its `dist/index.js` to bypass the `exports` field, and `next.config.ts` lists the HeroUI + React-Aria + Radix + Framer-Motion + tailwind-variants + input-otp + `@jridgewell/*` + `@cspotcode/*` ecosystem in `transpilePackages` so SWC transforms their ESM. If you add a new client component that imports a different ESM-only package, add it to `transpilePackages` and confirm it resolves through the SWC transform.
+
+## Key Files
+
+| File                                                                                       | Purpose                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AGENTS.md`                                                                                | Compact agent instructions: commands, architecture, env, CI, styling.                                                                                                                               |
+| `DESIGN.md`                                                                                | Visual design system tokens + rationale; lint with `pnpm design:lint`.                                                                                                                              |
+| `docs/UNIT_TESTING_GUIDELINES.md`                                                          | Canonical Jest/Testing Library authoring rules; the only full copy of test policy.                                                                                                                  |
+| `docs/ANALYTICS_EVENT_CONTRACT.md`                                                         | PLP analytics event contract (spec only; no analytics code ships yet). Requires product/marketing sign-off before an instrumentation story starts.                                                 |
+| `ai-skills/*/SKILL.md`, `ai-skills/*/COMMAND.md`                                           | Source of truth for every skill/command (`research`, `plan`, `implement`, `unit-test`, `check-design`, `task-effort-estimator`, `pr-describer`). `.claude/skills/<name>`, `.opencode/skill/<name>`, `.opencode/command/<name>.md`, and `.github/prompts/<name>.prompt.md` are symlinks into this folder. Edit `ai-skills/<name>/COMMAND.md`, then run `pnpm sync:prompts` to regenerate `ai-skills/<name>/SKILL.md` — `.github/prompts/*.prompt.md` needs no regeneration, it's a direct symlink to `COMMAND.md`. |
+| `ai-skills/REPO_CONTEXT.md`                                                                | This file. Moved here from the repo root so it lives alongside the rest of the agent tooling.                                                                                                       |
+| `package.json`                                                                             | Scripts and dependencies.                                                                                                                                                                           |
+| `next.config.ts`                                                                           | Minimal Next config.                                                                                                                                                                                |
+| `tsconfig.json`                                                                            | Strict TypeScript, bundler module resolution, `@/*` path alias.                                                                                                                                     |
+| `eslint.config.mjs`                                                                        | ESLint flat config with Next presets.                                                                                                                                                               |
+| `postcss.config.mjs`                                                                       | Tailwind v4 PostCSS plugin.                                                                                                                                                                         |
+| `tailwind.config.js`                                                                       | Minimal Tailwind config with class dark mode.                                                                                                                                                       |
+| `scripts/sync-opencode-commands.mjs`                                                       | Syncs `ai-skills/*/COMMAND.md` into `.claude/skills/*/SKILL.md`. `.github/prompts` is a symlink, not a sync target.                                                                                 |
+| `.github/workflows/check-label.yml`                                                        | PR label validation for `major`, `minor`, or `patch`.                                                                                                                                               |
+| `.github/workflows/develop-pipeline.yml`                                                   | Develop merge release/changelog automation.                                                                                                                                                         |
+| `src/app/layout.tsx`                                                                       | Root layout (`async`), HeroUI provider, next-themes provider, renders `Header`.                                                                                                                     |
+| `src/app/page.tsx`                                                                         | Catalog page, pagination param handling, server data fetch.                                                                                                                                         |
+| `src/app/cotizar/page.tsx`                                                                 | Quote page route + `generateMetadata` (`noindex, follow`).                                                                                                                                          |
+| `src/app/loading.tsx`                                                                      | Accessible catalog route loading fallback.                                                                                                                                                          |
+| `src/app/error.tsx`                                                                        | Catalog route error boundary with Spanish retry UI.                                                                                                                                                 |
+| `src/app/apollo-client.ts`                                                                 | Apollo Client factory using Strapi env vars.                                                                                                                                                        |
+| `src/app/robots.ts`                                                                        | `/robots.txt` — disallows `/api/`, points to the sitemap.                                                                                                                                           |
+| `src/app/sitemap.ts`                                                                       | `/sitemap.xml` — base pages + live category/brand URLs; degrades to base pages if Strapi is unreachable.                                                                                           |
+| `src/app/api/preferences/route.ts`                                                         | Theme cookie API route.                                                                                                                                                                             |
+| `src/app/api/catalog/_utils.ts`                                                            | Shared catalog route helpers: env validation, success/error envelopes, param parsing.                                                                                                               |
+| `src/app/api/catalog/{products,category,brand,categories,brands,variants,search}/route.ts` | Catalog API route handlers (thin wrappers over server actions).                                                                                                                                     |
+| `src/shared/constants/catalog.constants.ts`                                                | `CAT_*` error codes, `MSG_CAT_*` internal messages, and validation constants (page bounds, page sizes, documentId pattern/length, `SEARCH_TERM_MAX_LENGTH = 100`, `SEARCH_TERM_PATTERN` allowlist). |
+| `src/shared/utils/catalog-api.utils.ts`                                                    | Client-side `fetchCatalog<T>()` envelope wrapper, `CatalogApiError` with `code`, and `catalogErrorToSpanish` code-to-Spanish-copy map.                                                              |
+| `src/shared/constants/seo.constants.ts`                                                    | `SITE_URL` (from `NEXT_PUBLIC_SITE_URL`), `SITE_NAME`, `SITE_TITLE`, `SITE_DESCRIPTION`, `SITE_LOCALE`, the title-fragment constants used by the per-mode builders, and `QUOTE_TITLE`/`QUOTE_DESCRIPTION` for `/cotizar`'s literal `generateMetadata`. |
+| `src/shared/utils/seo.utils.ts`                                                            | `buildCatalogMetadata` (per-URL title/description/canonical/robots), `buildCatalogJsonLd` (`WebSite`+`SearchAction`, `ItemList`, `BreadcrumbList`), `toJsonLdHtml` (escapes `<` before `<script>`). |
+| `src/features/Home/Home.tsx`                                                               | Client catalog controller; pagination controls render as `next/link` anchors or disabled `<span>`s.                                                                                                |
+| `src/features/Home/useCatalogSearch.ts`                                                    | Hook owning catalog-wide name-search state, drawer state, and mode coordination.                                                                                                                    |
+| `src/features/Pagination/{types.pagination,utils.pagination}.ts`                           | Feature-local catalog URL parsing/building helpers and types for server URL orchestration, plus the pure `parseCatalogParams` and canonical-URL builders (`buildCanonicalPath`, `buildBasePagePath`, `buildModeUrl`) shared with SEO metadata/sitemap/anchor pagination.                          |
+| `src/features/ProductListing/*.tsx`                                                        | Listing grid, search input, category and brand dropdowns.                                                                                                                                           |
+| `src/features/CatalogSearchDrawer/CatalogSearchDrawer.tsx`                                 | HeroUI right-side drawer with name-search form plus the catalog-wide category/brand dropdowns.                                                                                                      |
+| `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`                             | Variant drawer and price display; selection/quantity keyed by variant `documentId`, uses `QuantityStepper`. Default mode's CTA adds lines to the cart store; optional `initialQuantity`/`onConfirmVariant` props put it in single-select upgrade mode for `/cotizar`'s `Elegir medida`. |
+| `src/features/QuotePage/QuotePage.tsx`                                                     | `/cotizar` line list: hydration-mounted gate, empty state, subtotal, `Vaciar lista` `AlertDialog` confirmation, wires the drawer's upgrade mode, the revalidation hook, checking/failed banners, and focus-to-list-region when a focused stepper's line disappears (tracked via focus/blur capture, not `document.activeElement` post-hoc — it's already reset by the time an effect could read it). |
+| `src/features/QuotePage/QuoteLineRow.tsx`                                                  | Five quote line states: priced (incl. changed-price with struck previous price + `Total actual`), variant-less, variant-gone, product-gone, no-price (`pricing: null`); `internalId` never rendered. |
+| `src/features/QuotePage/quote.utils.ts`                                                    | `getQuoteTotals(lines, checks?)` — pure, integer-cents subtotal + product/piece counts, checks-aware; `buildProductSearchHref` — longest safe segment of a product name as a `/?mode=name&q=` href, `null` if nothing survives. |
+| `src/features/QuotePage/useQuoteRevalidation.ts`                                           | Batches one `/api/catalog/revalidate` call per mount (gated on hydration, never refired by a quantity edit); resolves each line to `priced`/`no-price`/`variant-gone`/`product-gone` (product-gone takes precedence); `retry()` refires the whole batch. Checks are ephemeral React state only. |
+| `src/components/ProductCard.tsx`                                                           | Product card UI; two-CTA footer (`Explorar…` + tertiary `Agregar y elegir después`) or, when `variantCount === 1`, a single `Agregar 1 pieza` CTA with pending/failure states.                    |
+| `src/shared/lib/global.lib.ts`                                                             | Server actions for Strapi reads and theme cookies.                                                                                                                                                  |
+| `src/shared/queries/global.queries.ts`                                                     | GraphQL operations.                                                                                                                                                                                 |
+| `src/shared/types/global.types.ts`                                                         | Product/domain types plus hardcoded category and brand options, plus the `CartLine` union and `CartContact`.                                                                                       |
+| `src/shared/constants/cart.constants.ts`                                                   | Cart storage key, schema version, quantity/line-count bounds, contact validation constants.                                                                                                        |
+| `src/shared/ui/atoms/QuantityStepper.tsx`                                                  | Shared `− n +` stepper (HeroUI `NumberField` composition); used by the drawer and reserved for `/cotizar` (Story 2).                                                                                |
+| `src/shared/ui/atoms/CartCount.tsx`                                                        | Header cart badge; mounted-guard pattern, now a real `next/link` to `/cotizar` with `aria-current="page"` there.                                                                                    |
+| `src/zustand/provider/change-theme.provider.tsx`                                           | Theme store provider and hook.                                                                                                                                                                      |
+| `src/zustand/store/change-theme.store.ts`                                                  | Vanilla Zustand theme store.                                                                                                                                                                        |
+| `src/zustand/provider/cart.provider.tsx`                                                   | Cart store provider and `useCartStore` hook.                                                                                                                                                        |
+| `src/zustand/store/cart.store.ts`                                                          | Vanilla Zustand cart store: persist config, rehydrate validation, add/increment/cap logic, plus `setLineQuantity`/`removeLine`/`upgradeLine` (index-preserving replace, merge-on-collision).        |
+
+## External References
+
+### HeroUI v3 Documentation
+
+- **MCP server (primary):** `heroui-react` is configured in `opencode.json` via `@heroui/react-mcp`. Prefer it for component API, props, and pattern questions — it returns live v3 docs without a web fetch.
+- **LLM docs (fallback):** when the MCP is not loaded or for bulk context:
+
+| URL                                          | Scope                      |
+| -------------------------------------------- | -------------------------- |
+| https://heroui.com/react/llms.txt            | Index/summary — start here |
+| https://heroui.com/react/llms-full.txt       | Full React docs            |
+| https://heroui.com/react/llms-components.txt | Component docs only        |
+| https://heroui.com/react/llms-patterns.txt   | Patterns/composition docs  |
+
+## Open Questions
+
+- The Strapi schema is inferred from current GraphQL queries and prior research notes; there is no schema file or OpenAPI equivalent in this repo. Ground truth is the backend repo at `/home/rafael/projects/tehesa/store-tehesa-api` plus live introspection (see the pagination-metadata correction under Data Flow).
+- The production deployment target is not documented in source beyond generic Next README content and GitHub workflows.
+- Category/brand options are hardcoded; confirm whether they should eventually come from Strapi before replacing them with dynamic fetches.
+- `DESIGN.md` documents a green accent scale targeting HeroUI's `--primary-*` tokens, but HeroUI's default blue is still live in `src/app/globals.css`; remapping is a pending deliberate change, not a bug.

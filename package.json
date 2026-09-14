@@ -1,6 +1,6 @@
 {
   "name": "fe-tehesa",
-  "version": "0.23.0",
+  "version": "0.32.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -26,6 +26,7 @@
     "next-themes": "^0.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hook-form": "^7.88.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
