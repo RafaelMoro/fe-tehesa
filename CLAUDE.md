@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Browser (page?=..., theme cookie)
   ↓
 Next.js App Router (src/app)
-  ├─ Server: src/app/page.tsx (/, catalog), src/app/cotizar/page.tsx (/cotizar, quote shell), and src/app/categorias/page.tsx (/categorias, category index)
+  ├─ Server: src/app/page.tsx (/, catalog), src/app/cotizar/page.tsx (/cotizar, quote shell), src/app/categorias/page.tsx (/categorias, category index), and src/app/categorias/tornilleria/page.tsx (/categorias/tornilleria, Tornillería category page)
   ├─ Routes: /api/preferences (theme), /api/catalog/* (product queries)
   ├─ Providers: NextThemesProvider (dark mode), HeroUI provider, CartStoreProvider + Toast.Provider (providers.tsx)
   └─ Apollo Client factory (per-request) → Strapi
@@ -39,6 +39,7 @@ Next.js App Router (src/app)
   ├─ CatalogSearchDrawer (name search + category/brand filters)
   ├─ QuotePage (/cotizar line list, subtotal, clear-list confirmation)
   ├─ CategoriesPage (/categorias breadcrumb, hero + WhatsApp panel, category grid)
+  ├─ CategoryPage (/categorias/tornilleria breadcrumb, hero + WhatsApp panel, in-memory subcategory/brand/search filters, product grid)
   └─ ProductCard (shared, mobile-aware)
         │
   Shared (src/shared)
@@ -79,10 +80,11 @@ See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a
 | `src/app/api/preferences/` | POST endpoint for theme cookie persistence |
 | `src/app/cotizar/page.tsx` | Quote route `/cotizar` — server shell + `generateMetadata` (`noindex, follow`) around the `"use client"` `QuotePage` feature |
 | `src/app/categorias/page.tsx` | Categories index route `/categorias` — server component, `generateMetadata` (`index, follow`), fetches `fetchCategories()` + `fetchCategoryProductCounts()` (degrades to no pill on count failure), renders `BreadcrumbList` JSON-LD + the `CategoriesPage` feature |
+| `src/app/categorias/tornilleria/page.tsx` | Tornillería category route `/categorias/tornilleria` — server component, `generateMetadata` (`index, follow`), fetches the full product set via `fetchAllProductsByCategory("tornilleria")`, renders `BreadcrumbList` JSON-LD + the `CategoryPage` feature; ships its own `error.tsx`/`loading.tsx` (see gotcha below) |
 | `src/app/providers.tsx` | Client provider: mounts `CartStoreProvider` and HeroUI's `Toast.Provider` |
 | `src/app/robots.ts` | `GET /robots.txt` — disallows `/api/`, points to the sitemap |
-| `src/app/sitemap.ts` | `GET /sitemap.xml` — base pages (incl. `/categorias`) + live category/brand URLs; degrades to base pages if Strapi is unreachable |
-| `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination, QuotePage, CategoriesPage |
+| `src/app/sitemap.ts` | `GET /sitemap.xml` — base pages (incl. `/categorias` and `/categorias/tornilleria` via `CATEGORY_PAGE_HREFS`) + live category/brand URLs; degrades to base pages if Strapi is unreachable |
+| `src/features/` | Scoped UI domains: Home, ProductListing, ProductVariantsDrawer, CatalogSearchDrawer, Pagination, QuotePage, CategoriesPage, CategoryPage |
 | `src/components/` | Shared ProductCard (only) |
 | `src/shared/lib/global.lib.ts` | Server actions for Strapi reads + theme cookie (the "use server" seam) |
 | `src/shared/queries/` | GraphQL operations |
@@ -90,7 +92,7 @@ See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a
 | `src/shared/constants/` | Catalog error codes, theme cookie key, cart bounds (`cart.constants.ts`), validation rules, pagination bounds, SEO copy/origin (`seo.constants.ts`) |
 | `src/shared/utils/` | Pure helpers (currency format, catalog API client envelope wrapper, SEO metadata/JSON-LD builders in `seo.utils.ts`) |
 | `src/shared/ui/atoms` | Atomic UI (ToggleDarkMode, QuantityStepper, CartCount, etc.) |
-| `src/shared/ui/organisms` | Composed UI: `Header` (sticky, every route — utility bar + WhatsApp link, desktop nav with disabled category/brand dropdowns ending in a `Ver todas las categorías` link to `/categorias` (hidden there; the trigger gets an active underline + `(actual)` on that route), mobile lupa/cart/hamburger; rendered once from the root layout) and `MobileMenu` (right-side drawer it renders below `md:`, same footer row + active-state treatment on its `Categorías` accordion) |
+| `src/shared/ui/organisms` | Composed UI: `Header` (sticky, every route — utility bar + WhatsApp link, desktop nav with category/brand dropdowns ending in a `Ver todas las categorías` link to `/categorias` (hidden there; the trigger gets an active underline + `(actual)` on that route); per-item dropdown rows become real links via `CATEGORY_PAGE_HREFS` (Tornillería only today — others stay `isDisabled`), mobile lupa/cart/hamburger; rendered once from the root layout), `MobileMenu` (right-side drawer it renders below `md:`, same footer row + active-state treatment on its `Categorías` accordion, same `CATEGORY_PAGE_HREFS`-driven link rows), and `WhatsappPanel` (hook-free `<aside>` shared by `CategoriesPage` and `CategoryPage`, hidden when `NEXT_PUBLIC_WHATSAPP_NUMBER` is unset) |
 | `src/zustand/store/` | Vanilla Zustand stores: theme (`change-theme.store.ts`) and cart (`cart.store.ts`, `zustand/persist` to `localStorage`) |
 | `src/zustand/provider/` | SSR-safe store providers (wraps-store pattern), one per store |
 
@@ -109,6 +111,8 @@ See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a
 **Empty page handling:** Page 1 can be empty (empty state shown). Page >1 empty redirects to the same mode/value page 1; speculative `notice=end` redirects to the last populated page.
 
 **Local search:** The `useCatalogSearch` hook filters the current working set in memory by product name. It does NOT query Strapi and does NOT reset to page 1.
+
+**Category page (Tornillería):** `fetchAllProductsByCategory(customId, subcategory?)` in `global.lib.ts` fetches the *entire* matching set (no pagination controls on the page) by querying `products_connection` with `pageSize: 100` and looping pages `1..pageCount` sequentially; the `subcategory` filter key is omitted entirely (not sent as `null`/`undefined`) when not given. `CategoryPage` then filters that full array in memory (name/subcategory/brand, all AND'd) — same "no navigation, no fetch" pattern as `useCatalogSearch`, but scoped to one category.
 
 ## Theme And Cookie Persistence
 
@@ -141,9 +145,10 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 - `generateMetadata` in `src/app/page.tsx` derives title/description/canonical/robots per URL from `buildCatalogMetadata` (`src/shared/utils/seo.utils.ts`), which parses `searchParams` via the pure `parseCatalogParams` in `src/features/Pagination/utils.pagination.ts` — it never fetches products (Apollo clients are per-call with no dedupe).
 - Canonicals fold `/` and `/?page=1` together and never carry the transient `notice=end` param. `?mode=name&q=` URLs are `noindex, follow`; base/category/brand URLs are `index, follow`.
 - JSON-LD (`WebSite`+`SearchAction`, per-page `ItemList`, category/brand `BreadcrumbList`) is built by `buildCatalogJsonLd` and injected in the page body (needs product data, so it can't live in `generateMetadata`); `toJsonLdHtml` escapes `<` before writing into `<script type="application/ld+json">` — this is a trust boundary since product/taxonomy strings come from Strapi.
-- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes serving `/robots.txt` and `/sitemap.xml`. The sitemap's page list derives from `PRODUCT_PAGE_MAX` (inherits the `KNOWN_PRODUCT_TOTAL` staleness), adds a static `/categorias` base-page entry, and lists one URL per live category/brand; it never emits `lastModified` (no timestamp field exists) and degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`.
+- `src/app/robots.ts` / `src/app/sitemap.ts` are Next.js metadata routes serving `/robots.txt` and `/sitemap.xml`. The sitemap's page list derives from `PRODUCT_PAGE_MAX` (inherits the `KNOWN_PRODUCT_TOTAL` staleness), adds a static `/categorias` base-page entry plus one static entry per `CATEGORY_PAGE_HREFS` value (currently just `/categorias/tornilleria`), and lists one URL per live category/brand; it never emits `lastModified` (no timestamp field exists) and degrades to base pages only if the Strapi taxonomy fetch fails, so a Strapi outage never fails `pnpm build`.
 - Base-mode and filtered-mode pagination controls in `src/features/Home/Home.tsx` render as real `next/link` anchors (crawlable) when a target exists, or a non-focusable `<span aria-disabled="true">` otherwise — never `href="#"`.
 - `/categorias` has its own literal `generateMetadata` (`CATEGORIES_TITLE`/`CATEGORIES_DESCRIPTION` in `seo.constants.ts`, canonical `/categorias`, `index, follow`) and renders a `BreadcrumbList` JSON-LD via `toJsonLdHtml`, same trust-boundary pattern as `/`.
+- `/categorias/tornilleria` has the same literal-metadata pattern (`TORNILLERIA_TITLE`/`TORNILLERIA_DESCRIPTION`, canonical `/categorias/tornilleria`, `index, follow`) and a 3-item `BreadcrumbList` JSON-LD (Inicio → Categorías → Tornillería).
 
 ## Conventions And Gotchas
 
@@ -154,6 +159,8 @@ All routes return envelopes: `{ success: true, data }` or `{ success: false, cod
 - **New dependencies:** Do not add unless explicitly planned. Do not run `pnpm install` during feature work.
 - **GraphQL schema:** Infer from `src/shared/queries/global.queries.ts` and TypeScript types. Confirm Strapi contract before normalizing fields or changing query shapes.
 - **Category/brand lists:** Currently hardcoded in `src/shared/types/global.types.ts` (there's a TODO questioning this). Catalog API validation uses the live Strapi taxonomy, not the hardcoded arrays.
+- **`Product.subcategory`:** optional (`string | null`), populated only by `GET_ALL_PRODUCTS_BY_CATEGORY`/`fetchAllProductsByCategory` — today that's Tornillería only. Every other product query omits the field. Labels for known values live in `SUBCATEGORY_LABELS` (`src/shared/constants/category.constants.ts`); an unrecognized value falls back to the raw slug rather than hiding the product.
+- **Routes nested under `src/app/categorias/`** are caught by `src/app/categorias/error.tsx`/`loading.tsx` unless they ship their own — `src/app/categorias/tornilleria/` does, with product-specific copy. Add the same pair for any future `src/app/categorias/<slug>/` route.
 - **HeroUI v3 ESM resolution:** `@heroui/react` is ESM-only; Jest cannot resolve it by name. `jest.config.ts` maps it to its `dist/index.js`, and `next.config.ts` lists HeroUI + dependencies in `transpilePackages` for SWC. When adding a new ESM-only client package, add it to both.
 - **Catalog images:** Strapi has no media field. `ProductCard` accepts an optional `image?: { src; alt }` prop that nothing currently passes.
 - **Console statements:** Do not remove pre-existing `console.log/warn/error` unless explicitly planned.

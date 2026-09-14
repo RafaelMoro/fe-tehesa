@@ -26,7 +26,7 @@ jest.mock("@/shared/constants/whatsapp.constants", () => ({
 
 const categories: TaxonomyItem[] = [
   { name: "Herramienta manual para trabajo pesado en obra industrial", customId: "cat-1" },
-  { name: "Tornillería", customId: "cat-2" },
+  { name: "Tornillería", customId: "tornilleria" },
 ]
 const brands: TaxonomyItem[] = [
   { name: "Truper", customId: "brand-1" },
@@ -61,7 +61,7 @@ describe("Header", () => {
     expect(productosElsewhere).not.toHaveAttribute("aria-current")
   })
 
-  it("opens the Categorías dropdown listing every item as disabled plus a Ver todas las categorías row", async () => {
+  it("opens the Categorías dropdown: Tornillería is a link, the rest stay disabled, plus a Ver todas las categorías row", async () => {
     const user = userEvent.setup()
     render(<Header categories={categories} brands={brands} />)
 
@@ -74,7 +74,15 @@ describe("Header", () => {
     const menu = screen.getByRole("menu", { name: "Categorías" })
     const items = within(menu).getAllByRole("menuitem")
     expect(items).toHaveLength(categories.length + 1)
-    for (const item of items.slice(0, categories.length)) {
+
+    const tornilleriaItem = within(menu).getByRole("menuitem", {
+      name: "Tornillería",
+    })
+    expect(tornilleriaItem).not.toHaveAttribute("aria-disabled", "true")
+    expect(tornilleriaItem).toHaveAttribute("href", "/categorias/tornilleria")
+
+    const otherItems = items.filter((item) => item !== tornilleriaItem)
+    for (const item of otherItems.slice(0, categories.length - 1)) {
       expect(item).toHaveAttribute("aria-disabled", "true")
       expect(item).not.toHaveAttribute("href")
     }
@@ -85,7 +93,28 @@ describe("Header", () => {
     await user.keyboard("{Escape}")
     await user.click(screen.getByRole("button", { name: /Marcas/ }))
     const brandsMenu = screen.getByRole("menu", { name: "Marcas" })
-    expect(within(brandsMenu).getAllByRole("menuitem")).toHaveLength(brands.length)
+    const brandItems = within(brandsMenu).getAllByRole("menuitem")
+    expect(brandItems).toHaveLength(brands.length)
+    for (const item of brandItems) {
+      expect(item).toHaveAttribute("aria-disabled", "true")
+      expect(item).not.toHaveAttribute("href")
+    }
+  })
+
+  it("closes the Categorías dropdown when Tornillería is selected", async () => {
+    const capture = (event: Event) => event.preventDefault()
+    window.addEventListener("click", capture)
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const trigger = screen.getByRole("button", { name: /Categorías/ })
+    await user.click(trigger)
+    const tornilleriaItem = screen.getByRole("menuitem", { name: "Tornillería" })
+
+    await user.click(tornilleriaItem)
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false")
+    window.removeEventListener("click", capture)
   })
 
   it("closes the Categorías dropdown when the Ver todas las categorías row is selected", async () => {
@@ -119,6 +148,22 @@ describe("Header", () => {
     expect(
       screen.queryByRole("menuitem", { name: "Ver todas las categorías" }),
     ).not.toBeInTheDocument()
+  })
+
+  it("marks Categorías and Tornillería active on /categorias/tornilleria, keeping the Ver todas las categorías row", async () => {
+    usePathnameMock.mockReturnValue("/categorias/tornilleria")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const trigger = screen.getByRole("button", { name: "Categorías (actual)" })
+    await user.click(trigger)
+
+    expect(
+      screen.getByRole("menuitem", { name: "Tornillería (actual)" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("menuitem", { name: "Ver todas las categorías" }),
+    ).toBeInTheDocument()
   })
 
   it("highlights the active category from the URL", async () => {
@@ -216,6 +261,47 @@ describe("Header", () => {
     }
     expect(within(dialog).getByText("Urrea")).toHaveAttribute("aria-current", "page")
     expect(within(dialog).queryByRole("link", { name: "Urrea" })).not.toBeInTheDocument()
+  })
+
+  it("shows a Tornillería link in the side menu that closes the drawer; other rows stay disabled", async () => {
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    await user.click(within(dialog).getByRole("button", { name: "Categorías" }))
+
+    const tornilleriaRow = within(dialog).getByRole("link", {
+      name: "Tornillería",
+    })
+    expect(tornilleriaRow).toHaveAttribute("href", "/categorias/tornilleria")
+
+    const otherCategoryText = categories.find((c) => c.customId !== "tornilleria")!.name
+    expect(within(dialog).getByText(otherCategoryText)).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    )
+
+    await user.click(tornilleriaRow)
+
+    expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
+  })
+
+  it("on /categorias/tornilleria: the row has aria-current=page and the accordion trigger reads Categorías (actual)", async () => {
+    usePathnameMock.mockReturnValue("/categorias/tornilleria")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+
+    expect(
+      within(dialog).getByRole("button", { name: "Categorías (actual)" }),
+    ).toBeInTheDocument()
+    await user.click(within(dialog).getByRole("button", { name: "Categorías (actual)" }))
+    expect(
+      within(dialog).getByRole("link", { name: "Tornillería" }),
+    ).toHaveAttribute("aria-current", "page")
   })
 
   it("shows a Ver todas las categorías link in the side menu that closes the drawer", async () => {
