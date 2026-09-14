@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Button, Dropdown } from "@heroui/react"
-import { RiArrowDownSLine, RiSearchLine } from "@remixicon/react"
+import { RiArrowDownSLine, RiArrowRightLine, RiSearchLine } from "@remixicon/react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { CartCount } from "../atoms/CartCount"
@@ -25,6 +25,8 @@ interface TaxonomyDropdownProps {
   items: TaxonomyItem[]
   activeName: string | null
   menuClassName: string
+  allHref?: string
+  isActiveRoute?: boolean
 }
 
 const TaxonomyDropdown = ({
@@ -32,6 +34,8 @@ const TaxonomyDropdown = ({
   items,
   activeName,
   menuClassName,
+  allHref,
+  isActiveRoute,
 }: TaxonomyDropdownProps) => {
   if (items.length === 0) {
     return null
@@ -41,9 +45,12 @@ const TaxonomyDropdown = ({
     <Dropdown>
       <Button
         variant="ghost"
-        className="flex items-center gap-1 px-3 py-2 text-sm font-medium"
+        className={`flex items-center gap-1 px-3 py-2 text-sm font-medium ${
+          isActiveRoute ? "border-b-2 border-[#4DF527]" : ""
+        }`}
       >
         {label}
+        {isActiveRoute && <span className="sr-only"> (actual)</span>}
         <RiArrowDownSLine aria-hidden="true" className="size-4" />
       </Button>
       <Dropdown.Popover>
@@ -67,6 +74,17 @@ const TaxonomyDropdown = ({
               </Dropdown.Item>
             )
           })}
+          {allHref !== undefined && (
+            <Dropdown.Item
+              id="ver-todas"
+              href={allHref}
+              textValue="Ver todas las categorías"
+              className="min-h-11 mt-1 flex items-center justify-between border-t border-default-200 bg-[#F5FFEF] font-medium text-[#125D03] dark:border-[#1E3608] dark:bg-[#12250A] dark:text-[#4DF527] dark:hover:text-[#B4FE99]"
+            >
+              Ver todas las categorías
+              <RiArrowRightLine aria-hidden="true" className="size-4" />
+            </Dropdown.Item>
+          )}
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown>
@@ -77,6 +95,7 @@ export const Header = ({ categories, brands }: HeaderProps) => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isCatalog = pathname === "/"
+  const isCategories = pathname === "/categorias"
   const activeCategory =
     searchParams.get("mode") === "category" ? searchParams.get("category") : null
   const activeBrand =
@@ -124,6 +143,8 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             items={categories}
             activeName={activeCategory}
             menuClassName="w-[350px]"
+            allHref={isCategories ? undefined : "/categorias"}
+            isActiveRoute={isCategories}
           />
           <TaxonomyDropdown
             label="Marcas"
@@ -150,6 +171,7 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             categories={categories}
             brands={brands}
             isCatalog={isCatalog}
+            isCategories={isCategories}
             activeCategory={activeCategory}
             activeBrand={activeBrand}
             whatsappUrl={whatsappUrl}

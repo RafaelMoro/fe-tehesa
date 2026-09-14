@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client"
+import { gql, type DocumentNode } from "@apollo/client"
 
 export const GET_PRODUCTS = gql`
   query GetProductsQuery($pagination: PaginationArg) {
@@ -135,6 +135,24 @@ export const GET_CATEGORIES = gql`
     }
   }
 `
+
+export const buildCategoryProductCountsQuery = (count: number): DocumentNode => {
+  const variableDefinitions = Array.from(
+    { length: count },
+    (_, i) => `$id${i}: String!`,
+  ).join(", ")
+  const fields = Array.from(
+    { length: count },
+    (_, i) =>
+      `c${i}: products_connection(filters: { category: { customId: { eq: $id${i} } } }, pagination: { pageSize: 1 }) { pageInfo { total } }`,
+  ).join("\n    ")
+
+  return gql(`
+    query CategoryProductCounts(${variableDefinitions}) {
+      ${fields}
+    }
+  `)
+}
 
 export const GET_BRANDS = gql`
   query GetBrands {

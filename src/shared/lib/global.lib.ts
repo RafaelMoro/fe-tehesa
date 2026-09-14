@@ -5,6 +5,7 @@ import createApolloClient from "@/app/apollo-client"
 import type {
   FetchBrandsResponse,
   FetchCategoriesResponse,
+  FetchCategoryProductCountsResponse,
   FetchProductsByIdsResponse,
   FetchProductsResponse,
   FetchSingleProductResponse,
@@ -23,6 +24,7 @@ import {
 } from "../constants/global.constants"
 import { REVALIDATE_MAX_IDS } from "../constants/catalog.constants"
 import {
+  buildCategoryProductCountsQuery,
   GET_BRANDS,
   GET_CATEGORIES,
   GET_PRODUCT_VARIANTS,
@@ -37,7 +39,8 @@ import {
 /**
  * Adapter error-handling contract — applies to every Apollo-backed helper below
  * (`fetchProducts`, `fetchProductsByCategory`, `fetchProductsByBrand`,
- * `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`).
+ * `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`,
+ * `fetchCategoryProductCounts`).
  *
  * None of them wraps the Apollo call in a local try/catch. The reason is the
  * "throw at the boundary, catch at the edge" pattern: every catalog route handler
@@ -237,6 +240,21 @@ export const fetchCategories = async (): Promise<TaxonomyItem[]> => {
     query: GET_CATEGORIES,
   })
   return res?.data?.categories ?? []
+}
+
+export const fetchCategoryProductCounts = async (
+  customIds: string[],
+): Promise<number[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
+  if (customIds.length === 0) {
+    return []
+  }
+  const client = createApolloClient()
+  const res = await client.query<FetchCategoryProductCountsResponse>({
+    query: buildCategoryProductCountsQuery(customIds.length),
+    variables: Object.fromEntries(customIds.map((id, i) => [`id${i}`, id])),
+  })
+  return customIds.map((_, i) => res.data![`c${i}`].pageInfo.total)
 }
 
 export const fetchBrands = async (): Promise<TaxonomyItem[]> => {

@@ -18,6 +18,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}${buildBasePagePath(page)}`,
     })
   }
+  basePages.push({
+    url: `${SITE_URL}/categorias`,
+  })
 
   try {
     // ponytail: sitemap must not fail a build; degrade to base pages.

@@ -49,6 +49,13 @@ export interface FetchCategoriesResponse {
   categories: TaxonomyItem[]
 }
 
+export type FetchCategoryProductCountsResponse = Record<
+  string,
+  { pageInfo: { total: number } }
+>
+
+export type CategoryWithCount = TaxonomyItem & { productCount: number | null }
+
 export interface FetchBrandsResponse {
   brands: TaxonomyItem[]
 }

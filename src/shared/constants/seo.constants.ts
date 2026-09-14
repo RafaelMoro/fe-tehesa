@@ -9,3 +9,6 @@ export const TITLE_TAXONOMY_SUFFIX = "Herramienta industrial en Puebla"
 export const QUOTE_TITLE = "Solicitar cotización | Tehesa"
 export const QUOTE_DESCRIPTION =
   "Revisa los productos, medidas y cantidades de tu lista antes de solicitar tu cotización a Tehesa."
+export const CATEGORIES_TITLE = "Categorías de herramienta industrial | Tehesa"
+export const CATEGORIES_DESCRIPTION =
+  "Todas las categorías del catálogo de Tehesa en Puebla: tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. Cotiza por WhatsApp."

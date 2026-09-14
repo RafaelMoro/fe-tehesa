@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { Accordion, Button, Drawer, useOverlayState } from "@heroui/react"
-import { RiCloseLine, RiMenuLine } from "@remixicon/react"
+import { RiArrowRightLine, RiCloseLine, RiMenuLine } from "@remixicon/react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import type { TaxonomyItem } from "@/shared/types/global.types"
@@ -10,6 +10,7 @@ interface MobileMenuProps {
   categories: TaxonomyItem[]
   brands: TaxonomyItem[]
   isCatalog: boolean
+  isCategories: boolean
   activeCategory: string | null
   activeBrand: string | null
   whatsappUrl: string | null
@@ -20,6 +21,9 @@ interface TaxonomyAccordionSectionProps {
   label: string
   items: TaxonomyItem[]
   activeName: string | null
+  allHref?: string
+  isActiveRoute?: boolean
+  onNavigate: () => void
 }
 
 const TaxonomyAccordionSection = ({
@@ -27,6 +31,9 @@ const TaxonomyAccordionSection = ({
   label,
   items,
   activeName,
+  allHref,
+  isActiveRoute,
+  onNavigate,
 }: TaxonomyAccordionSectionProps) => {
   if (items.length === 0) {
     return null
@@ -35,8 +42,15 @@ const TaxonomyAccordionSection = ({
   return (
     <Accordion.Item id={id} className="border-b border-default-200 dark:border-[#1E3608]">
       <Accordion.Heading>
-        <Accordion.Trigger className="flex min-h-[52px] w-full items-center justify-between px-1 text-sm font-medium">
+        <Accordion.Trigger
+          className={`flex min-h-[52px] w-full items-center justify-between px-1 text-sm font-medium ${
+            isActiveRoute
+              ? "bg-[#F5FFEF] text-[#125D03] shadow-[inset_3px_0_0_#4DF527] dark:bg-[#16300A] dark:text-[#B4FE99]"
+              : ""
+          }`}
+        >
           {label}
+          {isActiveRoute && <span className="sr-only"> (actual)</span>}
           <Accordion.Indicator />
         </Accordion.Trigger>
       </Accordion.Heading>
@@ -58,6 +72,18 @@ const TaxonomyAccordionSection = ({
                 </span>
               </li>
             ))}
+            {allHref !== undefined && (
+              <li>
+                <Link
+                  href={allHref}
+                  onClick={onNavigate}
+                  className="mt-1 flex min-h-11 items-center justify-between border-t border-default-200 bg-[#F5FFEF] px-1 font-medium text-[#125D03] dark:border-[#1E3608] dark:bg-[#12250A] dark:text-[#4DF527]"
+                >
+                  Ver todas las categorías
+                  <RiArrowRightLine aria-hidden="true" className="size-4" />
+                </Link>
+              </li>
+            )}
           </ul>
         </Accordion.Body>
       </Accordion.Panel>
@@ -69,6 +95,7 @@ export const MobileMenu = ({
   categories,
   brands,
   isCatalog,
+  isCategories,
   activeCategory,
   activeBrand,
   whatsappUrl,
@@ -114,12 +141,16 @@ export const MobileMenu = ({
                     label="Categorías"
                     items={categories}
                     activeName={activeCategory}
+                    allHref={isCategories ? undefined : "/categorias"}
+                    isActiveRoute={isCategories}
+                    onNavigate={state.close}
                   />
                   <TaxonomyAccordionSection
                     id="marcas"
                     label="Marcas"
                     items={brands}
                     activeName={activeBrand}
+                    onNavigate={state.close}
                   />
                 </Accordion>
               </Drawer.Body>
