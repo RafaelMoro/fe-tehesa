@@ -371,8 +371,9 @@ changes an image field will need; the "Tres variantes propuestas" designs; hero/
   (assumption recorded in D6); Phase 3 verifies by eye.
 - II: Question: The comp's dark card surface is `gray-900` (`#111827`) on a `#0A0A0A` page. Should the whole app's
   dark surfaces (drawer, hero aside, header) move to that too, or is it card-only for now?
-  Status: pending
-  Context: Card-only is assumed for this story; app-wide surface alignment would be its own story.
+  Status: answered
+  Answer: Card-only (user, 2026-09-14). Drawer, hero aside, and header keep their current dark surfaces; app-wide
+  surface alignment would be its own story.
 
 ### Verification
 
