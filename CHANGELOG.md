@@ -1,3 +1,9 @@
+## v0.34.0 (2026-09-14)
+
+### Pull Requests
+[#43](https://github.com/RafaelMoro/fe-tehesa/pull/43) | Redesign ProductCard with new responsive anatomy and dark mode support
+
+
 ## v0.33.1 (2026-09-14)
 
 ### Pull Requests
