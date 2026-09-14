@@ -1,3 +1,9 @@
+## v0.31.0 (2026-09-14)
+
+### Pull Requests
+[#38](https://github.com/RafaelMoro/fe-tehesa/pull/38) | Feat/story 4 cart epic
+
+
 ## v0.30.0 (2026-09-13)
 
 ### Pull Requests
