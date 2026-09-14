@@ -1,3 +1,9 @@
+## v0.33.0 (2026-09-14)
+
+### Pull Requests
+[#41](https://github.com/RafaelMoro/fe-tehesa/pull/41) | Rebuild header with utility bar, navigation dropdowns, and mobile side menu
+
+
 ## v0.32.0 (2026-09-14)
 
 ### Pull Requests
