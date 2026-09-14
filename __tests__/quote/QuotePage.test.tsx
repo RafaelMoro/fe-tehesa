@@ -33,6 +33,16 @@ const seedCart = (lines: CartLine[]) => {
   )
 }
 
+const seedRecovery = (lastQuoteLines: CartLine[]) => {
+  localStorage.setItem(
+    CART_STORAGE_KEY,
+    JSON.stringify({
+      state: { lines: [], contact: null, lastQuoteLines },
+      version: CART_SCHEMA_VERSION,
+    }),
+  )
+}
+
 const originalFetch = globalThis.fetch
 const originalResizeObserver = globalThis.ResizeObserver
 
@@ -402,5 +412,58 @@ describe("QuotePage variant upgrade", () => {
       .filter((li) => li.hasAttribute("aria-label"))
     expect(rows).toHaveLength(1)
     expect(rows[0]).toHaveAccessibleName("Tornillo, 1/4 in")
+  })
+})
+
+describe("QuotePage recovery empty-state", () => {
+  it("shows the plain empty state when there is no recovery copy", async () => {
+    render(<QuotePage />)
+
+    expect(await screen.findByText("Tu lista está vacía")).toBeInTheDocument()
+    expect(
+      screen.queryByText("Abrimos WhatsApp para ti"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the recovery empty-state when lines is empty and a recovery copy exists", async () => {
+    seedRecovery([variantLine()])
+
+    render(<QuotePage />)
+
+    expect(
+      await screen.findByText("Abrimos WhatsApp para ti"),
+    ).toBeInTheDocument()
+    expect(screen.queryByText("Tu lista está vacía")).not.toBeInTheDocument()
+  })
+
+  it("Restaurar lista brings back the exact archived lines and clears the recovery slot", async () => {
+    const user = userEvent.setup()
+    seedRecovery([variantLine({ quantity: 3 })])
+    render(<QuotePage />)
+    await screen.findByText("Abrimos WhatsApp para ti")
+
+    await user.click(screen.getByRole("button", { name: "Restaurar lista" }))
+
+    expect(await screen.findByText("Tornillo")).toBeInTheDocument()
+    expect(
+      JSON.parse(localStorage.getItem(CART_STORAGE_KEY) ?? "{}").state.lines,
+    ).toEqual([variantLine({ quantity: 3 })])
+  })
+
+  it("Empezar una nueva cotización from the recovery screen dismisses without restoring", async () => {
+    const user = userEvent.setup()
+    seedRecovery([variantLine()])
+    render(<QuotePage />)
+    await screen.findByText("Abrimos WhatsApp para ti")
+
+    await user.click(
+      screen.getByRole("button", { name: "Empezar una nueva cotización" }),
+    )
+
+    expect(await screen.findByText("Tu lista está vacía")).toBeInTheDocument()
+    expect(
+      JSON.parse(localStorage.getItem(CART_STORAGE_KEY) ?? "{}").state
+        .lastQuoteLines,
+    ).toBeNull()
   })
 })

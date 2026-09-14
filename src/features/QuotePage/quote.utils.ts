@@ -52,6 +52,30 @@ export const getQuoteTotals = (
   }
 }
 
+export const getEffectiveLines = (
+  lines: CartLine[],
+  checks?: LineChecks,
+): CartLine[] => {
+  const effectiveLines: CartLine[] = []
+
+  for (const line of lines) {
+    const check = checks?.[cartLineKey(line)]
+
+    if (check?.kind === "variant-gone" || check?.kind === "product-gone") {
+      continue
+    }
+
+    if (check?.kind === "priced" && line.variantDocumentId !== null) {
+      effectiveLines.push({ ...line, unitPrice: check.currentPrice })
+      continue
+    }
+
+    effectiveLines.push(line)
+  }
+
+  return effectiveLines
+}
+
 export const buildProductSearchHref = (productName: string): string | null => {
   const segments = productName
     .split(SEARCH_TERM_UNSAFE_PATTERN)

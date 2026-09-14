@@ -293,4 +293,59 @@ describe("cart.store", () => {
       expect(store.getState().lines[0].quantity).toBe(CART_MAX_QUANTITY)
     })
   })
+
+  describe("last-quote recovery slice", () => {
+    it("archiveAndClearLines snapshots current lines then empties the cart", () => {
+      const store = createCartStore()
+      store.getState().addVariantLines([buildVariantLine()])
+      const archivedLines = store.getState().lines
+
+      store.getState().archiveAndClearLines()
+
+      expect(store.getState().lines).toEqual([])
+      expect(store.getState().lastQuoteLines).toEqual(archivedLines)
+    })
+
+    it("archiveAndClearLines is a no-op on an already-empty cart", () => {
+      const store = createCartStore()
+
+      store.getState().archiveAndClearLines()
+
+      expect(store.getState().lines).toEqual([])
+      expect(store.getState().lastQuoteLines).toBeNull()
+    })
+
+    it("restoreLastQuote round-trips lines and clears the recovery slot", () => {
+      const store = createCartStore()
+      store.getState().addVariantLines([buildVariantLine()])
+      const archivedLines = store.getState().lines
+      store.getState().archiveAndClearLines()
+
+      store.getState().restoreLastQuote()
+
+      expect(store.getState().lines).toEqual(archivedLines)
+      expect(store.getState().lastQuoteLines).toBeNull()
+    })
+
+    it("restoreLastQuote is a no-op when there is nothing to restore", () => {
+      const store = createCartStore()
+      store.getState().addVariantLines([buildVariantLine()])
+      const currentLines = store.getState().lines
+
+      store.getState().restoreLastQuote()
+
+      expect(store.getState().lines).toEqual(currentLines)
+    })
+
+    it("dismissLastQuote clears the recovery slot without restoring", () => {
+      const store = createCartStore()
+      store.getState().addVariantLines([buildVariantLine()])
+      store.getState().archiveAndClearLines()
+
+      store.getState().dismissLastQuote()
+
+      expect(store.getState().lastQuoteLines).toBeNull()
+      expect(store.getState().lines).toEqual([])
+    })
+  })
 })

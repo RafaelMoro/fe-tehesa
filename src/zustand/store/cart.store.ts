@@ -13,10 +13,9 @@ import {
   CART_SCHEMA_VERSION,
   CART_STORAGE_KEY,
   CART_TEXT_MAX_LENGTH,
-  CONTACT_EMAIL_PATTERN,
-  CONTACT_TEXT_MAX_LENGTH,
   NO_VARIANT_KEY,
 } from "@/shared/constants/cart.constants"
+import { validateContact } from "@/shared/utils/contact-validation.utils"
 import type {
   CartContact,
   CartLine,
@@ -27,6 +26,7 @@ import type {
 export type CartState = {
   lines: CartLine[]
   contact: CartContact | null
+  lastQuoteLines: CartLine[] | null
 }
 
 export type CartAddResult = {
@@ -46,6 +46,9 @@ export type CartActions = {
   setLineQuantity: (key: string, quantity: number) => void
   removeLine: (key: string) => void
   upgradeLine: (key: string, line: CartVariantLine) => CartUpgradeResult
+  archiveAndClearLines: () => void
+  restoreLastQuote: () => void
+  dismissLastQuote: () => void
 }
 
 export type CartStore = CartState & CartActions
@@ -53,6 +56,7 @@ export type CartStore = CartState & CartActions
 export const defaultCartState: CartState = {
   lines: [],
   contact: null,
+  lastQuoteLines: null,
 }
 
 export const cartLineKey = (
@@ -120,34 +124,6 @@ export const isValidCartLine = (value: unknown): value is CartLine => {
   return true
 }
 
-const sanitizeContact = (value: unknown): CartContact | null => {
-  if (typeof value !== "object" || value === null) {
-    return null
-  }
-
-  const candidate = value as Record<string, unknown>
-
-  if (
-    !isNonEmptyString(candidate.firstName, CONTACT_TEXT_MAX_LENGTH) ||
-    !isNonEmptyString(candidate.lastName, CONTACT_TEXT_MAX_LENGTH)
-  ) {
-    return null
-  }
-
-  if (
-    !isNonEmptyString(candidate.email, CONTACT_TEXT_MAX_LENGTH) ||
-    !CONTACT_EMAIL_PATTERN.test(candidate.email)
-  ) {
-    return null
-  }
-
-  return {
-    firstName: candidate.firstName,
-    lastName: candidate.lastName,
-    email: candidate.email,
-  }
-}
-
 export const sanitizeCartState = (value: unknown): CartState => {
   if (typeof value !== "object" || value === null) {
     return { ...defaultCartState }
@@ -159,9 +135,15 @@ export const sanitizeCartState = (value: unknown): CartState => {
     ? candidate.lines.slice(0, CART_MAX_LINES).filter(isValidCartLine)
     : []
 
+  const sanitizedLastQuoteLines = Array.isArray(candidate.lastQuoteLines)
+    ? candidate.lastQuoteLines.slice(0, CART_MAX_LINES).filter(isValidCartLine)
+    : []
+
   return {
     lines,
-    contact: sanitizeContact(candidate.contact),
+    contact: validateContact(candidate.contact).contact,
+    lastQuoteLines:
+      sanitizedLastQuoteLines.length > 0 ? sanitizedLastQuoteLines : null,
   }
 }
 
@@ -317,6 +299,21 @@ export const createCartStore = (initState: CartState = defaultCartState) => {
           set({ lines: nextLines })
           return "merged"
         },
+        archiveAndClearLines: () => {
+          const currentLines = get().lines
+          if (currentLines.length === 0) {
+            return
+          }
+          set({ lines: [], lastQuoteLines: currentLines })
+        },
+        restoreLastQuote: () => {
+          const lastQuoteLines = get().lastQuoteLines
+          if (lastQuoteLines === null) {
+            return
+          }
+          set({ lines: lastQuoteLines, lastQuoteLines: null })
+        },
+        dismissLastQuote: () => set({ lastQuoteLines: null }),
       }),
       {
         name: CART_STORAGE_KEY,

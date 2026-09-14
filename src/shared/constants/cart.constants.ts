@@ -1,5 +1,5 @@
 export const CART_STORAGE_KEY = "tehesa-cart"
-export const CART_SCHEMA_VERSION = 1
+export const CART_SCHEMA_VERSION = 2
 export const CART_MAX_LINES = 100
 export const CART_MIN_QUANTITY = 1
 export const CART_MAX_QUANTITY = 100

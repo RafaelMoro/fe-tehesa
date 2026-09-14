@@ -1,5 +1,6 @@
 import {
   buildProductSearchHref,
+  getEffectiveLines,
   getQuoteTotals,
   type LineChecks,
 } from "@/features/QuotePage/quote.utils"
@@ -151,6 +152,61 @@ describe("getQuoteTotals", () => {
     }
     const totals = getQuoteTotals([line], checks)
     expect(totals.subtotal).toBeCloseTo(648.9, 10)
+  })
+})
+
+describe("getEffectiveLines", () => {
+  it("swaps in the checks' current price for a priced check", () => {
+    const line = pricedLine({ unitPrice: 10 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "priced", currentPrice: 15 },
+    }
+
+    const [effective] = getEffectiveLines([line], checks)
+
+    expect(effective.unitPrice).toBe(15)
+  })
+
+  it("excludes a variant-gone line", () => {
+    const line = pricedLine()
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "variant-gone" },
+    }
+
+    expect(getEffectiveLines([line], checks)).toEqual([])
+  })
+
+  it("excludes a product-gone line", () => {
+    const line = pricedLine()
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "product-gone" },
+    }
+
+    expect(getEffectiveLines([line], checks)).toEqual([])
+  })
+
+  it("leaves an unchecked line's stored price untouched", () => {
+    const line = pricedLine({ unitPrice: 7 })
+
+    const [effective] = getEffectiveLines([line], {})
+
+    expect(effective).toEqual(line)
+  })
+
+  it("leaves a no-price checked line unchanged", () => {
+    const line = pricedLine({ unitPrice: 7 })
+    const checks: LineChecks = {
+      [cartLineKey(line)]: { kind: "no-price" },
+    }
+
+    const [effective] = getEffectiveLines([line], checks)
+
+    expect(effective).toEqual(line)
+  })
+
+  it("works with no checks argument at all", () => {
+    const line = pricedLine()
+    expect(getEffectiveLines([line])).toEqual([line])
   })
 })
 

@@ -86,15 +86,14 @@ Deferred from Story 4 (`ai-research/stories/plp-seo-readiness.story4.md`, open q
 - Both `Agregar al carrito` CTAs are wired: the drawer footer adds one line per selected variant to the new Zustand cart store (`src/zustand/store/cart.store.ts`, persisted to `localStorage`); the card's tertiary `Agregar y elegir después` adds a variant-less product-level line. A third case this entry didn't anticipate — `variantCount === 1` products — got its own single-CTA `Agregar 1 pieza` card branch.
 - Cart totals reuse `formatNumberToCurrency`, as recommended here.
 
-### Quote recovery after the WhatsApp hand-off (deferred)
+### Quote recovery after the WhatsApp hand-off (resolved)
 
-Deferred on the user's call, 2026-07-31, from `ai-research/epics/cart-quote-whatsapp.epic.md` (open question UI III). The cart **clears** after the WhatsApp hand-off. Recovery beyond an immediate undo is follow-up work, not v1 scope.
+**Resolved 2026-09-13 by the cart epic's Story 4** (`ai-planning/cart-quote-whatsapp/contact-form-whatsapp-cta.story-4.md`, Phases 2 and 6 — durable recovery pulled into scope during planning, Open Question V). Kept for history; the items below no longer describe the current code.
 
-- The hand-off is unobservable: clicking a `wa.me` anchor means the link *opened*, never that the message was *sent*. WhatsApp may not be installed, the buyer may back out of the composer, the wrong account may be signed in. In all of those the cart is already gone.
-- v1 ships the non-silent minimum — an explicit acknowledgement or an immediately visible undo. What is deferred is durable recovery: a "restaurar última cotización" that survives a reload, i.e. keeping the last sent quote in a separate persisted slot rather than discarding it.
-- **Multi-part quotes make this sharper.** A quote too long for one message is split into parts built from the cart, so the clear may only fire after the last part is opened. A buyer who abandons after part 1 has sent the seller a message promising parts that no longer exist.
-- The buyer's contact details (name, last name, email) are persisted separately and deliberately survive the clear. Do not fold the two slices together when implementing recovery.
-- Worth revisiting once there is any funnel data on how often buyers return to `/cotizar` after a hand-off.
+- Durable recovery shipped as planned: the cart store gained a `lastQuoteLines: CartLine[] | null` slot (`src/zustand/store/cart.store.ts`) plus `archiveAndClearLines`/`restoreLastQuote`/`dismissLastQuote`. The cart clears only when the buyer presses `Empezar una nueva cotización` on the WhatsApp CTA's all-opened state (`WhatsappCta.tsx`) — never silently, and never merely from opening the last part, resolving the "multi-part quotes make this sharper" risk this entry raised (opening part 1 alone no longer clears anything).
+- `/cotizar`'s empty-cart branch checks `lastQuoteLines` first: a recovery copy present offers `Restaurar lista` (round-trips the exact archived lines) beside `Empezar una nueva cotización` (dismisses the offer without restoring); no recovery copy falls through to the plain empty state, unchanged.
+- The buyer's contact details stayed a separate persisted slice, as this entry anticipated — `archiveAndClearLines`/`restoreLastQuote`/`dismissLastQuote` never touch `contact`.
+- No funnel-data threshold was needed to ship this — the user pulled it into Story 4's scope directly during planning rather than waiting for return-visit data.
 
 ### Quantity field on the single-variant product card (deferred)
 

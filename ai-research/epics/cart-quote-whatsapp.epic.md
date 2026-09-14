@@ -570,6 +570,93 @@ The record of what was decided and why. Struck-through entries are settled, kept
 
 9. ~~Where do `measurementUnit` and `packageQuantity` sit in a cart line?~~ **Answered 2026-07-31: they are not used.** Quantities are pieces throughout, matching the drawer's existing `N piezas`. Nothing to design.
 
+## Spike 4S Outcome: WhatsApp Delivery Mechanisms
+
+**Run 2026-09-13.** Timebox: one working day (elapsed: well under — no code, no sign-up, documentation research only). Volume bracket per the user's 2026-09-13 answer: fewer than 100 quotes/month, priced at 50 and 100 (the epic's original 500 bracket is dropped as unrealistic). Sources are Meta's own developer documentation, fetched directly and dated below; a BSP figure is labelled "vendor-published" and never presented as a Meta rate.
+
+### 1. Does a programmatic API fit this flow?
+
+**Framing A — system→seller.** Tehesa's own WhatsApp Business Account (WABA) sends the quote to the *seller's* phone; the seller is the API's "customer."
+
+- **Verdict: viable, with a template-message cost most of the time.** [Meta: WhatsApp Business Platform pricing](https://developers.facebook.com/docs/whatsapp/pricing) (retrieved 2026-09-13) — Meta requires **user opt-in before sending message templates**: *"You must obtain user opt-in before sending message templates"* ([Meta: WhatsApp overview](https://developers.facebook.com/docs/whatsapp/overview), retrieved 2026-09-13). Since the recipient under Framing A is Tehesa's own seller, opt-in is trivially satisfiable — the seller can opt in once, as an employee — but it must still be recorded, not assumed.
+- **The 24-hour window governs whether it's free.** [Meta: Send messages](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/send-messages) (retrieved 2026-09-13): *"When a WhatsApp user messages you or calls you, a 24-hour timer called a customer service window starts... While the window is open, you can send any of the service message types... When the window closes, you can only send pre-approved template messages."* A quote arriving after the seller has gone quiet for a day (a weekend, overnight) therefore requires a **template message**, priced per Framing A's category. Expected category: **utility** — verify against Meta's own template-category guidance before building; utility templates are free *inside* an open window and charged *outside* it (section 3 below).
+- **Sender number.** The Cloud API and the WhatsApp Business app cannot share one number simultaneously — see section 4 item 1. `222 441 7330` (the seller's number today, user-answered 2026-09-13) cannot be the Cloud API sender without moving the seller off the app on that number.
+
+**Framing B — system→buyer.** The WABA messages the *buyer* who just gave name/email on `/cotizar`.
+
+- **Verdict: not a substitute for click-to-chat.** It delivers nothing to the seller — it only adds a buyer-side confirmation, which is a different feature. It requires buyer opt-in captured on the form (a new checkbox, Story 4 AC 1 territory) and the buyer's phone number, which the form does not collect today. Noted and set aside; it does not answer "how does the seller receive the quote."
+
+**Framing C — hybrid.** Click-to-chat stays as the delivery; the Cloud API is used only for a server-side record or a seller notification.
+
+- **Verdict: earns a delivery receipt and a server-side record, not delivery of the buyer's actual message.** A receipt that "our notification arrived" is not the same as knowing the buyer's quote was sent — the buyer still has to open the `wa.me` link themselves. This is the "gain" column item developed fully in section 4 item 5; it is additive to click-to-chat, not a replacement for it.
+
+**Gate result: Framing A is viable.** Phases 2-3 run in full rather than collapsing to a dismissal.
+
+### 2. Seller-side setup today
+
+**Recorded fact (user, 2026-09-13):** the seller answers customers on `222 441 7330` from the WhatsApp Business app.
+
+**Consequence:** per [Meta: Cloud API phone numbers](https://developers.facebook.com/docs/whatsapp/cloud-api/phone-numbers) (retrieved 2026-09-13), *"Registered numbers can still be used for everyday purposes, such as calling and text messages, but cannot be used with WhatsApp Messenger"* and *"Numbers already in use with WhatsApp cannot be registered unless they are deleted first."* Moving `222 441 7330` to the Cloud API means the seller loses the WhatsApp Business app on that number entirely. A migration therefore needs **either** a second, dedicated number for the Cloud API (leaving the seller's existing app workflow untouched, but splitting where quotes vs. ad-hoc customer chats land) **or** moving the seller's whole workflow off the app and onto an API-fed inbox (a BSP's hosted inbox, section 3). This is a live operational cost, not a hypothetical, given the seller already has an established number and app habit.
+
+### 3. Mechanism assessment
+
+**Cloud API (Meta-hosted).**
+
+- **Pricing model:** per-message, effective **July 1, 2025** — *"Effective July 1, 2025, Meta charges on a per-message basis... You are only charged when a template message is delivered."* ([Meta: WhatsApp pricing](https://developers.facebook.com/docs/whatsapp/pricing), retrieved 2026-09-13). This replaced the older per-conversation model; service (non-template) conversations had already become free on November 1, 2024, ahead of the full switch ([Meta: Transition to per-message pricing](https://developers.facebook.com/docs/whatsapp/pricing/updates-to-pricing), retrieved 2026-09-13).
+- **Categories:** marketing (always charged), utility and authentication (charged outside the customer service window, free inside it), service/user-initiated (never charged) — same source. Framing A's quote message maps to **utility**, sent outside the window whenever the seller hasn't messaged in the prior 24 hours (see section 1).
+- **Free conditions:** *"All non-template messages are free... Non-template messages can only be sent within an open customer service window."* Utility templates inside an open window are also free. A "free entry point" (FEP) window can extend certain replies to 72 hours, but that does not apply to Tehesa's flow (no ad/click-to-WhatsApp entry point in scope).
+- **Monthly free allowance:** **not published** — the pricing page fetched 2026-09-13 makes no mention of any free per-month message tier under the current per-message model. Treat as none.
+- **Mexico per-category rate (MXN):** **not published in fetchable form.** The pricing page states Mexico rates exist as a downloadable rate card — *"These rate cards reflect our current rates and volume tiers, effective July 1, 2026"* with columns for "Rates(CSV)," "Volume tiers(CSV)," and "Rates and Volume tiers(PDF)" in currencies including MXN — but the actual figures live inside those CSV/PDF files, which are not renderable as fetchable text from this environment. The page does confirm two Mexico-specific rate changes have already happened: *"Mexico – Lower marketing rates"* effective **October 1, 2025** and again effective **January 1, 2026**. **Action for whoever plans Story 4 under a migrate verdict: download the MXN rate card CSV directly from `developers.facebook.com/docs/whatsapp/pricing` before pricing the per-message cost** — do not estimate it here.
+- **Template pre-approval:** required — *"Templates must have a status of `APPROVED` before they can be sent in template messages."* Turnaround: *"Review can take up to 24 hours."* ([Meta: Message templates](https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates), retrieved 2026-09-13).
+
+**BSPs.** Twilio and 360dialog publish pricing without a sales call; capped at two per the plan's timebox note.
+
+- **Twilio** ([twilio.com/en-us/whatsapp/pricing](https://www.twilio.com/en-us/whatsapp/pricing), retrieved 2026-09-13, vendor-published): pass-through of Meta's per-template fee plus Twilio's own **$0.005 per message** fee — *"WhatsApp pricing is calculated based on Twilio's per-message fee, plus Meta's per-template message fee, which Twilio passes through to customers."* No stated monthly platform or phone-number fee; pay-as-you-go. No shared-inbox/CRM feature is documented on the pricing page itself — Twilio's value here is API access plus its own messaging tooling (e.g., an optional "Messaging Engagement Suite" add-on at $0.015/message for link tracking, not relevant to this flow).
+- **360dialog** ([360dialog.com/pricing](https://www.360dialog.com/pricing), retrieved 2026-09-13, vendor-published): tiered monthly platform fee — **Regular €49/mo**, **Premium €99/mo**, **Scale €500/mo** — plus Meta's own messaging fees with **no markup**: *"+Meta WhatsApp Messaging Fees"*, *"no markup on Meta fees."* Regular includes 24/7 human support and a direct Meta escalation path — relevant for a seller with no CRM who would otherwise face Meta's support alone; Premium adds a stated "Business verification in 48h," which is the one BSP feature that directly answers section 4 item 2's turnaround uncertainty.
+- **Infobip, Gupshup, Wati** — not fetched; the plan's two-BSP cap for the timebox is used given Twilio and 360dialog already establish both ends of the model (zero platform fee + per-message markup vs. flat platform fee + zero markup).
+
+**On-Premises API.** **Dead — dismissed.** [Meta: On-Premises API](https://developers.facebook.com/docs/whatsapp/on-premises) (retrieved 2026-09-13): final client version expired **October 23, 2025** — *"La última versión admitida del cliente de la API local caducó el 23 de octubre de 2025... No se entregarán ni los mensajes enviados desde números comerciales"* — and new phone numbers could only register for the Cloud API since **July 1, 2024**. Not a candidate.
+
+### 4. What a migration would require
+
+1. **Phone-number exclusivity.** Confirmed no — [Meta: Cloud API phone numbers](https://developers.facebook.com/docs/whatsapp/cloud-api/phone-numbers) (retrieved 2026-09-13): a Cloud API number "cannot be used with WhatsApp Messenger," and an in-use WhatsApp number must be deleted before Cloud API registration. **Consequence for Tehesa:** given the seller's confirmed setup (section 2), migrating forces a second number for the Cloud API or moving the seller's whole inbox off the app — there is no way to add the Cloud API to `222 441 7330` while the seller keeps using it as-is.
+2. **Business verification.** [Meta: Business verification](https://developers.facebook.com/docs/development/release/business-verification) (retrieved 2026-09-13) confirms the process runs in Meta Business Manager by a Business Admin and points to a separate Help Center article for the document list; that Help Center page did not return readable content in this environment (client-rendered), so the exact document list and turnaround are **not published in fetchable form** here — plan-time action: visit `facebook.com/business/help/1095661473946872` directly. What is already known locally: `docs/improvement.md:62-70`(ish, "Business data for local SEO structured data") records that this repo holds **no legal business name, address, or hours** — the same missing business data verification would need. Owner: whoever holds Tehesa's Meta Business Manager admin role — not determined in this repo.
+3. **24-hour customer-service window.** As established in section 1: opens when the seller messages/calls, lasts 24 hours, resets on each inbound message, and *"When the window closes, you can only send pre-approved template messages."* Framing A's quote is sent by the system, not the seller, so whether the window is open depends entirely on when the seller last wrote to the WABA — largely out of Tehesa's control per quote, meaning a meaningful share of quotes will fall outside the window and cost a template send.
+4. **Opt-in.** Under Framing A the seller (an employee) opts in once; simple to record, no new UI. Under Framing B the *buyer's* phone number and consent would need capturing on the `/cotizar` form — not built, not planned. **New fact for Story 4/Story 5 either way:** under Framing A, the buyer's name/email still leave the buyer's device via **Tehesa's own server** (the Cloud API call), not only inside a message the buyer personally sends — this narrows Persistence II's "never transmitted anywhere except into the WhatsApp message the buyer themselves sends" and Story 5 AC 3's "never sent to any provider" to mean "no analytics provider"; a Cloud API migration would be a new, non-analytics transmission path for that PII. The Mexican data-protection angle (LFPDPPP) applies once a business collects and transmits any personal data via its own server — worth a compliance read at plan time if Framing B or B-adjacent buyer-phone-number capture is ever pursued; not evaluated further here, since Framing A doesn't need it.
+5. **Gains vs. costs ledger.**
+
+   | Gains | Costs |
+   |---|---|
+   | Delivery receipt (message delivered/read status from Meta) | A backend route holding a non-`NEXT_PUBLIC_` secret (the Cloud API access token) |
+   | Server-side quote record (a request Tehesa's own server made, logged) | A webhook endpoint (for delivery/read status and template review callbacks) |
+   | 4096-character message body, no URL involved — the URL-length batching problem (Decision 3, Story 4 AC 5/6) disappears entirely | A recurring bill (Cloud API per-message charges outside the free window, or a BSP's flat + markup) |
+   | Structured payload (template variables) instead of hand-built prose | Business verification lead time (turnaround not published here — see item 2) |
+   | | Phone-number exclusivity (item 1) — a second number or a workflow change for the seller |
+
+### 5. Monthly cost at 50 and 100 quotes/month
+
+| Mechanism | 50 quotes/mo | 100 quotes/mo | Fixed monthly | What is *not* in the number |
+|---|---|---|---|---|
+| `wa.me` click-to-chat (current) | $0 | $0 | $0 | buyer abandonment mid-batch, no delivery record |
+| Cloud API direct (Framing A, utility category) | **not published** — Mexico per-message rate is inside a CSV, not fetchable here | **not published**, same reason | $0 (no BSP layer) | verification lead time, second number, the backend route/webhook themselves |
+| Twilio (BSP, pass-through + $0.005/msg) | Meta utility rate (not published) × 50 + $0.005 × 50 | same × 100 | $0 platform fee | same as above, minus the second BSP's support SLA |
+| 360dialog Regular (BSP, flat + no markup) | Meta utility rate (not published) × 50 | same × 100 | €49/mo | same, plus 360dialog's support/escalation is now what Tehesa is buying at low volume |
+
+Every currency figure that can be stated (BSP platform fees, Twilio's per-message add-on) is cited in section 3; the one figure this table cannot fill — Meta's Mexico per-category rate — is the literal string `not published` rather than an estimate, per the plan's rule. At 50-100 quotes/month, even a mid-range published WhatsApp utility rate (order of a few US cents per message in most Meta rate cards seen historically, but **not verified for Mexico specifically here**) implies a monthly cost in the low single-digit dollars — small in absolute terms, but the fixed costs (verification lead time, a second number or workflow change, a new backend surface) dominate the decision at this volume, not the per-message rate.
+
+### 6. Recommendation
+
+**Stay on click-to-chat for v1.**
+
+- **What's being declined:** at 50-100 quotes/month, the Cloud API's per-message cost is not precisely known (Mexico rate not published in fetchable form) but is expected to be small in absolute terms; what is declined is the delivery receipt and server-side record (section 4 item 5's gains column), not a large sum of money.
+- **What's being avoided:** phone-number exclusivity forcing a second number or a workflow change for the seller (section 2, section 4 item 1), a business-verification step of unknown duration (section 4 item 2), a new backend route holding a secret and a webhook endpoint — none of which exist in this repo today — and template pre-approval (up to 24h turnaround) as a prerequisite for every new message shape.
+- **Trigger that would flip this decision:** measured buyer abandonment between part 1 and part N of a multi-part send (Decision 3 → Overflow), or the seller rejecting the "2-3 sequential messages" arrangement they accepted on 2026-09-13 (closing the WhatsApp II/III sub-question — recorded below). Either signal would mean the free path's real cost (lost or incomplete quotes) exceeds a Cloud API migration's fixed costs, which the ledger above shows are the actual barrier, not the per-message rate.
+- **Story 4 proceeds as written.** AC 5 (length-budget overflow split) and AC 6 (multi-part UI) stand. `react-hook-form` remains the only new dependency in the epic. No backend, no secret, no webhook.
+
+**Seller's sequential-message tolerance (user, 2026-09-13):** the seller accepts 2-3 sequential messages for a large quote. This closes the WhatsApp II/III sub-question ("is receiving 2-3 sequential messages acceptable, or would they rather get part 1 and reply asking for the rest?") — the answer is yes, sequential sends are acceptable, so Story 4's batched-send design (AC 5/AC 6) needs no redesign around a single-message constraint.
+
+**`NEXT_PUBLIC_WHATSAPP_NUMBER` survives unchanged** under this recommendation — it stays a public click-to-chat target, not a server-side Cloud API recipient. (Under a future migrate decision, this would need to be revisited, since the API sender number would move server-side and the public number question would need re-deciding — not applicable now.)
+
 ## Open Questions
 
 ### UI And Product Decisions
@@ -743,6 +830,11 @@ Why 1800 and not 2000 or 4000: the failure modes are wildly asymmetric. Too low 
 
 The one prerequisite is a device with WhatsApp installed and a number to test against — the destination number is now known (WhatsApp I), and testing against one's own number works equally well. This is exactly the manual-QA class of check that cannot be done in jsdom and should not be faked there.
 
+V: Question: Which delivery mechanism does v1 use?
+Status: **answered, 2026-09-13 — stay on click-to-chat.** Story 4 proceeds as written; AC 5 and AC 6 (length budget, batched sends) stand.
+Context: Full reasoning, sourced and dated, in "Spike 4S Outcome" above. Also closes the WhatsApp II/III sub-question: the seller accepts 2-3 sequential messages for a large quote (user, 2026-09-13).
+Explanation: The Cloud API is technically viable (Framing A, system→seller) but its fixed costs at 50-100 quotes/month — a second phone number or a seller workflow change, business verification of unknown duration, a new backend route and webhook, template pre-approval — outweigh a per-message rate that is small even where it could be priced. Revisit only if measured buyer abandonment mid-batch, or the seller rejecting sequential sends, flips the trade.
+
 ### Strapi Contract
 
 I: Question: Is `internalId` guaranteed present and unique on every `product_variant`?
@@ -845,6 +937,20 @@ Awaiting human sign-off.
 
 ## Epic Completion Status
 
+**Updated 2026-09-13, after implementing Story 4** (`ai-planning/cart-quote-whatsapp/contact-form-whatsapp-cta.story-4.md`).
+
+### Story 4: Contact Form And The WhatsApp `Cotizar` CTA — Complete
+
+Implemented against the planning doc's 11 acceptance criteria (1, 1b, 1c, 1d, 2, 3, 4, 5, 6, 7, 8) across 6 phases, both open questions this planning session pulled in (durable recovery — Open Question V; clear-only-on-explicit-action — Open Question VI) resolved as written.
+
+- AC 1 / AC 1b / AC 1c (form half) / AC 1d — `src/features/QuotePage/ContactForm.tsx` (`react-hook-form`, the epic's one sanctioned new dependency) and `ContactSection.tsx` (collapsed read-only summary vs. expanded form gate, "Usar otros datos"/"Cancelar cambios", confirmed "Olvidar mis datos"). The shared validator (`src/shared/utils/contact-validation.utils.ts`) is consumed by the RHF form, the cart store's rehydrate sanitize, and `WhatsappCta`'s send gate — one validator, three consumers, per AC 1c. `__tests__/cart/ContactSection.test.tsx`, `__tests__/cart/contact-validation.test.ts`.
+- AC 2 / AC 3 / AC 5 (logic) / AC 7 — `src/shared/utils/whatsapp-message.utils.ts`: `sanitizeForWhatsapp`, `generateQuoteReference`, `buildQuoteMessages` (pure, Option A wording, greedy line-boundary splitting against `WHATSAPP_URL_MAX_ENCODED_LENGTH = 1800`), `buildWhatsappUrl`. `__tests__/cart/whatsapp-message.utils.test.ts` covers escaping, the exact one-part template, subtotal exclusion, and a forced split (line-boundary only, `Parte N de M` + shared reference on every part, part 1 alone carrying contact/subtotal, continuous numbering).
+- AC 4 / AC 5 (UI) / AC 6 — `src/features/QuotePage/WhatsappCta.tsx`: a real anchor when the effective cart, contact, and `NEXT_PUBLIC_WHATSAPP_NUMBER` are all valid, a non-focusable `aria-disabled` span with an explanatory message otherwise; a multi-part quote renders a re-openable stepper (never "sent", only "opened") instead of a single CTA. `__tests__/cart/WhatsappCta.test.tsx`.
+- AC 8 — the cart store's recovery slice (`lastQuoteLines`, `archiveAndClearLines`/`restoreLastQuote`/`dismissLastQuote` in `src/zustand/store/cart.store.ts`), the archive trigger firing only from `WhatsappCta`'s all-opened `Empezar una nueva cotización`, and `QuotePage.tsx`'s recovery empty-state (`Restaurar lista` beside `Empezar una nueva cotización`). `__tests__/cart/cart.store.test.ts`, `__tests__/quote/QuotePage.test.tsx` (recovery block).
+- **Out-of-scope implementation correction (Phase 4, user-approved via phase sign-off):** HeroUI v3's `TextField` manages its own controlled value internally, so a prefilled RHF-registered `Input`'s `defaultValue` must be set on the surrounding `TextField`, not the `Input` itself — the plan's stated verified fact about HeroUI's `Input` API was accurate for event wiring but incomplete for prefill. See the planning doc's "Out-of-scope implementation changes" section.
+
+Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (36 suites, 365 passed, 1 pre-existing unrelated skip), `pnpm build` all pass. Dev-server validation (`curl /cotizar`, `/`, `/api/catalog/products`) ran clean at 200 with no compile/runtime errors for every phase and the final pass. The plan's suggested curl-grep checks for phase-specific copy (contact heading, disabled-CTA text) don't hold given `QuotePage`'s pre-existing mounted-guard, which SSRs only a skeleton regardless of cart/contact/config state — confirmed this is not a regression (the same is already true for the pre-existing "Tu lista está vacía" text). Manual click-through (form fill/prefill/forget, single and multi-part WhatsApp send, restore/dismiss after archive) is deferred to the user per this workflow's rule against claiming unrun manual verification.
+
 **Updated 2026-09-13, after implementing Story 3** (`ai-planning/cart-quote-whatsapp/price-availability-revalidation.story-3.md`).
 
 ### Story 3: Price And Availability Revalidation On `/cotizar` — Complete
@@ -900,19 +1006,19 @@ Verification: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (30 suites, 256
 | Story 1: Cart state, persistence, add-to-cart wiring | Complete | See above | None |
 | Story 2: Quote page (`/cotizar`) — line review and subtotal | Complete | See above | None |
 | Story 3: Price/availability revalidation on `/cotizar` | Complete | See above | Manual browser/live-Strapi/assistive-tech QA (M1-M17) deferred to the user |
-| Spike 4S: WhatsApp delivery mechanisms | Not started | — | Timeboxed research spike; gates Story 4 |
-| Story 4: Contact form and the WhatsApp `Cotizar` CTA | Not started | — | Gated on Spike 4S; depends on Story 2/3 for line data to build the message |
+| Spike 4S: WhatsApp delivery mechanisms | Complete | Spike 4S Outcome section | None |
+| Story 4: Contact form and the WhatsApp `Cotizar` CTA | Complete | See above | Manual click-through (form, single/multi-part send, restore/dismiss) deferred to the user |
 | Story 5: Analytics contract extension | Not started | — | Documentation-only; can run independently once trigger sites are final |
 
 ### Overall Completion
 
-**21 / 37** acceptance criteria verified complete (Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, and Story 3's 8 ACs — grown from this section's original 4 during research/planning, so the epic total grows by 4 to 37; Stories 4-5 contribute 0 of their remaining combined ACs) ≈ **57%**.
+**32 / 36** acceptance criteria verified complete — Story 1's 8 ACs counted as 7 per the approved AC 6 divergence, Story 2's 6 ACs, Story 3's 8 ACs (grown from this section's original 4 during research/planning), Story 4's 11 ACs (unchanged from this section's original count — the planning session's Open Question V/VI resolutions extended AC 8's scope but did not add a new numbered AC), and Story 5's remaining 4 ACs ≈ **89%**. (This recomputes the basis directly from each story's current AC list rather than carrying forward the prior "21/37" figure, which no longer reconciles digit-for-digit against the individual story counts above — not worth a forensic audit here, just noting the denominator changed for a traceable reason.) Spike 4S is documentary and carries no acceptance criteria in this count — its completion doesn't move the percentage.
 
-The epic is not complete — Stories 4 and 5 and Spike 4S remain.
+The epic is not complete — Story 5 remains.
 
 ### Next Steps
 
-1. Run Spike 4S (WhatsApp delivery mechanism pricing) — it gates Story 4's shape and does not depend on Story 3.
+1. ~~Run Spike 4S (WhatsApp delivery mechanism pricing)~~ **Done, 2026-09-13 — recommendation: stay on click-to-chat.** See "Spike 4S Outcome" above and Open Question "WhatsApp V."
 2. Complete Story 3's manual QA (M1-M17: live Strapi edits, real clicks, 390px layout in light/dark, screen reader) before merge.
-3. Plan and implement Story 4 (contact form + WhatsApp CTA) once Spike 4S recommends a mechanism — Story 3 has now settled the revalidated-price shape it builds the message from.
-4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 once Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist).
+3. ~~Plan and implement Story 4 (contact form + WhatsApp CTA)~~ **Done, 2026-09-13.** See "Story 4" above; manual click-through (form fill/prefill/forget, single/multi-part WhatsApp send, restore/dismiss after archive) still deferred to the user before merge, same as Story 3's M1-M17.
+4. Update `docs/ANALYTICS_EVENT_CONTRACT.md` per Story 5 now that Stories 1-4's trigger sites and payload shapes are final (Story 5 AC 1 needs Story 1's real trigger sites, which now exist; Story 4's CTA gives `begin_checkout`/`generate_lead` their real trigger site too).
