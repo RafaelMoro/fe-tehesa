@@ -1,3 +1,9 @@
+## v0.36.0 (2026-09-14)
+
+### Pull Requests
+[#45](https://github.com/RafaelMoro/fe-tehesa/pull/45) | Add Tornillería category page with entry points
+
+
 ## v0.35.0 (2026-09-14)
 
 ### Pull Requests
