@@ -346,3 +346,12 @@ No new component file — this is small enough to stay inline in `QuotePage.tsx`
 - Migrating off click-to-chat — Spike 4S said stay; out of scope by that verdict.
 - Any analytics instrumentation for the events this story unblocks (`add_to_cart` already fires from Stories 1-3; `begin_checkout`/`generate_lead` would fire from this story's CTA) — that's Story 5, documentation-only, no instrumentation code in either story.
 - Persisting per-part "opened" state across a reload — see Cross-Cutting Concerns; not required by any AC.
+
+## Out-of-scope implementation changes
+
+**Phase 4 — HeroUI `TextField` owns the controlled value, not `Input` (2026-09-13, implementer correction, user-approved via phase sign-off).**
+
+- **Changed:** `src/features/QuotePage/ContactForm.tsx`.
+- **What changed:** `defaultValue` for each of the three fields is set on the HeroUI `TextField` wrapper, not on the inner `Input` as the plan's Phase 4 "Changes Required" implied.
+- **Why:** the plan's verified fact ("HeroUI's `Input`... forwards a real DOM ref and accepts `name`/`onChange`/`onBlur`/`ref` directly, so RHF's `register()` attaches to it exactly like a native input") is accurate for event wiring but incomplete for prefill: HeroUI v3's `TextField` (built on `react-aria-components`) manages its own controlled `value` internally via `useTextField`/`useControlledState` and passes it down through context to `Input`, overriding any `defaultValue` or ref-imperative value set directly on `Input`. Isolated debug tests (`Input`-level `defaultValue` vs. `TextField`-level `defaultValue`) confirmed the DOM's `value` attribute stayed empty in the first case and populated correctly in the second, with typed input still reaching RHF's tracked state in both cases (confirmed via `handleSubmit`).
+- **Verification:** `__tests__/cart/ContactSection.test.tsx` — "Usar otros datos reveals a form prefilled with the saved contact" and "shows the form prefilled with only the surviving fields" both assert `getByDisplayValue` on the prefilled fields and would fail under the `Input`-level approach.

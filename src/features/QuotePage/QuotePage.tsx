@@ -17,6 +17,7 @@ import { ContactSection } from "./ContactSection"
 import { QuoteLineRow } from "./QuoteLineRow"
 import { getQuoteTotals } from "./quote.utils"
 import { useQuoteRevalidation } from "./useQuoteRevalidation"
+import { WhatsappCta } from "./WhatsappCta"
 
 interface QuoteHeadingProps {
   counts?: { productCount: number; pieceCount: number }
@@ -48,6 +49,8 @@ export const QuotePage = () => {
   const removeLine = useCartStore((store) => store.removeLine)
   const clearLines = useCartStore((store) => store.clearLines)
   const upgradeLine = useCartStore((store) => store.upgradeLine)
+  const contact = useCartStore((store) => store.contact)
+  const archiveAndClearLines = useCartStore((store) => store.archiveAndClearLines)
 
   const { pageStatus, checks, retry } = useQuoteRevalidation(lines, mounted)
 
@@ -257,6 +260,12 @@ export const QuotePage = () => {
         </div>
       </div>
       <ContactSection />
+      <WhatsappCta
+        lines={lines}
+        checks={checks}
+        contact={contact}
+        onArchiveAndClear={archiveAndClearLines}
+      />
       <AlertDialog>
         <AlertDialog.Trigger>
           <Button variant="danger">Vaciar lista</Button>
