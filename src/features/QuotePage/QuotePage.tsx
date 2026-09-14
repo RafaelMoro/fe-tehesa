@@ -51,6 +51,9 @@ export const QuotePage = () => {
   const upgradeLine = useCartStore((store) => store.upgradeLine)
   const contact = useCartStore((store) => store.contact)
   const archiveAndClearLines = useCartStore((store) => store.archiveAndClearLines)
+  const lastQuoteLines = useCartStore((store) => store.lastQuoteLines)
+  const restoreLastQuote = useCartStore((store) => store.restoreLastQuote)
+  const dismissLastQuote = useCartStore((store) => store.dismissLastQuote)
 
   const { pageStatus, checks, retry } = useQuoteRevalidation(lines, mounted)
 
@@ -163,6 +166,31 @@ export const QuotePage = () => {
           aria-hidden="true"
           className="h-40 animate-pulse rounded-lg border border-default-200 bg-default-50"
         />
+      </>
+    )
+  }
+
+  if (lines.length === 0 && lastQuoteLines !== null) {
+    return (
+      <>
+        <QuoteHeading />
+        <div
+          ref={listRegionRef}
+          tabIndex={-1}
+          className="flex flex-col items-center gap-4 rounded-lg border border-default-200 p-10 text-center"
+        >
+          <p className="text-lg font-medium">Abrimos WhatsApp para ti</p>
+          <p className="text-sm text-muted">
+            No podemos confirmar si enviaste el mensaje. La lista se limpió en
+            este dispositivo, pero conservamos una copia para recuperarla.
+          </p>
+          <div className="flex items-center gap-4">
+            <Button onPress={restoreLastQuote}>Restaurar lista</Button>
+            <Button variant="secondary" onPress={dismissLastQuote}>
+              Empezar una nueva cotización
+            </Button>
+          </div>
+        </div>
       </>
     )
   }
