@@ -1,5 +1,6 @@
 import { render, screen, userEvent, waitFor, within } from "@__tests__/test-utils"
 import { Header } from "@/shared/ui/organisms/Header"
+import { buildWhatsappUrl } from "@/shared/utils/whatsapp-message.utils"
 import type { TaxonomyItem } from "@/shared/types/global.types"
 
 const usePathnameMock = jest.fn(() => "/")
@@ -8,6 +9,19 @@ const useSearchParamsMock = jest.fn(() => new URLSearchParams(""))
 jest.mock("next/navigation", () => ({
   usePathname: () => usePathnameMock(),
   useSearchParams: () => useSearchParamsMock(),
+}))
+
+// WHATSAPP_NUMBER is read per-render in Header, so a getter-backed mock lets
+// each test flip the value (mirrors __tests__/cart/WhatsappCta.test.tsx).
+let mockWhatsappNumber: string | undefined = "5215500000000"
+
+jest.mock("@/shared/constants/whatsapp.constants", () => ({
+  __esModule: true,
+  get WHATSAPP_NUMBER() {
+    return mockWhatsappNumber
+  },
+  WHATSAPP_HEADER_MESSAGE:
+    "Hola, Tehesa. Necesito una cotización para una medida especial. ¿Me pueden ayudar?",
 }))
 
 const categories: TaxonomyItem[] = [
@@ -22,6 +36,7 @@ const brands: TaxonomyItem[] = [
 beforeEach(() => {
   usePathnameMock.mockReturnValue("/")
   useSearchParamsMock.mockReturnValue(new URLSearchParams(""))
+  mockWhatsappNumber = "5215500000000"
 })
 
 describe("Header", () => {
@@ -177,5 +192,41 @@ describe("Header", () => {
     render(<Header categories={categories} brands={brands} />)
 
     expect(screen.queryByRole("button", { name: "Buscar" })).not.toBeInTheDocument()
+  })
+
+  it("renders the utility bar WhatsApp links with the header message", async () => {
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const expectedUrl = buildWhatsappUrl(
+      "5215500000000",
+      "Hola, Tehesa. Necesito una cotización para una medida especial. ¿Me pueden ayudar?",
+    )
+
+    const utilityBarLink = screen.getByRole("link", { name: "Solicitar cotización Cotizar" })
+    expect(utilityBarLink).toHaveAttribute("href", expectedUrl)
+    expect(utilityBarLink).toHaveAttribute("target", "_blank")
+    expect(utilityBarLink).toHaveAttribute("rel", "noopener noreferrer")
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    const footerLink = within(dialog).getByRole("link", { name: "Solicitar cotización" })
+    expect(footerLink).toHaveAttribute("href", expectedUrl)
+  })
+
+  it("hides both WhatsApp links when the number is unset, without throwing", async () => {
+    mockWhatsappNumber = undefined
+    const user = userEvent.setup()
+
+    expect(() => render(<Header categories={categories} brands={brands} />)).not.toThrow()
+
+    expect(screen.queryByRole("link", { name: "Solicitar cotización" })).not.toBeInTheDocument()
+    expect(screen.getByText("¿Medida especial?")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    expect(
+      within(dialog).queryByRole("link", { name: "Solicitar cotización" }),
+    ).not.toBeInTheDocument()
   })
 })

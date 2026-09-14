@@ -398,3 +398,12 @@ the "useSearchParams should be wrapped in a suspense boundary" error.
   Answer: Move it (D16).
   Context: `docs/UNIT_TESTING_GUIDELINES.md` governs; the current block exists only because Story 1 added the badge to
   the header. Recommendation: move it.
+
+## Out-of-scope implementation changes
+
+Recorded during `/implement`; see `ai-planning/header-navigation.story.md` for full detail.
+
+### Phase 1
+
+- `src/shared/ui/organisms/Header.tsx`: the active desktop-dropdown taxonomy item is marked with a visually-hidden `" (actual)"` text suffix instead of a literal `aria-current="page"` attribute, because react-aria-components' `MenuItem` strips unrecognized `aria-*` attributes from the rendered DOM node (confirmed empirically; `data-*` passes through). User-approved inline (`cnp`). Covered by `__tests__/shared/Header.test.tsx`.
+- `src/shared/ui/organisms/Header.tsx`: the WhatsApp URL (`WHATSAPP_HEADER_MESSAGE`/`whatsappUrl`) is computed inside the `Header` component body per render instead of at module scope, matching `WhatsappCta.tsx`'s own per-render pattern and keeping the set/unset cases testable without `jest.resetModules()` (documented as unsafe elsewhere in this repo's test suite). User-approved inline (`cnp`). Covered by `__tests__/shared/Header.test.tsx`.

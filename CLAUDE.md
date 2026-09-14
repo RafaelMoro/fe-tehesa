@@ -15,7 +15,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Required env vars for local development:** `STRAPI_HOST` and `STRAPI_API_TOKEN` in `.env.local`. Without them, Apollo queries silently fail.
 
-**Optional env var:** `NEXT_PUBLIC_SITE_URL` — absolute production origin used by `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000` when unset; never throws.
+**Optional env vars:**
+- `NEXT_PUBLIC_SITE_URL` — absolute production origin used by `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000` when unset; never throws.
+- `NEXT_PUBLIC_WHATSAPP_NUMBER` — the seller's WhatsApp click-to-chat number, used by `/cotizar`'s `WhatsappCta` and the header's utility-bar link / mobile menu footer button. Unset hides the affected links/CTA instead of throwing.
 
 ## High-Level Architecture
 
@@ -45,14 +47,14 @@ Next.js App Router (src/app)
   ├─ types (Product, Variant, Theme, pagination, cart line types)
   ├─ utils (currency formatting, catalog API envelope wrapper, SEO metadata/JSON-LD builders)
   ├─ hooks (useMediaQuery)
-  └─ ui/atoms + ui/organisms (ToggleDarkMode, CartCount, QuantityStepper, Header, etc.)
+  └─ ui/atoms + ui/organisms (ToggleDarkMode, CartCount, QuantityStepper, Header + MobileMenu, etc.)
         │
   State (src/zustand)
   ├─ change-theme store/provider (SSR-safe, currently zero consumers — ToggleDarkMode uses next-themes directly)
   └─ cart store/provider — SSR-safe, persists to localStorage via zustand/persist with rehydrate validation
 ```
 
-**Key flow invariant:** Server components in `src/app/page.tsx` call `"use server"` actions in `src/shared/lib/global.lib.ts`, which create a **per-request Apollo Client** against Strapi. Clients never import `global.lib.ts` directly. Route handlers wrap server actions in thin HTTP envelopes. The cart (`/cotizar`) is client-only Zustand state persisted to `localStorage`; it is not synced to Strapi — there is no order/cart/quote content type in the backend.
+**Key flow invariant:** Server components in `src/app/page.tsx` call `"use server"` actions in `src/shared/lib/global.lib.ts`, which create a **per-request Apollo Client** against Strapi. Clients never import `global.lib.ts` directly. Route handlers wrap server actions in thin HTTP envelopes. The cart (`/cotizar`) is client-only Zustand state persisted to `localStorage`; it is not synced to Strapi — there is no order/cart/quote content type in the backend. The root layout (`src/app/layout.tsx`) also fetches category/brand taxonomy for `Header`'s desktop dropdowns and mobile menu, degrading to an empty header (no dropdowns) on Strapi failure; every route is forced dynamic (`export const dynamic = "force-dynamic"`) because `Header` reads `useSearchParams()`.
 
 See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a summary, kept only roughly in sync).
 
@@ -86,7 +88,7 @@ See `ai-skills/REPO_CONTEXT.md` for the full architecture map (this section is a
 | `src/shared/constants/` | Catalog error codes, theme cookie key, cart bounds (`cart.constants.ts`), validation rules, pagination bounds, SEO copy/origin (`seo.constants.ts`) |
 | `src/shared/utils/` | Pure helpers (currency format, catalog API client envelope wrapper, SEO metadata/JSON-LD builders in `seo.utils.ts`) |
 | `src/shared/ui/atoms` | Atomic UI (ToggleDarkMode, QuantityStepper, CartCount, etc.) |
-| `src/shared/ui/organisms` | Composed UI (Header — renders `CartCount`, rendered once from the root layout) |
+| `src/shared/ui/organisms` | Composed UI: `Header` (sticky, every route — utility bar + WhatsApp link, desktop nav with disabled category/brand dropdowns, mobile lupa/cart/hamburger; rendered once from the root layout) and `MobileMenu` (right-side drawer it renders below `md:`) |
 | `src/zustand/store/` | Vanilla Zustand stores: theme (`change-theme.store.ts`) and cart (`cart.store.ts`, `zustand/persist` to `localStorage`) |
 | `src/zustand/provider/` | SSR-safe store providers (wraps-store pattern), one per store |
 
