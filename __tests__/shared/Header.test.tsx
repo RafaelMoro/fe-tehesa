@@ -61,7 +61,7 @@ describe("Header", () => {
     expect(productosElsewhere).not.toHaveAttribute("aria-current")
   })
 
-  it("opens the Categorías dropdown listing every item as disabled", async () => {
+  it("opens the Categorías dropdown listing every item as disabled plus a Ver todas las categorías row", async () => {
     const user = userEvent.setup()
     render(<Header categories={categories} brands={brands} />)
 
@@ -73,11 +73,52 @@ describe("Header", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true")
     const menu = screen.getByRole("menu", { name: "Categorías" })
     const items = within(menu).getAllByRole("menuitem")
-    expect(items).toHaveLength(categories.length)
-    for (const item of items) {
+    expect(items).toHaveLength(categories.length + 1)
+    for (const item of items.slice(0, categories.length)) {
       expect(item).toHaveAttribute("aria-disabled", "true")
       expect(item).not.toHaveAttribute("href")
     }
+    const allRow = items[categories.length]
+    expect(allRow).not.toHaveAttribute("aria-disabled", "true")
+    expect(allRow).toHaveAttribute("href", "/categorias")
+
+    await user.keyboard("{Escape}")
+    await user.click(screen.getByRole("button", { name: /Marcas/ }))
+    const brandsMenu = screen.getByRole("menu", { name: "Marcas" })
+    expect(within(brandsMenu).getAllByRole("menuitem")).toHaveLength(brands.length)
+  })
+
+  it("closes the Categorías dropdown when the Ver todas las categorías row is selected", async () => {
+    const capture = (event: Event) => event.preventDefault()
+    window.addEventListener("click", capture)
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const trigger = screen.getByRole("button", { name: /Categorías/ })
+    await user.click(trigger)
+    const allRow = screen.getByRole("menuitem", { name: "Ver todas las categorías" })
+
+    await user.click(allRow)
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false")
+    window.removeEventListener("click", capture)
+  })
+
+  it("marks Categorías active on /categorias and hides the Ver todas las categorías row there", async () => {
+    usePathnameMock.mockReturnValue("/categorias")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    expect(screen.getAllByRole("link", { name: "Productos" })[0]).not.toHaveAttribute(
+      "aria-current",
+    )
+
+    const trigger = screen.getByRole("button", { name: "Categorías (actual)" })
+    await user.click(trigger)
+
+    expect(
+      screen.queryByRole("menuitem", { name: "Ver todas las categorías" }),
+    ).not.toBeInTheDocument()
   })
 
   it("highlights the active category from the URL", async () => {
@@ -110,6 +151,9 @@ describe("Header", () => {
 
     expect(screen.queryByRole("button", { name: /Categorías/ })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /Marcas/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Ver todas las categorías" }),
+    ).not.toBeInTheDocument()
   })
 
   it("renders the cart control and the theme toggle", async () => {
@@ -172,6 +216,38 @@ describe("Header", () => {
     }
     expect(within(dialog).getByText("Urrea")).toHaveAttribute("aria-current", "page")
     expect(within(dialog).queryByRole("link", { name: "Urrea" })).not.toBeInTheDocument()
+  })
+
+  it("shows a Ver todas las categorías link in the side menu that closes the drawer", async () => {
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    await user.click(within(dialog).getByRole("button", { name: "Categorías" }))
+
+    const row = within(dialog).getByRole("link", { name: "Ver todas las categorías" })
+    expect(row).toHaveAttribute("href", "/categorias")
+
+    await user.click(row)
+
+    expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
+  })
+
+  it("hides the side-menu Ver todas las categorías link and highlights the trigger on /categorias", async () => {
+    usePathnameMock.mockReturnValue("/categorias")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+
+    expect(
+      within(dialog).queryByRole("link", { name: "Ver todas las categorías" }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("button", { name: "Categorías (actual)" }),
+    ).toBeInTheDocument()
   })
 
   it("shows the lupa button on / and dispatches the search-open event", async () => {
