@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button, Pagination, Popover, useOverlayState } from "@heroui/react"
 import { buttonVariants } from "@heroui/styles"
-import { RiArrowLeftLine, RiArrowRightLine, RiInformationLine } from "@remixicon/react"
+import {
+  RiArrowLeftLine,
+  RiArrowRightLine,
+  RiInformationLine,
+} from "@remixicon/react"
 
 import {
   CatalogMode,
@@ -350,7 +354,11 @@ export const Home = ({
       {activeCatalogMode === null ? (
         <div className="flex flex-col gap-3 rounded-xl border border-default-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted">
-            Mostrando <span className="font-medium text-foreground">{visibleProductStart}-{visibleProductEnd}</span> de {KNOWN_PRODUCT_TOTAL} productos
+            Mostrando{" "}
+            <span className="font-medium text-foreground">
+              {visibleProductStart}-{visibleProductEnd}
+            </span>{" "}
+            de {KNOWN_PRODUCT_TOTAL} productos
           </p>
           <div className="flex items-center justify-center gap-2">
             {currentPage > 1 && !isRoutePending ? (
