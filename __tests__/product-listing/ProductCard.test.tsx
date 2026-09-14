@@ -79,6 +79,34 @@ describe("ProductCard", () => {
     expect(screen.getByText("Tubes")).toBeInTheDocument()
   })
 
+  it("renders the subcategory label in the kicker when subcategory is set", () => {
+    const product: Product = {
+      name: "Tornillo hex",
+      documentId: "tornillo-1",
+      category: { name: "Tornillería" },
+      brand: null,
+      subcategory: "tornillos",
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.getByText("Tornillería / Tornillos")).toBeInTheDocument()
+  })
+
+  it("renders the raw subcategory value when it has no known label", () => {
+    const product: Product = {
+      name: "Unknown sub",
+      documentId: "unknown-sub-1",
+      category: { name: "Tornillería" },
+      brand: null,
+      subcategory: "zzz",
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.getByText("Tornillería / zzz")).toBeInTheDocument()
+  })
+
   it("renders no image when the image prop is absent", () => {
     const product: Product = {
       name: "Imageless Tire",

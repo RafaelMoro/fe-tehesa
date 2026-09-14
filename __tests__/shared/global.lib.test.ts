@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import {
+  fetchAllProductsByCategory,
   fetchBrands,
   fetchCategories,
   fetchCategoryProductCounts,
@@ -13,8 +14,12 @@ import {
   fetchProductsByName,
   fetchVariantsByIds,
 } from "@/shared/lib/global.lib"
-import { REVALIDATE_MAX_IDS } from "@/shared/constants/catalog.constants"
 import {
+  ALL_PRODUCTS_PAGE_SIZE,
+  REVALIDATE_MAX_IDS,
+} from "@/shared/constants/catalog.constants"
+import {
+  GET_ALL_PRODUCTS_BY_CATEGORY,
   GET_BRANDS,
   GET_CATEGORIES,
   GET_PRODUCT_VARIANTS,
@@ -30,6 +35,7 @@ import type {
   FetchCategoriesResponse,
   FetchCategoryProductCountsResponse,
   FetchProductsByIdsResponse,
+  FetchProductsConnectionResponse,
   FetchProductsResponse,
   FetchSingleProductResponse,
   FetchVariantsByIdsResponse,
@@ -302,6 +308,100 @@ describe("Apollo adapters", () => {
     it("fetchProductsByBrand rejects on Apollo failure", async () => {
       queryMock.mockRejectedValue(new Error("up"))
       await expect(fetchProductsByBrand("acme", 1)).rejects.toThrow("up")
+    })
+  })
+
+  describe("fetchAllProductsByCategory", () => {
+    const productA: Product = { ...product, documentId: "a" }
+    const productB: Product = { ...product, documentId: "b" }
+
+    it("pages through products_connection by pageCount, no subcategory key by default", async () => {
+      queryMock
+        .mockResolvedValueOnce(
+          ok<FetchProductsConnectionResponse>({
+            products_connection: {
+              pageInfo: { pageCount: 2 },
+              nodes: [productA],
+            },
+          }),
+        )
+        .mockResolvedValueOnce(
+          ok<FetchProductsConnectionResponse>({
+            products_connection: {
+              pageInfo: { pageCount: 2 },
+              nodes: [productB],
+            },
+          }),
+        )
+
+      const result = await fetchAllProductsByCategory("tornilleria")
+
+      expect(result).toEqual([productA, productB])
+      expect(queryMock).toHaveBeenCalledTimes(2)
+      expect(queryMock).toHaveBeenNthCalledWith(1, {
+        query: GET_ALL_PRODUCTS_BY_CATEGORY,
+        variables: {
+          filters: { category: { customId: { eq: "tornilleria" } } },
+          pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+        },
+      })
+      expect(queryMock).toHaveBeenNthCalledWith(2, {
+        query: GET_ALL_PRODUCTS_BY_CATEGORY,
+        variables: {
+          filters: { category: { customId: { eq: "tornilleria" } } },
+          pagination: { page: 2, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+        },
+      })
+    })
+
+    it("passes filters.subcategory.eq when a subcategory is given", async () => {
+      queryMock.mockResolvedValue(
+        ok<FetchProductsConnectionResponse>({
+          products_connection: { pageInfo: { pageCount: 1 }, nodes: [] },
+        }),
+      )
+
+      await fetchAllProductsByCategory("tornilleria", "tornillos")
+
+      expect(queryMock).toHaveBeenCalledWith({
+        query: GET_ALL_PRODUCTS_BY_CATEGORY,
+        variables: {
+          filters: {
+            category: { customId: { eq: "tornilleria" } },
+            subcategory: { eq: "tornillos" },
+          },
+          pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+        },
+      })
+    })
+
+    it("returns [] after exactly one call when pageCount is 0 with empty nodes", async () => {
+      queryMock.mockResolvedValue(
+        ok<FetchProductsConnectionResponse>({
+          products_connection: { pageInfo: { pageCount: 0 }, nodes: [] },
+        }),
+      )
+
+      const result = await fetchAllProductsByCategory("tornilleria")
+      expect(result).toEqual([])
+      expect(queryMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("returns [] when products_connection is null", async () => {
+      queryMock.mockResolvedValue(
+        ok<FetchProductsConnectionResponse>({ products_connection: null }),
+      )
+
+      const result = await fetchAllProductsByCategory("tornilleria")
+      expect(result).toEqual([])
+      expect(queryMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("rejects on Apollo failure", async () => {
+      queryMock.mockRejectedValue(new Error("up"))
+      await expect(fetchAllProductsByCategory("tornilleria")).rejects.toThrow(
+        "up",
+      )
     })
   })
 })
