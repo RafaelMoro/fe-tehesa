@@ -193,7 +193,7 @@ Do **not** touch the primary/secondary tables, the adapter contract, or the App 
 | AC2 — four more reserved-name events, flat payloads | Phase 1 | n/a — docs only | Cannot validate | Proof is the 5-row grep and a read against the ≤40/≤25/≤100 limits |
 | AC3 — name/email never sent; redaction is a backstop | Phase 1 | n/a — docs only | Cannot validate | Proof is the "never analytics data" subsection and no contact field in any table row |
 | AC4 — `docs/improvement.md` reflects what shipped | Phase 2 | n/a — docs only | Cannot validate | Proof is the two `cart funnel` greps |
-| AC5 — same quote reference on every part across re-renders | Phase 0 | `GET /cotizar` 200 (route still renders); proof is `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` | Not validated | The CTA is behind the mounted guard, so the reference itself is only observable in jsdom / manually |
+| AC5 — same quote reference on every part across re-renders | Phase 0 | `GET /cotizar` 200 (route still renders); proof is `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` | Validated | `pnpm test -- __tests__/cart/WhatsappCta.test.tsx` (7/7 passed, including the new stable-reference case); `curl /cotizar` → 200, no dev-server log errors |
 
 ## Cross-cutting concerns
 
