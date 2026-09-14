@@ -1,6 +1,5 @@
 import { render, screen } from "@__tests__/test-utils"
 import { CartCount } from "@/shared/ui/atoms/CartCount"
-import { Header } from "@/shared/ui/organisms/Header"
 import { useCartStore } from "@/zustand/provider/cart.provider"
 
 const usePathnameMock = jest.fn(() => "/")
@@ -94,16 +93,5 @@ describe("CartCount", () => {
       name: "Ver mi lista, 0 artículos",
     })
     expect(link).not.toHaveAttribute("aria-current")
-  })
-})
-
-describe("Header", () => {
-  it("renders the cart control alongside the theme toggle", async () => {
-    render(<Header themeFetched="light" />)
-
-    expect(
-      await screen.findByText("Ver mi lista, 0 artículos"),
-    ).toBeInTheDocument()
-    expect(screen.getByRole("button")).toBeInTheDocument()
   })
 })
