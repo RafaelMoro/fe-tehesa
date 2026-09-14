@@ -7,6 +7,7 @@ import { Product, ProductVariant } from "@/shared/types/global.types"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
 import { fetchCatalog } from "@/shared/utils/catalog-api.utils"
 import { CART_MAX_LINES } from "@/shared/constants/cart.constants"
+import { SUBCATEGORY_LABELS } from "@/shared/constants/category.constants"
 import { useCartStore } from "@/zustand/provider/cart.provider"
 
 interface ProductCardProps {
@@ -136,6 +137,8 @@ export const ProductCard = ({
           {product.category && (
             <span className="truncate text-[11px] font-medium tracking-[.08em] text-primary-500 uppercase dark:text-primary-100">
               {product.category.name}
+              {product.subcategory &&
+                ` / ${SUBCATEGORY_LABELS[product.subcategory] ?? product.subcategory}`}
             </span>
           )}
           {variantPill && (

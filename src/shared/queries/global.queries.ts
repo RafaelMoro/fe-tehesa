@@ -162,3 +162,31 @@ export const GET_BRANDS = gql`
     }
   }
 `
+
+export const GET_ALL_PRODUCTS_BY_CATEGORY = gql`
+  query GetAllProductsByCategory(
+    $filters: ProductFiltersInput
+    $pagination: PaginationArg
+  ) {
+    products_connection(filters: $filters, pagination: $pagination) {
+      pageInfo {
+        pageCount
+      }
+      nodes {
+        name
+        minPrice
+        maxPrice
+        documentId
+        variantCount
+        hasOneProductVariant
+        subcategory
+        category {
+          name
+        }
+        brand {
+          name
+        }
+      }
+    }
+  }
+`

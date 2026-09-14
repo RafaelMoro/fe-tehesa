@@ -8,6 +8,7 @@ import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { CartCount } from "../atoms/CartCount"
 import { MobileMenu } from "./MobileMenu"
 import { CATALOG_SEARCH_OPEN_EVENT } from "@/shared/constants/catalog.constants"
+import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
 import {
   WHATSAPP_HEADER_MESSAGE,
   WHATSAPP_NUMBER,
@@ -27,6 +28,7 @@ interface TaxonomyDropdownProps {
   menuClassName: string
   allHref?: string
   isActiveRoute?: boolean
+  hrefs?: Record<string, string>
 }
 
 const TaxonomyDropdown = ({
@@ -36,6 +38,7 @@ const TaxonomyDropdown = ({
   menuClassName,
   allHref,
   isActiveRoute,
+  hrefs = {},
 }: TaxonomyDropdownProps) => {
   if (items.length === 0) {
     return null
@@ -57,12 +60,14 @@ const TaxonomyDropdown = ({
         <Dropdown.Menu aria-label={label} className={`max-h-[420px] overflow-y-auto ${menuClassName}`}>
           {items.map((item) => {
             const isActive = item.name === activeName
+            const href = hrefs[item.customId]
             return (
               <Dropdown.Item
                 key={item.customId}
                 id={item.name}
                 textValue={item.name}
-                isDisabled
+                href={href}
+                isDisabled={href === undefined}
                 className={`min-h-11 leading-[1.3] whitespace-normal ${
                   isActive
                     ? "bg-[#F5FFEF] text-[#125D03] dark:bg-[#16300A] dark:text-[#B4FE99]"
@@ -95,9 +100,16 @@ export const Header = ({ categories, brands }: HeaderProps) => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isCatalog = pathname === "/"
-  const isCategories = pathname === "/categorias"
+  const isCategoriesIndex = pathname === "/categorias"
+  const isCategories = pathname.startsWith("/categorias")
+  const pageCategoryId = Object.keys(CATEGORY_PAGE_HREFS).find(
+    (id) => CATEGORY_PAGE_HREFS[id] === pathname,
+  )
   const activeCategory =
-    searchParams.get("mode") === "category" ? searchParams.get("category") : null
+    searchParams.get("mode") === "category"
+      ? searchParams.get("category")
+      : (categories.find((category) => category.customId === pageCategoryId)
+          ?.name ?? null)
   const activeBrand =
     searchParams.get("mode") === "brand" ? searchParams.get("brand") : null
   const whatsappUrl = WHATSAPP_NUMBER
@@ -143,8 +155,9 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             items={categories}
             activeName={activeCategory}
             menuClassName="w-[350px]"
-            allHref={isCategories ? undefined : "/categorias"}
+            allHref={isCategoriesIndex ? undefined : "/categorias"}
             isActiveRoute={isCategories}
+            hrefs={CATEGORY_PAGE_HREFS}
           />
           <TaxonomyDropdown
             label="Marcas"
@@ -172,6 +185,7 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             brands={brands}
             isCatalog={isCatalog}
             isCategories={isCategories}
+            categoriesAllHref={isCategoriesIndex ? undefined : "/categorias"}
             activeCategory={activeCategory}
             activeBrand={activeBrand}
             whatsappUrl={whatsappUrl}

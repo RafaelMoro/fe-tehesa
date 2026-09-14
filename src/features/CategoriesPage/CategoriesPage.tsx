@@ -1,18 +1,10 @@
 import Link from "next/link"
 
 import { CategoryCard } from "./CategoryCard"
-import {
-  WHATSAPP_HEADER_MESSAGE,
-  WHATSAPP_NUMBER,
-} from "@/shared/constants/whatsapp.constants"
-import { buildWhatsappUrl } from "@/shared/utils/whatsapp-message.utils"
+import { WhatsappPanel } from "@/shared/ui/organisms/WhatsappPanel"
 import type { CategoryWithCount } from "@/shared/types/global.types"
 
 export const CategoriesPage = ({ categories }: { categories: CategoryWithCount[] }) => {
-  const whatsappUrl = WHATSAPP_NUMBER
-    ? buildWhatsappUrl(WHATSAPP_NUMBER, WHATSAPP_HEADER_MESSAGE)
-    : null
-
   return (
     <>
       <nav aria-label="Ruta">
@@ -40,23 +32,7 @@ export const CategoriesPage = ({ categories }: { categories: CategoryWithCount[]
             WhatsApp.
           </p>
         </div>
-        {whatsappUrl !== null && (
-          <aside className="rounded-[14px] bg-[#0F2001] p-6 text-white">
-            <h2 className="text-lg font-semibold">Cotiza por WhatsApp</h2>
-            <p className="mt-2 text-sm text-white/80">
-              Envía tu lista de medidas y cantidades; confirmamos existencia el mismo
-              día.
-            </p>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg bg-[#4DF527] px-4 font-semibold text-[#0D3401]"
-            >
-              Cotizar ahora
-            </a>
-          </aside>
-        )}
+        <WhatsappPanel />
       </section>
       <p className="text-sm text-muted">{categories.length} categorías</p>
       {categories.length === 0 ? (
