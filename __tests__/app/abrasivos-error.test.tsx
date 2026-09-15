@@ -2,9 +2,9 @@
  * @jest-environment jsdom
  */
 import { render, screen, userEvent } from "@__tests__/test-utils"
-import Error from "@/app/categorias/tornilleria-fijacion/error"
+import Error from "@/app/categorias/abrasivos/error"
 
-describe("categorias/tornilleria-fijacion error boundary", () => {
+describe("categorias/abrasivos error boundary", () => {
   it("shows Spanish error copy and retries through reset", async () => {
     const user = userEvent.setup()
     const reset = jest.fn()
@@ -13,7 +13,7 @@ describe("categorias/tornilleria-fijacion error boundary", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "No pudimos cargar los productos de Tornillería",
+        name: "No pudimos cargar los productos de Abrasivos",
       }),
     ).toBeInTheDocument()
 

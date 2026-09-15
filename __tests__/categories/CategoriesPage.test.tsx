@@ -25,7 +25,7 @@ const categories: CategoryWithCount[] = [
 ]
 
 describe("CategoriesPage", () => {
-  it("renders one article per category with an h2 name; the Tornillería CTA is a link, the others stay disabled", () => {
+  it("renders one article per category with an h2 name; the Tornillería and Abrasivos CTAs are links, the others stay disabled", () => {
     render(<CategoriesPage categories={categories} />)
 
     const articles = screen.getAllByRole("article")
@@ -36,12 +36,19 @@ describe("CategoriesPage", () => {
       ).toBeInTheDocument()
     }
 
-    const tornilleriaCta = screen.getByRole("link", { name: "Ver categoría" })
-    expect(tornilleriaCta).toHaveAttribute("href", "/categorias/tornilleria")
+    const linkCtas = screen.getAllByRole("link", { name: "Ver categoría" })
+    const hrefs = linkCtas.map((cta) => cta.getAttribute("href"))
+    expect(hrefs).toEqual(
+      expect.arrayContaining([
+        "/categorias/tornilleria-fijacion",
+        "/categorias/abrasivos",
+      ]),
+    )
+    expect(linkCtas).toHaveLength(2)
 
     const ctas = screen.getAllByText("Ver categoría")
-    const disabledCtas = ctas.filter((cta) => cta !== tornilleriaCta)
-    expect(disabledCtas).toHaveLength(categories.length - 1)
+    const disabledCtas = ctas.filter((cta) => !linkCtas.includes(cta))
+    expect(disabledCtas).toHaveLength(categories.length - 2)
     for (const cta of disabledCtas) {
       expect(cta).toHaveAttribute("aria-disabled", "true")
       expect(cta.tagName).not.toBe("A")
