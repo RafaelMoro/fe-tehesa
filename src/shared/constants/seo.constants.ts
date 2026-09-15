@@ -16,3 +16,7 @@ export const TORNILLERIA_TITLE =
   "Tornillería y Fijación Industrial en Puebla | Tehesa"
 export const TORNILLERIA_DESCRIPTION =
   "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy."
+export const ABRASIVOS_TITLE =
+  "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa"
+export const ABRASIVOS_DESCRIPTION =
+  "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial."

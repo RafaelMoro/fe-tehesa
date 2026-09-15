@@ -50,6 +50,9 @@ describe("sitemap", () => {
       result.some((entry) => entry.url.endsWith("/categorias/tornilleria-fijacion")),
     ).toBe(true)
     expect(
+      result.some((entry) => entry.url.endsWith("/categorias/abrasivos")),
+    ).toBe(true)
+    expect(
       result.some((entry) => entry.url.includes("mode=category")),
     ).toBe(true)
     expect(result.some((entry) => entry.url.includes("mode=brand"))).toBe(
@@ -80,6 +83,9 @@ describe("sitemap", () => {
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
     expect(
       result.some((entry) => entry.url.endsWith("/categorias/tornilleria-fijacion")),
+    ).toBe(true)
+    expect(
+      result.some((entry) => entry.url.endsWith("/categorias/abrasivos")),
     ).toBe(true)
   })
 })
