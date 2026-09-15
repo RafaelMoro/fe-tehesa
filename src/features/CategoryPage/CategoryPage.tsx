@@ -5,8 +5,8 @@ import { Button, useOverlayState } from "@heroui/react"
 
 import { Product, TaxonomyItem } from "@/shared/types/global.types"
 import {
+  CategoryPageConfig,
   SUBCATEGORY_LABELS,
-  TORNILLERIA_CATEGORY_NAME,
 } from "@/shared/constants/category.constants"
 import { WhatsappPanel } from "@/shared/ui/organisms/WhatsappPanel"
 import { ProductListing } from "@/features/ProductListing/ProductListing"
@@ -23,7 +23,13 @@ const buildOptions = (values: string[]): TaxonomyItem[] =>
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "es"))
 
-export const CategoryPage = ({ products }: { products: Product[] }) => {
+export const CategoryPage = ({
+  products,
+  config,
+}: {
+  products: Product[]
+  config: CategoryPageConfig
+}) => {
   const [searchTerm, setSearchTerm] = useState("")
   const [subcategory, setSubcategory] = useState<string | null>(null)
   const [brand, setBrand] = useState<string | null>(null)
@@ -93,7 +99,7 @@ export const CategoryPage = ({ products }: { products: Product[] }) => {
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <span aria-current="page">{TORNILLERIA_CATEGORY_NAME}</span>
+            <span aria-current="page">{config.name}</span>
           </li>
         </ol>
       </nav>
@@ -103,12 +109,9 @@ export const CategoryPage = ({ products }: { products: Product[] }) => {
             Categoría
           </p>
           <h1 className="text-[28px] font-bold md:text-4xl lg:text-5xl">
-            Tornillería y fijación industrial
+            {config.heading}
           </h1>
-          <p className="mt-3 text-muted">
-            Tornillos, tuercas, rondanas, pernos y varillas roscadas para
-            industria. Acero e inoxidable, con existencia en Puebla.
-          </p>
+          <p className="mt-3 text-muted">{config.intro}</p>
         </div>
         <WhatsappPanel />
       </section>
@@ -117,15 +120,17 @@ export const CategoryPage = ({ products }: { products: Product[] }) => {
         <SearchInput
           value={searchTerm}
           onSearch={setSearchTerm}
-          placeholder="Buscar tornillos, tuercas, pernos..."
+          placeholder={config.searchPlaceholder}
         />
         <div className="flex flex-col gap-3 sm:flex-row">
-          <DropdownCategories
-            selectedCategory={subcategory}
-            updateSelectedCategory={setSubcategory}
-            categories={subcategoryOptions}
-            defaultLabel="Filtrar subcategorías"
-          />
+          {subcategoryOptions.length > 0 && (
+            <DropdownCategories
+              selectedCategory={subcategory}
+              updateSelectedCategory={setSubcategory}
+              categories={subcategoryOptions}
+              defaultLabel="Filtrar subcategorías"
+            />
+          )}
           <DropdownBrands
             selectedBrand={brand}
             updateSelectedBrand={setBrand}

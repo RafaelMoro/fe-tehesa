@@ -4,8 +4,8 @@ import { CategoryPage } from "@/features/CategoryPage/CategoryPage"
 import { fetchAllProductsByCategory } from "@/shared/lib/global.lib"
 import {
   CATEGORY_PAGE_HREFS,
+  CATEGORY_PAGES,
   TORNILLERIA_CATEGORY_ID,
-  TORNILLERIA_CATEGORY_NAME,
 } from "@/shared/constants/category.constants"
 import {
   SITE_URL,
@@ -40,7 +40,7 @@ const breadcrumbJsonLd = {
     {
       "@type": "ListItem",
       position: 3,
-      name: TORNILLERIA_CATEGORY_NAME,
+      name: CATEGORY_PAGES[TORNILLERIA_CATEGORY_ID].name,
       item: `${SITE_URL}${CATEGORY_PAGE_HREFS[TORNILLERIA_CATEGORY_ID]}`,
     },
   ],
@@ -56,7 +56,10 @@ export default async function TornilleriaRoute() {
         dangerouslySetInnerHTML={{ __html: toJsonLdHtml(breadcrumbJsonLd) }}
       />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-4 md:p-5">
-        <CategoryPage products={products} />
+        <CategoryPage
+          products={products}
+          config={CATEGORY_PAGES[TORNILLERIA_CATEGORY_ID]}
+        />
       </main>
     </>
   )
