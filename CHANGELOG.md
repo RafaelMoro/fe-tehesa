@@ -1,3 +1,9 @@
+## v0.37.0 (2026-09-15)
+
+### Pull Requests
+[#47](https://github.com/RafaelMoro/fe-tehesa/pull/47) | Add Abrasivos category page with shared category config
+
+
 ## v0.36.0 (2026-09-14)
 
 ### Pull Requests
