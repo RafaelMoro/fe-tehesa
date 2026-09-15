@@ -37,7 +37,10 @@ describe("CategoriesPage", () => {
     }
 
     const tornilleriaCta = screen.getByRole("link", { name: "Ver categoría" })
-    expect(tornilleriaCta).toHaveAttribute("href", "/categorias/tornilleria")
+    expect(tornilleriaCta).toHaveAttribute(
+      "href",
+      "/categorias/tornilleria-fijacion",
+    )
 
     const ctas = screen.getAllByText("Ver categoría")
     const disabledCtas = ctas.filter((cta) => cta !== tornilleriaCta)

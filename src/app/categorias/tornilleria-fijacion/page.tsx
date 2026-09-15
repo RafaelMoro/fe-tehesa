@@ -17,7 +17,7 @@ import { toJsonLdHtml } from "@/shared/utils/seo.utils"
 export const generateMetadata = (): Metadata => ({
   title: TORNILLERIA_TITLE,
   description: TORNILLERIA_DESCRIPTION,
-  alternates: { canonical: "/categorias/tornilleria" },
+  alternates: { canonical: "/categorias/tornilleria-fijacion" },
   robots: { index: true, follow: true },
 })
 

@@ -79,7 +79,7 @@ describe("Header", () => {
       name: "Tornillería",
     })
     expect(tornilleriaItem).not.toHaveAttribute("aria-disabled", "true")
-    expect(tornilleriaItem).toHaveAttribute("href", "/categorias/tornilleria")
+    expect(tornilleriaItem).toHaveAttribute("href", "/categorias/tornilleria-fijacion")
 
     const otherItems = items.filter((item) => item !== tornilleriaItem)
     for (const item of otherItems.slice(0, categories.length - 1)) {
@@ -150,8 +150,8 @@ describe("Header", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("marks Categorías and Tornillería active on /categorias/tornilleria, keeping the Ver todas las categorías row", async () => {
-    usePathnameMock.mockReturnValue("/categorias/tornilleria")
+  it("marks Categorías and Tornillería active on /categorias/tornilleria-fijacion, keeping the Ver todas las categorías row", async () => {
+    usePathnameMock.mockReturnValue("/categorias/tornilleria-fijacion")
     const user = userEvent.setup()
     render(<Header categories={categories} brands={brands} />)
 
@@ -274,7 +274,7 @@ describe("Header", () => {
     const tornilleriaRow = within(dialog).getByRole("link", {
       name: "Tornillería",
     })
-    expect(tornilleriaRow).toHaveAttribute("href", "/categorias/tornilleria")
+    expect(tornilleriaRow).toHaveAttribute("href", "/categorias/tornilleria-fijacion")
 
     const otherCategoryText = categories.find((c) => c.customId !== "tornilleria")!.name
     expect(within(dialog).getByText(otherCategoryText)).toHaveAttribute(
@@ -287,8 +287,8 @@ describe("Header", () => {
     expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
   })
 
-  it("on /categorias/tornilleria: the row has aria-current=page and the accordion trigger reads Categorías (actual)", async () => {
-    usePathnameMock.mockReturnValue("/categorias/tornilleria")
+  it("on /categorias/tornilleria-fijacion: the row has aria-current=page and the accordion trigger reads Categorías (actual)", async () => {
+    usePathnameMock.mockReturnValue("/categorias/tornilleria-fijacion")
     const user = userEvent.setup()
     render(<Header categories={categories} brands={brands} />)
 

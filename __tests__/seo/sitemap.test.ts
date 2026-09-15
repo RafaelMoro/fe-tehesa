@@ -47,7 +47,7 @@ describe("sitemap", () => {
     expect(result.some((entry) => entry.url.endsWith("/"))).toBe(true)
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
     expect(
-      result.some((entry) => entry.url.endsWith("/categorias/tornilleria")),
+      result.some((entry) => entry.url.endsWith("/categorias/tornilleria-fijacion")),
     ).toBe(true)
     expect(
       result.some((entry) => entry.url.includes("mode=category")),
@@ -79,7 +79,7 @@ describe("sitemap", () => {
     expect(result.some((entry) => entry.url.includes("mode="))).toBe(false)
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
     expect(
-      result.some((entry) => entry.url.endsWith("/categorias/tornilleria")),
+      result.some((entry) => entry.url.endsWith("/categorias/tornilleria-fijacion")),
     ).toBe(true)
   })
 })

@@ -2,9 +2,9 @@
  * @jest-environment jsdom
  */
 import { render, screen, userEvent } from "@__tests__/test-utils"
-import Error from "@/app/categorias/tornilleria/error"
+import Error from "@/app/categorias/tornilleria-fijacion/error"
 
-describe("categorias/tornilleria error boundary", () => {
+describe("categorias/tornilleria-fijacion error boundary", () => {
   it("shows Spanish error copy and retries through reset", async () => {
     const user = userEvent.setup()
     const reset = jest.fn()

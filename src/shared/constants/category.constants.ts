@@ -1,7 +1,7 @@
 export const TORNILLERIA_CATEGORY_ID = "tornilleria"
 
 export const CATEGORY_PAGE_HREFS: Record<string, string> = {
-  [TORNILLERIA_CATEGORY_ID]: "/categorias/tornilleria",
+  [TORNILLERIA_CATEGORY_ID]: "/categorias/tornilleria-fijacion",
 }
 
 export type CategoryPageConfig = {
