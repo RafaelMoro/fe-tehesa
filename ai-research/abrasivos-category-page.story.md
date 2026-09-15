@@ -216,7 +216,7 @@ stock, and does not paginate.
 
 - **Abrasivos is empty today** (0 published, Strapi contract I). The page will render the empty state until
   content lands. `/categorias` already shows `0 productos` on the card; the CTA will now be a live link to an
-  empty page. See UI/product question II on whether that's acceptable to ship as-is.
+  empty page. Accepted: the data gap is filled in Strapi before the production deploy (UI/product question II).
 - **Subcategory field selection** — `GET_ALL_PRODUCTS_BY_CATEGORY` selects `subcategory` for every category; for
   Abrasivos it comes back `null` on every node, which the card kicker and dropdown already handle.
 - **`fetchAllProductsByCategory` page size** — 100 per page, sequential; irrelevant at 0 products, fine at the
@@ -262,10 +262,10 @@ stock, and does not paginate.
   - Answer: Reuse the meta description text (D1).
 - II: Question: Is it acceptable to ship `/categorias/abrasivos` as an indexable (`index, follow`) page while it
   has 0 products, i.e. an empty grid under the hero?
-  - Status: pending
-  - Context: Google may treat an empty category page as thin content. Alternatives are `noindex` until content
-    lands, or holding the `CATEGORY_PAGE_HREFS` entry (which gates every entry point + sitemap) until Strapi has
-    products. Research assumes ship-as-is with `index, follow` to mirror Tornillería.
+  - Status: answered
+  - Answer: Yes — `index, follow`, mirroring Tornillería. The empty set is a Strapi data gap the user will fill
+    before the production deploy, not a frontend concern.
+  - Context: Decided by the user on 2026-09-15.
 - III: Question: Should the old `/categorias/tornilleria` URL redirect?
   - Status: answered
   - Answer: No redirect (D3).
@@ -277,6 +277,5 @@ stock, and does not paginate.
 ### Verification
 
 - I: Question: Which PR label?
-  - Status: pending
-  - Context: research assumes `minor` (new page + route rename). Use `patch` only if the team treats the rename
-    as a fix.
+  - Status: answered
+  - Answer: `minor` (new page + route rename), matching the Tornillería PR (#45).
