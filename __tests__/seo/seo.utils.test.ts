@@ -74,7 +74,7 @@ describe("buildCatalogMetadata", () => {
   it("base mode page N: page-suffixed title, canonical, indexable", () => {
     const metadata = buildCatalogMetadata({ page: "3" })
     expect(metadata.title).toBe(
-      "Herramienta Industrial y Tornilleria en Puebla | Pagina 3 | Tehesa",
+      "Herramienta Industrial y Tornillería en Puebla | Pagina 3 | Tehesa",
     )
     expect(metadata.alternates?.canonical).toBe("/?page=3")
     expect(metadata.robots).toMatchObject({ index: true, follow: true })
