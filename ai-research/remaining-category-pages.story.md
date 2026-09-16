@@ -54,8 +54,8 @@ Per-category copy conventions carried over unchanged from the five existing stor
 - **D3** `name` = Strapi name (breadcrumb, JSON-LD leaf, error heading — matches the header dropdown row, which
   renders the live Strapi name); `heading` = table H1. Rows 8–11, 13, 14 differ between the two; rows 6, 7, 12,
   15, 16 are identical.
-- **D2** search placeholder is per category and was chosen by the user each time. Proposed defaults, pending
-  (UI/product I): 6 `Buscar dados, llaves, puntas...`; 7 `Buscar machuelos, terrajas, juegos...`;
+- **D2** search placeholder is per category and was chosen by the user each time. Confirmed (UI/product I,
+  2026-09-16): 6 `Buscar dados, llaves, puntas...`; 7 `Buscar machuelos, terrajas, juegos...`;
   8 `Buscar limas, puntas de diamante, cortadores...`; 9 `Buscar clamps verticales, horizontales...`;
   10 `Buscar calibradores, cuenta hilos...`; 11 `Buscar extractores, manerales...`;
   12 `Buscar adhesivos, selladores...`; 13 `Buscar lentes, equipo de seguridad...`;
@@ -73,8 +73,8 @@ copy or routes, sitemap semantics, queries/server actions, product images, renam
    fetches its full set via `fetchAllProductsByCategory(customId)` and renders `CategoryPage` with the matching
    `CATEGORY_PAGES` config. The five existing URLs keep byte-identical `generateMetadata` output (title,
    description, `alternates.canonical`, `robots: { index: true, follow: true }`) and 3-item `BreadcrumbList`
-   JSON-LD. Any other `/categorias/<x>` returns 404 via `notFound()` (rendered by the existing
-   `src/app/not-found` handling, if any — see Catalog I).
+   JSON-LD. Any other `/categorias/<x>` returns 404 via `notFound()`, rendered by a new app-level
+   `src/app/not-found.tsx` (Catalog I).
 2. **11 new pages carry the table copy.** For rows 6–16 the `<title>`, meta description, canonical, H1, hero
    intro (= description) and breadcrumb leaf (= Strapi name) match the table / conventions above. Product counts
    render live; empty or single-product sets still show the full hero/breadcrumb/WhatsApp panel (Abrasivos rule).
@@ -91,7 +91,7 @@ copy or routes, sitemap semantics, queries/server actions, product images, renam
 ### Task breakdown
 
 - **Phase 1 — migrate to `[slug]`** with the existing 5 categories only; all existing tests green (rewritten as
-  table-driven). This is a valid stopping point / separate commit.
+  table-driven), plus the app-level `not-found.tsx` (D6). This is a valid stopping point / separate commit.
 - **Phase 2 — add 11 config entries** (`CATEGORY_PAGES`, `CATEGORY_PAGE_HREFS`, 22 SEO constants) + test-table
   rows + doc rows.
 
@@ -102,7 +102,10 @@ None. Copy swap on the Tornillería comps for each new page; no new visual state
 ### Decision record
 
 - **D4 (revised, user 2026-09-16)** — replace static folders with `/categorias/[slug]`. Supersedes Abrasivos D4.
-- **D1/D2/D3** — unchanged (see Description). D2 placeholders pending user confirmation.
+- **D1/D2/D3** — unchanged (see Description). D2 placeholders and D3 name/heading split confirmed by the user
+  (2026-09-16).
+- **D6 — general 404 page (user 2026-09-16).** Add `src/app/not-found.tsx` (app-level, not under `[slug]`) with
+  branded copy and a link back to `/categorias`; unknown slugs and any other unmatched URL render it.
 - **D5 — slug ↔ `customId` mapping.** Assumed: the route resolves `slug → customId` by inverting
   `CATEGORY_PAGE_HREFS` (`/categorias/<slug>` → id), so the two legacy slugs keep working with no second map.
   Planner may instead re-key `CATEGORY_PAGES` by slug and add a `customId` field; either is one lookup.
@@ -120,6 +123,8 @@ None. Copy swap on the Tornillería comps for each new page; no new visual state
   `esta categoría` when the slug is unknown.
 - `src/app/categorias/[slug]/loading.tsx` — one-line re-export of `CategoryPageSkeleton`, as today.
 - Delete the five static folders (15 files).
+- `src/app/not-found.tsx` — new app-level 404 (D6): heading, one-line copy, link to `/categorias`; server
+  component, no data fetching. Add `__tests__/app/not-found.test.tsx` (renders heading + link).
 - `src/shared/constants/category.constants.ts` — 11 new `*_CATEGORY_ID` constants (or drop the per-category
   constants and key everything by string literal — planner's call; the existing five are imported only by the
   soon-deleted routes and tests), 11 `CATEGORY_PAGE_HREFS` entries, 11 `CATEGORY_PAGES` entries.
@@ -174,8 +179,8 @@ None. Copy swap on the Tornillería comps for each new page; no new visual state
 - Rows 13–16 have exactly 1 product; the counter renders singular `1 producto` (already handled).
 - `Extracción y Reparación de fijaciones` has a capital R in Strapi; D3 keeps it in breadcrumb/JSON-LD, the H1
   uses the table's lowercase. Cosmetic; flagged in UI/product II.
-- Unknown-slug 404 depends on a `not-found` UI existing; if the app has no `src/app/not-found.tsx`, Next renders
-  its default (Catalog I).
+- Unknown-slug 404 renders the new app-level `src/app/not-found.tsx` (D6); it must not depend on category
+  config so it stays valid for non-category URLs.
 - `useParams()` in `error.tsx` returns the raw URL segment; unknown slugs never reach `error.tsx` (they `notFound()`
   in `page.tsx` first), so the fallback copy is defensive only.
 
@@ -194,20 +199,23 @@ None. Copy swap on the Tornillería comps for each new page; no new visual state
 
 - I: Question: Does the app have a custom `src/app/not-found.tsx`, or should `[slug]` ship a `not-found.tsx`
   with category-index copy?
-  - Status: pending
+  - Status: answered
+  - Answer: ship a general app-level `src/app/not-found.tsx` (user, 2026-09-16), not a route-level one under
+    `[slug]`. It covers unknown category slugs and every other unmatched URL.
   - Context: verified 2026-09-16 — no `not-found.tsx` exists anywhere under `src/app`, so `notFound()` renders
-    Next's default 404 today. Acceptable for an MVP; a route-level `not-found.tsx` is one small file if the user
-    wants branded copy. Needs a user call.
+    Next's default 404 today.
 
 ### UI/product decisions
 
 - I: Question: Confirm or replace the 11 proposed search placeholders (D2 list in Description).
-  - Status: pending
+  - Status: answered
+  - Answer: confirmed as proposed (user, 2026-09-16).
 - II: Question: Keep D3 for the six rows where Strapi `name` ≠ H1 (`Carburo` / `Carburo y diamantados`,
   `Sujeción` / `Sujeción industrial`, `Calibrador` / `Calibradores`, `Equipo de seguridad` / `... industrial`,
   `Herramientas de diagnóstico de electricidad y electrónica` / `Diagnóstico de ...`,
   `Extracción y Reparación ...` / `... reparación ...`)? Breadcrumb/JSON-LD/error copy would show the Strapi name.
-  - Status: pending
+  - Status: answered
+  - Answer: keep D3 (user, 2026-09-16) — `name` = Strapi name, `heading` = table H1. No Strapi renames.
   - Context: same trade-off as Perforación (`para` vs `de`), decided D3 there. Alternative is renaming in Strapi
     (backend-owned).
 - III: Question: Route shape and delivery.
