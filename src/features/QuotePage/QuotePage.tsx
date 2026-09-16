@@ -26,7 +26,7 @@ interface QuoteHeadingProps {
 const QuoteHeading = ({ counts }: QuoteHeadingProps) => (
   <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 className="text-2xl font-bold">Solicitar cotización</h1>
+      <h1 className="text-2xl font-bold">Solicita tu cotización</h1>
       <p className="text-muted">Revisa productos, medidas y cantidades.</p>
     </div>
     {counts && (

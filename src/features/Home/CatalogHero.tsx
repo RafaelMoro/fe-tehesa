@@ -22,7 +22,7 @@ export const CatalogHero = ({
         Suministro industrial
       </p>
       <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-        Piezas precisas para trabajo exigente.
+        Distribuidor de herramienta industrial en Puebla
       </h1>
       <p className="max-w-xl text-muted">
         Compara rangos de precio y consulta las dimensiones disponibles antes de
