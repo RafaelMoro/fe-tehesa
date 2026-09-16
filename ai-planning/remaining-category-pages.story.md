@@ -8,7 +8,7 @@
 
 - `category-seo-copy-corrections` already landed (PR #51 is in `develop`; `seo.constants.ts` carries the corrected strings). This PR does not re-apply it.
 - **SEO copy source of truth** is Anexo A of `faber-customer-projects/Tehesa/estrategia-y-diagnostico/estrategia-web-paquete-base-fase1-tehesa.md` (lines 390–426) and its handoff `Tehesa/fase-1-tehesa/fase-2-tehesa/handoff-seo-categorias-restantes.fase2-tehesa.md` (v0.2.0, 2026-09-16). Both docs are outside this repo and gitignored there, so the strings are copied verbatim into Phase 2 below. Titles/descriptions of the 5 live pages and every locked field (slug, H1, URL) were cross-checked against Anexo A — no drift.
-- **D1 revised (marketing, 2026-09-16 — needs the user's yes at sign-off):** hero `intro` is no longer `= description`. Anexo A ships a distinct 1–2 sentence intro per category (no CTA, no "en Puebla"), including new intros for the 5 live pages. `CategoryPageConfig.intro` already exists, so this is strings-only in `category.constants.ts` — no `src/features/CategoryPage` change. Folded into Phase 2; if the user prefers to keep the story as researched, Phase 2 falls back to `intro: CATEGORY_SEO[id].description` and the 16 intros move to a follow-up.
+- **D1 revised (marketing 2026-09-16, confirmed by the user 2026-09-16):** hero `intro` is no longer `= description`. Anexo A ships a distinct 1–2 sentence intro per category (no CTA, no "en Puebla"), including new intros for the 5 live pages. `CategoryPageConfig.intro` already exists, so this is strings-only in `category.constants.ts` — no `src/features/CategoryPage` change. Folded into Phase 2.
 - Slugs for rows 6–16 equal their Strapi `customId` (live-verified in research). Legacy slugs `tornilleria-fijacion` and `impacto-forja` stay as they are.
 - Root layout is `force-dynamic`; no `generateStaticParams`.
 - Env for dev-server checks: `STRAPI_HOST`, `STRAPI_API_TOKEN`, `NEXT_PUBLIC_WHATSAPP_NUMBER` in `.env.local`; `pnpm dev` on `http://localhost:3000`.
@@ -293,13 +293,14 @@ Note the capital `R` in `Extracción y Reparación de fijaciones` (`name`) vs lo
 ## Open Questions / Out-of-scope
 
 **Open**
-- **D1 revised — confirm at sign-off.** Marketing's handoff (§2) asks that the hero intro stop mirroring the meta description and ships 16 distinct intros. The plan folds it in (strings only, `intro` field already exists). Say no and Phase 2 keeps `intro = description`, intros become a follow-up.
+- None. D1 revised confirmed by the user (2026-09-16): hero intro = Anexo A intro for all 16 pages.
 
-**Follow-up story candidates (from the Faber docs, not this story)**
-- **Manual category ordering** — strategy §3 (lines 81–106) wants a demand-based order on `/categorias` / header (Tornillería → Corte → Perforación → Llaves → …) instead of A→Z, and asks whether the platform can order manually. The list predates the 16-category split (misses roscado, calibrador, herrajes, lubricantes). Frontend decision — Strapi has no order field.
-- **`/marcas/bohrcraft`** brand page — Anexo A line 415, marked Fase 2.
-- **Meta review with Search Console data** — Anexo A line 426, deferred until data exists.
-- **Quote form `sector` field + structured registry** — strategy §7 (lines 164–166), Fase 2.
+**Follow-up story candidates** — none of these come from this repo or the research doc; all are in
+`/home/rafael/projects/faber/core-skills-faber/faber-customer-projects/Tehesa/estrategia-y-diagnostico/estrategia-web-paquete-base-fase1-tehesa.md`:
+- **Manual category ordering** — §3, lines 80–106: demand-based order (Tornillería → Corte → Perforación → Llaves → Abrasivos → …) for the menu and `/categorias` instead of A→Z; line 106 asks whether the platform can order manually. The list is 12 items and predates the 16-category split (misses roscado, calibrador, herrajes, lubricantes; item 6 "Herramientas de maquinado" is not a category per line 419). Frontend-only — Strapi has no order field (`REPO_CONTEXT.md` Strapi gotchas).
+- **`/marcas/bohrcraft`** brand page — Anexo A, line 415 (`Marca (Fase 2)` row).
+- **Meta review with Search Console data** — Anexo A, line 426.
+- **Quote form structured registry** — §7, line 164 (`El registro estructurado es Fase 2`).
 
 **Out of scope (deliberately excluded)**
 - Refactoring `Header.tsx:105`'s inline href-inversion to use `getCategoryIdBySlug` — works as-is; nearby-cleanup only.
