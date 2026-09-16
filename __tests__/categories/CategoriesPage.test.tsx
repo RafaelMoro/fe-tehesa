@@ -22,6 +22,11 @@ const categories: CategoryWithCount[] = [
   { name: "Abrasivos", customId: "abrasivos", productCount: 0 },
   { name: "Tornillería", customId: "tornilleria", productCount: 1234 },
   { name: "Sujeción", customId: "sujecion", productCount: null },
+  {
+    name: "Herramientas de impacto o forja",
+    customId: "herramientas-impacto-forja",
+    productCount: 2,
+  },
 ]
 
 describe("CategoriesPage", () => {
@@ -42,13 +47,14 @@ describe("CategoriesPage", () => {
       expect.arrayContaining([
         "/categorias/tornilleria-fijacion",
         "/categorias/abrasivos",
+        "/categorias/impacto-forja",
       ]),
     )
-    expect(linkCtas).toHaveLength(2)
+    expect(linkCtas).toHaveLength(3)
 
     const ctas = screen.getAllByText("Ver categoría")
     const disabledCtas = ctas.filter((cta) => !linkCtas.includes(cta))
-    expect(disabledCtas).toHaveLength(categories.length - 2)
+    expect(disabledCtas).toHaveLength(categories.length - 3)
     for (const cta of disabledCtas) {
       expect(cta).toHaveAttribute("aria-disabled", "true")
       expect(cta.tagName).not.toBe("A")
@@ -60,13 +66,14 @@ describe("CategoriesPage", () => {
 
     expect(screen.getByText("1,234 productos")).toBeInTheDocument()
     expect(screen.getByText("0 productos")).toBeInTheDocument()
-    expect(screen.queryAllByText(/productos$/)).toHaveLength(2)
+    expect(screen.getByText("2 productos")).toBeInTheDocument()
+    expect(screen.queryAllByText(/productos$/)).toHaveLength(3)
   })
 
   it("shows the hero/counter category count and the breadcrumb", () => {
     render(<CategoriesPage categories={categories} />)
 
-    expect(screen.getAllByText(/3 categorías/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/4 categorías/).length).toBeGreaterThan(0)
     const nav = screen.getByRole("navigation", { name: "Ruta" })
     expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/")
     expect(nav).toHaveTextContent("Categorías")
