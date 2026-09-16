@@ -53,6 +53,9 @@ describe("sitemap", () => {
       result.some((entry) => entry.url.endsWith("/categorias/abrasivos")),
     ).toBe(true)
     expect(
+      result.some((entry) => entry.url.endsWith("/categorias/impacto-forja")),
+    ).toBe(true)
+    expect(
       result.some((entry) => entry.url.includes("mode=category")),
     ).toBe(true)
     expect(result.some((entry) => entry.url.includes("mode=brand"))).toBe(
@@ -86,6 +89,9 @@ describe("sitemap", () => {
     ).toBe(true)
     expect(
       result.some((entry) => entry.url.endsWith("/categorias/abrasivos")),
+    ).toBe(true)
+    expect(
+      result.some((entry) => entry.url.endsWith("/categorias/impacto-forja")),
     ).toBe(true)
   })
 })
