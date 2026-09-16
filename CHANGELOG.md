@@ -1,3 +1,9 @@
+## v0.41.0 (2026-09-16)
+
+### Pull Requests
+[#51](https://github.com/RafaelMoro/fe-tehesa/pull/51) | Sync SEO copy and headings across home, categories, and quote pages
+
+
 ## v0.40.0 (2026-09-16)
 
 ### Pull Requests
