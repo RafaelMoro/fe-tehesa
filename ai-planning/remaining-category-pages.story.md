@@ -7,7 +7,8 @@
 ## Assumptions
 
 - `category-seo-copy-corrections` already landed (PR #51 is in `develop`; `seo.constants.ts` carries the corrected strings). This PR does not re-apply it.
-- **The 22 title/description strings for rows 6–16 are not in the repo** (research: "verbatim from the user's table, not repeated here"). Phase 2 lists them as `⟨title⟩`/`⟨description⟩` placeholders; the user must paste the table before `/implement` runs Phase 2. Nothing else is blocked.
+- **SEO copy source of truth** is Anexo A of `faber-customer-projects/Tehesa/estrategia-y-diagnostico/estrategia-web-paquete-base-fase1-tehesa.md` (lines 390–426) and its handoff `Tehesa/fase-1-tehesa/fase-2-tehesa/handoff-seo-categorias-restantes.fase2-tehesa.md` (v0.2.0, 2026-09-16). Both docs are outside this repo and gitignored there, so the strings are copied verbatim into Phase 2 below. Titles/descriptions of the 5 live pages and every locked field (slug, H1, URL) were cross-checked against Anexo A — no drift.
+- **D1 revised (marketing, 2026-09-16 — needs the user's yes at sign-off):** hero `intro` is no longer `= description`. Anexo A ships a distinct 1–2 sentence intro per category (no CTA, no "en Puebla"), including new intros for the 5 live pages. `CategoryPageConfig.intro` already exists, so this is strings-only in `category.constants.ts` — no `src/features/CategoryPage` change. Folded into Phase 2; if the user prefers to keep the story as researched, Phase 2 falls back to `intro: CATEGORY_SEO[id].description` and the 16 intros move to a follow-up.
 - Slugs for rows 6–16 equal their Strapi `customId` (live-verified in research). Legacy slugs `tornilleria-fijacion` and `impacto-forja` stay as they are.
 - Root layout is `force-dynamic`; no `generateStaticParams`.
 - Env for dev-server checks: `STRAPI_HOST`, `STRAPI_API_TOKEN`, `NEXT_PUBLIC_WHATSAPP_NUMBER` in `.env.local`; `pnpm dev` on `http://localhost:3000`.
@@ -16,6 +17,7 @@
 
 1. **All 16 URLs resolve.** Every URL in the research table is server-rendered by `src/app/categorias/[slug]/page.tsx`, fetches its full set via `fetchAllProductsByCategory(customId)` and renders `CategoryPage` with the matching `CATEGORY_PAGES` config. The five existing URLs keep byte-identical `generateMetadata` output (title, description, `alternates.canonical`, `robots: { index: true, follow: true }`) and 3-item `BreadcrumbList` JSON-LD. Any other `/categorias/<x>` returns 404 via `notFound()`, rendered by a new app-level `src/app/not-found.tsx`.
 2. **11 new pages carry the table copy.** For rows 6–16 the `<title>`, meta description, canonical, H1, hero intro (= description) and breadcrumb leaf (= Strapi name) match the table / conventions. Product counts render live; empty or single-product sets still show the full hero/breadcrumb/WhatsApp panel.
+   *Plan amendment (D1 revised, see Assumptions):* hero intro = Anexo A intro, not the description — for all 16 pages.
 3. **Entry points light up from config.** `CATEGORY_PAGE_HREFS` has 16 entries. Header `Categorías` dropdown and mobile accordion rows become links for all 16; `/categorias` cards all get a real `Ver categoría` link; `/sitemap.xml` lists all 16 static category URLs; header active state (`pageCategoryId`) works on every one.
 4. **Static folders are gone.** The five `src/app/categorias/<slug>/` folders are deleted; one `[slug]/{page,error,loading}.tsx` replaces them. `error.tsx` still shows `No pudimos cargar los productos de <Strapi name>` for the failing category.
 5. **Verification.** `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm test` pass. The five per-route metadata/error tests are replaced by table-driven tests over all 16 slugs; `sitemap.test.ts` and `CategoriesPage.test.tsx` assert from the map's size.
@@ -172,46 +174,59 @@ Fallback is defensive only — unknown slugs `notFound()` in `page.tsx` before a
 
 ## Phase 2 — Add the 11 config entries
 
-Config + test rows + docs only. No new files under `src/app`.
+Config + test rows + docs only. No new files under `src/app`. All strings below are verbatim from Anexo A (`estrategia-web-paquete-base-fase1-tehesa.md:398-413`); the `|` in titles is a literal pipe. No `<`, `>` or straight double quotes appear in any of them.
 
 ### Changes Required
 
-**`src/shared/constants/seo.constants.ts`** — Modify: 11 `CATEGORY_SEO` entries. **Strings must be pasted verbatim from the user's table** (placeholders below; do not invent copy):
+**`src/shared/constants/seo.constants.ts`** — Modify: 11 `CATEGORY_SEO` entries.
 
 | `customId` | title | description |
 | --- | --- | --- |
-| `llaves-herramientas-apriete` | ⟨title⟩ | ⟨description⟩ |
-| `roscado-herramientas-roscas` | ⟨title⟩ | ⟨description⟩ |
-| `carburo` | ⟨title⟩ | ⟨description⟩ |
-| `sujecion` | ⟨title⟩ | ⟨description⟩ |
-| `calibrador` | ⟨title⟩ | ⟨description⟩ |
-| `extraccion-reparacion-fijaciones` | ⟨title⟩ | ⟨description⟩ |
-| `adhesivos-selladores` | ⟨title⟩ | ⟨description⟩ |
-| `equipo-seguridad` | ⟨title⟩ | ⟨description⟩ |
-| `herramientas-diagnostico-electricidad` | ⟨title⟩ | ⟨description⟩ |
-| `herrajes-accesorios-cable` | ⟨title⟩ | ⟨description⟩ |
-| `lubricantes-multifuncionales` | ⟨title⟩ | ⟨description⟩ |
+| `llaves-herramientas-apriete` | `Llaves, Dados y Herramientas de Apriete \| Tehesa Industrial` | `Dados, llaves, puntas y bristol King Tony para industria y taller. Existencia en Puebla. Solicita cotización con Tehesa Industrial.` |
+| `roscado-herramientas-roscas` | `Machuelos, Terrajas y Herramientas de Roscado \| Tehesa Puebla` | `Machuelos, terrajas y juegos de roscado Bohrcraft para industria y taller. Distribuidor directo en Puebla. Cotiza por WhatsApp.` |
+| `carburo` | `Limas Diamantadas y Herramientas de Carburo \| Tehesa Puebla` | `Limas diamantadas, puntas de diamante, limas rotativas y cortadores de carburo. Precisión industrial en Puebla. Cotiza hoy.` |
+| `sujecion` | `Clamps y Herramientas de Sujeción Industrial \| Tehesa Puebla` | `Clamps verticales, horizontales y de jalar para sujeción industrial. Existencia en Puebla. Cotiza con Tehesa Industrial.` |
+| `calibrador` | `Calibradores Industriales en Puebla \| Tehesa Industrial` | `Calibradores y cuenta hilos para medición industrial de precisión. Existencia en Puebla. Solicita tu cotización.` |
+| `extraccion-reparacion-fijaciones` | `Extractores de Tornillos y Reparación de Fijaciones \| Tehesa` | `Extractores de tornillos y manerales para reparación de fijaciones. Distribuidor industrial en Puebla. Solicita tu cotización.` |
+| `adhesivos-selladores` | `Adhesivos y Selladores Industriales en Puebla \| Tehesa` | `Adhesivos y selladores para fijación y sellado industrial. Abasto en Puebla. Cotiza con Tehesa Industrial.` |
+| `equipo-seguridad` | `Equipo de Seguridad Industrial en Puebla \| Tehesa Industrial` | `Lentes y equipo de seguridad para entornos industriales. Existencia en Puebla. Cotiza con Tehesa Industrial.` |
+| `herramientas-diagnostico-electricidad` | `Probadores y Herramientas de Diagnóstico Eléctrico \| Tehesa Puebla` | `Probadores eléctricos y herramienta de diagnóstico para electricidad y electrónica industrial. Puebla. Solicita tu cotización.` |
+| `herrajes-accesorios-cable` | `Herrajes y Accesorios para Cable en Puebla \| Tehesa Industrial` | `Herrajes y accesorios para cable de acero en aplicaciones industriales. Existencia en Puebla. Cotiza hoy.` |
+| `lubricantes-multifuncionales` | `Lubricantes Multifuncionales Industriales \| Tehesa Puebla` | `Lubricantes multifuncionales para mantenimiento industrial y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.` |
 
-**`src/shared/constants/category.constants.ts`** — Modify: 11 `CATEGORY_PAGE_HREFS` entries (`[customId]: "/categorias/<customId>"` — slug = `customId` for every new row) and 11 `CATEGORY_PAGES` entries. `intro: CATEGORY_SEO[<id>].description` (D1) for all 11.
+The 5 existing entries are unchanged (Anexo A matches the code byte-for-byte).
 
-| `customId` | `name` (Strapi, D3) | `heading` (H1) | `searchPlaceholder` (D2) |
-| --- | --- | --- | --- |
-| `llaves-herramientas-apriete` | Llaves y herramientas de apriete | Llaves y herramientas de apriete | Buscar dados, llaves, puntas... |
-| `roscado-herramientas-roscas` | Roscado y herramientas para roscas | Roscado y herramientas para roscas | Buscar machuelos, terrajas, juegos... |
-| `carburo` | Carburo | Carburo y diamantados | Buscar limas, puntas de diamante, cortadores... |
-| `sujecion` | Sujeción | Sujeción industrial | Buscar clamps verticales, horizontales... |
-| `calibrador` | Calibrador | Calibradores | Buscar calibradores, cuenta hilos... |
-| `extraccion-reparacion-fijaciones` | Extracción y Reparación de fijaciones | Extracción y reparación de fijaciones | Buscar extractores, manerales... |
-| `adhesivos-selladores` | Adhesivos y selladores | Adhesivos y selladores | Buscar adhesivos, selladores... |
-| `equipo-seguridad` | Equipo de seguridad | Equipo de seguridad industrial | Buscar lentes, equipo de seguridad... |
-| `herramientas-diagnostico-electricidad` | Herramientas de diagnóstico de electricidad y electrónica | Diagnóstico de electricidad y electrónica | Buscar probadores, herramienta de diagnóstico... |
-| `herrajes-accesorios-cable` | Herrajes y accesorios para cable | Herrajes y accesorios para cable | Buscar herrajes, accesorios para cable... |
-| `lubricantes-multifuncionales` | Lubricantes multifuncionales | Lubricantes multifuncionales | Buscar lubricantes... |
+**`src/shared/constants/category.constants.ts`** — Modify: 11 `CATEGORY_PAGE_HREFS` entries (`[customId]: "/categorias/<customId>"` — slug = `customId` for every new row) and 11 `CATEGORY_PAGES` entries. `intro` is a literal string (D1 revised), so `category.constants.ts` no longer needs to import `CATEGORY_SEO` at all — drop the import from Phase 1.
+
+| `customId` | `name` (Strapi, D3) | `heading` (H1) | `searchPlaceholder` (D2) | `intro` (Anexo A) |
+| --- | --- | --- | --- | --- |
+| `llaves-herramientas-apriete` | Llaves y herramientas de apriete | Llaves y herramientas de apriete | Buscar dados, llaves, puntas... | `Dados, matracas, llaves combinadas, puntas y llaves bristol King Tony. Lo que necesita un taller o una línea de mantenimiento para apretar con el torque correcto sin barrer la tuerca.` |
+| `roscado-herramientas-roscas` | Roscado y herramientas para roscas | Roscado y herramientas para roscas | Buscar machuelos, terrajas, juegos... | `Machuelos, terrajas y juegos completos de roscado Bohrcraft, en métrico y estándar. Para hacer rosca nueva o rescatar una dañada con herramienta que no se despunta a la tercera pieza.` |
+| `carburo` | Carburo | Carburo y diamantados | Buscar limas, puntas de diamante, cortadores... | `Limas diamantadas, puntas de diamante, limas rotativas y cortadores de carburo para trabajar acero endurecido, fundición y materiales que una lima común no toca.` |
+| `sujecion` | Sujeción | Sujeción industrial | Buscar clamps verticales, horizontales... | `Clamps verticales, horizontales y de jalar para fijar piezas en soldadura, ensamble y maquinado. Sujeción rápida y repetible, sin improvisar con prensas.` |
+| `calibrador` | Calibrador | Calibradores | Buscar calibradores, cuenta hilos... | `Calibradores y cuenta hilos para medir con precisión antes de cortar, roscar o rechazar una pieza. Herramienta de medición para control de calidad en piso y taller.` |
+| `extraccion-reparacion-fijaciones` | Extracción y Reparación de fijaciones | Extracción y reparación de fijaciones | Buscar extractores, manerales... | `Extractores de tornillos y manerales para sacar fijaciones barridas, rotas o corroídas sin dañar la pieza. Lo que resuelve el problema que detiene el mantenimiento.` |
+| `adhesivos-selladores` | Adhesivos y selladores | Adhesivos y selladores | Buscar adhesivos, selladores... | `Adhesivos y selladores industriales para fijar roscas, sellar juntas y pegar donde un tornillo no cabe. Complemento directo de nuestra tornillería.` |
+| `equipo-seguridad` | Equipo de seguridad | Equipo de seguridad industrial | Buscar lentes, equipo de seguridad... | `Lentes y equipo de protección personal para taller y planta. Protección básica que cumple la norma y se compra en el mismo lugar que la herramienta.` |
+| `herramientas-diagnostico-electricidad` | Herramientas de diagnóstico de electricidad y electrónica | Diagnóstico de electricidad y electrónica | Buscar probadores, herramienta de diagnóstico... | `Probadores y herramienta de diagnóstico para revisar circuitos, continuidad y voltaje en instalaciones eléctricas y equipo electrónico industrial.` |
+| `herrajes-accesorios-cable` | Herrajes y accesorios para cable | Herrajes y accesorios para cable | Buscar herrajes, accesorios para cable... | `Herrajes y accesorios para cable de acero: sujeción, tensión y terminación en izaje, anclaje y aplicaciones industriales.` |
+| `lubricantes-multifuncionales` | Lubricantes multifuncionales | Lubricantes multifuncionales | Buscar lubricantes... | `Lubricantes multifuncionales para aflojar, proteger contra corrosión y lubricar piezas en mantenimiento industrial y de taller.` |
 
 Note the capital `R` in `Extracción y Reparación de fijaciones` (`name`) vs lowercase in `heading` — intentional (D3, research UI/product II).
 
+**Also replace the `intro` of the 5 live entries** (D1 revised; Anexo A "Intro del hero"):
+
+| `customId` | `intro` |
+| --- | --- |
+| `tornilleria` | `Tornillos, tuercas, rondanas, pernos y varilla roscada en acero e inoxidable, por pieza o por caja. La base de cualquier ensamble o mantenimiento, con las medidas que la industria pide.` |
+| `abrasivos` | `Discos de corte, discos de desbaste y puntas montadas para esmeril y rectificado. Abrasivos que cortan parejo y duran en trabajo pesado.` |
+| `herramientas-impacto-forja` | `Martillos, marros y herramienta de hojalatería para golpear, formar y enderezar. Herramienta de impacto para taller y planta.` |
+| `herramientas-corte-conformado` | `Machuelos, buriles y cortadores para torno, fresa y maquinado. Herramienta de corte que aguanta turnos completos sin perder filo.` |
+| `perforacion-accesorios-taladro` | `Brocas Bohrcraft, juegos y accesorios para taladro en metal, concreto y madera. Precisión alemana para perforar sin quemar la broca ni la pieza.` |
+
 **Tests**
 - `__tests__/seo/category-slug-metadata.test.ts` — add 11 `[slug, title, description]` rows with the literal strings from the table.
+- `__tests__/category-page/CategoryPage.test.tsx` — no edit; `intro` rendering is already covered through the Tornillería config, and per-page intros are proven by the dev-server grep below.
 - `__tests__/app/category-slug-error.test.tsx` — add 11 `[slug, strapiName]` rows.
 - `__tests__/categories/CategoriesPage.test.tsx` — fixture gains the 11 real categories (name + customId from the table, any counts incl. `1` and `null`); the fake `sin-pagina` entry stays. No assertion edits — they read the map's size since Phase 1.
 - `sitemap.test.ts` — no edit (iterates the map).
@@ -234,7 +249,8 @@ Note the capital `R` in `Extracción y Reparación de fijaciones` (`name`) vs lo
 | Check | Expect |
 | --- | --- |
 | loop over all 16 slugs: `curl -s -o /dev/null -w "$s %{http_code}\n" localhost:3000/categorias/$s` | 16 × `200` |
-| loop over the 11 new slugs: `curl -s localhost:3000/categorias/$s \| grep -o '<title>[^<]*\|name="description" content="[^"]*"\|rel="canonical" href="[^"]*"\|<h1[^>]*>[^<]*'` | title/description = user table, canonical `…/categorias/<slug>`, `<h1>` = table H1 |
+| loop over the 11 new slugs: `curl -s localhost:3000/categorias/$s \| grep -o '<title>[^<]*\|name="description" content="[^"]*"\|rel="canonical" href="[^"]*"\|<h1[^>]*>[^<]*'` | title/description = Anexo A table, canonical `…/categorias/<slug>`, `<h1>` = table H1 |
+| `curl -s localhost:3000/categorias/carburo \| grep -c 'que una lima común no toca'` and `curl -s localhost:3000/categorias/tornilleria-fijacion \| grep -c 'por pieza o por caja'` | `1` each — hero intro is the Anexo A intro, not the meta description (D1 revised), on a new and a live page |
 | `curl -s localhost:3000/categorias/carburo \| grep -o '"name":"Carburo"\|aria-current="page">[^<]*'` | JSON-LD leaf and breadcrumb leaf = `Carburo` (Strapi name, not the H1) |
 | `curl -s localhost:3000/categorias/llaves-herramientas-apriete \| grep -o '[0-9]* productos'` | `33 productos` (live count) |
 | `curl -s localhost:3000/categorias/lubricantes-multifuncionales \| grep -o '1 producto\b\|Solicitar cotización'` | singular `1 producto` + WhatsApp panel present |
@@ -262,7 +278,7 @@ Note the capital `R` in `Extracción y Reparación de fijaciones` (`name`) vs lo
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 | --- | --- | --- | --- | --- |
 | AC1 — all 16 URLs resolve, 5 legacy byte-identical, unknown → 404 | 1, 2 | Phase 1: 5 × `200` + title/description/canonical/H1 grep parity + `BreadcrumbList` grep; `/categorias/nope` and `/no-existe` `404` with `Página no encontrada`. Phase 2: 16 × `200`. | Not validated | metadata parity also asserted literally in `category-slug-metadata.test.ts` |
-| AC2 — 11 new pages carry table copy, live counts, empty/single sets render | 2 | per-slug title/description/canonical/H1 grep; `/categorias/carburo` leaf `Carburo`; `33 productos`; `1 producto` + WhatsApp on `lubricantes-multifuncionales` | Not validated | blocked until the user supplies the 22 strings |
+| AC2 — 11 new pages carry table copy, live counts, empty/single sets render | 2 | per-slug title/description/canonical/H1 grep; intro grep on `carburo` + `tornilleria-fijacion`; `/categorias/carburo` leaf `Carburo`; `33 productos`; `1 producto` + WhatsApp on `lubricantes-multifuncionales` | Not validated | strings from Anexo A; intro ≠ description per D1 revised |
 | AC3 — entry points light up (16 hrefs, cards, sitemap, active state) | 2 | `/categorias` → 16 unique `href="/categorias/…"`; `/sitemap.xml` → 16 static `<loc>`; `/categorias/sujecion` → `Sujeción (actual)` | Not validated | header dropdown/accordion rows are client-rendered → manual click check |
 | AC4 — static folders gone, `[slug]` error copy per category | 1 | `ls src/app/categorias` shows only `[slug]`, `page.tsx`, `error.tsx`, `loading.tsx`; error copy | Cannot validate | error boundary needs a Strapi failure; proven by `category-slug-error.test.tsx` (16 rows after Phase 2) |
 | AC5 — lint/tsc/build/test pass, table-driven tests, map-size counts | 1, 2 | n/a (automated commands) | Not validated | `pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build` |
@@ -277,7 +293,13 @@ Note the capital `R` in `Extracción y Reparación de fijaciones` (`name`) vs lo
 ## Open Questions / Out-of-scope
 
 **Open**
-- **The 22 title/description strings for rows 6–16.** Not in the repo; Phase 2 cannot start without the user's table pasted into this plan (or straight into `seo.constants.ts` + the metadata test).
+- **D1 revised — confirm at sign-off.** Marketing's handoff (§2) asks that the hero intro stop mirroring the meta description and ships 16 distinct intros. The plan folds it in (strings only, `intro` field already exists). Say no and Phase 2 keeps `intro = description`, intros become a follow-up.
+
+**Follow-up story candidates (from the Faber docs, not this story)**
+- **Manual category ordering** — strategy §3 (lines 81–106) wants a demand-based order on `/categorias` / header (Tornillería → Corte → Perforación → Llaves → …) instead of A→Z, and asks whether the platform can order manually. The list predates the 16-category split (misses roscado, calibrador, herrajes, lubricantes). Frontend decision — Strapi has no order field.
+- **`/marcas/bohrcraft`** brand page — Anexo A line 415, marked Fase 2.
+- **Meta review with Search Console data** — Anexo A line 426, deferred until data exists.
+- **Quote form `sector` field + structured registry** — strategy §7 (lines 164–166), Fase 2.
 
 **Out of scope (deliberately excluded)**
 - Refactoring `Header.tsx:105`'s inline href-inversion to use `getCategoryIdBySlug` — works as-is; nearby-cleanup only.
