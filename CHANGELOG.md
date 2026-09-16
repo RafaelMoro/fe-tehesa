@@ -1,3 +1,9 @@
+## v0.39.0 (2026-09-16)
+
+### Pull Requests
+[#49](https://github.com/RafaelMoro/fe-tehesa/pull/49) | Add Herramientas de corte y conformado category page
+
+
 ## v0.38.0 (2026-09-16)
 
 ### Pull Requests
