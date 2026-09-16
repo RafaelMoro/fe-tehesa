@@ -24,3 +24,7 @@ export const IMPACTO_FORJA_TITLE =
   "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla"
 export const IMPACTO_FORJA_DESCRIPTION =
   "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla."
+export const CORTE_CONFORMADO_TITLE =
+  "Herramientas de Corte y Machuelos en Puebla | Tehesa"
+export const CORTE_CONFORMADO_DESCRIPTION =
+  "Machuelos, buriles, cortadores y herramienta de corte para torno y maquinado. Marcas de calidad en Puebla. Solicita tu cotización."

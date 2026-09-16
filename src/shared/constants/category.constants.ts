@@ -1,16 +1,19 @@
 import {
   ABRASIVOS_DESCRIPTION,
+  CORTE_CONFORMADO_DESCRIPTION,
   IMPACTO_FORJA_DESCRIPTION,
 } from "@/shared/constants/seo.constants"
 
 export const TORNILLERIA_CATEGORY_ID = "tornilleria"
 export const ABRASIVOS_CATEGORY_ID = "abrasivos"
 export const IMPACTO_FORJA_CATEGORY_ID = "herramientas-impacto-forja"
+export const CORTE_CONFORMADO_CATEGORY_ID = "herramientas-corte-conformado"
 
 export const CATEGORY_PAGE_HREFS: Record<string, string> = {
   [TORNILLERIA_CATEGORY_ID]: "/categorias/tornilleria-fijacion",
   [ABRASIVOS_CATEGORY_ID]: "/categorias/abrasivos",
   [IMPACTO_FORJA_CATEGORY_ID]: "/categorias/impacto-forja",
+  [CORTE_CONFORMADO_CATEGORY_ID]: "/categorias/herramientas-corte-conformado",
 }
 
 export type CategoryPageConfig = {
@@ -39,6 +42,12 @@ export const CATEGORY_PAGES: Record<string, CategoryPageConfig> = {
     heading: "Herramientas de impacto y forja",
     intro: IMPACTO_FORJA_DESCRIPTION,
     searchPlaceholder: "Buscar martillos, mazos, cinceles...",
+  },
+  [CORTE_CONFORMADO_CATEGORY_ID]: {
+    name: "Herramientas de corte y conformado",
+    heading: "Herramientas de corte y conformado",
+    intro: CORTE_CONFORMADO_DESCRIPTION,
+    searchPlaceholder: "Buscar machuelos, buriles, cortadores...",
   },
 }
 
