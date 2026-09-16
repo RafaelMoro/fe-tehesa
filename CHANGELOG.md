@@ -1,3 +1,9 @@
+## v0.40.0 (2026-09-16)
+
+### Pull Requests
+[#50](https://github.com/RafaelMoro/fe-tehesa/pull/50) | Add Perforación y accesorios de taladro category page
+
+
 ## v0.39.0 (2026-09-16)
 
 ### Pull Requests
