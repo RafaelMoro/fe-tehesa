@@ -20,3 +20,7 @@ export const ABRASIVOS_TITLE =
   "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa"
 export const ABRASIVOS_DESCRIPTION =
   "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial."
+export const IMPACTO_FORJA_TITLE =
+  "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla"
+export const IMPACTO_FORJA_DESCRIPTION =
+  "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla."
