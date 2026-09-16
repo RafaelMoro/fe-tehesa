@@ -61,6 +61,11 @@ describe("sitemap", () => {
       ),
     ).toBe(true)
     expect(
+      result.some((entry) =>
+        entry.url.endsWith("/categorias/perforacion-accesorios-taladro"),
+      ),
+    ).toBe(true)
+    expect(
       result.some((entry) => entry.url.includes("mode=category")),
     ).toBe(true)
     expect(result.some((entry) => entry.url.includes("mode=brand"))).toBe(
@@ -101,6 +106,11 @@ describe("sitemap", () => {
     expect(
       result.some((entry) =>
         entry.url.endsWith("/categorias/herramientas-corte-conformado"),
+      ),
+    ).toBe(true)
+    expect(
+      result.some((entry) =>
+        entry.url.endsWith("/categorias/perforacion-accesorios-taladro"),
       ),
     ).toBe(true)
   })
