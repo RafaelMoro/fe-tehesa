@@ -295,12 +295,10 @@ Note the capital `R` in `Extracción y Reparación de fijaciones` (`name`) vs lo
 **Open**
 - None. D1 revised confirmed by the user (2026-09-16): hero intro = Anexo A intro for all 16 pages.
 
-**Follow-up story candidates** — none of these come from this repo or the research doc; all are in
+**Follow-up stories (not this story; Paquete Base, after the category work — user 2026-09-16)** — source is
 `/home/rafael/projects/faber/core-skills-faber/faber-customer-projects/Tehesa/estrategia-y-diagnostico/estrategia-web-paquete-base-fase1-tehesa.md`:
-- **Manual category ordering** — §3, lines 80–106: demand-based order (Tornillería → Corte → Perforación → Llaves → Abrasivos → …) for the menu and `/categorias` instead of A→Z; line 106 asks whether the platform can order manually. The list is 12 items and predates the 16-category split (misses roscado, calibrador, herrajes, lubricantes; item 6 "Herramientas de maquinado" is not a category per line 419). Frontend-only — Strapi has no order field (`REPO_CONTEXT.md` Strapi gotchas).
-- **`/marcas/bohrcraft`** brand page — Anexo A, line 415 (`Marca (Fase 2)` row).
-- **Meta review with Search Console data** — Anexo A, line 426.
-- **Quote form structured registry** — §7, line 164 (`El registro estructurado es Fase 2`).
+- **Manual category ordering** — §3, lines 84–101: a demand-based order over all 16 categories (Tornillería → Corte → Roscado → Perforación → Llaves → Abrasivos → Carburo → Sujeción → Extracción → Impacto → Adhesivos → Calibradores → Diagnóstico → Seguridad → Herrajes → Lubricantes) for the header dropdown/mobile accordion and the `/categorias` grid, replacing today's A→Z sort. Frontend-only — Strapi has no order field — so it is one ordered `customId` list in `category.constants.ts` applied wherever `fetchCategories()` results are sorted. Line 106: order gets revisited once Search Console has data.
+- **`/marcas/bohrcraft`** brand page — §4 line 121 (pulled into Paquete Base); SEO row in Anexo A line 415 (row label still says `Fase 2`, stale).
 
 **Out of scope (deliberately excluded)**
 - Refactoring `Header.tsx:105`'s inline href-inversion to use `getCategoryIdBySlug` — works as-is; nearby-cleanup only.
