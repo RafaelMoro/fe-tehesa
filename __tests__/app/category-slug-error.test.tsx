@@ -20,6 +20,23 @@ describe("categorias/[slug] error boundary", () => {
       "perforacion-accesorios-taladro",
       "Perforación y accesorios para taladro",
     ],
+    ["llaves-herramientas-apriete", "Llaves y herramientas de apriete"],
+    ["roscado-herramientas-roscas", "Roscado y herramientas para roscas"],
+    ["carburo", "Carburo"],
+    ["sujecion", "Sujeción"],
+    ["calibrador", "Calibrador"],
+    [
+      "extraccion-reparacion-fijaciones",
+      "Extracción y Reparación de fijaciones",
+    ],
+    ["adhesivos-selladores", "Adhesivos y selladores"],
+    ["equipo-seguridad", "Equipo de seguridad"],
+    [
+      "herramientas-diagnostico-electricidad",
+      "Herramientas de diagnóstico de electricidad y electrónica",
+    ],
+    ["herrajes-accesorios-cable", "Herrajes y accesorios para cable"],
+    ["lubricantes-multifuncionales", "Lubricantes multifuncionales"],
   ])("shows Spanish error copy for %s", (slug, strapiName) => {
     mockSlug = slug
 

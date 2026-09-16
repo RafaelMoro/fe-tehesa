@@ -36,6 +36,61 @@ describe("categorias/[slug] generateMetadata", () => {
       "Brocas Industriales y Perforación en Puebla | Tehesa",
       "Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp.",
     ],
+    [
+      "llaves-herramientas-apriete",
+      "Llaves, Dados y Herramientas de Apriete | Tehesa Industrial",
+      "Dados, llaves, puntas y bristol King Tony para industria y taller. Existencia en Puebla. Solicita cotización con Tehesa Industrial.",
+    ],
+    [
+      "roscado-herramientas-roscas",
+      "Machuelos, Terrajas y Herramientas de Roscado | Tehesa Puebla",
+      "Machuelos, terrajas y juegos de roscado Bohrcraft para industria y taller. Distribuidor directo en Puebla. Cotiza por WhatsApp.",
+    ],
+    [
+      "carburo",
+      "Limas Diamantadas y Herramientas de Carburo | Tehesa Puebla",
+      "Limas diamantadas, puntas de diamante, limas rotativas y cortadores de carburo. Precisión industrial en Puebla. Cotiza hoy.",
+    ],
+    [
+      "sujecion",
+      "Clamps y Herramientas de Sujeción Industrial | Tehesa Puebla",
+      "Clamps verticales, horizontales y de jalar para sujeción industrial. Existencia en Puebla. Cotiza con Tehesa Industrial.",
+    ],
+    [
+      "calibrador",
+      "Calibradores Industriales en Puebla | Tehesa Industrial",
+      "Calibradores y cuenta hilos para medición industrial de precisión. Existencia en Puebla. Solicita tu cotización.",
+    ],
+    [
+      "extraccion-reparacion-fijaciones",
+      "Extractores de Tornillos y Reparación de Fijaciones | Tehesa",
+      "Extractores de tornillos y manerales para reparación de fijaciones. Distribuidor industrial en Puebla. Solicita tu cotización.",
+    ],
+    [
+      "adhesivos-selladores",
+      "Adhesivos y Selladores Industriales en Puebla | Tehesa",
+      "Adhesivos y selladores para fijación y sellado industrial. Abasto en Puebla. Cotiza con Tehesa Industrial.",
+    ],
+    [
+      "equipo-seguridad",
+      "Equipo de Seguridad Industrial en Puebla | Tehesa Industrial",
+      "Lentes y equipo de seguridad para entornos industriales. Existencia en Puebla. Cotiza con Tehesa Industrial.",
+    ],
+    [
+      "herramientas-diagnostico-electricidad",
+      "Probadores y Herramientas de Diagnóstico Eléctrico | Tehesa Puebla",
+      "Probadores eléctricos y herramienta de diagnóstico para electricidad y electrónica industrial. Puebla. Solicita tu cotización.",
+    ],
+    [
+      "herrajes-accesorios-cable",
+      "Herrajes y Accesorios para Cable en Puebla | Tehesa Industrial",
+      "Herrajes y accesorios para cable de acero en aplicaciones industriales. Existencia en Puebla. Cotiza hoy.",
+    ],
+    [
+      "lubricantes-multifuncionales",
+      "Lubricantes Multifuncionales Industriales | Tehesa Puebla",
+      "Lubricantes multifuncionales para mantenimiento industrial y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.",
+    ],
   ])(
     "marks %s index, follow with a matching canonical",
     async (slug, title, description) => {
