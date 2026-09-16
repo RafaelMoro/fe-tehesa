@@ -27,10 +27,15 @@ const categories: CategoryWithCount[] = [
     customId: "herramientas-impacto-forja",
     productCount: 2,
   },
+  {
+    name: "Herramientas de corte y conformado",
+    customId: "herramientas-corte-conformado",
+    productCount: 75,
+  },
 ]
 
 describe("CategoriesPage", () => {
-  it("renders one article per category with an h2 name; the Tornillería and Abrasivos CTAs are links, the others stay disabled", () => {
+  it("renders one article per category with an h2 name; the Tornillería, Abrasivos, Impacto/Forja, and Corte/Conformado CTAs are links, the others stay disabled", () => {
     render(<CategoriesPage categories={categories} />)
 
     const articles = screen.getAllByRole("article")
@@ -48,13 +53,14 @@ describe("CategoriesPage", () => {
         "/categorias/tornilleria-fijacion",
         "/categorias/abrasivos",
         "/categorias/impacto-forja",
+        "/categorias/herramientas-corte-conformado",
       ]),
     )
-    expect(linkCtas).toHaveLength(3)
+    expect(linkCtas).toHaveLength(4)
 
     const ctas = screen.getAllByText("Ver categoría")
     const disabledCtas = ctas.filter((cta) => !linkCtas.includes(cta))
-    expect(disabledCtas).toHaveLength(categories.length - 3)
+    expect(disabledCtas).toHaveLength(categories.length - 4)
     for (const cta of disabledCtas) {
       expect(cta).toHaveAttribute("aria-disabled", "true")
       expect(cta.tagName).not.toBe("A")
@@ -67,13 +73,14 @@ describe("CategoriesPage", () => {
     expect(screen.getByText("1,234 productos")).toBeInTheDocument()
     expect(screen.getByText("0 productos")).toBeInTheDocument()
     expect(screen.getByText("2 productos")).toBeInTheDocument()
-    expect(screen.queryAllByText(/productos$/)).toHaveLength(3)
+    expect(screen.getByText("75 productos")).toBeInTheDocument()
+    expect(screen.queryAllByText(/productos$/)).toHaveLength(4)
   })
 
   it("shows the hero/counter category count and the breadcrumb", () => {
     render(<CategoriesPage categories={categories} />)
 
-    expect(screen.getAllByText(/4 categorías/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/5 categorías/).length).toBeGreaterThan(0)
     const nav = screen.getByRole("navigation", { name: "Ruta" })
     expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/")
     expect(nav).toHaveTextContent("Categorías")
