@@ -1,12 +1,9 @@
 import { render, screen, userEvent, within } from "@__tests__/test-utils"
 import { CategoryPage } from "@/features/CategoryPage/CategoryPage"
-import {
-  CATEGORY_PAGES,
-  TORNILLERIA_CATEGORY_ID,
-} from "@/shared/constants/category.constants"
+import { CATEGORY_PAGES } from "@/shared/constants/category.constants"
 import type { Product } from "@/shared/types/global.types"
 
-const config = CATEGORY_PAGES[TORNILLERIA_CATEGORY_ID]
+const config = CATEGORY_PAGES["tornilleria"]
 
 let mockWhatsappNumber: string | undefined = "5215500000000"
 

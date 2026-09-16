@@ -1,6 +1,7 @@
 import { render, screen } from "@__tests__/test-utils"
 import { CategoriesPage } from "@/features/CategoriesPage/CategoriesPage"
 import { buildWhatsappUrl } from "@/shared/utils/whatsapp-message.utils"
+import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
 import type { CategoryWithCount } from "@/shared/types/global.types"
 
 let mockWhatsappNumber: string | undefined = "5215500000000"
@@ -21,7 +22,7 @@ beforeEach(() => {
 const categories: CategoryWithCount[] = [
   { name: "Abrasivos", customId: "abrasivos", productCount: 0 },
   { name: "Tornillería", customId: "tornilleria", productCount: 1234 },
-  { name: "Sujeción", customId: "sujecion", productCount: null },
+  { name: "Sin página", customId: "sin-pagina", productCount: null },
   {
     name: "Herramientas de impacto o forja",
     customId: "herramientas-impacto-forja",
@@ -62,11 +63,13 @@ describe("CategoriesPage", () => {
         "/categorias/perforacion-accesorios-taladro",
       ]),
     )
-    expect(linkCtas).toHaveLength(5)
+    expect(linkCtas).toHaveLength(Object.keys(CATEGORY_PAGE_HREFS).length)
 
     const ctas = screen.getAllByText("Ver categoría")
     const disabledCtas = ctas.filter((cta) => !linkCtas.includes(cta))
-    expect(disabledCtas).toHaveLength(categories.length - 5)
+    expect(disabledCtas).toHaveLength(
+      categories.length - Object.keys(CATEGORY_PAGE_HREFS).length,
+    )
     for (const cta of disabledCtas) {
       expect(cta).toHaveAttribute("aria-disabled", "true")
       expect(cta.tagName).not.toBe("A")

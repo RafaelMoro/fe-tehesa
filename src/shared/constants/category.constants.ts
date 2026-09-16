@@ -1,23 +1,17 @@
-import {
-  ABRASIVOS_DESCRIPTION,
-  CORTE_CONFORMADO_DESCRIPTION,
-  IMPACTO_FORJA_DESCRIPTION,
-  PERFORACION_DESCRIPTION,
-} from "@/shared/constants/seo.constants"
-
-export const TORNILLERIA_CATEGORY_ID = "tornilleria"
-export const ABRASIVOS_CATEGORY_ID = "abrasivos"
-export const IMPACTO_FORJA_CATEGORY_ID = "herramientas-impacto-forja"
-export const CORTE_CONFORMADO_CATEGORY_ID = "herramientas-corte-conformado"
-export const PERFORACION_CATEGORY_ID = "perforacion-accesorios-taladro"
+import { CATEGORY_SEO } from "@/shared/constants/seo.constants"
 
 export const CATEGORY_PAGE_HREFS: Record<string, string> = {
-  [TORNILLERIA_CATEGORY_ID]: "/categorias/tornilleria-fijacion",
-  [ABRASIVOS_CATEGORY_ID]: "/categorias/abrasivos",
-  [IMPACTO_FORJA_CATEGORY_ID]: "/categorias/impacto-forja",
-  [CORTE_CONFORMADO_CATEGORY_ID]: "/categorias/herramientas-corte-conformado",
-  [PERFORACION_CATEGORY_ID]: "/categorias/perforacion-accesorios-taladro",
+  tornilleria: "/categorias/tornilleria-fijacion",
+  abrasivos: "/categorias/abrasivos",
+  "herramientas-impacto-forja": "/categorias/impacto-forja",
+  "herramientas-corte-conformado": "/categorias/herramientas-corte-conformado",
+  "perforacion-accesorios-taladro": "/categorias/perforacion-accesorios-taladro",
 }
+
+export const getCategoryIdBySlug = (slug: string): string | undefined =>
+  Object.keys(CATEGORY_PAGE_HREFS).find(
+    (id) => CATEGORY_PAGE_HREFS[id] === `/categorias/${slug}`,
+  )
 
 export type CategoryPageConfig = {
   name: string
@@ -27,35 +21,35 @@ export type CategoryPageConfig = {
 }
 
 export const CATEGORY_PAGES: Record<string, CategoryPageConfig> = {
-  [TORNILLERIA_CATEGORY_ID]: {
+  tornilleria: {
     name: "Tornillería",
     heading: "Tornillería y fijación industrial",
     intro:
       "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla.",
     searchPlaceholder: "Buscar tornillos, tuercas, pernos...",
   },
-  [ABRASIVOS_CATEGORY_ID]: {
+  abrasivos: {
     name: "Abrasivos",
     heading: "Abrasivos industriales",
-    intro: ABRASIVOS_DESCRIPTION,
+    intro: CATEGORY_SEO.abrasivos.description,
     searchPlaceholder: "Buscar discos, puntas montadas...",
   },
-  [IMPACTO_FORJA_CATEGORY_ID]: {
+  "herramientas-impacto-forja": {
     name: "Herramientas de impacto o forja",
     heading: "Herramientas de impacto y forja",
-    intro: IMPACTO_FORJA_DESCRIPTION,
+    intro: CATEGORY_SEO["herramientas-impacto-forja"].description,
     searchPlaceholder: "Buscar martillos, mazos, cinceles...",
   },
-  [CORTE_CONFORMADO_CATEGORY_ID]: {
+  "herramientas-corte-conformado": {
     name: "Herramientas de corte y conformado",
     heading: "Herramientas de corte y conformado",
-    intro: CORTE_CONFORMADO_DESCRIPTION,
+    intro: CATEGORY_SEO["herramientas-corte-conformado"].description,
     searchPlaceholder: "Buscar machuelos, buriles, cortadores...",
   },
-  [PERFORACION_CATEGORY_ID]: {
+  "perforacion-accesorios-taladro": {
     name: "Perforación y accesorios para taladro",
     heading: "Perforación y accesorios de taladro",
-    intro: PERFORACION_DESCRIPTION,
+    intro: CATEGORY_SEO["perforacion-accesorios-taladro"].description,
     searchPlaceholder: "Buscar brocas, juegos, portabrocas...",
   },
 }

@@ -12,23 +12,32 @@ export const QUOTE_DESCRIPTION =
 export const CATEGORIES_TITLE = "Catálogo de Herramienta Industrial en Puebla | Tehesa"
 export const CATEGORIES_DESCRIPTION =
   "Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías con existencia en Puebla. Cotiza por WhatsApp."
-export const TORNILLERIA_TITLE =
-  "Tornillería y Fijación Industrial en Puebla | Tehesa"
-export const TORNILLERIA_DESCRIPTION =
-  "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy."
-export const ABRASIVOS_TITLE =
-  "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa"
-export const ABRASIVOS_DESCRIPTION =
-  "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial."
-export const IMPACTO_FORJA_TITLE =
-  "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla"
-export const IMPACTO_FORJA_DESCRIPTION =
-  "Martillos y herramienta de hojalatería para industria y taller. Abasto en Puebla. Cotiza con Tehesa Industrial."
-export const CORTE_CONFORMADO_TITLE =
-  "Herramientas de Corte y Machuelos en Puebla | Tehesa"
-export const CORTE_CONFORMADO_DESCRIPTION =
-  "Machuelos, buriles, cortadores y herramienta de corte para torno y maquinado. Marcas de calidad en Puebla. Solicita tu cotización."
-export const PERFORACION_TITLE =
-  "Brocas Industriales y Perforación en Puebla | Tehesa"
-export const PERFORACION_DESCRIPTION =
-  "Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp."
+export type CategorySeo = { title: string; description: string }
+
+export const CATEGORY_SEO: Record<string, CategorySeo> = {
+  tornilleria: {
+    title: "Tornillería y Fijación Industrial en Puebla | Tehesa",
+    description:
+      "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy.",
+  },
+  abrasivos: {
+    title: "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa",
+    description:
+      "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial.",
+  },
+  "herramientas-impacto-forja": {
+    title: "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla",
+    description:
+      "Martillos y herramienta de hojalatería para industria y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.",
+  },
+  "herramientas-corte-conformado": {
+    title: "Herramientas de Corte y Machuelos en Puebla | Tehesa",
+    description:
+      "Machuelos, buriles, cortadores y herramienta de corte para torno y maquinado. Marcas de calidad en Puebla. Solicita tu cotización.",
+  },
+  "perforacion-accesorios-taladro": {
+    title: "Brocas Industriales y Perforación en Puebla | Tehesa",
+    description:
+      "Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp.",
+  },
+}
