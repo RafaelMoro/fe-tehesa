@@ -28,3 +28,7 @@ export const CORTE_CONFORMADO_TITLE =
   "Herramientas de Corte y Machuelos en Puebla | Tehesa"
 export const CORTE_CONFORMADO_DESCRIPTION =
   "Machuelos, buriles, cortadores y herramienta de corte para torno y maquinado. Marcas de calidad en Puebla. Solicita tu cotización."
+export const PERFORACION_TITLE =
+  "Brocas Industriales y Perforación en Puebla | Tehesa"
+export const PERFORACION_DESCRIPTION =
+  "Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp."
