@@ -1,3 +1,9 @@
+## v0.42.0 (2026-09-16)
+
+### Pull Requests
+[#52](https://github.com/RafaelMoro/fe-tehesa/pull/52) | Consolidate 16 category pages into dynamic slug-based routing
+
+
 ## v0.41.0 (2026-09-16)
 
 ### Pull Requests
