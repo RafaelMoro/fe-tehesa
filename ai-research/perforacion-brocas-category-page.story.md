@@ -1,4 +1,4 @@
-# Perforación y accesorios de taladro category page (`/categorias/perforacion-brocas`) — Research (quick note)
+# Perforación y accesorios de taladro category page (`/categorias/perforacion-accesorios-taladro`) — Research (quick note)
 
 **Date:** 2026-09-16
 **Branch:** `feat/add-brocas-perf-page`
@@ -12,7 +12,7 @@ decisions D1–D4, "adding another category" contract in its AC 3), `ai-research
 
 ### Title
 
-Add `/categorias/perforacion-brocas` as the fifth consumer of the shared `CategoryPage` feature.
+Add `/categorias/perforacion-accesorios-taladro` as the fifth consumer of the shared `CategoryPage` feature.
 
 ### Description
 
@@ -23,7 +23,7 @@ the matching tests and doc rows. Strapi category **`Perforación y accesorios pa
 
 | Field              | Value                                                                                                                        | Source      |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| URL                | `/categorias/perforacion-brocas`                                                                                             | user        |
+| URL                | `/categorias/perforacion-accesorios-taladro`                                                                                             | user        |
 | `<title>`          | `Brocas Industriales y Perforación en Puebla \| Tehesa`                                                                      | user        |
 | Meta description   | `Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp.` | user        |
 | H1                 | `Perforación y accesorios de taladro`                                                                                        | user        |
@@ -31,10 +31,9 @@ the matching tests and doc rows. Strapi category **`Perforación y accesorios pa
 | Search placeholder | `Buscar brocas, juegos, portabrocas...`                                                                                      | user (D2)   |
 | Breadcrumb / JSON-LD leaf, error heading | `CATEGORY_PAGES[id].name` = `Perforación y accesorios para taladro`                                    | Strapi name |
 
-Note two spelling gaps, both harmless to the code but worth knowing:
+Slug equals the Strapi `customId` (`perforacion-accesorios-taladro`), like Corte/Conformado (user, 2026-09-16 — replaced
+the earlier `perforacion-brocas` slug). One spelling gap, harmless to the code but worth knowing:
 
-- Slug ≠ `customId` (`perforacion-brocas` vs `perforacion-accesorios-taladro`) — same as Tornillería and
-  Impacto/Forja; the map key is the `customId`, the value is the href.
 - Strapi `name` says **para** taladro, the user's H1 says **de** taladro. `CategoryPageConfig` already separates
   `name` (breadcrumb/JSON-LD/error copy, matches the header dropdown row which renders the live Strapi name) from
   `heading` (the `<h1>`), exactly like `Tornillería` vs `Tornillería y fijación industrial`. Assumed: keep `name`
@@ -46,10 +45,10 @@ renaming the Strapi category, fixing `brand: null` on 5 of the 51 products (back
 
 ### Acceptance criteria
 
-1. **Route + data.** `GET /categorias/perforacion-brocas` is server-rendered, fetches every published product with
+1. **Route + data.** `GET /categorias/perforacion-accesorios-taladro` is server-rendered, fetches every published product with
    `category.customId == "perforacion-accesorios-taladro"` via
    `fetchAllProductsByCategory("perforacion-accesorios-taladro")`, renders them in one unpaginated grid.
-   `generateMetadata` returns the exact title/description above, `alternates.canonical: "/categorias/perforacion-brocas"`,
+   `generateMetadata` returns the exact title/description above, `alternates.canonical: "/categorias/perforacion-accesorios-taladro"`,
    `robots: { index: true, follow: true }`. A 3-item `BreadcrumbList` JSON-LD (`Inicio` / `Categorías` /
    `Perforación y accesorios para taladro`) is emitted.
 2. **Page structure.** Same DOM shape as Corte/Conformado: `nav[aria-label="Ruta"]` with leaf
@@ -58,16 +57,16 @@ renaming the Strapi category, fixing `brand: null` on 5 of the 51 products (back
    filter row with `SearchInput` + `Filtrar marcas` (3 options: Bohrcraft, Bondhus, Weston).
    `Filtrar subcategorías` stays hidden (no product carries `subcategory`, Strapi I). Own `error.tsx`
    (`No pudimos cargar los productos de Perforación y accesorios para taladro`) and `loading.tsx` under
-   `src/app/categorias/perforacion-brocas/`.
+   `src/app/categorias/perforacion-accesorios-taladro/`.
 3. **Entry points light up with no code changes.** `CATEGORY_PAGE_HREFS` gains
-   `"perforacion-accesorios-taladro": "/categorias/perforacion-brocas"`; header `Categorías` dropdown row, mobile
+   `"perforacion-accesorios-taladro": "/categorias/perforacion-accesorios-taladro"`; header `Categorías` dropdown row, mobile
    accordion row, `/categorias` card CTA, sitemap entry and header active state (`pageCategoryId`) all follow from
    the map.
 4. **Shared component untouched.** `src/features/CategoryPage/*` has no diff. Existing category pages/tests are
    unchanged except where a test enumerates the href map.
 5. **Verification.** `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm test` pass. New tests:
-   `__tests__/seo/perforacion-brocas-metadata.test.ts`, `__tests__/app/perforacion-brocas-error.test.tsx`;
-   `sitemap.test.ts` asserts `/categorias/perforacion-brocas` in both `it`s; `CategoriesPage.test.tsx` fixture
+   `__tests__/seo/perforacion-accesorios-taladro-metadata.test.ts`, `__tests__/app/perforacion-accesorios-taladro-error.test.tsx`;
+   `sitemap.test.ts` asserts `/categorias/perforacion-accesorios-taladro` in both `it`s; `CategoriesPage.test.tsx` fixture
    gains the new category and `linkCtas` 4 → 5 / `disabledCtas` `length - 5`.
 
 ## Design Agent Handoff
@@ -82,7 +81,8 @@ nothing to filter.
   `intro: PERFORACION_DESCRIPTION`.
 - **D2 — Search placeholder.** Decided (user, 2026-09-16): `Buscar brocas, juegos, portabrocas...`.
 - **D3 — `name` vs `heading`.** Assumed (see UI/product I): `name` = Strapi `Perforación y accesorios para
-  taladro`, `heading` = user H1 `Perforación y accesorios de taladro`. Pending user confirmation.
+  taladro`, `heading` = user H1 `Perforación y accesorios de taladro`. Confirmed by the user during planning
+  (2026-09-16).
 
 ## Technical Research
 
@@ -93,11 +93,11 @@ nothing to filter.
   import `PERFORACION_DESCRIPTION` next to the existing three.
 - `src/shared/constants/seo.constants.ts` — `PERFORACION_TITLE`, `PERFORACION_DESCRIPTION` after the
   Corte/Conformado pair.
-- `src/app/categorias/perforacion-brocas/page.tsx` — copy of `herramientas-corte-conformado/page.tsx` with the
+- `src/app/categorias/perforacion-accesorios-taladro/page.tsx` — copy of `herramientas-corte-conformado/page.tsx` with the
   ID/constant names and canonical swapped.
-- `src/app/categorias/perforacion-brocas/error.tsx` — copy of `herramientas-corte-conformado/error.tsx`.
-- `src/app/categorias/perforacion-brocas/loading.tsx` — one-line re-export of `CategoryPageSkeleton`.
-- Tests: new `__tests__/seo/perforacion-brocas-metadata.test.ts`, `__tests__/app/perforacion-brocas-error.test.tsx`
+- `src/app/categorias/perforacion-accesorios-taladro/error.tsx` — copy of `herramientas-corte-conformado/error.tsx`.
+- `src/app/categorias/perforacion-accesorios-taladro/loading.tsx` — one-line re-export of `CategoryPageSkeleton`.
+- Tests: new `__tests__/seo/perforacion-accesorios-taladro-metadata.test.ts`, `__tests__/app/perforacion-accesorios-taladro-error.test.tsx`
   (templates: the Corte/Conformado twins); edit `__tests__/seo/sitemap.test.ts` (lines ~60, ~103) and
   `__tests__/categories/CategoriesPage.test.tsx` (fixture lines 21–35, counts lines ~50–60, `it` title).
   `__tests__/shared/Header.test.tsx` does not enumerate categories; no change.
@@ -117,8 +117,8 @@ nothing to filter.
 
 - `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm test`.
 - Dev server + curl (project implement convention):
-  `curl -s localhost:3000/categorias/perforacion-brocas | grep -c '<h1>'`,
-  `curl -s localhost:3000/sitemap.xml | grep perforacion-brocas`, `/categorias` card CTA is an `<a>` for the new
+  `curl -s localhost:3000/categorias/perforacion-accesorios-taladro | grep -c '<h1>'`,
+  `curl -s localhost:3000/sitemap.xml | grep perforacion-accesorios-taladro`, `/categorias` card CTA is an `<a>` for the new
   category.
 
 ### Dependencies / integration points
@@ -155,7 +155,9 @@ nothing to filter.
 
 - I: Question: Strapi `name` is `Perforación y accesorios **para** taladro`; the requested H1 is `... **de**
   taladro`. Keep breadcrumb/JSON-LD/error copy on the Strapi name (D3) and only the `<h1>` on the user copy?
-  - Status: pending
+  - Status: answered
+  - Answer: Yes — `name` = Strapi `Perforación y accesorios para taladro`, `heading` = `Perforación y accesorios de
+    taladro` (user, 2026-09-16).
   - Context: The header dropdown and `/categorias` card render the live Strapi name regardless, so using the
     Strapi name for `CATEGORY_PAGES[id].name` keeps breadcrumb ↔ nav consistent. Alternative is renaming the
     category in Strapi (backend-owned, out of scope here).
