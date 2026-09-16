@@ -1,3 +1,9 @@
+## v0.38.0 (2026-09-16)
+
+### Pull Requests
+[#48](https://github.com/RafaelMoro/fe-tehesa/pull/48) | Add Herramientas de impacto y forja category page
+
+
 ## v0.37.0 (2026-09-15)
 
 ### Pull Requests
