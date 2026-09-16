@@ -60,6 +60,15 @@ Found during Story 4 (SEO) research on 2026-07-27.
 - Show a notification error when the theme is changed but the cookie persistance failed
 - Remove the dead `change-theme` Zustand store/provider (`src/zustand/store/change-theme.store.ts`, `src/zustand/provider/change-theme.provider.tsx`). Noticed during cart epic Story 2 planning and implementation (`ai-planning/cart-quote-whatsapp/quote-page-line-review.story-2.md`): `useChangeThemeStore` has zero consumers — `ToggleDarkMode` uses next-themes directly — and the store is kept alive only by `ChangeThemeStoreProvider` in `src/app/page.tsx`. Not touched during Story 2 to keep the story's scope to the quote page; safe to delete in a follow-up cleanup.
 
+## `notFound()` on `/categorias/[slug]` renders the 404 UI but responds 200 (pending)
+
+Found during `remaining-category-pages.story.md` (Phase 1, 2026-09-16). Confirmed with an isolated repro route, and reproduced identically after upgrading to `next@15.5.25` (reverted, no fix).
+
+- `notFound()` called inside `src/app/categorias/[slug]/page.tsx` for an unknown slug correctly renders `src/app/not-found.tsx`'s body (heading, copy, link), but the HTTP response status stays `200`, not `404`.
+- Root cause appears to be the combination of a dynamic `[slug]` segment with no `generateStaticParams` and a root layout that is `force-dynamic` (`src/app/layout.tsx`, required by `Header`'s `useSearchParams`/per-request taxonomy fetch) — a known class of upstream Next.js limitation, not specific to this repo's code.
+- `/no-existe` (no matching route segment at all) is unaffected and correctly returns `404`; only `notFound()` calls from within a matched dynamic segment show the gap.
+- User decision (2026-09-16): ship as-is — accept the 200 status with the correct 404-shaped UI — rather than block the story on an upstream fix. Revisit on a future Next major/minor upgrade, or if Next patches this specific case.
+
 ## Business data for local SEO structured data (pending)
 
 Deferred from Story 4 (`ai-research/stories/plp-seo-readiness.story4.md`, open question SEO IV) on the user's call: keep it pending here rather than blocking the SEO story.

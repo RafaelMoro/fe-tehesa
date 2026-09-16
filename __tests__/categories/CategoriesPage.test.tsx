@@ -1,6 +1,7 @@
 import { render, screen } from "@__tests__/test-utils"
 import { CategoriesPage } from "@/features/CategoriesPage/CategoriesPage"
 import { buildWhatsappUrl } from "@/shared/utils/whatsapp-message.utils"
+import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
 import type { CategoryWithCount } from "@/shared/types/global.types"
 
 let mockWhatsappNumber: string | undefined = "5215500000000"
@@ -21,7 +22,7 @@ beforeEach(() => {
 const categories: CategoryWithCount[] = [
   { name: "Abrasivos", customId: "abrasivos", productCount: 0 },
   { name: "Tornillería", customId: "tornilleria", productCount: 1234 },
-  { name: "Sujeción", customId: "sujecion", productCount: null },
+  { name: "Sin página", customId: "sin-pagina", productCount: null },
   {
     name: "Herramientas de impacto o forja",
     customId: "herramientas-impacto-forja",
@@ -36,6 +37,49 @@ const categories: CategoryWithCount[] = [
     name: "Perforación y accesorios para taladro",
     customId: "perforacion-accesorios-taladro",
     productCount: 51,
+  },
+  {
+    name: "Llaves y herramientas de apriete",
+    customId: "llaves-herramientas-apriete",
+    productCount: 33,
+  },
+  {
+    name: "Roscado y herramientas para roscas",
+    customId: "roscado-herramientas-roscas",
+    productCount: 12,
+  },
+  { name: "Carburo", customId: "carburo", productCount: 8 },
+  { name: "Sujeción", customId: "sujecion", productCount: 6 },
+  { name: "Calibrador", customId: "calibrador", productCount: 4 },
+  {
+    name: "Extracción y Reparación de fijaciones",
+    customId: "extraccion-reparacion-fijaciones",
+    productCount: 9,
+  },
+  {
+    name: "Adhesivos y selladores",
+    customId: "adhesivos-selladores",
+    productCount: 7,
+  },
+  {
+    name: "Equipo de seguridad",
+    customId: "equipo-seguridad",
+    productCount: null,
+  },
+  {
+    name: "Herramientas de diagnóstico de electricidad y electrónica",
+    customId: "herramientas-diagnostico-electricidad",
+    productCount: 5,
+  },
+  {
+    name: "Herrajes y accesorios para cable",
+    customId: "herrajes-accesorios-cable",
+    productCount: 3,
+  },
+  {
+    name: "Lubricantes multifuncionales",
+    customId: "lubricantes-multifuncionales",
+    productCount: 1,
   },
 ]
 
@@ -62,11 +106,13 @@ describe("CategoriesPage", () => {
         "/categorias/perforacion-accesorios-taladro",
       ]),
     )
-    expect(linkCtas).toHaveLength(5)
+    expect(linkCtas).toHaveLength(Object.keys(CATEGORY_PAGE_HREFS).length)
 
     const ctas = screen.getAllByText("Ver categoría")
     const disabledCtas = ctas.filter((cta) => !linkCtas.includes(cta))
-    expect(disabledCtas).toHaveLength(categories.length - 5)
+    expect(disabledCtas).toHaveLength(
+      categories.length - Object.keys(CATEGORY_PAGE_HREFS).length,
+    )
     for (const cta of disabledCtas) {
       expect(cta).toHaveAttribute("aria-disabled", "true")
       expect(cta.tagName).not.toBe("A")
@@ -81,13 +127,22 @@ describe("CategoriesPage", () => {
     expect(screen.getByText("2 productos")).toBeInTheDocument()
     expect(screen.getByText("75 productos")).toBeInTheDocument()
     expect(screen.getByText("51 productos")).toBeInTheDocument()
-    expect(screen.queryAllByText(/productos$/)).toHaveLength(5)
+    expect(screen.getByText("1 productos")).toBeInTheDocument()
+    const countedCategories = categories.filter(
+      (category) => category.productCount !== null,
+    )
+    expect(screen.queryAllByText(/productos$/)).toHaveLength(
+      countedCategories.length,
+    )
   })
 
   it("shows the hero/counter category count and the breadcrumb", () => {
     render(<CategoriesPage categories={categories} />)
 
-    expect(screen.getAllByText(/6 categorías/).length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByText(new RegExp(`${categories.length} categorías`))
+        .length,
+    ).toBeGreaterThan(0)
     const nav = screen.getByRole("navigation", { name: "Ruta" })
     expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("href", "/")
     expect(nav).toHaveTextContent("Categorías")
