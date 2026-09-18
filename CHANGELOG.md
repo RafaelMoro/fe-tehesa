@@ -1,3 +1,9 @@
+## v0.44.0 (2026-09-18)
+
+### Pull Requests
+[#54](https://github.com/RafaelMoro/fe-tehesa/pull/54) | feat: Add dedicated brand pages at /marcas/[slug] with product filtering
+
+
 ## v0.43.0 (2026-09-18)
 
 ### Pull Requests
