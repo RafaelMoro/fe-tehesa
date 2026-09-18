@@ -5,6 +5,7 @@ import { RiArrowRightLine, RiCloseLine, RiMenuLine } from "@remixicon/react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
+import { BRAND_PAGE_HREFS } from "@/shared/constants/brand.constants"
 import type { TaxonomyItem } from "@/shared/types/global.types"
 
 interface MobileMenuProps {
@@ -183,6 +184,7 @@ export const MobileMenu = ({
                     allHref={brandsAllHref}
                     allLabel="Ver todas las marcas"
                     isActiveRoute={isBrands}
+                    hrefs={BRAND_PAGE_HREFS}
                     onNavigate={state.close}
                   />
                 </Accordion>

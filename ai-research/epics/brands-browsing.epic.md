@@ -117,23 +117,62 @@ dev-server check but proven by the Jest suite — see the plan's AC Validation S
 **Verification evidence:** `pnpm test` — 46 suites, 466 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
 `pnpm exec tsc --noEmit` clean; `pnpm build` succeeds with `/marcas` as a new dynamic route.
 
+### Story 2 — `/marcas/[slug]` brand pages: Complete
+
+Implemented across three phases on `feat/add-specific-brand-page`:
+
+- **Phase 1** (`seo.constants.ts`, `brand.constants.ts`, `global.queries.ts`, `global.lib.ts`): `BRAND_SEO` (six
+  entries, verbatim SEO copy), `BRAND_PAGE_HREFS` filled, `getBrandIdBySlug`/`getBrandDisplayName`; `GET_ALL_PRODUCTS`
+  rename (was `GET_ALL_PRODUCTS_BY_CATEGORY`); a private `fetchAllProducts(filters)` page-loop shared by
+  `fetchAllProductsByCategory` and the new `fetchAllProductsByBrand`. Verified:
+  `pnpm test -- __tests__/shared/global.lib.test.ts` (32/32), `tsc`, dev-server `curl` on `/marcas` (six card CTAs
+  now links) and `/marcas/weston` (404 — route not built yet, as planned).
+- **Phase 2** (`CategoryPageError.tsx` generalised, `src/app/marcas/[slug]/{page,error,loading}.tsx`,
+  `src/features/BrandPage/BrandPage.tsx`): route clone of `categorias/[slug]` with `notFound()` on unknown/`libre`
+  slugs, `fetchAllProductsByBrand`, per-brand `generateMetadata` + 3-item `BreadcrumbList` JSON-LD; `BrandPage`
+  feature with name search + a category-only in-memory filter (≥ 2 distinct categories, no subcategory/brand
+  dropdown). Verified: `pnpm test -- __tests__/brand-page __tests__/seo/brand-slug-metadata.test.ts
+  __tests__/app/brand-slug-error.test.tsx __tests__/app/category-slug-error.test.tsx __tests__/category-page`
+  (54/54), `pnpm build`, dev-server `curl` on all six slugs (counts 90/26/19/13/6/5 match live totals, category
+  dropdown present/absent per brand, metadata/canonical/JSON-LD correct), WhatsApp-unset check, and the
+  pre-existing `notFound()`-in-`[slug]` HTTP-200 limitation confirmed identical to `/categorias/[slug]` (not a
+  regression).
+- **Phase 3** (`Header.tsx`, `MobileMenu.tsx`, `sitemap.ts`, docs): brand rows relabelled via `getBrandDisplayName`
+  before being passed to `TaxonomyDropdown`/`TaxonomyAccordionSection` with `hrefs={BRAND_PAGE_HREFS}`; active-row
+  matching by `customId` (`pageBrandId` mirrors `pageCategoryId`) so both `/marcas/<slug>` and `?mode=brand&brand=`
+  URLs highlight the relabelled row; sitemap gains the six `/marcas/<slug>` base pages. Verified:
+  `pnpm test -- __tests__/shared/Header.test.tsx __tests__/brands/BrandsPage.test.tsx __tests__/seo/sitemap.test.ts`
+  (37/37), full `pnpm test` (497 passed / 1 pre-existing skip, 0 failed), `pnpm build`, `pnpm lint`, dev-server
+  `curl` on `/sitemap.xml` (six `/marcas/<slug>` locs, seven `mode=brand` entries, one `/marcas`) and a regression
+  check on `/categorias/tornilleria-fijacion`.
+
+5 of 6 ACs verified `Validated`; AC4 (header/mobile-menu dropdown rows) is `Cannot validate` by dev-server check —
+HeroUI's `Dropdown.Popover`/`Drawer` render nothing into the initial SSR HTML until opened, confirmed by inspecting
+the `<header>` slice of `/marcas/cleveland` (neither `cleveland` nor `Clevaland` appears) — proven instead by
+`Header.test.tsx`. AC6 (tests) is `Cannot validate` by nature, proven by the full `pnpm test` run. See the plan's AC
+Validation Summary (`ai-planning/brands-browsing/brand-page.story-2.md`) for the full table.
+
+**Verification evidence:** `pnpm test` — 49 suites, 497 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
+`pnpm exec tsc --noEmit` clean; `pnpm build` succeeds with `/marcas/[slug]` as a new dynamic route.
+
 ### Story overview
 
 | Story | Status | Verified evidence | Remaining work / blocker |
 | --- | --- | --- | --- |
 | 1 — `/marcas` index page | Complete | See above | None |
-| 2 — `/marcas/[slug]` brand pages | Not started | — | Needs its own `/research` pass (no comp yet per this epic doc); then `fetchAllProductsByBrand`, `BrandPage` feature, `BRAND_PAGE_HREFS` population, header brand rows as links, sitemap URLs, `BRAND_SEO` |
+| 2 — `/marcas/[slug]` brand pages | Complete | See above | None |
 
 ### Overall completion
 
-Epic-level acceptance criteria live per-story; Story 1's 7/7 ACs are verified complete (6 `Validated`, 2
-`Cannot validate`-but-proven-by-tests, 0 failed). Story 2 has no research/plan yet, so its ACs don't exist to count.
-**Story-count basis: 1/2 stories complete.** Not marking the epic complete — Story 2 is fully outstanding.
+Epic-level acceptance criteria live per-story. Story 1: 7/7 ACs verified complete (6 `Validated`, 2
+`Cannot validate`-but-proven-by-tests, 0 failed). Story 2: 6/6 ACs verified complete (4 `Validated`, 2
+`Cannot validate`-but-proven-by-tests, 0 failed). **13/13 acceptance criteria complete.** Both stories in this epic
+are done.
 
 ### Next Steps
 
-1. Run `/research` for Story 2 (`/marcas/[slug]` brand pages) — no comp exists yet per this epic's own note.
-2. After Story 2 research/plan/implementation, populate `BRAND_PAGE_HREFS` (flips Story 1's disabled CTAs live with
-   no component change, by design) and wire header brand rows as links.
-3. Decide the `Clevaland` Strapi typo and `/?mode=brand` URL fate (both explicitly deferred, backend/product
-   judgment, out of this epic's Story 1 scope).
+1. Decide the `Clevaland` Strapi typo and `/?mode=brand` URL fate (both explicitly deferred, backend/product
+   judgment, out of scope for both stories in this epic).
+2. Manual checks still owed before merge: desktop `Marcas` dropdown rows/labels/active-row on `/`, `/marcas/cleveland`,
+   and `/?mode=brand&brand=Clevaland`; mobile accordion `aria-current`; light/dark layout at 390/1440 on a brand page;
+   drawer open from a brand-page card click.

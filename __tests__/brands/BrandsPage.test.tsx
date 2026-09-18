@@ -46,16 +46,21 @@ describe("BrandsPage", () => {
     expect(screen.getAllByText("En almacén")).toHaveLength(3)
   })
 
-  it("renders every Ver productos CTA disabled while BRAND_PAGE_HREFS is empty", () => {
+  it("renders every Ver productos CTA as a link to /marcas/<slug>", () => {
     const { container } = render(<BrandsPage brands={brands} />)
 
-    expect(
-      screen.queryAllByRole("link", { name: /Ver productos/ }),
-    ).toHaveLength(0)
-    const disabledCtas = screen.getAllByText("Ver productos")
-    expect(disabledCtas).toHaveLength(3)
-    for (const cta of disabledCtas) {
-      expect(cta).toHaveAttribute("aria-disabled", "true")
+    const links = screen.getAllByRole("link", { name: /Ver productos/ })
+    expect(links).toHaveLength(3)
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/marcas/weston",
+      "/marcas/king-tony",
+      "/marcas/bohrcraft",
+    ])
+    for (const link of links) {
+      expect(link).not.toHaveAttribute("aria-disabled")
+    }
+    for (const article of screen.getAllByRole("article")) {
+      expect(within(article).getAllByRole("link")).toHaveLength(1)
     }
     expect(container.querySelector('a[href="#"]')).toBeNull()
   })

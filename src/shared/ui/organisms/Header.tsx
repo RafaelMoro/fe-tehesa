@@ -10,6 +10,10 @@ import { MobileMenu } from "./MobileMenu"
 import { CATALOG_SEARCH_OPEN_EVENT } from "@/shared/constants/catalog.constants"
 import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
 import {
+  BRAND_PAGE_HREFS,
+  getBrandDisplayName,
+} from "@/shared/constants/brand.constants"
+import {
   WHATSAPP_HEADER_MESSAGE,
   WHATSAPP_NUMBER,
 } from "@/shared/constants/whatsapp.constants"
@@ -114,8 +118,20 @@ export const Header = ({ categories, brands }: HeaderProps) => {
       ? searchParams.get("category")
       : (categories.find((category) => category.customId === pageCategoryId)
           ?.name ?? null)
+  const brandItems: TaxonomyItem[] = brands.map((brand) => ({
+    ...brand,
+    name: getBrandDisplayName(brand.customId) ?? brand.name,
+  }))
+  const pageBrandId = Object.keys(BRAND_PAGE_HREFS).find(
+    (id) => BRAND_PAGE_HREFS[id] === pathname,
+  )
+  const activeBrandId =
+    searchParams.get("mode") === "brand"
+      ? brands.find((brand) => brand.name === searchParams.get("brand"))
+          ?.customId
+      : pageBrandId
   const activeBrand =
-    searchParams.get("mode") === "brand" ? searchParams.get("brand") : null
+    brandItems.find((brand) => brand.customId === activeBrandId)?.name ?? null
   const whatsappUrl = WHATSAPP_NUMBER
     ? buildWhatsappUrl(WHATSAPP_NUMBER, WHATSAPP_HEADER_MESSAGE)
     : null
@@ -166,12 +182,13 @@ export const Header = ({ categories, brands }: HeaderProps) => {
           />
           <TaxonomyDropdown
             label="Marcas"
-            items={brands}
+            items={brandItems}
             activeName={activeBrand}
             menuClassName="w-[220px]"
             allHref={isBrandsIndex ? undefined : "/marcas"}
             allLabel="Ver todas las marcas"
             isActiveRoute={isBrands}
+            hrefs={BRAND_PAGE_HREFS}
           />
         </nav>
         <div className="flex items-center gap-1 md:hidden">
@@ -190,7 +207,7 @@ export const Header = ({ categories, brands }: HeaderProps) => {
           <CartCount />
           <MobileMenu
             categories={categories}
-            brands={brands}
+            brands={brandItems}
             isCatalog={isCatalog}
             isCategories={isCategories}
             categoriesAllHref={isCategoriesIndex ? undefined : "/categorias"}

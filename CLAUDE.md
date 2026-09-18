@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-**fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog: paginated products from Strapi via GraphQL, client-side search/filtering, a variants-pricing drawer, a `/cotizar` quote page backed by a persisted cart, category pages under `/categorias`, and a brands index at `/marcas`. See `ai-skills/REPO_CONTEXT.md` for the full architecture map, directory layout, data flow, theme/cookie handling, API route inventory, SEO surface, and conventions/gotchas.
+**fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog: paginated products from Strapi via GraphQL, client-side search/filtering, a variants-pricing drawer, a `/cotizar` quote page backed by a persisted cart, category pages under `/categorias`, and a brands index at `/marcas` with per-brand pages at `/marcas/<slug>`. See `ai-skills/REPO_CONTEXT.md` for the full architecture map, directory layout, data flow, theme/cookie handling, API route inventory, SEO surface, and conventions/gotchas.
 
 ## Release And PR Workflow
 
