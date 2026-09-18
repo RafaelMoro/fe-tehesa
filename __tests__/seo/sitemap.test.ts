@@ -40,12 +40,14 @@ describe("sitemap", () => {
       PRODUCT_PAGE_MIN +
       1 +
       1 +
-      Object.keys(CATEGORY_PAGE_HREFS).length
+      Object.keys(CATEGORY_PAGE_HREFS).length +
+      1
     expect(result).toHaveLength(
       basePageCount + categories.length + brands.length,
     )
     expect(result.some((entry) => entry.url.endsWith("/"))).toBe(true)
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
+    expect(result.some((entry) => entry.url.endsWith("/marcas"))).toBe(true)
     for (const href of Object.values(CATEGORY_PAGE_HREFS)) {
       expect(result.some((entry) => entry.url.endsWith(href))).toBe(true)
     }
@@ -74,10 +76,12 @@ describe("sitemap", () => {
       PRODUCT_PAGE_MIN +
       1 +
       1 +
-      Object.keys(CATEGORY_PAGE_HREFS).length
+      Object.keys(CATEGORY_PAGE_HREFS).length +
+      1
     expect(result).toHaveLength(basePageCount)
     expect(result.some((entry) => entry.url.includes("mode="))).toBe(false)
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
+    expect(result.some((entry) => entry.url.endsWith("/marcas"))).toBe(true)
     for (const href of Object.values(CATEGORY_PAGE_HREFS)) {
       expect(result.some((entry) => entry.url.endsWith(href))).toBe(true)
     }

@@ -87,3 +87,51 @@ Not yet researched; no comp yet. Expected shape, from the categories precedent:
 
 1 → 2. Story 1 ships standalone: `/marcas` reachable from the header row, by URL and via the sitemap; card CTAs and
 header brand rows inert until Story 2.
+
+## Epic Completion Status
+
+**Last updated:** 2026-09-17 (Story 1 implementation, `/implement` on `ai-planning/brands-browsing/brands-index-page.story-1.md`).
+
+### Story 1 — `/marcas` index page: Complete
+
+Implemented across three phases on `feat/add-brand-page`:
+
+- **Phase 1** (`Header.tsx`/`MobileMenu.tsx`): `Marcas` dropdown/accordion gained a `Ver todas las marcas` row
+  (`allLabel` prop, mirroring `Categorías`'s `allHref` pattern), hidden on `/marcas`; `Marcas` trigger/accordion
+  active on `/marcas*`. Verified: `pnpm test -- __tests__/shared/Header.test.tsx` (27/27), `tsc`, `lint`, dev-server
+  `curl` on `/` and `/categorias`.
+- **Phase 2** (`brand.constants.ts`, `BrandsPage`/`BrandCard`, `src/app/marcas/page.tsx`): six-brand editorial config,
+  config ∩ live-taxonomy intersection, breadcrumb/hero/counter/grid/note/closing panel, disabled `Ver productos` CTA
+  (`BRAND_PAGE_HREFS` empty). Verified: `pnpm test -- __tests__/brands/BrandsPage.test.tsx` (7/7), `pnpm build`,
+  dev-server `curl` confirming 6 cards in comp order, metadata, JSON-LD, WhatsApp gating, and the `STRAPI_HOST`-down
+  degrade (parity with `/`).
+- **Phase 3** (`sitemap.ts`, docs): `/marcas` base-page sitemap entry (Strapi up and down), `seo/brands-metadata.test.ts`,
+  `seo/sitemap.test.ts` updated, `CLAUDE.md`/`ai-skills/REPO_CONTEXT.md` route/feature/env docs.
+
+All 7 ACs verified `Validated` except AC1 (header entry point) and AC7 (test-run gate), both `Cannot validate` by
+dev-server check but proven by the Jest suite — see the plan's AC Validation Summary
+(`ai-planning/brands-browsing/brands-index-page.story-1.md`) for the full table.
+
+**Verification evidence:** `pnpm test` — 46 suites, 466 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
+`pnpm exec tsc --noEmit` clean; `pnpm build` succeeds with `/marcas` as a new dynamic route.
+
+### Story overview
+
+| Story | Status | Verified evidence | Remaining work / blocker |
+| --- | --- | --- | --- |
+| 1 — `/marcas` index page | Complete | See above | None |
+| 2 — `/marcas/[slug]` brand pages | Not started | — | Needs its own `/research` pass (no comp yet per this epic doc); then `fetchAllProductsByBrand`, `BrandPage` feature, `BRAND_PAGE_HREFS` population, header brand rows as links, sitemap URLs, `BRAND_SEO` |
+
+### Overall completion
+
+Epic-level acceptance criteria live per-story; Story 1's 7/7 ACs are verified complete (6 `Validated`, 2
+`Cannot validate`-but-proven-by-tests, 0 failed). Story 2 has no research/plan yet, so its ACs don't exist to count.
+**Story-count basis: 1/2 stories complete.** Not marking the epic complete — Story 2 is fully outstanding.
+
+### Next Steps
+
+1. Run `/research` for Story 2 (`/marcas/[slug]` brand pages) — no comp exists yet per this epic's own note.
+2. After Story 2 research/plan/implementation, populate `BRAND_PAGE_HREFS` (flips Story 1's disabled CTAs live with
+   no component change, by design) and wire header brand rows as links.
+3. Decide the `Clevaland` Strapi typo and `/?mode=brand` URL fate (both explicitly deferred, backend/product
+   judgment, out of this epic's Story 1 scope).

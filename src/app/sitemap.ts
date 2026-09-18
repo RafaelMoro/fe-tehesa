@@ -27,6 +27,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}${href}`,
     })
   }
+  basePages.push({
+    url: `${SITE_URL}/marcas`,
+  })
 
   try {
     // ponytail: sitemap must not fail a build; degrade to base pages.

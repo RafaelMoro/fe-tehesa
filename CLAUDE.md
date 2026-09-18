@@ -19,11 +19,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Optional env vars:**
 - `NEXT_PUBLIC_SITE_URL` — absolute production origin used by `metadataBase`, canonicals, `robots.ts`, and `sitemap.ts`. Falls back to `http://localhost:3000` when unset; never throws.
-- `NEXT_PUBLIC_WHATSAPP_NUMBER` — the seller's WhatsApp click-to-chat number, used by `/cotizar`'s `WhatsappCta`, the header's utility-bar link / mobile menu footer button, and the `WhatsappPanel` shared by `/categorias` and `/categorias/tornilleria`. Unset hides the affected links/CTA instead of throwing.
+- `NEXT_PUBLIC_WHATSAPP_NUMBER` — the seller's WhatsApp click-to-chat number, used by `/cotizar`'s `WhatsappCta`, the header's utility-bar link / mobile menu footer button, the `WhatsappPanel` shared by `/categorias` and `/categorias/tornilleria`, and `/marcas`'s closing-panel `Cotizar por WhatsApp` button. Unset hides the affected links/CTA instead of throwing.
 
 ## What This Is
 
-**fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog: paginated products from Strapi via GraphQL, client-side search/filtering, a variants-pricing drawer, a `/cotizar` quote page backed by a persisted cart, and category pages under `/categorias`. See `ai-skills/REPO_CONTEXT.md` for the full architecture map, directory layout, data flow, theme/cookie handling, API route inventory, SEO surface, and conventions/gotchas.
+**fe-tehesa** is a Next.js 15 App Router MVP for a Tehesa product catalog: paginated products from Strapi via GraphQL, client-side search/filtering, a variants-pricing drawer, a `/cotizar` quote page backed by a persisted cart, category pages under `/categorias`, and a brands index at `/marcas`. See `ai-skills/REPO_CONTEXT.md` for the full architecture map, directory layout, data flow, theme/cookie handling, API route inventory, SEO surface, and conventions/gotchas.
 
 ## Release And PR Workflow
 
