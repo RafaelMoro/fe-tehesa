@@ -118,10 +118,12 @@ export const Header = ({ categories, brands }: HeaderProps) => {
       ? searchParams.get("category")
       : (categories.find((category) => category.customId === pageCategoryId)
           ?.name ?? null)
-  const brandItems: TaxonomyItem[] = brands.map((brand) => ({
-    ...brand,
-    name: getBrandDisplayName(brand.customId) ?? brand.name,
-  }))
+  const brandItems: TaxonomyItem[] = brands
+    .filter((brand) => BRAND_PAGE_HREFS[brand.customId] !== undefined)
+    .map((brand) => ({
+      ...brand,
+      name: getBrandDisplayName(brand.customId) ?? brand.name,
+    }))
   const pageBrandId = Object.keys(BRAND_PAGE_HREFS).find(
     (id) => BRAND_PAGE_HREFS[id] === pathname,
   )

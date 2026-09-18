@@ -94,7 +94,7 @@ describe("Header", () => {
     await user.click(screen.getByRole("button", { name: /Marcas/ }))
     const brandsMenu = screen.getByRole("menu", { name: "Marcas" })
     const brandItems = within(brandsMenu).getAllByRole("menuitem")
-    expect(brandItems).toHaveLength(brands.length + 1)
+    expect(brandItems).toHaveLength(2)
 
     const clevelandItem = within(brandsMenu).getByRole("menuitem", {
       name: "Cleveland",
@@ -104,12 +104,9 @@ describe("Header", () => {
     expect(
       within(brandsMenu).queryByRole("menuitem", { name: "Clevaland" }),
     ).not.toBeInTheDocument()
-
-    const marcaLibreItem = within(brandsMenu).getByRole("menuitem", {
-      name: "Marca Libre",
-    })
-    expect(marcaLibreItem).toHaveAttribute("aria-disabled", "true")
-    expect(marcaLibreItem).not.toHaveAttribute("href")
+    expect(
+      within(brandsMenu).queryByText("Marca Libre"),
+    ).not.toBeInTheDocument()
 
     const allBrandsRow = within(brandsMenu).getByRole("menuitem", {
       name: "Ver todas las marcas",
@@ -316,7 +313,7 @@ describe("Header", () => {
     await waitFor(() => expect(hamburger).toHaveFocus())
   })
 
-  it("lists a disabled Marca Libre row inside the side menu and links the active Cleveland row", async () => {
+  it("omits Marca Libre from the side menu and links the active Cleveland row", async () => {
     useSearchParamsMock.mockReturnValue(
       new URLSearchParams("mode=brand&brand=Clevaland"),
     )
@@ -328,10 +325,7 @@ describe("Header", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Marcas" }))
 
-    expect(within(dialog).getByText("Marca Libre")).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    )
+    expect(within(dialog).queryByText("Marca Libre")).not.toBeInTheDocument()
     const clevelandRow = within(dialog).getByRole("link", { name: "Cleveland" })
     expect(clevelandRow).toHaveAttribute("aria-current", "page")
     expect(clevelandRow).toHaveAttribute("href", "/marcas/cleveland")
