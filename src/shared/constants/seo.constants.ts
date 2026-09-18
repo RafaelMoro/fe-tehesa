@@ -100,3 +100,44 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
       "Lubricantes multifuncionales para mantenimiento industrial y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.",
   },
 }
+
+export type BrandSeo = CategorySeo & { heading: string }
+
+export const BRAND_SEO: Record<string, BrandSeo> = {
+  weston: {
+    title: "Weston en Puebla — Herramienta Industrial Mexicana | Tehesa",
+    description:
+      "Distribuidor de Weston en Puebla: cortadores, brocas, machuelos y rimas para la industria. Marca mexicana con +30 años. Cotiza con Tehesa.",
+    heading: "Weston: la marca mexicana para la industria",
+  },
+  "king-tony": {
+    title: "King Tony en Puebla — Dados y Llaves Profesionales | Tehesa",
+    description:
+      "Distribuidor de King Tony en Puebla. Dados, matracas y llaves de apriete bajo norma DIN y ANSI. Cotiza con Tehesa Industrial.",
+    heading: "King Tony: apriete profesional bajo norma DIN y ANSI",
+  },
+  bohrcraft: {
+    title: "Bohrcraft en Puebla — Brocas y Machuelos Alemanes | Tehesa",
+    description:
+      "Distribuidor directo de Bohrcraft en Puebla. Brocas y machuelos de precisión alemana para industria. Cotiza con Tehesa.",
+    heading: "Bohrcraft: precisión alemana en brocas y machuelos",
+  },
+  bondhus: {
+    title: "Bondhus en Puebla — Llaves Hexagonales Made in USA | Tehesa",
+    description:
+      "Distribuidor de Bondhus en Puebla. Llaves hexagonales y Torx hechas en EUA, inventoras de la punta de bola. Cotiza con Tehesa.",
+    heading: "Bondhus: el inventor de la llave de punta de bola",
+  },
+  precision: {
+    title: "Precision Brand en Puebla — Laina de Precisión | Tehesa",
+    description:
+      "Distribuidor de Precision Brand en Puebla. Laina en rollo para alineación de maquinaria y ajuste de troqueles. Cotiza con Tehesa.",
+    heading: "Precision Brand: laina para alinear y ajustar con exactitud",
+  },
+  cleveland: {
+    title: "Cleveland en Puebla — Buriles y Machuelos de Cobalto | Tehesa",
+    description:
+      "Distribuidor de Cleveland en Puebla. Buriles de cobalto K-42 y machuelos para maquinado industrial. Cotiza con Tehesa Industrial.",
+    heading: "Cleveland: 150 años de herramienta de corte",
+  },
+}

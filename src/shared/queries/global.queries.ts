@@ -163,8 +163,8 @@ export const GET_BRANDS = gql`
   }
 `
 
-export const GET_ALL_PRODUCTS_BY_CATEGORY = gql`
-  query GetAllProductsByCategory(
+export const GET_ALL_PRODUCTS = gql`
+  query GetAllProducts(
     $filters: ProductFiltersInput
     $pagination: PaginationArg
   ) {
