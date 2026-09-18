@@ -94,11 +94,66 @@ describe("Header", () => {
     await user.click(screen.getByRole("button", { name: /Marcas/ }))
     const brandsMenu = screen.getByRole("menu", { name: "Marcas" })
     const brandItems = within(brandsMenu).getAllByRole("menuitem")
-    expect(brandItems).toHaveLength(brands.length)
-    for (const item of brandItems) {
+    expect(brandItems).toHaveLength(brands.length + 1)
+
+    const disabledBrandItems = brandItems.slice(0, brands.length)
+    for (const item of disabledBrandItems) {
       expect(item).toHaveAttribute("aria-disabled", "true")
       expect(item).not.toHaveAttribute("href")
     }
+
+    const allBrandsRow = within(brandsMenu).getByRole("menuitem", {
+      name: "Ver todas las marcas",
+    })
+    expect(allBrandsRow).not.toHaveAttribute("aria-disabled", "true")
+    expect(allBrandsRow).toHaveAttribute("href", "/marcas")
+  })
+
+  it("closes the Marcas dropdown when the Ver todas las marcas row is selected", async () => {
+    const capture = (event: Event) => event.preventDefault()
+    window.addEventListener("click", capture)
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const trigger = screen.getByRole("button", { name: /Marcas/ })
+    await user.click(trigger)
+    const allRow = screen.getByRole("menuitem", { name: "Ver todas las marcas" })
+
+    await user.click(allRow)
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false")
+    window.removeEventListener("click", capture)
+  })
+
+  it("marks Marcas active on /marcas and hides the Ver todas las marcas row there", async () => {
+    usePathnameMock.mockReturnValue("/marcas")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    expect(screen.getAllByRole("link", { name: "Productos" })[0]).not.toHaveAttribute(
+      "aria-current",
+    )
+    expect(screen.getByRole("button", { name: "Categorías" })).toBeInTheDocument()
+
+    const trigger = screen.getByRole("button", { name: "Marcas (actual)" })
+    await user.click(trigger)
+
+    expect(
+      screen.queryByRole("menuitem", { name: "Ver todas las marcas" }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("marks Marcas active on /marcas/weston, keeping the Ver todas las marcas row", async () => {
+    usePathnameMock.mockReturnValue("/marcas/weston")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    const trigger = screen.getByRole("button", { name: "Marcas (actual)" })
+    await user.click(trigger)
+
+    expect(
+      screen.getByRole("menuitem", { name: "Ver todas las marcas" }),
+    ).toBeInTheDocument()
   })
 
   it("closes the Categorías dropdown when Tornillería is selected", async () => {
@@ -198,6 +253,9 @@ describe("Header", () => {
     expect(screen.queryByRole("button", { name: /Marcas/ })).not.toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: "Ver todas las categorías" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Ver todas las marcas" }),
     ).not.toBeInTheDocument()
   })
 
@@ -333,6 +391,38 @@ describe("Header", () => {
     ).not.toBeInTheDocument()
     expect(
       within(dialog).getByRole("button", { name: "Categorías (actual)" }),
+    ).toBeInTheDocument()
+  })
+
+  it("shows a Ver todas las marcas link in the side menu that closes the drawer", async () => {
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    await user.click(within(dialog).getByRole("button", { name: "Marcas" }))
+
+    const row = within(dialog).getByRole("link", { name: "Ver todas las marcas" })
+    expect(row).toHaveAttribute("href", "/marcas")
+
+    await user.click(row)
+
+    expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
+  })
+
+  it("hides the side-menu Ver todas las marcas link and highlights the trigger on /marcas", async () => {
+    usePathnameMock.mockReturnValue("/marcas")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+
+    expect(
+      within(dialog).queryByRole("link", { name: "Ver todas las marcas" }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("button", { name: "Marcas (actual)" }),
     ).toBeInTheDocument()
   })
 
