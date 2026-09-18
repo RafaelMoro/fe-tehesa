@@ -11,11 +11,22 @@ import {
 import { Home } from "@/features/Home/Home"
 import type { Product, TaxonomyItem } from "@/shared/types/global.types"
 import { CATALOG_SEARCH_OPEN_EVENT } from "@/shared/constants/catalog.constants"
+import { buildWhatsappUrl } from "@/shared/utils/whatsapp-message.utils"
 
 const pushMock = jest.fn()
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
+}))
+
+let mockWhatsappNumber: string | undefined = "5215500000000"
+
+jest.mock("@/shared/constants/whatsapp.constants", () => ({
+  ...jest.requireActual("@/shared/constants/whatsapp.constants"),
+  __esModule: true,
+  get WHATSAPP_NUMBER() {
+    return mockWhatsappNumber
+  },
 }))
 
 const originalScrollTo = window.scrollTo
@@ -74,6 +85,7 @@ const resetFetch = () => {
 beforeEach(() => {
   pushMock.mockReset()
   window.scrollTo = jest.fn()
+  mockWhatsappNumber = "5215500000000"
 })
 
 afterEach(() => {
@@ -124,7 +136,7 @@ describe("Home - URL-backed catalog modes", () => {
     renderHome()
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Búsqueda ampliada",
@@ -151,7 +163,7 @@ describe("Home - URL-backed catalog modes", () => {
     })
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Búsqueda ampliada",
@@ -178,12 +190,12 @@ describe("Home - URL-backed catalog modes", () => {
     // it while disabled and never see the drawer open.
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+        screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
       ).toBeEnabled()
     })
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog2 = await screen.findByRole("dialog", {
       name: "Búsqueda ampliada",
@@ -248,9 +260,23 @@ describe("Home - pagination", () => {
       "aria-disabled",
       "true",
     )
+    const nextLink = screen.getByRole("link", { name: "Página siguiente" })
+    expect(nextLink).toHaveAttribute("href", "/?page=2")
+    expect(nextLink).toHaveTextContent("Página siguiente")
     expect(
-      screen.getByRole("link", { name: "Página siguiente" }),
-    ).toHaveAttribute("href", "/?page=2")
+      screen.queryByText(/Llegaste al final de esta lista/),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the end-of-list copy and no Página siguiente link on the last base page", () => {
+    renderHome({ currentPage: 7 })
+
+    expect(
+      screen.queryByRole("link", { name: "Página siguiente" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/Llegaste al final de esta lista/),
+    ).toBeInTheDocument()
   })
 
   it("uses canonical wide Anterior/Siguiente URLs", () => {
@@ -270,6 +296,21 @@ describe("Home - pagination", () => {
       "href",
       "/?mode=category&category=Tubos+PVC&page=3",
     )
+    expect(
+      screen.queryByText(/Llegaste al final de esta lista/),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the end-of-list copy in filtered mode when there is no next page", () => {
+    renderHome({
+      catalogMode: "brand",
+      catalogValue: "Acme",
+      hasNextCatalogPage: false,
+    })
+
+    expect(
+      screen.getByText(/Llegaste al final de esta lista/),
+    ).toBeInTheDocument()
   })
 
   it("shows notice=end feedback and renders Siguiente as disabled, not a link", () => {
@@ -295,6 +336,9 @@ describe("Home - pagination", () => {
       "aria-disabled",
       "true",
     )
+    expect(
+      screen.getByText(/Llegaste al final de esta lista/),
+    ).toBeInTheDocument()
   })
 
   it("never renders a pagination control with href=\"#\"", () => {
@@ -303,6 +347,90 @@ describe("Home - pagination", () => {
     screen.getAllByRole("link").forEach((link) => {
       expect(link.getAttribute("href")).not.toBe("#")
     })
+  })
+})
+
+describe("Home - no results", () => {
+  it("shows the trimmed search term and both actions", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "  zzz  ",
+    )
+
+    const status = screen.getByRole("status")
+    expect(status).toHaveTextContent('Nada con "zzz".')
+    expect(
+      screen.queryByText("No hay coincidencias en estos productos"),
+    ).not.toBeInTheDocument()
+    expect(
+      within(status).getByRole("button", { name: "Buscar en todo el catálogo" }),
+    ).toBeInTheDocument()
+    expect(
+      within(status).getByRole("button", { name: "Limpiar filtros" }),
+    ).toBeInTheDocument()
+  })
+
+  it("opens the drawer from the no-results action and restores the grid on clear", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "zzz",
+    )
+
+    await user.click(
+      within(screen.getByRole("status")).getByRole("button", {
+        name: "Buscar en todo el catálogo",
+      }),
+    )
+    expect(
+      await screen.findByRole("dialog", { name: "Búsqueda ampliada" }),
+    ).toBeInTheDocument()
+  })
+
+  it("restores the grid and hint after Limpiar filtros", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "zzz",
+    )
+    await user.click(
+      within(screen.getByRole("status")).getByRole("button", {
+        name: "Limpiar filtros",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Chain C")).toBeInTheDocument()
+    })
+    expect(
+      screen.getByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).toBeInTheDocument()
+  })
+
+  it("shows the filter-only message when a category/brand filter has zero matches", async () => {
+    const user = userEvent.setup()
+    renderHome({
+      categories: [
+        { name: "Tubes", customId: "tubes" },
+        { name: "Wheels", customId: "wheels" },
+      ],
+    })
+
+    await user.click(
+      screen.getByRole("button", { name: "Filtrar categorías" }),
+    )
+    await user.click(await screen.findByText("Wheels"))
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Ninguno de los productos que estás viendo coincide.",
+    )
   })
 })
 
@@ -334,5 +462,161 @@ describe("Home - product details", () => {
       .map((c) => String(c[0]))
       .find((u) => u.includes("/api/catalog/variants"))
     expect(variantsCall).toBe("/api/catalog/variants?documentId=doc-1")
+  })
+})
+
+describe("Home - hero", () => {
+  it("shows the catalog total on base mode", () => {
+    renderHome()
+
+    expect(
+      screen.getByText("333 productos en catálogo"),
+    ).toBeInTheDocument()
+  })
+
+  it("shows the result count on a catalog mode instead of the total", () => {
+    renderHome({ catalogMode: "brand", catalogValue: "Acme" })
+
+    expect(screen.getByText("3 productos")).toBeInTheDocument()
+    expect(
+      screen.queryByText("333 productos en catálogo"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("opens the Búsqueda ampliada drawer from the hero button", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.click(
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
+    )
+
+    expect(
+      await screen.findByRole("dialog", { name: "Búsqueda ampliada" }),
+    ).toBeInTheDocument()
+  })
+})
+
+describe("Home - closing panel", () => {
+  it("links to /cotizar", () => {
+    renderHome()
+
+    expect(
+      screen.getByRole("link", { name: /Ver mi lista de cotización/ }),
+    ).toHaveAttribute("href", "/cotizar")
+  })
+
+  it("renders the WhatsApp link with the header message when a number is set", () => {
+    renderHome()
+
+    const link = screen.getByRole("link", { name: "Cotizar por WhatsApp" })
+    expect(link).toHaveAttribute("target", "_blank")
+    expect(link).toHaveAttribute("rel", "noopener noreferrer")
+    expect(link).toHaveAttribute(
+      "href",
+      buildWhatsappUrl(
+        "5215500000000",
+        jest.requireActual("@/shared/constants/whatsapp.constants")
+          .WHATSAPP_HEADER_MESSAGE,
+      ),
+    )
+  })
+
+  it("hides the WhatsApp link when no number is set", () => {
+    mockWhatsappNumber = undefined
+    renderHome()
+
+    expect(
+      screen.queryByRole("link", { name: "Cotizar por WhatsApp" }),
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("Home - brand strip", () => {
+  it("lists only brands with a BRAND_PAGES entry, in BRAND_PAGES order", () => {
+    renderHome({
+      brands: [
+        { name: "Clevaland", customId: "cleveland" },
+        { name: "Marca Libre", customId: "libre" },
+        { name: "WESTON", customId: "weston" },
+      ],
+    })
+
+    const nav = screen.getByRole("navigation", { name: "Marcas en almacén" })
+    const links = within(nav).getAllByRole("link", {
+      name: (name) => name === "Weston" || name === "Cleveland",
+    })
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Weston",
+      "Cleveland",
+    ])
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/marcas/weston",
+      "/marcas/cleveland",
+    ])
+    expect(
+      within(nav).queryByRole("link", { name: "Marca Libre" }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(nav).getByRole("link", {
+        name: /Explorar el catálogo por marca/,
+      }),
+    ).toHaveAttribute("href", "/marcas")
+  })
+
+  it("renders nothing when no brand qualifies", () => {
+    renderHome({ brands: [] })
+
+    expect(
+      screen.queryByRole("navigation", { name: "Marcas en almacén" }),
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("Home - filter hint", () => {
+  it("shows the hint until a local filter is active, then hides it", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    expect(
+      screen.getByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).toBeInTheDocument()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "tire",
+    )
+
+    expect(
+      screen.queryByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Limpiar filtros" }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }))
+
+    expect(
+      screen.getByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).toBeInTheDocument()
+  })
+
+  it("shows the updated popover copy while a local filter is active", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "tire",
+    )
+    await user.click(
+      screen.getByRole("button", { name: "¿Qué significa este filtro?" }),
+    )
+
+    expect(
+      await screen.findByText(
+        /Puedes combinar categoría, marca y texto/,
+      ),
+    ).toBeInTheDocument()
   })
 })
