@@ -12,7 +12,7 @@ export const SearchInput = ({
   value,
   onSearch,
   isDisabled = false,
-  placeholder = "Buscar tornillos, tuercas, herramientas...",
+  placeholder = "Buscar por nombre: broca, machuelo, dado…",
 }: SearchInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearch(e.target.value)

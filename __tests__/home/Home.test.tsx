@@ -415,3 +415,92 @@ describe("Home - closing panel", () => {
     ).not.toBeInTheDocument()
   })
 })
+
+describe("Home - brand strip", () => {
+  it("lists only brands with a BRAND_PAGES entry, in BRAND_PAGES order", () => {
+    renderHome({
+      brands: [
+        { name: "Clevaland", customId: "cleveland" },
+        { name: "Marca Libre", customId: "libre" },
+        { name: "WESTON", customId: "weston" },
+      ],
+    })
+
+    const nav = screen.getByRole("navigation", { name: "Marcas en almacén" })
+    const links = within(nav).getAllByRole("link", {
+      name: (name) => name === "Weston" || name === "Cleveland",
+    })
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Weston",
+      "Cleveland",
+    ])
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/marcas/weston",
+      "/marcas/cleveland",
+    ])
+    expect(
+      within(nav).queryByRole("link", { name: "Marca Libre" }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(nav).getByRole("link", {
+        name: /Explorar el catálogo por marca/,
+      }),
+    ).toHaveAttribute("href", "/marcas")
+  })
+
+  it("renders nothing when no brand qualifies", () => {
+    renderHome({ brands: [] })
+
+    expect(
+      screen.queryByRole("navigation", { name: "Marcas en almacén" }),
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe("Home - filter hint", () => {
+  it("shows the hint until a local filter is active, then hides it", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    expect(
+      screen.getByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).toBeInTheDocument()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "tire",
+    )
+
+    expect(
+      screen.queryByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Limpiar filtros" }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }))
+
+    expect(
+      screen.getByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).toBeInTheDocument()
+  })
+
+  it("shows the updated popover copy while a local filter is active", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "tire",
+    )
+    await user.click(
+      screen.getByRole("button", { name: "¿Qué significa este filtro?" }),
+    )
+
+    expect(
+      await screen.findByText(
+        /Puedes combinar categoría, marca y texto/,
+      ),
+    ).toBeInTheDocument()
+  })
+})

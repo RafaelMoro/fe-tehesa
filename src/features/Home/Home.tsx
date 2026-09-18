@@ -34,6 +34,7 @@ import { DropdownBrands } from "../ProductListing/DropdownBrands"
 import { useCatalogSearch } from "./useCatalogSearch"
 import { CatalogHero } from "./CatalogHero"
 import { HomeQuotePanel } from "./HomeQuotePanel"
+import { BrandStrip } from "./BrandStrip"
 
 type PageFeedback = { message: string; kind: "status" | "error" } | null
 
@@ -286,8 +287,9 @@ export const Home = ({
         onAction={catalogSearchDrawerState.open}
         isDisabled={isBusy}
       />
+      <BrandStrip brands={brands} />
       <div>
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row">
+        <div className="mb-5 flex flex-col gap-3 border-t border-default-200 pt-5 dark:border-[#1E3608] lg:flex-row">
           <SearchInput value={localSearchTerm} onSearch={handleSearch} />
           <div className="flex flex-col gap-3 sm:flex-row">
             <DropdownCategories
@@ -309,6 +311,12 @@ export const Home = ({
             )}
           </div>
         </div>
+        {!isLocalFilterActive && (
+          <p className="mb-3 text-sm text-muted">
+            Escribe el nombre del producto. Ejemplo: broca cobalto, machuelo
+            NPT, dado de impacto.
+          </p>
+        )}
         {isLocalFilterActive && (
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
             <span>
@@ -331,7 +339,8 @@ export const Home = ({
               <Popover.Content className="max-w-64">
                 <Popover.Dialog>
                   <p className="text-sm">
-                    Este filtro solo busca en los productos que estás viendo.
+                    Filtra solo entre los productos que estás viendo. Puedes
+                    combinar categoría, marca y texto.
                   </p>
                 </Popover.Dialog>
               </Popover.Content>
