@@ -61,8 +61,9 @@ both gated on the empty `BRAND_PAGE_HREFS` map. This story fills that map and ad
    `next/link` to `/marcas/<slug>` (no `BrandCard` code change); the header `Marcas` dropdown/accordion rows become
    real links to the same hrefs (`Marca Libre` — not in the map — stays `isDisabled`); on `/marcas/<slug>` the row
    for that brand carries the active treatment (`" (actual)"` suffix in the dropdown, `aria-current` in the mobile
-   accordion) and the `Marcas` trigger keeps its Story 1 active underline. The card stays an `<article>` with the CTA
-   as its only link (D6 upheld).
+   accordion) and the `Marcas` trigger keeps its Story 1 active underline. Mapped rows are labelled with the
+   H1-derived display name (`Cleveland`, `Precision Brand`), unmapped rows keep the Strapi name (D9). The card stays
+   an `<article>` with the CTA as its only link (D6 upheld).
 5. **SEO.** `generateMetadata` returns the per-brand `title` / `description` from `BRAND_SEO` (table below),
    canonical `/marcas/<slug>`, `robots: { index: true, follow: true }`; unknown slug → `notFound()` from
    `generateMetadata` too. A 3-item `BreadcrumbList` JSON-LD (`Inicio`, `Marcas`, brand) via `toJsonLdHtml`.
@@ -154,7 +155,7 @@ for categories; the mobile accordion rows carry real `aria-current`.
 **Content.** Spanish. Kicker `Marca`; H1 per the SEO table; intro paragraphs `BRAND_PAGES[id].identity` then
 `BRAND_PAGES[id].stock` (D3); search placeholder `Buscar en {display name}...` where the display name is the
 title-case brand as written in the H1 (`Weston`, `King Tony`, `Precision Brand`… — **not** the uppercase card
-`name`; planner adds a `displayName`/derives it — see UI III); dropdown label `Filtrar categorías`; clear button
+`name`; derived as the H1 text before the first `:` — UI III); dropdown label `Filtrar categorías`; clear button
 `Limpiar filtros`; count `1 producto` / `N productos`. Error copy: `No pudimos cargar los productos de {display
 name}` + `Ver todas las marcas`. Never `formatNumberToCurrency` for counts.
 
@@ -177,6 +178,12 @@ of the layout's `fetchBrands()`; pagination on the brand page (90 products max t
 - **D6 — `/marcas` card: CTA remains the only link.** Decided (user). `BrandCard` needs no change.
 - **D7 — Brand pages are `index, follow`, in the sitemap, own `error.tsx`/`loading.tsx`.** Assumed, mirroring
   `/categorias/[slug]`.
+- **D9 — Header brand rows use the frontend display name.** Decided (user, 2026-09-17): rows whose `customId` has a
+  `BRAND_SEO` entry are labelled with the H1-derived display name; unmapped rows keep the Strapi name. Consequence:
+  `Clevaland` → `Cleveland` and `Precision` → `Precision Brand` in the header (the `/marcas` cards already say
+  `PRECISION BRAND`). `activeBrand` keeps matching on the taxonomy **name** for `?mode=brand` URLs, but on
+  `/marcas/<slug>` it should match by `customId` so the relabelled row still highlights — planner picks the cleanest
+  way (e.g. pass `activeId` alongside `activeName`, or compare labels after mapping).
 - **D8 — Unknown slug (incl. `libre`) → `notFound()`.** Assumed from the epic ("what happens for `libre` (no page;
   `notFound()`)"). `Marca Libre` stays reachable through `/categorias/tornilleria-fijacion` and the header row stays
   disabled because it has no `BRAND_PAGE_HREFS` entry.
@@ -255,11 +262,12 @@ of the layout's `fetchBrands()`; pagination on the brand page (90 products max t
   purpose (there, one subcategory still partitions the set from the unsubcategorised rest).
 - **`Marca Libre` in the header.** With `hrefs={BRAND_PAGE_HREFS}` it is the one row that stays `isDisabled`, which
   is the Story 1 look for a row with no page; the tornillería note on `/marcas` explains it.
-- **Active brand on `/marcas/<slug>`.** `activeBrand` must match the **taxonomy name** (`Clevaland` for
-  `cleveland`) because the row list is the live taxonomy — the config display name would never match. Same trick
-  `activeCategory` uses.
-- **`Clevaland` display leak.** The header row label is the raw Strapi name (existing behaviour for every brand row);
-  this story does not rename rows. The page itself never shows it.
+- **Active brand on `/marcas/<slug>`.** With rows relabelled (D9), the active check can no longer rely on the raw
+  taxonomy name alone; match by `customId` on brand pages (`getBrandIdBySlug(pathname)`) while `?mode=brand` URLs
+  keep matching the Strapi name they carry.
+- **`Clevaland` display leak.** Closed in the header by D9. Still visible in `/?mode=brand&brand=Clevaland` URLs,
+  the catalog's brand-mode title/breadcrumb, and the search-drawer `DropdownBrands` (live taxonomy names) — all
+  out of scope; the backend fix retires them.
 - **`fetchAllProductsByBrand` with a category filter** is not needed — the category filter is in-memory.
 - **`/marcas/[slug]` and `/marcas` sharing a folder.** `src/app/marcas/page.tsx` stays; `[slug]/` sits beside it,
   exactly like `categorias/`.
@@ -277,9 +285,13 @@ of the layout's `fetchBrands()`; pagination on the brand page (90 products max t
   - Answer: Yes — `category { name }` is selected; `DropdownCategories` supports `valueKey="name"`. No schema
     question remains, so no delegation was needed.
 - III: Question: Should the Strapi brand name `Clevaland` be corrected?
-  - Status: pending (backend judgment, carried over from Story 1; out of this repo's scope)
-  - Context: This story makes the typo slightly more visible — the enabled header row labelled `Clevaland` now links
-    to `/marcas/cleveland`, whose H1 says `Cleveland`.
+  - Status: answered (user, 2026-09-17)
+  - Answer: Backend will fix Strapi separately; **this story corrects it in the frontend**: header `Marcas` rows
+    label a brand with the derived display name when `BRAND_SEO[customId]` exists (`Cleveland`), falling back to
+    the Strapi name otherwise (`Marca Libre`) — D9. `/?mode=brand&brand=Clevaland` catalog URLs and their sitemap
+    entries stay as they are (D5).
+  - Context: Without this, the enabled header row labelled `Clevaland` would link to `/marcas/cleveland`, whose H1
+    says `Cleveland`.
 
 ### Catalog behavior
 
@@ -304,9 +316,10 @@ of the layout's `fetchBrands()`; pagination on the brand page (90 products max t
 - III: Question: Search placeholder / error copy need a title-case brand name (`Weston`, `Precision Brand`) while
   `BRAND_PAGES.name` is uppercase (`WESTON`) — add a `displayName` field, or derive it from the H1 (`text before
   ":"`)?
-  - Status: pending (small; planner may default)
-  - Explanation: Proposed default: a `displayName` string in `BRAND_SEO` next to `heading` — explicit beats parsing
-    the H1. Six short strings.
+  - Status: answered (user, 2026-09-17)
+  - Answer: Derive it from the H1 — the text before the first `:` (`Weston`, `King Tony`, `Bohrcraft`, `Bondhus`,
+    `Precision Brand`, `Cleveland`). One helper (`getBrandDisplayName(customId)`), no extra field. All six headings
+    follow the `Name: tagline` shape; the helper falls back to the whole heading if no `:` is present.
 - IV: Question: Hero intro copy?
   - Status: answered (user, 2026-09-17)
   - Answer: `identity` then `stock` from `BRAND_PAGES` (D3).
@@ -315,7 +328,8 @@ of the layout's `fetchBrands()`; pagination on the brand page (90 products max t
   - Answer: No; CTA stays the only link (D6).
 - VI: Question: Error-boundary copy — `No pudimos cargar los productos de {Brand}` + secondary `Ver todas las
   marcas` → `/marcas`?
-  - Status: pending (assumed; mirrors `CategoryPageError`)
+  - Status: answered (user, 2026-09-17)
+  - Answer: Yes, as proposed.
 
 ### Theme/persistence
 
