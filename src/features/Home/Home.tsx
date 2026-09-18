@@ -33,6 +33,7 @@ import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
 import { useCatalogSearch } from "./useCatalogSearch"
 import { CatalogHero } from "./CatalogHero"
+import { HomeQuotePanel } from "./HomeQuotePanel"
 
 type PageFeedback = { message: string; kind: "status" | "error" } | null
 
@@ -49,6 +50,7 @@ const ICON_BUTTON_CLASSES = buttonVariants({
 const FILTERED_PAGINATION_BUTTON_CLASSES = buttonVariants({
   variant: "secondary",
 })
+const countFormatter = new Intl.NumberFormat("es-MX")
 
 interface HomeProps {
   products: Product[]
@@ -276,6 +278,11 @@ export const Home = ({
     <>
       <CatalogHero
         productCount={products.length}
+        statusText={
+          catalogMode === "base"
+            ? `${countFormatter.format(KNOWN_PRODUCT_TOTAL)} productos en catálogo`
+            : undefined
+        }
         onAction={catalogSearchDrawerState.open}
         isDisabled={isBusy}
       />
@@ -483,6 +490,7 @@ export const Home = ({
           )}
         </div>
       )}
+      <HomeQuotePanel />
       {productDetails && (
         <ProductVariantsDrawer product={productDetails} state={drawerState} />
       )}

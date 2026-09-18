@@ -11,11 +11,22 @@ import {
 import { Home } from "@/features/Home/Home"
 import type { Product, TaxonomyItem } from "@/shared/types/global.types"
 import { CATALOG_SEARCH_OPEN_EVENT } from "@/shared/constants/catalog.constants"
+import { buildWhatsappUrl } from "@/shared/utils/whatsapp-message.utils"
 
 const pushMock = jest.fn()
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
+}))
+
+let mockWhatsappNumber: string | undefined = "5215500000000"
+
+jest.mock("@/shared/constants/whatsapp.constants", () => ({
+  ...jest.requireActual("@/shared/constants/whatsapp.constants"),
+  __esModule: true,
+  get WHATSAPP_NUMBER() {
+    return mockWhatsappNumber
+  },
 }))
 
 const originalScrollTo = window.scrollTo
@@ -74,6 +85,7 @@ const resetFetch = () => {
 beforeEach(() => {
   pushMock.mockReset()
   window.scrollTo = jest.fn()
+  mockWhatsappNumber = "5215500000000"
 })
 
 afterEach(() => {
@@ -124,7 +136,7 @@ describe("Home - URL-backed catalog modes", () => {
     renderHome()
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Búsqueda ampliada",
@@ -151,7 +163,7 @@ describe("Home - URL-backed catalog modes", () => {
     })
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog = await screen.findByRole("dialog", {
       name: "Búsqueda ampliada",
@@ -178,12 +190,12 @@ describe("Home - URL-backed catalog modes", () => {
     // it while disabled and never see the drawer open.
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+        screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
       ).toBeEnabled()
     })
 
     await user.click(
-      screen.getByRole("button", { name: "Buscar en catálogo completo" }),
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
     )
     const dialog2 = await screen.findByRole("dialog", {
       name: "Búsqueda ampliada",
@@ -334,5 +346,72 @@ describe("Home - product details", () => {
       .map((c) => String(c[0]))
       .find((u) => u.includes("/api/catalog/variants"))
     expect(variantsCall).toBe("/api/catalog/variants?documentId=doc-1")
+  })
+})
+
+describe("Home - hero", () => {
+  it("shows the catalog total on base mode", () => {
+    renderHome()
+
+    expect(
+      screen.getByText("333 productos en catálogo"),
+    ).toBeInTheDocument()
+  })
+
+  it("shows the result count on a catalog mode instead of the total", () => {
+    renderHome({ catalogMode: "brand", catalogValue: "Acme" })
+
+    expect(screen.getByText("3 productos")).toBeInTheDocument()
+    expect(
+      screen.queryByText("333 productos en catálogo"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("opens the Búsqueda ampliada drawer from the hero button", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.click(
+      screen.getByRole("button", { name: "Buscar en todo el catálogo" }),
+    )
+
+    expect(
+      await screen.findByRole("dialog", { name: "Búsqueda ampliada" }),
+    ).toBeInTheDocument()
+  })
+})
+
+describe("Home - closing panel", () => {
+  it("links to /cotizar", () => {
+    renderHome()
+
+    expect(
+      screen.getByRole("link", { name: /Ver mi lista de cotización/ }),
+    ).toHaveAttribute("href", "/cotizar")
+  })
+
+  it("renders the WhatsApp link with the header message when a number is set", () => {
+    renderHome()
+
+    const link = screen.getByRole("link", { name: "Cotizar por WhatsApp" })
+    expect(link).toHaveAttribute("target", "_blank")
+    expect(link).toHaveAttribute("rel", "noopener noreferrer")
+    expect(link).toHaveAttribute(
+      "href",
+      buildWhatsappUrl(
+        "5215500000000",
+        jest.requireActual("@/shared/constants/whatsapp.constants")
+          .WHATSAPP_HEADER_MESSAGE,
+      ),
+    )
+  })
+
+  it("hides the WhatsApp link when no number is set", () => {
+    mockWhatsappNumber = undefined
+    renderHome()
+
+    expect(
+      screen.queryByRole("link", { name: "Cotizar por WhatsApp" }),
+    ).not.toBeInTheDocument()
   })
 })
