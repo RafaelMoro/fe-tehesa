@@ -4,9 +4,14 @@
 **Branch:** `feat/add-brand-page`
 **Status:** Awaiting human sign-off. No source files were modified during this research.
 **Design source:** Claude Design project "Tehesa UI mocks v1"
-(https://claude.ai/design/p/4b99241e-42ab-4ca4-ac4e-c1cd49a75385) — `pagina-marcas.dc.html` is the `/marcas` page of
-record. Its inline header is **not** the header of record (user: "ignore that header shown"); header comps arrive
-later. `support.js` / `image-slot.js` are the generic Claude Design runtime, no design content.
+(https://claude.ai/design/p/4b99241e-42ab-4ca4-ac4e-c1cd49a75385):
+
+- `pagina-marcas.dc.html` — the `/marcas` page of record. Its inline header is a stale copy (user: "ignore that
+  header shown").
+- `header.dc.html` — the header of record, now with a `Ver todas las marcas` row (`allBrandsHref` → `/marcas`) under
+  the `Marcas` dropdown / tablet dropdown / mobile accordion, light + dark. Brand rows stay inert (`mkList(BRANDS,
+  null)`).
+- `support.js` / `image-slot.js` — the generic Claude Design runtime, no design content.
 
 ## Epic Title
 
@@ -54,10 +59,12 @@ Notes that shape every story:
 
 Research: `ai-research/brands-browsing/brands-index-page.story-1.md`.
 
-ACs (summary): server-rendered `/marcas` with breadcrumb, hero, `N marcas en almacén` counter, one editorial card per
-configured brand (name, origin, identity, `En almacén` summary, tags, `Ver productos` CTA), the tornillería note, the
-`¿No ves tu marca?` panel (`/categorias` link + brand-specific WhatsApp prefill), `index, follow` metadata,
-`BreadcrumbList` JSON-LD, sitemap entry. Card CTAs are `aria-disabled` until Story 2 ships.
+ACs (summary): the header's `Marcas` dropdown/accordion gain a `Ver todas las marcas` row → `/marcas` (hidden on
+`/marcas`) plus the active-route treatment on `/marcas*`; a server-rendered `/marcas` with breadcrumb, hero, `N
+marcas en almacén` counter, one editorial card per configured brand (name, origin, identity, `En almacén` summary,
+tags, `Ver productos` CTA), the tornillería note, the `¿No ves tu marca?` panel (`/categorias` link + brand-specific
+WhatsApp prefill), `index, follow` metadata, `BreadcrumbList` JSON-LD, sitemap entry. Card CTAs and header brand rows
+stay `aria-disabled`/`isDisabled` until Story 2 ships.
 
 ### Story 2 — `/marcas/[slug]` brand pages
 
@@ -73,15 +80,10 @@ Not yet researched; no comp yet. Expected shape, from the categories precedent:
 4. Open: whether `/?mode=brand&brand=<name>` catalog URLs (still in the sitemap) should redirect/canonicalize to the
    new pages, and what happens for `libre` (no page; `notFound()`).
 
-### Story 3 — Header `Marcas` entry points
-
-Blocked on the header comps the user will provide. Expected: `Ver todas las marcas` row (hidden on `/marcas`), active
-underline/accordion highlight on `/marcas*`, brand rows become links via the existing `hrefs` prop on
-`TaxonomyDropdown`/`TaxonomyAccordionSection` once Story 2 ships. Pure reuse of the categories code path; the only
-new code is `isBrands = pathname.startsWith("/marcas")` and `allHref` on the `Marcas` instance.
+(Header brand **rows** becoming links is part of Story 2, not a third story: it is the `hrefs` prop on
+`TaxonomyDropdown`/`TaxonomyAccordionSection` fed with `BRAND_PAGE_HREFS`, one line each.)
 
 ## Delivery order
 
-1 → 2 → 3. Story 1 ships standalone (disabled CTAs, reachable by URL and sitemap; the header has no link to it until
-Story 3). If the header comps arrive before Story 2 is planned, Story 3's `Ver todas las marcas` row can ship with
-brand rows still disabled — it only needs `/marcas` to exist.
+1 → 2. Story 1 ships standalone: `/marcas` reachable from the header row, by URL and via the sitemap; card CTAs and
+header brand rows inert until Story 2.
