@@ -54,7 +54,7 @@ const TaxonomyDropdown = ({
     <Dropdown>
       <Button
         variant="ghost"
-        className={`flex items-center gap-1 px-3 py-2 text-sm font-medium ${
+        className={`flex items-center gap-1 rounded-none px-3 py-2 text-sm font-medium ${
           isActiveRoute ? "border-b-2 border-[#4DF527]" : ""
         }`}
       >
