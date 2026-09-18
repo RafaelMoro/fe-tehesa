@@ -1,3 +1,9 @@
+## v0.43.0 (2026-09-18)
+
+### Pull Requests
+[#53](https://github.com/RafaelMoro/fe-tehesa/pull/53) | Add brands index page and Marcas navigation entry
+
+
 ## v0.42.0 (2026-09-16)
 
 ### Pull Requests
