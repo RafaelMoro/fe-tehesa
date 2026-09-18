@@ -6,6 +6,7 @@ import {
   PRODUCT_PAGE_MIN,
 } from "@/shared/constants/catalog.constants"
 import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
+import { BRAND_PAGE_HREFS } from "@/shared/constants/brand.constants"
 import { SITE_URL } from "@/shared/constants/seo.constants"
 import {
   buildBasePagePath,
@@ -30,6 +31,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   basePages.push({
     url: `${SITE_URL}/marcas`,
   })
+  for (const href of Object.values(BRAND_PAGE_HREFS)) {
+    basePages.push({
+      url: `${SITE_URL}${href}`,
+    })
+  }
 
   try {
     // ponytail: sitemap must not fail a build; degrade to base pages.

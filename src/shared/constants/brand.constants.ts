@@ -1,4 +1,21 @@
-export const BRAND_PAGE_HREFS: Record<string, string> = {} // Story 2 fills this
+import { BRAND_SEO } from "./seo.constants"
+
+export const BRAND_PAGE_HREFS: Record<string, string> = {
+  weston: "/marcas/weston",
+  "king-tony": "/marcas/king-tony",
+  bohrcraft: "/marcas/bohrcraft",
+  bondhus: "/marcas/bondhus",
+  precision: "/marcas/precision",
+  cleveland: "/marcas/cleveland",
+}
+
+export const getBrandIdBySlug = (slug: string): string | undefined =>
+  Object.keys(BRAND_PAGE_HREFS).find(
+    (id) => BRAND_PAGE_HREFS[id] === `/marcas/${slug}`,
+  )
+
+export const getBrandDisplayName = (customId: string): string | undefined =>
+  BRAND_SEO[customId]?.heading.split(":")[0].trim()
 
 export type BrandPageConfig = {
   name: string

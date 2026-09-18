@@ -29,8 +29,8 @@ const categories: TaxonomyItem[] = [
   { name: "Tornillería", customId: "tornilleria" },
 ]
 const brands: TaxonomyItem[] = [
-  { name: "Truper", customId: "brand-1" },
-  { name: "Urrea", customId: "brand-2" },
+  { name: "Clevaland", customId: "cleveland" },
+  { name: "Marca Libre", customId: "libre" },
 ]
 
 beforeEach(() => {
@@ -94,13 +94,19 @@ describe("Header", () => {
     await user.click(screen.getByRole("button", { name: /Marcas/ }))
     const brandsMenu = screen.getByRole("menu", { name: "Marcas" })
     const brandItems = within(brandsMenu).getAllByRole("menuitem")
-    expect(brandItems).toHaveLength(brands.length + 1)
+    expect(brandItems).toHaveLength(2)
 
-    const disabledBrandItems = brandItems.slice(0, brands.length)
-    for (const item of disabledBrandItems) {
-      expect(item).toHaveAttribute("aria-disabled", "true")
-      expect(item).not.toHaveAttribute("href")
-    }
+    const clevelandItem = within(brandsMenu).getByRole("menuitem", {
+      name: "Cleveland",
+    })
+    expect(clevelandItem).not.toHaveAttribute("aria-disabled", "true")
+    expect(clevelandItem).toHaveAttribute("href", "/marcas/cleveland")
+    expect(
+      within(brandsMenu).queryByRole("menuitem", { name: "Clevaland" }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(brandsMenu).queryByText("Marca Libre"),
+    ).not.toBeInTheDocument()
 
     const allBrandsRow = within(brandsMenu).getByRole("menuitem", {
       name: "Ver todas las marcas",
@@ -143,8 +149,8 @@ describe("Header", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("marks Marcas active on /marcas/weston, keeping the Ver todas las marcas row", async () => {
-    usePathnameMock.mockReturnValue("/marcas/weston")
+  it("marks Marcas active on /marcas/cleveland, keeping the Ver todas las marcas row", async () => {
+    usePathnameMock.mockReturnValue("/marcas/cleveland")
     const user = userEvent.setup()
     render(<Header categories={categories} brands={brands} />)
 
@@ -154,6 +160,12 @@ describe("Header", () => {
     expect(
       screen.getByRole("menuitem", { name: "Ver todas las marcas" }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole("menuitem", { name: "Cleveland (actual)" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", { name: "Marca Libre (actual)" }),
+    ).not.toBeInTheDocument()
   })
 
   it("closes the Categorías dropdown when Tornillería is selected", async () => {
@@ -301,9 +313,9 @@ describe("Header", () => {
     await waitFor(() => expect(hamburger).toHaveFocus())
   })
 
-  it("lists disabled taxonomy rows inside the side menu and highlights the active one", async () => {
+  it("omits Marca Libre from the side menu and links the active Cleveland row", async () => {
     useSearchParamsMock.mockReturnValue(
-      new URLSearchParams("mode=brand&brand=Urrea"),
+      new URLSearchParams("mode=brand&brand=Clevaland"),
     )
     const user = userEvent.setup()
     render(<Header categories={categories} brands={brands} />)
@@ -313,12 +325,28 @@ describe("Header", () => {
 
     await user.click(within(dialog).getByRole("button", { name: "Marcas" }))
 
-    for (const brand of brands) {
-      const row = within(dialog).getByText(brand.name)
-      expect(row).toHaveAttribute("aria-disabled", "true")
-    }
-    expect(within(dialog).getByText("Urrea")).toHaveAttribute("aria-current", "page")
-    expect(within(dialog).queryByRole("link", { name: "Urrea" })).not.toBeInTheDocument()
+    expect(within(dialog).queryByText("Marca Libre")).not.toBeInTheDocument()
+    const clevelandRow = within(dialog).getByRole("link", { name: "Cleveland" })
+    expect(clevelandRow).toHaveAttribute("aria-current", "page")
+    expect(clevelandRow).toHaveAttribute("href", "/marcas/cleveland")
+    expect(within(dialog).queryByText("Clevaland")).not.toBeInTheDocument()
+  })
+
+  it("on /marcas/cleveland: the side-menu Cleveland link has aria-current=page and closes the drawer", async () => {
+    usePathnameMock.mockReturnValue("/marcas/cleveland")
+    const user = userEvent.setup()
+    render(<Header categories={categories} brands={brands} />)
+
+    await user.click(screen.getByRole("button", { name: "Menú" }))
+    const dialog = await screen.findByRole("dialog", { name: "Menú" })
+    await user.click(within(dialog).getByRole("button", { name: "Marcas (actual)" }))
+
+    const clevelandRow = within(dialog).getByRole("link", { name: "Cleveland" })
+    expect(clevelandRow).toHaveAttribute("aria-current", "page")
+
+    await user.click(clevelandRow)
+
+    expect(screen.queryByRole("dialog", { name: "Menú" })).not.toBeInTheDocument()
   })
 
   it("shows a Tornillería link in the side menu that closes the drawer; other rows stay disabled", async () => {

@@ -14,7 +14,10 @@ export default function Error({ reset }: { reset: () => void }) {
 
   return (
     <CategoryPageError
-      categoryName={id ? CATEGORY_PAGES[id].name : "esta categoría"}
+      name={id ? CATEGORY_PAGES[id].name : "esta categoría"}
+      body="Ocurrió un problema al consultar los productos de esta categoría. Intenta nuevamente en unos segundos."
+      backHref="/categorias"
+      backLabel="Ver todas las categorías"
       reset={reset}
     />
   )
