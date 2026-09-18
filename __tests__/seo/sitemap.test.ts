@@ -7,6 +7,7 @@ import {
   PRODUCT_PAGE_MIN,
 } from "@/shared/constants/catalog.constants"
 import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
+import { BRAND_PAGE_HREFS } from "@/shared/constants/brand.constants"
 import type { TaxonomyItem } from "@/shared/types/global.types"
 
 const fetchCategoriesMock = jest.fn()
@@ -40,15 +41,21 @@ describe("sitemap", () => {
       PRODUCT_PAGE_MIN +
       1 +
       1 +
-      Object.keys(CATEGORY_PAGE_HREFS).length
+      Object.keys(CATEGORY_PAGE_HREFS).length +
+      1 +
+      Object.keys(BRAND_PAGE_HREFS).length
     expect(result).toHaveLength(
       basePageCount + categories.length + brands.length,
     )
     expect(result.some((entry) => entry.url.endsWith("/"))).toBe(true)
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
-    expect(
-      result.some((entry) => entry.url.endsWith("/categorias/tornilleria")),
-    ).toBe(true)
+    expect(result.some((entry) => entry.url.endsWith("/marcas"))).toBe(true)
+    for (const href of Object.values(CATEGORY_PAGE_HREFS)) {
+      expect(result.some((entry) => entry.url.endsWith(href))).toBe(true)
+    }
+    for (const href of Object.values(BRAND_PAGE_HREFS)) {
+      expect(result.some((entry) => entry.url.endsWith(href))).toBe(true)
+    }
     expect(
       result.some((entry) => entry.url.includes("mode=category")),
     ).toBe(true)
@@ -74,12 +81,18 @@ describe("sitemap", () => {
       PRODUCT_PAGE_MIN +
       1 +
       1 +
-      Object.keys(CATEGORY_PAGE_HREFS).length
+      Object.keys(CATEGORY_PAGE_HREFS).length +
+      1 +
+      Object.keys(BRAND_PAGE_HREFS).length
     expect(result).toHaveLength(basePageCount)
     expect(result.some((entry) => entry.url.includes("mode="))).toBe(false)
     expect(result.some((entry) => entry.url.endsWith("/categorias"))).toBe(true)
-    expect(
-      result.some((entry) => entry.url.endsWith("/categorias/tornilleria")),
-    ).toBe(true)
+    expect(result.some((entry) => entry.url.endsWith("/marcas"))).toBe(true)
+    for (const href of Object.values(CATEGORY_PAGE_HREFS)) {
+      expect(result.some((entry) => entry.url.endsWith(href))).toBe(true)
+    }
+    for (const href of Object.values(BRAND_PAGE_HREFS)) {
+      expect(result.some((entry) => entry.url.endsWith(href))).toBe(true)
+    }
   })
 })

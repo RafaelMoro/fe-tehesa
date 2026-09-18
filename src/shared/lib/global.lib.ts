@@ -29,7 +29,7 @@ import {
 } from "../constants/catalog.constants"
 import {
   buildCategoryProductCountsQuery,
-  GET_ALL_PRODUCTS_BY_CATEGORY,
+  GET_ALL_PRODUCTS,
   GET_BRANDS,
   GET_CATEGORIES,
   GET_PRODUCT_VARIANTS,
@@ -45,7 +45,7 @@ import {
  * Adapter error-handling contract — applies to every Apollo-backed helper below
  * (`fetchProducts`, `fetchProductsByCategory`, `fetchProductsByBrand`,
  * `fetchProductsByName`, `fetchProductVariants`, `fetchCategories`, `fetchBrands`,
- * `fetchCategoryProductCounts`, `fetchAllProductsByCategory`).
+ * `fetchCategoryProductCounts`, `fetchAllProductsByCategory`, `fetchAllProductsByBrand`).
  *
  * None of them wraps the Apollo call in a local try/catch. The reason is the
  * "throw at the boundary, catch at the edge" pattern: every catalog route handler
@@ -262,12 +262,40 @@ export const fetchCategoryProductCounts = async (
   return customIds.map((_, i) => res.data![`c${i}`].pageInfo.total)
 }
 
+const fetchAllProducts = async (
+  filters: Record<string, unknown>,
+): Promise<Product[]> => {
+  // ponytail: see the JSDoc above — no local try/catch by contract
+  const client = createApolloClient()
+
+  const firstPage = await client.query<FetchProductsConnectionResponse>({
+    query: GET_ALL_PRODUCTS,
+    variables: {
+      filters,
+      pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+    },
+  })
+  const pageCount = firstPage.data?.products_connection?.pageInfo.pageCount ?? 1
+  const products = [...(firstPage.data?.products_connection?.nodes ?? [])]
+
+  for (let page = 2; page <= pageCount; page++) {
+    const res = await client.query<FetchProductsConnectionResponse>({
+      query: GET_ALL_PRODUCTS,
+      variables: {
+        filters,
+        pagination: { page, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+      },
+    })
+    products.push(...(res.data?.products_connection?.nodes ?? []))
+  }
+
+  return products
+}
+
 export const fetchAllProductsByCategory = async (
   customId: string,
   subcategory?: string,
 ): Promise<Product[]> => {
-  // ponytail: see the JSDoc above — no local try/catch by contract
-  const client = createApolloClient()
   const filters = {
     category: {
       customId: {
@@ -282,30 +310,13 @@ export const fetchAllProductsByCategory = async (
         }
       : {}),
   }
-
-  const firstPage = await client.query<FetchProductsConnectionResponse>({
-    query: GET_ALL_PRODUCTS_BY_CATEGORY,
-    variables: {
-      filters,
-      pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
-    },
-  })
-  const pageCount = firstPage.data?.products_connection?.pageInfo.pageCount ?? 1
-  const products = [...(firstPage.data?.products_connection?.nodes ?? [])]
-
-  for (let page = 2; page <= pageCount; page++) {
-    const res = await client.query<FetchProductsConnectionResponse>({
-      query: GET_ALL_PRODUCTS_BY_CATEGORY,
-      variables: {
-        filters,
-        pagination: { page, pageSize: ALL_PRODUCTS_PAGE_SIZE },
-      },
-    })
-    products.push(...(res.data?.products_connection?.nodes ?? []))
-  }
-
-  return products
+  return fetchAllProducts(filters)
 }
+
+export const fetchAllProductsByBrand = async (
+  customId: string,
+): Promise<Product[]> =>
+  fetchAllProducts({ brand: { customId: { eq: customId } } })
 
 export const fetchBrands = async (): Promise<TaxonomyItem[]> => {
   const client = createApolloClient()

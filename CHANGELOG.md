@@ -1,3 +1,51 @@
+## v0.44.0 (2026-09-18)
+
+### Pull Requests
+[#54](https://github.com/RafaelMoro/fe-tehesa/pull/54) | feat: Add dedicated brand pages at /marcas/[slug] with product filtering
+
+
+## v0.43.0 (2026-09-18)
+
+### Pull Requests
+[#53](https://github.com/RafaelMoro/fe-tehesa/pull/53) | Add brands index page and Marcas navigation entry
+
+
+## v0.42.0 (2026-09-16)
+
+### Pull Requests
+[#52](https://github.com/RafaelMoro/fe-tehesa/pull/52) | Consolidate 16 category pages into dynamic slug-based routing
+
+
+## v0.41.0 (2026-09-16)
+
+### Pull Requests
+[#51](https://github.com/RafaelMoro/fe-tehesa/pull/51) | Sync SEO copy and headings across home, categories, and quote pages
+
+
+## v0.40.0 (2026-09-16)
+
+### Pull Requests
+[#50](https://github.com/RafaelMoro/fe-tehesa/pull/50) | Add Perforación y accesorios de taladro category page
+
+
+## v0.39.0 (2026-09-16)
+
+### Pull Requests
+[#49](https://github.com/RafaelMoro/fe-tehesa/pull/49) | Add Herramientas de corte y conformado category page
+
+
+## v0.38.0 (2026-09-16)
+
+### Pull Requests
+[#48](https://github.com/RafaelMoro/fe-tehesa/pull/48) | Add Herramientas de impacto y forja category page
+
+
+## v0.37.0 (2026-09-15)
+
+### Pull Requests
+[#47](https://github.com/RafaelMoro/fe-tehesa/pull/47) | Add Abrasivos category page with shared category config
+
+
 ## v0.36.0 (2026-09-14)
 
 ### Pull Requests

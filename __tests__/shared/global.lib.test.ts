@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import {
+  fetchAllProductsByBrand,
   fetchAllProductsByCategory,
   fetchBrands,
   fetchCategories,
@@ -19,7 +20,7 @@ import {
   REVALIDATE_MAX_IDS,
 } from "@/shared/constants/catalog.constants"
 import {
-  GET_ALL_PRODUCTS_BY_CATEGORY,
+  GET_ALL_PRODUCTS,
   GET_BRANDS,
   GET_CATEGORIES,
   GET_PRODUCT_VARIANTS,
@@ -339,14 +340,14 @@ describe("Apollo adapters", () => {
       expect(result).toEqual([productA, productB])
       expect(queryMock).toHaveBeenCalledTimes(2)
       expect(queryMock).toHaveBeenNthCalledWith(1, {
-        query: GET_ALL_PRODUCTS_BY_CATEGORY,
+        query: GET_ALL_PRODUCTS,
         variables: {
           filters: { category: { customId: { eq: "tornilleria" } } },
           pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
         },
       })
       expect(queryMock).toHaveBeenNthCalledWith(2, {
-        query: GET_ALL_PRODUCTS_BY_CATEGORY,
+        query: GET_ALL_PRODUCTS,
         variables: {
           filters: { category: { customId: { eq: "tornilleria" } } },
           pagination: { page: 2, pageSize: ALL_PRODUCTS_PAGE_SIZE },
@@ -364,7 +365,7 @@ describe("Apollo adapters", () => {
       await fetchAllProductsByCategory("tornilleria", "tornillos")
 
       expect(queryMock).toHaveBeenCalledWith({
-        query: GET_ALL_PRODUCTS_BY_CATEGORY,
+        query: GET_ALL_PRODUCTS,
         variables: {
           filters: {
             category: { customId: { eq: "tornilleria" } },
@@ -402,6 +403,65 @@ describe("Apollo adapters", () => {
       await expect(fetchAllProductsByCategory("tornilleria")).rejects.toThrow(
         "up",
       )
+    })
+  })
+
+  describe("fetchAllProductsByBrand", () => {
+    const productA: Product = { ...product, documentId: "a" }
+    const productB: Product = { ...product, documentId: "b" }
+
+    it("pages through products_connection by pageCount, filtered by brand.customId", async () => {
+      queryMock
+        .mockResolvedValueOnce(
+          ok<FetchProductsConnectionResponse>({
+            products_connection: {
+              pageInfo: { pageCount: 2 },
+              nodes: [productA],
+            },
+          }),
+        )
+        .mockResolvedValueOnce(
+          ok<FetchProductsConnectionResponse>({
+            products_connection: {
+              pageInfo: { pageCount: 2 },
+              nodes: [productB],
+            },
+          }),
+        )
+
+      const result = await fetchAllProductsByBrand("weston")
+
+      expect(result).toEqual([productA, productB])
+      expect(queryMock).toHaveBeenCalledTimes(2)
+      expect(queryMock).toHaveBeenNthCalledWith(1, {
+        query: GET_ALL_PRODUCTS,
+        variables: {
+          filters: { brand: { customId: { eq: "weston" } } },
+          pagination: { page: 1, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+        },
+      })
+      expect(queryMock).toHaveBeenNthCalledWith(2, {
+        query: GET_ALL_PRODUCTS,
+        variables: {
+          filters: { brand: { customId: { eq: "weston" } } },
+          pagination: { page: 2, pageSize: ALL_PRODUCTS_PAGE_SIZE },
+        },
+      })
+    })
+
+    it("returns [] when products_connection is missing", async () => {
+      queryMock.mockResolvedValue(
+        ok<FetchProductsConnectionResponse>({ products_connection: null }),
+      )
+
+      const result = await fetchAllProductsByBrand("weston")
+      expect(result).toEqual([])
+      expect(queryMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("rejects on Apollo failure", async () => {
+      queryMock.mockRejectedValue(new Error("up"))
+      await expect(fetchAllProductsByBrand("weston")).rejects.toThrow("up")
     })
   })
 })

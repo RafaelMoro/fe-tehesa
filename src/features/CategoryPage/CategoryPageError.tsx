@@ -3,7 +3,19 @@
 import { Button } from "@heroui/react"
 import { RiErrorWarningLine, RiRefreshLine } from "@remixicon/react"
 
-export default function Error({ reset }: { reset: () => void }) {
+export const CategoryPageError = ({
+  name,
+  body,
+  backHref,
+  backLabel,
+  reset,
+}: {
+  name: string
+  body: string
+  backHref: string
+  backLabel: string
+  reset: () => void
+}) => {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-4 md:p-5">
       <section
@@ -19,12 +31,9 @@ export default function Error({ reset }: { reset: () => void }) {
               No se pudo completar la carga
             </p>
             <h2 className="mt-2 text-3xl font-bold">
-              No pudimos cargar los productos de Tornillería
+              No pudimos cargar los productos de {name}
             </h2>
-            <p className="mt-3 max-w-xl text-muted">
-              Ocurrió un problema al consultar los productos de esta categoría.
-              Intenta nuevamente en unos segundos.
-            </p>
+            <p className="mt-3 max-w-xl text-muted">{body}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="primary" onPress={reset}>
                 <RiRefreshLine aria-hidden="true" />
@@ -32,9 +41,9 @@ export default function Error({ reset }: { reset: () => void }) {
               </Button>
               <Button
                 variant="secondary"
-                onPress={() => window.location.assign("/categorias")}
+                onPress={() => window.location.assign(backHref)}
               >
-                Ver todas las categorías
+                {backLabel}
               </Button>
             </div>
           </div>

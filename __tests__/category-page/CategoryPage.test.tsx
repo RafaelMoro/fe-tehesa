@@ -1,6 +1,9 @@
 import { render, screen, userEvent, within } from "@__tests__/test-utils"
 import { CategoryPage } from "@/features/CategoryPage/CategoryPage"
+import { CATEGORY_PAGES } from "@/shared/constants/category.constants"
 import type { Product } from "@/shared/types/global.types"
+
+const config = CATEGORY_PAGES["tornilleria"]
 
 let mockWhatsappNumber: string | undefined = "5215500000000"
 
@@ -62,7 +65,7 @@ const products: Product[] = [
 
 describe("CategoryPage", () => {
   it("renders the breadcrumb and H1", () => {
-    render(<CategoryPage products={products} />)
+    render(<CategoryPage products={products} config={config} />)
 
     const nav = screen.getByRole("navigation", { name: "Ruta" })
     expect(within(nav).getByRole("link", { name: "Inicio" })).toHaveAttribute(
@@ -86,7 +89,7 @@ describe("CategoryPage", () => {
 
   it("shows the counter for the full set and singular form after a filter", async () => {
     const user = userEvent.setup()
-    render(<CategoryPage products={products} />)
+    render(<CategoryPage products={products} config={config} />)
 
     expect(screen.getByText("4 productos")).toBeInTheDocument()
 
@@ -99,7 +102,7 @@ describe("CategoryPage", () => {
 
   it("lists only subcategories present in the data, as labels, A→Z, and skips null brand", async () => {
     const user = userEvent.setup()
-    render(<CategoryPage products={products} />)
+    render(<CategoryPage products={products} config={config} />)
 
     await user.click(screen.getByRole("button", { name: "Filtrar subcategorías" }))
     const subcategoryMenu = screen.getByRole("menu")
@@ -119,7 +122,7 @@ describe("CategoryPage", () => {
 
   it("stacks search, subcategory, and brand filters and clears them together", async () => {
     const user = userEvent.setup()
-    render(<CategoryPage products={products} />)
+    render(<CategoryPage products={products} config={config} />)
 
     await user.type(
       screen.getByLabelText("Filtrar resultados visibles"),
@@ -145,7 +148,7 @@ describe("CategoryPage", () => {
 
   it("shows the no-match state without the wide-search action when nothing matches", async () => {
     const user = userEvent.setup()
-    render(<CategoryPage products={products} />)
+    render(<CategoryPage products={products} config={config} />)
 
     await user.type(
       screen.getByLabelText("Filtrar resultados visibles"),
@@ -169,16 +172,16 @@ describe("CategoryPage", () => {
   })
 
   it("renders the empty catalog state when products is empty", () => {
-    render(<CategoryPage products={[]} />)
+    render(<CategoryPage products={[]} config={config} />)
     expect(screen.getByText("No hay productos disponibles.")).toBeInTheDocument()
   })
 
   it("renders the WhatsApp panel and hides it when the number is unset", () => {
-    const { rerender } = render(<CategoryPage products={products} />)
+    const { rerender } = render(<CategoryPage products={products} config={config} />)
     expect(screen.getByRole("link", { name: "Cotizar ahora" })).toBeInTheDocument()
 
     mockWhatsappNumber = undefined
-    rerender(<CategoryPage products={products} />)
+    rerender(<CategoryPage products={products} config={config} />)
     expect(
       screen.queryByRole("link", { name: "Cotizar ahora" }),
     ).not.toBeInTheDocument()
@@ -186,12 +189,29 @@ describe("CategoryPage", () => {
 
   it("opens the variants drawer from a card CTA", async () => {
     const user = userEvent.setup()
-    render(<CategoryPage products={products} />)
+    render(<CategoryPage products={products} config={config} />)
 
     await user.click(
       screen.getByRole("button", { name: "Explorar las 3 variantes" }),
     )
 
     expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  it("hides the subcategory dropdown when no product carries a subcategory", () => {
+    const productsWithoutSubcategory = products.map((product) => ({
+      ...product,
+      subcategory: null,
+    }))
+    render(
+      <CategoryPage products={productsWithoutSubcategory} config={config} />,
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "Filtrar subcategorías" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Filtrar marcas" }),
+    ).toBeInTheDocument()
   })
 })

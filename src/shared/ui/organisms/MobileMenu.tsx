@@ -5,6 +5,7 @@ import { RiArrowRightLine, RiCloseLine, RiMenuLine } from "@remixicon/react"
 
 import { ToggleDarkMode } from "../atoms/ToggleDarkMode"
 import { CATEGORY_PAGE_HREFS } from "@/shared/constants/category.constants"
+import { BRAND_PAGE_HREFS } from "@/shared/constants/brand.constants"
 import type { TaxonomyItem } from "@/shared/types/global.types"
 
 interface MobileMenuProps {
@@ -13,6 +14,8 @@ interface MobileMenuProps {
   isCatalog: boolean
   isCategories: boolean
   categoriesAllHref?: string
+  isBrands: boolean
+  brandsAllHref?: string
   activeCategory: string | null
   activeBrand: string | null
   whatsappUrl: string | null
@@ -24,6 +27,7 @@ interface TaxonomyAccordionSectionProps {
   items: TaxonomyItem[]
   activeName: string | null
   allHref?: string
+  allLabel?: string
   isActiveRoute?: boolean
   hrefs?: Record<string, string>
   onNavigate: () => void
@@ -35,6 +39,7 @@ const TaxonomyAccordionSection = ({
   items,
   activeName,
   allHref,
+  allLabel,
   isActiveRoute,
   hrefs = {},
   onNavigate,
@@ -100,7 +105,7 @@ const TaxonomyAccordionSection = ({
                   onClick={onNavigate}
                   className="mt-1 flex min-h-11 items-center justify-between border-t border-default-200 bg-[#F5FFEF] px-1 font-medium text-[#125D03] dark:border-[#1E3608] dark:bg-[#12250A] dark:text-[#4DF527]"
                 >
-                  Ver todas las categorías
+                  {allLabel}
                   <RiArrowRightLine aria-hidden="true" className="size-4" />
                 </Link>
               </li>
@@ -118,6 +123,8 @@ export const MobileMenu = ({
   isCatalog,
   isCategories,
   categoriesAllHref,
+  isBrands,
+  brandsAllHref,
   activeCategory,
   activeBrand,
   whatsappUrl,
@@ -164,6 +171,7 @@ export const MobileMenu = ({
                     items={categories}
                     activeName={activeCategory}
                     allHref={categoriesAllHref}
+                    allLabel="Ver todas las categorías"
                     isActiveRoute={isCategories}
                     hrefs={CATEGORY_PAGE_HREFS}
                     onNavigate={state.close}
@@ -173,6 +181,10 @@ export const MobileMenu = ({
                     label="Marcas"
                     items={brands}
                     activeName={activeBrand}
+                    allHref={brandsAllHref}
+                    allLabel="Ver todas las marcas"
+                    isActiveRoute={isBrands}
+                    hrefs={BRAND_PAGE_HREFS}
                     onNavigate={state.close}
                   />
                 </Accordion>
