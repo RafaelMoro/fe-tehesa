@@ -33,6 +33,8 @@ import { DropdownCategories } from "../ProductListing/DropdownCategories"
 import { DropdownBrands } from "../ProductListing/DropdownBrands"
 import { useCatalogSearch } from "./useCatalogSearch"
 import { CatalogHero } from "./CatalogHero"
+import { HomeQuotePanel } from "./HomeQuotePanel"
+import { BrandStrip } from "./BrandStrip"
 
 type PageFeedback = { message: string; kind: "status" | "error" } | null
 
@@ -41,14 +43,13 @@ const DROPDOWN_CLOSE_DELAY_MS = 250
 
 // ponytail: pagination__link is HeroUI's own slot class (pagination.css); an <a>/<span>
 // gets identical styling. Revisit if HeroUI renames it.
-const ICON_BUTTON_CLASSES = buttonVariants({
-  isIconOnly: true,
-  size: "sm",
-  variant: "tertiary",
-})
+const PAGE_NAV_BUTTON_CLASSES =
+  buttonVariants({ variant: "outline", size: "md" }) +
+  " min-h-10 rounded-[10px] border-default-300"
 const FILTERED_PAGINATION_BUTTON_CLASSES = buttonVariants({
   variant: "secondary",
 })
+const countFormatter = new Intl.NumberFormat("es-MX")
 
 interface HomeProps {
   products: Product[]
@@ -272,15 +273,24 @@ export const Home = ({
     drawerState.open()
   }
 
+  const trimmedLocalTerm = localSearchTerm.trim()
+  const hasNoLocalMatches = isLocalFilterActive && filteredProducts.length === 0
+
   return (
     <>
       <CatalogHero
         productCount={products.length}
+        statusText={
+          catalogMode === "base"
+            ? `${countFormatter.format(KNOWN_PRODUCT_TOTAL)} productos en catálogo`
+            : undefined
+        }
         onAction={catalogSearchDrawerState.open}
         isDisabled={isBusy}
       />
+      <BrandStrip brands={brands} />
       <div>
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row">
+        <div className="mb-5 flex flex-col gap-3 border-t border-default-200 pt-5 dark:border-[#1E3608] lg:flex-row">
           <SearchInput value={localSearchTerm} onSearch={handleSearch} />
           <div className="flex flex-col gap-3 sm:flex-row">
             <DropdownCategories
@@ -302,6 +312,12 @@ export const Home = ({
             )}
           </div>
         </div>
+        {!isLocalFilterActive && (
+          <p className="mb-3 text-sm text-muted">
+            Escribe el nombre del producto. Ejemplo: broca cobalto, machuelo
+            NPT, dado de impacto.
+          </p>
+        )}
         {isLocalFilterActive && (
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
             <span>
@@ -324,7 +340,8 @@ export const Home = ({
               <Popover.Content className="max-w-64">
                 <Popover.Dialog>
                   <p className="text-sm">
-                    Este filtro solo busca en los productos que estás viendo.
+                    Filtra solo entre los productos que estás viendo. Puedes
+                    combinar categoría, marca y texto.
                   </p>
                 </Popover.Dialog>
               </Popover.Content>
@@ -351,38 +368,73 @@ export const Home = ({
           </p>
         )}
       </div>
-      <ProductListing
-        products={filteredProducts}
-        handleProductClick={handleProductClick}
-        isLocalFilterActive={isLocalFilterActive}
-        onClearLocalFilter={clearLocalFilters}
-        onOpenCatalogSearch={catalogSearchDrawerState.open}
-      />
+      {hasNoLocalMatches ? (
+        <div className="flex flex-col items-start gap-4" role="status">
+          <p className="max-w-2xl text-muted">
+            {trimmedLocalTerm
+              ? `Nada con "${trimmedLocalTerm}". Prueba con otra palabra del nombre (broca, machuelo, dado) o mándanos la clave o la medida por WhatsApp.`
+              : "Ninguno de los productos que estás viendo coincide. Quita un filtro o busca en todo el catálogo."}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="primary"
+              onPress={catalogSearchDrawerState.open}
+              isDisabled={isBusy}
+            >
+              Buscar en todo el catálogo
+              <RiArrowRightLine aria-hidden="true" />
+            </Button>
+            <Button
+              variant="tertiary"
+              onPress={clearLocalFilters}
+              isDisabled={isBusy}
+            >
+              Limpiar filtros
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <ProductListing
+          products={filteredProducts}
+          handleProductClick={handleProductClick}
+          isLocalFilterActive={isLocalFilterActive}
+        />
+      )}
       {activeCatalogMode === null ? (
         <div className="flex flex-col gap-3 rounded-xl border border-default-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">
-            Mostrando{" "}
-            <span className="font-medium text-foreground">
-              {visibleProductStart}-{visibleProductEnd}
-            </span>{" "}
-            de {KNOWN_PRODUCT_TOTAL} productos
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-muted">
+              Mostrando{" "}
+              <span className="font-medium text-foreground">
+                {visibleProductStart}-{visibleProductEnd}
+              </span>{" "}
+              de {KNOWN_PRODUCT_TOTAL} productos
+            </p>
+            {currentPage === totalPages && !isRoutePending && (
+              <p className="text-sm text-muted">
+                Llegaste al final de esta lista. Cambia el filtro o busca en
+                todo el catálogo.
+              </p>
+            )}
+          </div>
           <div className="flex items-center justify-center gap-2">
             {currentPage > 1 && !isRoutePending ? (
               <Link
                 href={buildBasePagePath(currentPage - 1)}
                 aria-label="Página anterior"
-                className={ICON_BUTTON_CLASSES}
+                className={PAGE_NAV_BUTTON_CLASSES}
               >
-                <RiArrowLeftLine />
+                <RiArrowLeftLine aria-hidden="true" size={16} />
+                Página anterior
               </Link>
             ) : (
               <span
                 aria-label="Página anterior"
                 aria-disabled="true"
-                className={ICON_BUTTON_CLASSES}
+                className={PAGE_NAV_BUTTON_CLASSES}
               >
-                <RiArrowLeftLine />
+                <RiArrowLeftLine aria-hidden="true" size={16} />
+                Página anterior
               </span>
             )}
             <Pagination size="sm">
@@ -422,23 +474,32 @@ export const Home = ({
               <Link
                 href={buildBasePagePath(currentPage + 1)}
                 aria-label="Página siguiente"
-                className={ICON_BUTTON_CLASSES}
+                className={PAGE_NAV_BUTTON_CLASSES}
               >
-                <RiArrowRightLine />
+                Página siguiente
+                <RiArrowRightLine aria-hidden="true" size={16} />
               </Link>
             ) : (
               <span
                 aria-label="Página siguiente"
                 aria-disabled="true"
-                className={ICON_BUTTON_CLASSES}
+                className={PAGE_NAV_BUTTON_CLASSES}
               >
-                <RiArrowRightLine />
+                Página siguiente
+                <RiArrowRightLine aria-hidden="true" size={16} />
               </span>
             )}
           </div>
         </div>
       ) : (
-        <div className="w-full flex items-center justify-center gap-3">
+        <div className="flex flex-col items-center gap-3">
+          {(!initialHasNextCatalogPage || isEndNotice) && !isBusy && (
+            <p className="text-sm text-muted">
+              Llegaste al final de esta lista. Cambia el filtro o busca en
+              todo el catálogo.
+            </p>
+          )}
+          <div className="w-full flex items-center justify-center gap-3">
           {activeCatalogMode && initialHasPreviousCatalogPage && !isBusy ? (
             <Link
               href={buildModeUrl(
@@ -481,8 +542,10 @@ export const Home = ({
               Siguiente
             </span>
           )}
+          </div>
         </div>
       )}
+      <HomeQuotePanel />
       {productDetails && (
         <ProductVariantsDrawer product={productDetails} state={drawerState} />
       )}

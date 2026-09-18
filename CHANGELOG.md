@@ -1,3 +1,9 @@
+## v0.45.0 (2026-09-18)
+
+### Pull Requests
+[#56](https://github.com/RafaelMoro/fe-tehesa/pull/56) | feat: implement homepage redesign with hero, brand strip, filter hints, and closing panel
+
+
 ## v0.44.0 (2026-09-18)
 
 ### Pull Requests
