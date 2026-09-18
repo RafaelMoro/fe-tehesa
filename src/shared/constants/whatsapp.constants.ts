@@ -6,3 +6,5 @@ export const WHATSAPP_MARKDOWN_CHAR_PATTERN = /[*_~`]/g
 export const QUOTE_REFERENCE_PREFIX = "TH"
 export const WHATSAPP_HEADER_MESSAGE =
   "Hola, Tehesa. Necesito una cotización para una medida especial. ¿Me pueden ayudar?"
+export const WHATSAPP_BRANDS_MESSAGE =
+  "Hola, busco una marca que no veo en el catálogo de Tehesa: "

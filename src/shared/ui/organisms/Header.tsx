@@ -27,6 +27,7 @@ interface TaxonomyDropdownProps {
   activeName: string | null
   menuClassName: string
   allHref?: string
+  allLabel?: string
   isActiveRoute?: boolean
   hrefs?: Record<string, string>
 }
@@ -37,6 +38,7 @@ const TaxonomyDropdown = ({
   activeName,
   menuClassName,
   allHref,
+  allLabel,
   isActiveRoute,
   hrefs = {},
 }: TaxonomyDropdownProps) => {
@@ -83,10 +85,10 @@ const TaxonomyDropdown = ({
             <Dropdown.Item
               id="ver-todas"
               href={allHref}
-              textValue="Ver todas las categorías"
+              textValue={allLabel}
               className="min-h-11 mt-1 flex items-center justify-between border-t border-default-200 bg-[#F5FFEF] font-medium text-[#125D03] dark:border-[#1E3608] dark:bg-[#12250A] dark:text-[#4DF527] dark:hover:text-[#B4FE99]"
             >
-              Ver todas las categorías
+              {allLabel}
               <RiArrowRightLine aria-hidden="true" className="size-4" />
             </Dropdown.Item>
           )}
@@ -102,6 +104,8 @@ export const Header = ({ categories, brands }: HeaderProps) => {
   const isCatalog = pathname === "/"
   const isCategoriesIndex = pathname === "/categorias"
   const isCategories = pathname.startsWith("/categorias")
+  const isBrandsIndex = pathname === "/marcas"
+  const isBrands = pathname.startsWith("/marcas")
   const pageCategoryId = Object.keys(CATEGORY_PAGE_HREFS).find(
     (id) => CATEGORY_PAGE_HREFS[id] === pathname,
   )
@@ -156,6 +160,7 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             activeName={activeCategory}
             menuClassName="w-[350px]"
             allHref={isCategoriesIndex ? undefined : "/categorias"}
+            allLabel="Ver todas las categorías"
             isActiveRoute={isCategories}
             hrefs={CATEGORY_PAGE_HREFS}
           />
@@ -164,6 +169,9 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             items={brands}
             activeName={activeBrand}
             menuClassName="w-[220px]"
+            allHref={isBrandsIndex ? undefined : "/marcas"}
+            allLabel="Ver todas las marcas"
+            isActiveRoute={isBrands}
           />
         </nav>
         <div className="flex items-center gap-1 md:hidden">
@@ -186,6 +194,8 @@ export const Header = ({ categories, brands }: HeaderProps) => {
             isCatalog={isCatalog}
             isCategories={isCategories}
             categoriesAllHref={isCategoriesIndex ? undefined : "/categorias"}
+            isBrands={isBrands}
+            brandsAllHref={isBrandsIndex ? undefined : "/marcas"}
             activeCategory={activeCategory}
             activeBrand={activeBrand}
             whatsappUrl={whatsappUrl}

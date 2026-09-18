@@ -12,6 +12,9 @@ export const QUOTE_DESCRIPTION =
 export const CATEGORIES_TITLE = "Catálogo de Herramienta Industrial en Puebla | Tehesa"
 export const CATEGORIES_DESCRIPTION =
   "Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías con existencia en Puebla. Cotiza por WhatsApp."
+export const BRANDS_TITLE = "Marcas de Herramienta Industrial en Puebla | Tehesa"
+export const BRANDS_DESCRIPTION =
+  "Weston, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp."
 export type CategorySeo = { title: string; description: string }
 
 export const CATEGORY_SEO: Record<string, CategorySeo> = {
