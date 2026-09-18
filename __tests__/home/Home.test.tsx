@@ -260,9 +260,23 @@ describe("Home - pagination", () => {
       "aria-disabled",
       "true",
     )
+    const nextLink = screen.getByRole("link", { name: "Página siguiente" })
+    expect(nextLink).toHaveAttribute("href", "/?page=2")
+    expect(nextLink).toHaveTextContent("Página siguiente")
     expect(
-      screen.getByRole("link", { name: "Página siguiente" }),
-    ).toHaveAttribute("href", "/?page=2")
+      screen.queryByText(/Llegaste al final de esta lista/),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the end-of-list copy and no Página siguiente link on the last base page", () => {
+    renderHome({ currentPage: 7 })
+
+    expect(
+      screen.queryByRole("link", { name: "Página siguiente" }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/Llegaste al final de esta lista/),
+    ).toBeInTheDocument()
   })
 
   it("uses canonical wide Anterior/Siguiente URLs", () => {
@@ -282,6 +296,21 @@ describe("Home - pagination", () => {
       "href",
       "/?mode=category&category=Tubos+PVC&page=3",
     )
+    expect(
+      screen.queryByText(/Llegaste al final de esta lista/),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows the end-of-list copy in filtered mode when there is no next page", () => {
+    renderHome({
+      catalogMode: "brand",
+      catalogValue: "Acme",
+      hasNextCatalogPage: false,
+    })
+
+    expect(
+      screen.getByText(/Llegaste al final de esta lista/),
+    ).toBeInTheDocument()
   })
 
   it("shows notice=end feedback and renders Siguiente as disabled, not a link", () => {
@@ -307,6 +336,9 @@ describe("Home - pagination", () => {
       "aria-disabled",
       "true",
     )
+    expect(
+      screen.getByText(/Llegaste al final de esta lista/),
+    ).toBeInTheDocument()
   })
 
   it("never renders a pagination control with href=\"#\"", () => {
@@ -315,6 +347,90 @@ describe("Home - pagination", () => {
     screen.getAllByRole("link").forEach((link) => {
       expect(link.getAttribute("href")).not.toBe("#")
     })
+  })
+})
+
+describe("Home - no results", () => {
+  it("shows the trimmed search term and both actions", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "  zzz  ",
+    )
+
+    const status = screen.getByRole("status")
+    expect(status).toHaveTextContent('Nada con "zzz".')
+    expect(
+      screen.queryByText("No hay coincidencias en estos productos"),
+    ).not.toBeInTheDocument()
+    expect(
+      within(status).getByRole("button", { name: "Buscar en todo el catálogo" }),
+    ).toBeInTheDocument()
+    expect(
+      within(status).getByRole("button", { name: "Limpiar filtros" }),
+    ).toBeInTheDocument()
+  })
+
+  it("opens the drawer from the no-results action and restores the grid on clear", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "zzz",
+    )
+
+    await user.click(
+      within(screen.getByRole("status")).getByRole("button", {
+        name: "Buscar en todo el catálogo",
+      }),
+    )
+    expect(
+      await screen.findByRole("dialog", { name: "Búsqueda ampliada" }),
+    ).toBeInTheDocument()
+  })
+
+  it("restores the grid and hint after Limpiar filtros", async () => {
+    const user = userEvent.setup()
+    renderHome()
+
+    await user.type(
+      screen.getByLabelText("Filtrar resultados visibles"),
+      "zzz",
+    )
+    await user.click(
+      within(screen.getByRole("status")).getByRole("button", {
+        name: "Limpiar filtros",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Chain C")).toBeInTheDocument()
+    })
+    expect(
+      screen.getByText(/Escribe el nombre del producto\. Ejemplo:/),
+    ).toBeInTheDocument()
+  })
+
+  it("shows the filter-only message when a category/brand filter has zero matches", async () => {
+    const user = userEvent.setup()
+    renderHome({
+      categories: [
+        { name: "Tubes", customId: "tubes" },
+        { name: "Wheels", customId: "wheels" },
+      ],
+    })
+
+    await user.click(
+      screen.getByRole("button", { name: "Filtrar categorías" }),
+    )
+    await user.click(await screen.findByText("Wheels"))
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Ninguno de los productos que estás viendo coincide.",
+    )
   })
 })
 
