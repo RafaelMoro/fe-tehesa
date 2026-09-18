@@ -58,9 +58,9 @@ is a copy of `CategoriesPage`/`CategoryCard`/`Header`'s `allHref` path:
    `fetchBrands()` and renders, inside one `<main>`: a breadcrumb `nav[aria-label="Ruta"]` (`Inicio` → `/`; `Marcas`
    plain text with `aria-current="page"`), the hero, the counter row, the card grid, the tornillería note and the
    closing panel. Cards are rendered for the brands in `BRAND_PAGES` **that also exist in the live taxonomy**
-   (matched on `customId`), in `BRAND_PAGES` insertion order (= comp order = product count desc). The hero intro and
-   counter use the rendered count (`{N} marcas en almacén`; `Seis` in the comp is that number spelled out — render
-   the digit, see UI IV). Zero renderable brands → a Spanish empty-state line, no grid.
+   (matched on `customId`), in `BRAND_PAGES` insertion order (= comp order = product count desc). The hero intro is the
+   static comp copy (`Seis marcas en almacén…`, UI IV); the counter row uses the live rendered count (`{N} marcas en
+   almacén`). Zero renderable brands → `No hay marcas disponibles por ahora.`, no grid.
 4. **Brand card.** An `<article>` with `<h2>` = config `name` (comp spelling, uppercase as designed — never the raw
    Strapi name), origin line, identity paragraph, `En almacén` kicker + stock paragraph, tag pills (`aria-hidden`-free
    plain text; a `<ul>` if the planner prefers), and a `Ver productos` CTA that is a `next/link` when
@@ -125,7 +125,8 @@ brands**; it is not a product listing, not a search or filter surface, and — u
   frontend config. Never invent a logo, stock level or price.
 - The page uses the shared `Header` from the root layout; it must not render a second header/utility bar (the comp's
   inline header is stale).
-- The counter is the number of cards actually rendered, never a hardcoded `6`.
+- The counter row is the number of cards actually rendered; only the hero intro's `Seis` is static copy (UI IV) and
+  must be edited together with `BRAND_PAGES`.
 
 ### Implementation-facing constraints
 
@@ -157,8 +158,8 @@ only if `DESIGN.md` changes (none expected).
 | `precision` | PRECISION BRAND | Downers Grove, Illinois · desde 1940 | Laina de acero para alinear maquinaria, montar motores y bombas y ajustar troqueles. | Rollos en acero azul templado, acero al carbón y acero inoxidable — 6" × 50" y 100", 150 mm × 1.25 m y 2.5 m — en varios espesores. | Laina, Alineación, Troqueles |
 | `cleveland` | CLEVELAND | Cleveland Twist Drill, EUA · desde 1876 | Ciento cincuenta años haciendo herramienta de corte. | Buriles cuadrados de cobalto y buriles K-42 en 35 medidas, juegos de machuelos AAC y AAV y machuelos NPT. | Buriles, Cobalto, Machuelos |
 
-Page strings: kicker `Catálogo`; H1 `Explora el catálogo por marca`; intro `{N} marcas en almacén. Entra a la tuya y
-filtra por medida.`; counter `{N} marcas en almacén` / `Ordenadas por fondo de catálogo`; card kicker `En almacén`;
+Page strings: kicker `Catálogo`; H1 `Explora el catálogo por marca`; intro `Seis marcas en almacén. Entra a la tuya y
+filtra por medida.` (static, UI IV); counter `{N} marcas en almacén` / `Ordenadas por fondo de catálogo`; card kicker `En almacén`;
 CTA `Ver productos`; note `La tornillería (tornillos, tuercas, pijas, rondanas, varilla) es de línea, sin marca:
 búscala por categoría.`; panel H2 `¿No ves tu marca?`, body `El catálogo también se busca por categoría o directo
 por medida. Y si lo que usas no está aquí, mándanos la clave por WhatsApp.`, buttons `Buscar por categoría` /
@@ -176,7 +177,7 @@ brand logos (`showLogos` off; Strapi has no media); per-brand product-count pill
   `/?mode=brand&brand=<name>` (throwaway later) and emitting `/marcas/<slug>` before it exists (404s). Mechanism:
   `BRAND_PAGE_HREFS` map, empty in this story — the same gate `CategoryCard`/`Header` use for categories.
 - **D2 — Card copy is hardcoded frontend config; only configured brands render.** Decided (user): `BRAND_PAGES`
-  keyed by `customId`, comp copy verbatim. Consequence (assumed, confirm in UI I): a brand with no config entry —
+  keyed by `customId`, comp copy verbatim. Consequence (confirmed, UI I): a brand with no config entry —
   today `Marca Libre` (`libre`, 107 tornillería products) — does **not** get a card; the tornillería note covers it.
   A configured brand missing from the live taxonomy is also dropped, so a Strapi deletion never leaves a ghost card.
 - **D3 — Header changes are in this story.** Decided (user, supplied `header.dc.html`): `Ver todas las marcas` row
@@ -184,12 +185,12 @@ brand logos (`showLogos` off; Strapi has no media); per-brand product-count pill
 - **D4 — Closing panel kept, new `WHATSAPP_BRANDS_MESSAGE`.** Decided (user). Same `buildWhatsappUrl` /
   `WHATSAPP_NUMBER` gating as the header. The hero-side `WhatsappPanel` used by `/categorias` is **not** rendered on
   `/marcas` (the comp has no side panel; one WhatsApp CTA per page).
-- **D5 — Card order = `BRAND_PAGES` insertion order; no count query.** Assumed (confirm in UI II): the comp order is
+- **D5 — Card order = `BRAND_PAGES` insertion order; no count query.** Decided (user, 2026-09-17): the comp order is
   the live product-count order (90/26/19/13/6/5), so a per-brand `products_connection` count query would only
   reproduce a constant. `Ordenadas por fondo de catálogo` remains true by editorial maintenance. Upgrade path if the
   user wants it live: a brand twin of `fetchCategoryProductCounts` (same aliased-connection query with
   `brand.customId.eq`), sort desc, and drop the `products > 0` ones — the comp's own filter.
-- **D6 — Whole-card link dropped for now.** Assumed: the comp's card is one big `<a>`; with the CTA disabled that
+- **D6 — Whole-card link dropped for now.** Decided (user, 2026-09-17): the comp's card is one big `<a>`; with the CTA disabled that
   would be a dead link. Card is an `<article>`, CTA is the only control (as `CategoryCard`). Story 2 may promote the
   card to a link.
 - **D7 — `/marcas` is `index, follow` and in the sitemap.** Assumed, mirroring `/categorias` D7.
@@ -292,40 +293,48 @@ brand logos (`showLogos` off; Strapi has no media); per-brand product-count pill
 ### Catalog behavior
 
 - I: Question: Should `/marcas` call `fetchBrands()` at all, given the cards are config-driven?
-  - Status: answered (assumption, confirm)
+  - Status: answered (user, 2026-09-17)
   - Answer: Yes — one cheap query, so a brand deleted/unpublished in Strapi drops off the page automatically and
     the counter stays honest. Rejected: rendering config alone (page could list a brand the store no longer carries).
 
 ### UI/product decisions
 
 - I: Question: Confirm `Marca Libre` (`libre`) gets **no** card and is covered only by the tornillería note.
-  - Status: pending
+  - Status: answered (user, 2026-09-17)
+  - Answer: Yes — no card for now.
   - Context: Comp shows six brands and says "Seis marcas en almacén"; `libre` has 107 products, all Tornillería. D2's
     "only configured brands render" hides it by omission. Alternative: an explicit `HIDDEN_BRANDS` list — more code
     for the same result.
 - II: Question: Confirm order = config order (no live count query) — D5.
-  - Status: pending
+  - Status: answered (user, 2026-09-17)
+  - Answer: Yes. The order was derived from the product counts once; no count query and no extra fields on the
+    brand call.
   - Context: Comp order already equals live count-desc order. A live query costs one aliased request per page load
     and a sort; only worth it if counts are expected to reshuffle brands.
 - III: Question: The comp's card is one large `<a>`; with the CTA disabled, keep the card inert and the CTA as the
   only control (D6)?
-  - Status: pending
+  - Status: answered (user, 2026-09-17)
+  - Answer: Card inert, CTA disabled; not a large anchor.
 - IV: Question: Hero intro says `Seis marcas en almacén` — render the live digit (`6 marcas en almacén`) or spell it
   out?
-  - Status: pending
-  - Explanation: Spelling out requires a number-to-words map that breaks the moment a seventh brand is configured.
-    Recommendation: digit, formatted with `Intl.NumberFormat("es-MX")`, pluralised.
+  - Status: answered (user, 2026-09-17)
+  - Answer: Use the word. The hero intro is static comp copy (`Seis marcas en almacén. Entra a la tuya y filtra por
+    medida.`), maintained by hand alongside `BRAND_PAGES`. The counter row below it keeps the live rendered count
+    (`{N} marcas en almacén`, digit) — AC3 updated accordingly.
 - V: Question: Empty-state copy when no brand renders?
-  - Status: pending
+  - Status: answered (user, 2026-09-17)
+  - Answer: `No hay marcas disponibles por ahora.`
   - Explanation: No comp. Proposed: `No hay marcas disponibles por ahora.` (mirrors `/categorias`).
 - VI: Question: Which `<meta>` title/description for `/marcas`?
-  - Status: pending
+  - Status: answered (user, 2026-09-17)
+  - Answer: The proposal below.
   - Explanation: Proposed, following the `CATEGORIES_*` pattern — title `Marcas de Herramienta Industrial en Puebla |
     Tehesa`; description `Weston, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla.
     Explora el catálogo por marca y cotiza por WhatsApp.`
 - VII: Question: Active-state treatment for the `Marcas` trigger on `/marcas` — `header.dc.html` shows no
   per-route active state for `Marcas`; mirror the `Categorías` treatment exactly?
-  - Status: pending (assumed yes, AC2)
+  - Status: answered (user, 2026-09-17)
+  - Answer: Yes, mirror `Categorías` exactly (AC2).
 
 ### Theme/persistence
 
@@ -337,4 +346,6 @@ brand logos (`showLogos` off; Strapi has no media); per-brand product-count pill
 
 - I: Question: Does `__tests__/shared/Header.test.tsx` already exercise the `allHref` row so the brand instance can
   extend it, or does it need a new describe block?
-  - Status: pending (planner to check; not opened during research)
+  - Status: answered (user, 2026-09-17)
+  - Answer: Planner checks the existing file and extends it if the `allHref` row is already covered, otherwise adds
+    a describe block; no separate header test file.
