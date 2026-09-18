@@ -68,7 +68,9 @@ stay `aria-disabled`/`isDisabled` until Story 2 ships.
 
 ### Story 2 — `/marcas/[slug]` brand pages
 
-Not yet researched; no comp yet. Expected shape, from the categories precedent:
+Research: `ai-research/brands-browsing/brand-page.story-2.md` (2026-09-17; no comp — reuses the `CategoryPage`
+layout by decision D1; SEO copy supplied by the user for all six brands, Bohrcraft included). Original expected
+shape, from the categories precedent:
 
 1. `src/app/marcas/[slug]/page.tsx` mirroring `categorias/[slug]/page.tsx`: slug → `customId`, `notFound()` on
    unknown, `fetchAllProductsByBrand(customId)` (new adapter cloned from `fetchAllProductsByCategory`, filter
