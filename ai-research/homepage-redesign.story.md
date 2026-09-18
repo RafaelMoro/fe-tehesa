@@ -18,7 +18,7 @@
 ### Title
 
 Replace the current `/` catalog page chrome with the `pagina-home.dc.html` layout: new hero copy and search panel, a
-"Marcas en almacén" strip, an always-visible filter hint/tooltip, comp no-result copy, restyled pagination, and a
+"Marcas en almacén" strip, a filter-row hint line, comp no-result copy, restyled pagination, and a
 closing "Ya tienes la lista?" panel.
 
 ### Description
@@ -36,18 +36,21 @@ changes **what wraps the grid**, not how the catalog works. Top to bottom, versu
    existing `CatalogSearchDrawer` (D4), and a new footer line `Elige categoría o marca, una a la vez. La búsqueda
    por nombre reemplaza el filtro activo.`
 2. **Brand strip** (new). Label `MARCAS EN ALMACÉN`, then the six stocked brands as inline links separated by `·`
-   (Bohrcraft · Bondhus · Cleveland · King Tony · Precision · Weston), and a right-aligned `Explorar el catálogo por
-   marca →` link to `/marcas`. Brand links go to `/marcas/<slug>` (D5), not the comp's `?mode=brand`.
+   in `BRAND_PAGES` insertion order (Weston · King Tony · Bohrcraft · Bondhus · Precision · Cleveland — same as the
+   `/marcas` cards, D5), and a right-aligned `Explorar el catálogo por marca →` link to `/marcas`. Brand links go to
+   `/marcas/<slug>`, not the comp's `?mode=brand`.
 3. **Filter row.** Same `SearchInput` + `DropdownCategories` + `DropdownBrands`, new placeholder `Buscar por nombre:
-   broca, machuelo, dado…`, plus a permanently visible underlined text button `¿Qué significa este filtro?` whose
-   popover reads `Filtra solo entre los productos que estás viendo. Puedes combinar categoría, marca y texto.`
-   (today the popover is an icon button shown only while a local filter is active). A hint line `Escribe el nombre
-   del producto. Ejemplo: broca cobalto, machuelo NPT, dado de impacto.` renders below the row when no local filter
-   is active. Row sits above a top border.
+   broca, machuelo, dado…`. The `¿Qué significa este filtro?` popover now reads `Filtra solo entre los productos que
+   estás viendo. Puedes combinar categoría, marca y texto.` but keeps today's trigger — icon-only, shown only while
+   a local filter is active (D8; the comp's permanent underlined text button was rejected). A hint line `Escribe el
+   nombre del producto. Ejemplo: broca cobalto, machuelo NPT, dado de impacto.` renders below the row when no local
+   filter is active. Row sits above a top border.
 4. **No-result copy** (D6, `/` only). Local search term with zero matches → `Nada con "<término>". Prueba con otra
    palabra del nombre (broca, machuelo, dado) o mándanos la clave o la medida por WhatsApp.` Category/brand local
    filter with zero matches and no term → `Ninguno de los productos que estás viendo coincide. Quita un filtro o
-   busca en todo el catálogo.` Plain paragraphs; `ProductListing`'s tinted panel is no longer reached from `/`.
+   busca en todo el catálogo.` Each paragraph is followed by the same two actions `ProductListing`'s panel offers
+   today — `Buscar en todo el catálogo` (opens the drawer) and `Limpiar filtros` — so nothing is lost; the tinted
+   panel itself is no longer reached from `/`.
 5. **Pagination** (D1). Keep the crawlable numbered `1..7` links, prev/next, and `Mostrando X-Y de 333`; restyle the
    prev/next controls to the comp's outlined 40px `Página anterior` / `Página siguiente` buttons and add the comp's
    left-hand copy `Llegaste al final de esta lista. Cambia el filtro o busca en todo el catálogo.` on the last base
@@ -68,17 +71,18 @@ Unchanged: `page.tsx` data fetching/redirects/JSON-LD, `useCatalogSearch`, the d
    (same handler as today). `loading.tsx` / `error.tsx` keep rendering `CatalogHero` — loading shows `Contando
    productos…`, error shows the disabled button — without new props being required.
 2. **Brand strip.** Below the hero, a strip labelled `Marcas en almacén` lists every live brand that has a
-   `BRAND_PAGE_HREFS` entry (A→Z by display name, `getBrandDisplayName(customId) ?? name`), each a `next/link` to its
+   `BRAND_PAGE_HREFS` entry, in `BRAND_PAGES` key order, labelled `getBrandDisplayName(customId) ?? name`, each a `next/link` to its
    `/marcas/<slug>`, with `·` separators marked `aria-hidden`; plus `Explorar el catálogo por marca →` to `/marcas`.
    When no brand qualifies (Strapi failure → empty taxonomy) the strip is not rendered at all.
-3. **Filter row + hint.** The row is `SearchInput` (comp placeholder) + the two dropdowns + a text button
-   `¿Qué significa este filtro?` that is always present and toggles a popover with the comp copy. The example hint
-   line renders only while no local search/category/brand is active. Existing `Limpiar filtros` (local) and
-   `Limpiar búsqueda` (wide) behavior is unchanged.
+3. **Filter row + hint.** The row is `SearchInput` (comp placeholder) + the two dropdowns; the `¿Qué significa
+   este filtro?` popover keeps today's behavior (icon button, only while a local filter is active) but its text
+   becomes the comp copy. The example hint line renders only while no local search/category/brand is active.
+   Existing `Limpiar filtros` (local) and `Limpiar búsqueda` (wide) behavior is unchanged.
 4. **No results.** With a local search term and zero matches, `/` renders the `Nada con "…"` paragraph (term
    echoed verbatim, trimmed); with only a category/brand local filter and zero matches, the `Ninguno de los
-   productos…` paragraph. Neither renders `ProductListing`'s panel. `/categorias/[slug]` and `/marcas/[slug]`
-   still render the panel (untouched).
+   productos…` paragraph, each followed by a `Buscar en todo el catálogo` button (opens the drawer) and a
+   `Limpiar filtros` button (resets local filters). Neither renders `ProductListing`'s panel. `/categorias/[slug]`
+   and `/marcas/[slug]` still render the panel (untouched).
 5. **Pagination.** Base mode keeps numbered `1..7` real links / non-link current page, `Mostrando X-Y de 333`, and
    prev/next as real links or `aria-disabled` spans — never `href="#"` — now labelled `Página anterior` / `Página
    siguiente` in the comp's outlined style. The `Llegaste al final…` copy appears on the last base page and on a
@@ -96,8 +100,7 @@ Unchanged: `page.tsx` data fetching/redirects/JSON-LD, `useCatalogSearch`, the d
 1. **Hero + closing panel** — `CatalogHero.tsx` copy/icon/footer line/count label; new `HomeQuotePanel` (or inline
    `<section>` in `Home.tsx`, sibling of `/marcas`'s closing panel markup); `Home.test.tsx` label updates.
 2. **Brand strip + filter row** — new `BrandStrip` under `src/features/Home/` fed from the `brands` prop already
-   passed to `Home`; `SearchInput` placeholder via its existing `placeholder` prop; always-on `¿Qué significa este
-   filtro?` popover; hint line.
+   passed to `Home`; `SearchInput` placeholder via its existing `placeholder` prop; popover copy; hint line.
 3. **No-result copy + pagination restyle** — home-local empty paragraphs before `ProductListing`; prev/next
    restyle + end copy; tests.
 
@@ -124,8 +127,8 @@ testimonials, no stats, no image hero — Strapi has no media), and not a checko
 | Count label | `CatalogHero.tsx` | base (`333 productos en catálogo`), mode (`N productos`), loading (`Contando productos…`) | — |
 | Search panel | `CatalogHero.tsx` | enabled, disabled (loading/error/busy) | — |
 | Brand strip | new `src/features/Home/BrandStrip.tsx` | ≥1 brand, none (hidden); hover `#125D03` | — |
-| Filter row + tip + hint | `Home.tsx` | no filter (hint shown), filter active (hint hidden, `Limpiar filtros` shown), tip open/closed | — |
-| No-result paragraphs | `Home.tsx` | term-no-match, filter-no-match | — |
+| Filter row + tip + hint | `Home.tsx` | no filter (hint shown, tip hidden), filter active (hint hidden, `Limpiar filtros` + tip shown), tip open/closed | — |
+| No-result paragraphs + actions | `Home.tsx` | term-no-match, filter-no-match; each with `Buscar en todo el catálogo` + `Limpiar filtros` | — |
 | Pagination | `Home.tsx` | base numbered, filtered prev/next, end-of-list copy, pending | — |
 | Closing panel | `Home.tsx` (or `HomeQuotePanel.tsx`) | WhatsApp set / unset | — |
 
@@ -149,8 +152,8 @@ in `loading.tsx`. Comp: hero grid `minmax(0,1fr) 340px` ≥1024, one column belo
 panel `flex-wrap`, buttons wrap under the copy. Card grid unchanged (`ProductListing`).
 
 **Accessibility.** Hero H1 stays the only `<h1>`; panel title and closing panel title are `<h2>`. The hero panel is
-an `<aside>` today — keep. `¿Qué significa este filtro?` is a real `<button aria-expanded>` (HeroUI `Popover`, as
-today, just no longer icon-only). Brand strip `·` separators `aria-hidden="true"`; strip wrapped in
+an `<aside>` today — keep. `¿Qué significa este filtro?` stays HeroUI `Popover`'s icon button with its
+`aria-label`. Brand strip `·` separators `aria-hidden="true"`; strip wrapped in
 `<nav aria-label="Marcas en almacén">`. Pagination prev/next keep `aria-label="Página anterior"/"Página siguiente"`
 (tests assert them). No-result paragraphs use `role="status"` like `pageFeedback`. External WhatsApp link
 `target="_blank" rel="noopener noreferrer"`. Hit targets ≥40px desktop / 44px touch.
@@ -183,18 +186,22 @@ empty states (D6).
   `plp-seo-readiness.story4.md`, Catalog Behavior I) — would also replace the stale constant in `Mostrando … de 333`.
 - **D4 — Hero button opens `CatalogSearchDrawer`.** Decided (user, 2026-09-17). The comp focuses the local input
   because the mock has no drawer; the panel copy ("Busca en el catálogo completo por nombre") describes the drawer.
-- **D5 — Brand strip links to `/marcas/<slug>`, A→Z, config-gated.** Assumed: `BRAND_PAGE_HREFS` already covers the
-  six comp brands; live taxonomy ∩ `BRAND_PAGE_HREFS` (drops `libre`, drops unpublished brands), sorted by display
-  name with `localeCompare(…, "es")` — the comp's order is alphabetical. Reject the comp's `?mode=brand&brand=<slug>`
-  (that URL style takes a Strapi *name*, not a slug, and the brand page exists).
+- **D5 — Brand strip links to `/marcas/<slug>`, `BRAND_PAGES` insertion order, config-gated.** Decided (user,
+  2026-09-17): iterate `Object.keys(BRAND_PAGES)` (product-count desc, same as `/marcas` cards) and keep those
+  present in the live taxonomy (drops `libre`, drops unpublished brands). Rejected: the comp's alphabetical order,
+  and its `?mode=brand&brand=<slug>` href (that URL style takes a Strapi *name*, not a slug, and the brand page
+  exists).
 - **D6 — Comp no-result copy on `/` only.** Decided (user, 2026-09-17). `ProductListing`'s panel stays for
   `/categorias/[slug]` and `/marcas/[slug]`. Mechanism: `Home` short-circuits before rendering `ProductListing`
-  when `filteredProducts.length === 0 && isLocalFilterActive` (see UI III for the alternative).
-- **D7 — Closing panel WhatsApp reuses `WHATSAPP_HEADER_MESSAGE`; hidden when unset.** Assumed, same gating as
-  `Header`/`WhatsappPanel`/`BrandsPage`. The comp's prefill (`Hola, quiero cotizar un producto de Tehesa`) is a
-  mock string; a dedicated `WHATSAPP_HOME_MESSAGE` is a one-line constant if the user wants it (UI IV).
-- **D8 — Tip button always visible.** Assumed from the comp; today's icon-only popover appears only while a filter
-  is active. The comp shows it in the row permanently as an underlined text button.
+  when `filteredProducts.length === 0 && isLocalFilterActive` and renders the comp paragraph plus the same two
+  actions the panel has (`Buscar en todo el catálogo` → `catalogSearchDrawerState.open`, `Limpiar filtros` →
+  `clearLocalFilters`) — decided UI III (user, 2026-09-17).
+- **D7 — Closing panel WhatsApp reuses `WHATSAPP_HEADER_MESSAGE`; hidden when unset.** Decided (user,
+  2026-09-17), same gating as `Header`/`WhatsappPanel`/`BrandsPage`. The comp's prefill (`Hola, quiero cotizar un
+  producto de Tehesa`) is a mock string; no new constant.
+- **D8 — Tip popover keeps today's behavior.** Decided (user, 2026-09-17): icon-only button shown only while a
+  local filter is active; only the popover copy changes to the comp's. ~~Comp's always-visible underlined text
+  button~~ rejected.
 
 ## Technical Research
 
@@ -226,8 +233,9 @@ empty states (D6).
   customId]` gate is exactly the brand-strip data shape.
 - `Home.tsx` pagination — `buttonVariants()` / `pagination__link` class approach for `<a>`/`<span>` controls; keep it
   and swap `isIconOnly` for labelled outlined buttons (`variant: "outline"` — HeroUI v3 has no `bordered`).
-- `Home.tsx` `Popover` for the tip — already present; only its trigger changes from icon-only to a text button and
-  it stops being conditional.
+- `Home.tsx` `Popover` for the tip — already present; only its copy changes.
+- `ProductListing.tsx` empty-state actions — the `Buscar en todo el catálogo` + `Limpiar filtros` button pair to
+  mirror under the home no-result paragraphs (same handlers: `catalogSearchDrawerState.open`, `clearLocalFilters`).
 - `CategoryCard` — `Intl.NumberFormat("es-MX")` for counts.
 - Server/client split: `BrandStrip` needs no hooks and can be a plain component; `Home.tsx` stays `"use client"`.
 
@@ -294,21 +302,22 @@ empty states (D6).
 - III: Question: Should the no-result paragraphs still offer an action (the current panel has `Buscar en todo el
   catálogo` + `Limpiar filtros`)? The comp has none — the copy says "busca en todo el catálogo" but nothing is
   clickable there.
-  Status: pending
-  Context: Assumption if unanswered: plain paragraphs as drawn; the row's `Limpiar filtros` button and the hero
-  panel button are still on screen, so no action is lost.
+  Status: answered
+  Answer: Yes, offer the actions (user, 2026-09-17). Today `ProductListing`'s panel already does: `Buscar en todo
+  el catálogo` (only on `/`, gated on `onOpenCatalogSearch`) + `Limpiar filtros` (all three listing pages). Home's
+  paragraphs get the same pair.
 - IV: Question: Reuse `WHATSAPP_HEADER_MESSAGE` for the closing panel, or add a home-specific prefill (comp: `Hola,
   quiero cotizar un producto de Tehesa`)?
-  Status: pending
-  Context: D7 assumes reuse. A dedicated constant is one line in `whatsapp.constants.ts`.
+  Status: answered
+  Answer: Reuse `WHATSAPP_HEADER_MESSAGE` (user, 2026-09-17).
 - V: Question: Brand strip order — alphabetical (comp) or `BRAND_PAGES` insertion order (`/marcas` card order,
   product-count desc)?
-  Status: pending
-  Context: D5 assumes alphabetical as drawn.
+  Status: answered
+  Answer: `BRAND_PAGES` insertion order (user, 2026-09-17), matching the `/marcas` cards.
 - VI: Question: Should `¿Qué significa este filtro?` stay always visible (comp, D8) or keep today's
   only-while-filtering behavior?
-  Status: pending
-  Context: D8 assumes always visible.
+  Status: answered
+  Answer: Keep today's behavior — icon button, only while filtering; adopt the comp copy (user, 2026-09-17).
 
 ### Theme/persistence
 
