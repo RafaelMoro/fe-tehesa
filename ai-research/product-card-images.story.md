@@ -5,6 +5,13 @@
 **Scope:** standalone story (single deliverable, 2-3 phases)
 **Builds on:** `ai-research/product-card-redesign.story.md` (D5 — the optional `image` prop slot that shipped
 image-less), `ai-research/homepage-redesign.story.md` (D2 — card image slot off).
+**Design source:** Claude Design project "Tehesa UI mocks v1", file `PLP.dc.html`
+(https://claude.ai/design/p/4b99241e-42ab-4ca4-ac4e-c1cd49a75385?file=PLP.dc.html), read via the design MCP on
+2026-09-20. **In scope from the comp:** the card's image block (`showImages=true` grid card, lines 63-66), the
+"Adaptación responsiva" and "Tema oscuro" card image wrappers, and the **"Estado sin imagen"** section (lines 553-731:
+desktop 314px / tablet 352px / mobile 343px, light + dark). **Out of scope:** everything else on the page — hero,
+filter row, drawer, spec tables, and the `image-slot.js` / `support.js` runtime chrome (drag-to-fill, "Drop an
+image", dashed *ring*), which is tooling, not design.
 
 ## Story Definition
 
@@ -30,16 +37,18 @@ stay aligned.
 2. **Image present.** A product with a non-empty `imageUrl` renders the existing image block (4/3 at `sm`+, 16/9
    below, `rounded-[10px] bg-gray-100 dark:bg-gray-800`, `object-cover`) as a plain `<img>` with
    `alt={product.name}`, `loading="lazy"`, `decoding="async"`. No `next/image`, no `next.config.ts` change.
-3. **Image absent.** A product with `imageUrl` null/empty renders the **same block dimensions** with a placeholder:
-   the same gray ground and a single centered `RiImageLine` icon (`@remixicon/react`, already installed), `aria-hidden`,
-   no text. The block is never omitted — `ProductCard` no longer takes an `image` prop; it derives everything from
-   `product.imageUrl`.
+3. **Image absent.** A product with `imageUrl` null/empty renders the comp's **"Estado sin imagen"** block at the
+   same aspect ratio and radius: `bg-gray-50 border border-dashed border-gray-200` (dark: `bg-gray-800
+   border-gray-700`), a centered 30px line-style image icon in `text-gray-400` (dark `text-gray-500`), `aria-hidden`,
+   and the caption `Imagen no disponible` at 11px in `text-gray-500` (dark `text-gray-400`), 8px gap. The block is
+   never omitted — `ProductCard` no longer takes an `image` prop; it derives everything from `product.imageUrl`.
 4. **Loading state.** `ProductCardSkeleton` gains a matching aspect-ratio `Skeleton` block above the kicker so the
    loading grid has the same vertical rhythm as the loaded grid.
 5. **SEO.** `buildProductListItem` in `src/shared/utils/seo.utils.ts` adds `image: product.imageUrl` to the `Product`
    node only when `imageUrl` is present (omitted otherwise, same pattern as `brand`).
 6. **Tests.** `__tests__/product-listing/ProductCard.test.tsx` swaps the two image-prop cases for `imageUrl`
-   present → `img` with the product name as accessible name / absent → no `img`, placeholder icon present.
+   present → `img` with the product name as accessible name, no caption / absent → no `img`, `Imagen no disponible`
+   caption present.
    `__tests__/seo/seo.utils.test.ts` covers `image` present/omitted. Existing tests keep passing.
 
 ### Task breakdown
@@ -51,71 +60,98 @@ stay aligned.
 - **Phase 3 — SEO + docs:** JSON-LD `image`; refresh the stale "no media field" notes in `ai-skills/REPO_CONTEXT.md`
   (lines 168, 236, 306, 327, 383) and `docs/improvement.md:53`.
 
-## Design Agent Handoff
+## Design Reference (from the comp)
 
-**User goal.** A buyer scanning the catalog should recognize a product by its photo where one exists, and still get an
-evenly laid-out grid where one does not. This is **not** a gallery, a lightbox, a zoom, a multi-image carousel, or a
-product detail page — one image per card, no interaction on the image.
+No external design agent pass is needed: `PLP.dc.html` already draws both card states at every breakpoint and theme.
+This section is the extract; the comp is the source of truth if they ever disagree.
 
-### Surface index
+**User goal.** A buyer scanning the catalog recognizes a product by its photo where one exists and still gets an
+evenly laid-out grid where one does not. This is **not** a gallery, lightbox, zoom, carousel, or detail page — one
+image per card, no interaction on the image.
 
-| Surface | File | States | Story | Brief |
-| --- | --- | --- | --- | --- |
-| Product card, image present | `src/components/ProductCard.tsx` | rest / hover / dark | this | Brief 1 |
-| Product card, placeholder | `src/components/ProductCard.tsx` | rest / hover / dark | this | Brief 1 |
-| Mixed grid (imaged + placeholder side by side) | `src/features/ProductListing/ProductListing.tsx` | 1 / 2 / auto-fill columns, light + dark | this | Brief 1 |
-| Card skeleton | `src/components/ProductCardSkeleton.tsx` | loading | this | derived from Brief 1 (no separate brief) |
+### Image block — photo present
+
+| Breakpoint | Aspect | Card padding / gap | Wrapper |
+| --- | --- | --- | --- |
+| Mobile `<600` (comp) → `max-sm` in code | 16/9 | 14px / 12px | `rounded-[10px] overflow-hidden bg-gray-100 dark:bg-gray-800` |
+| Tablet `600–1023` → `sm`+ | 4/3 | 16px / 14px | same |
+| Desktop `≥1024` → `lg`+ | 4/3 | 16px / 14px | same |
+
+Comp wrapper: `position:relative; aspect-ratio:4/3 (16/9 mobile); border-radius:10px; overflow:hidden; background:#F3F4F6`
+(dark `#1F2937`). The `image-slot` inside defaults to `fit="cover"` → `object-cover` in code. Both match what
+`ProductCard.tsx` already renders for the `image` prop; **no change to the present-state markup beyond the source
+of `src`/`alt`**.
+
+### Image block — "Estado sin imagen" (comp lines 553-731)
+
+Comp copy: *"El hueco conserva la misma proporción y radio que la foto, para que la rejilla no se desalinee. Dentro va
+un ícono de imagen en trazo y la leyenda "Imagen no disponible": el borde punteado y el fondo un paso más claro que la
+tarjeta dejan claro que falta contenido y no que la imagen se rompió. Nada de logotipo ni de ilustración de producto,
+que se leerían como una foto real."*
+
+| Role | Light (hex → token) | Dark (hex → token) |
+| --- | --- | --- |
+| Ground | `#F9FAFB` → `bg-gray-50` | `#1F2937` → `dark:bg-gray-800` |
+| Border | `1px dashed #E5E7EB` → `border border-dashed border-gray-200` | `#374151` → `dark:border-gray-700` |
+| Icon stroke | `#9CA3AF` → `text-gray-400` | `#6B7280` → `dark:text-gray-500` |
+| Caption | `#6B7280` → `text-gray-500` | `#9CA3AF` → `dark:text-gray-400` |
+
+- Layout: `flex flex-col items-center justify-center gap-2`; same `aspect-[4/3] max-sm:aspect-video rounded-[10px]`
+  as the photo state. Same at 314 / 352 / 343px card widths — the comp shows no per-breakpoint change other than
+  the aspect ratio.
+- Icon: 30×30, stroke-only picture glyph (rounded rect + circle + two mountain paths; comp SVG on line 568). Nearest
+  installed equivalent: `RiImageLine` from `@remixicon/react` at `size={30}`. Use it rather than pasting the comp
+  SVG — every other icon on the card is Remix.
+- Caption: `Imagen no disponible`, 11px / 400. Plain `<span>`, not `aria-hidden` (it is real, if low-value, text).
+- Note the ground differs between states on purpose: photo ground is `gray-100`, placeholder ground is `gray-50`
+  ("un paso más claro que la tarjeta"). In dark both are `gray-800`.
 
 ### Rules that override design instinct
 
-- **The placeholder is quiet.** Gray ground + one icon. No "Sin imagen" / "Foto próximamente" text, no dashed border,
-  no brand logo, no category illustration. It exists to hold the space, not to draw the eye.
-- **Never present the price as an amount to pay** — `Desde $X MXN` (+ `hasta $Y MXN`) is unchanged (redesign story
-  rule).
+- **The placeholder is exactly the comp's.** No logo, no category illustration, no "Foto próximamente", no spinner,
+  no shimmer — and no dashed *ring* from `image-slot.js` (that is the runtime's drop-target, not the design).
+- **Never present the price as an amount to pay** — `Desde $X MXN` (+ `hasta $Y MXN`) is unchanged.
 - **Do not invent data.** No badges over the image (stock, "nuevo", discount), no image count, no zoom affordance.
-- **Copy is unchanged.** Every existing string on the card stays as-is.
+- **Nothing outside the image block changes.** Kicker, pill, title, chip, price, buttons, hover, skeleton rows below
+  the image, grid columns — all stay as shipped by the redesign story.
 
 ### Implementation-facing constraints
 
-**Responsive.** The block is `aspect-[4/3]` at `sm`+ and `aspect-video` below `sm`, exactly as D5 shipped. Grid
-columns (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]`) do not change. No
-`useMediaQuery` (`REPO_CONTEXT.md` hook gotcha) — class-only.
+**Responsive.** Class-only (`max-sm:aspect-video` vs `aspect-[4/3]`), no `useMediaQuery` (`REPO_CONTEXT.md` hook
+gotcha). The comp's 600px mobile/tablet boundary maps to the code's existing `sm` (640px) split — the redesign story
+already made that call; do not introduce a new breakpoint.
 
-**Accessibility.** Real image: `alt={product.name}` (the only alt source the contract offers; no `alternativeText`
-field exists). Placeholder: the icon is `aria-hidden="true"` and the wrapper has no role — a missing photo is not
-information a screen-reader user needs announced per card. No `title` attributes.
+**Accessibility.** Photo: `alt={product.name}` (the only alt source the contract offers; no `alternativeText`
+field). Placeholder: icon `aria-hidden="true"`, caption is visible text and is read as-is. No `title` attributes, no
+`role` on the wrapper.
 
-**Visual patterns to preserve.** Image ground `gray-100` / `dark:gray-800` (`DESIGN.md:26`), radius `10px` inside the
-`14px` card, `overflow-hidden` only on the image wrapper (redesign story). Placeholder icon color: `text-gray-400`
-light / `dark:text-gray-600` (low contrast is intentional — decorative). Run `pnpm design:lint` after styling.
+**Visual patterns to preserve.** All hexes above are `DESIGN.md` tokens (`gray-50/200/400/500/700/800`, lines 25-33).
+Run `pnpm design:lint` after styling. `overflow-hidden` only on the photo wrapper.
 
-**Content.** Cloudinary URLs are absolute and already `.webp`; the frontend does not transform them. If sizing is
-ever needed, Cloudinary's URL transforms (`/upload/w_600,f_auto,q_auto/`) are available without a frontend dependency
-— out of scope here.
+**Content.** Cloudinary URLs are absolute and already `.webp`; the frontend does not transform them. Cloudinary URL
+transforms (`/upload/w_600,f_auto,q_auto/`) are available later without a frontend dependency — out of scope.
 
-**Out of scope.** `next/image` / `remotePatterns`; image in `ProductVariantsDrawer`; image in the `/cotizar` line
-rows; OG/Twitter share images; a `onError` broken-image fallback (see UI/product II); backend `imageUrl` coverage
-(the mapping script lives in the backend repo).
+**Out of scope.** `next/image` / `remotePatterns`; image in `ProductVariantsDrawer`; image in `/cotizar` line rows;
+OG/Twitter share images; an `onError` broken-image fallback (UI/product II); backend `imageUrl` coverage (mapping
+script lives in the backend repo); any other part of `PLP.dc.html`.
 
 ### Decision record
 
 - **D1 — Placeholder vs. hidden block.** *Decided (user, 2026-09-20):* reserve the slot with a placeholder when
   `imageUrl` is null. Rationale: ~60% of products have no image today, so nearly every grid row mixes both states;
-  hiding the block (the D5 default from the redesign story, chosen when *no* product had an image) puts kicker/title/
-  price at different heights across a row. Supersedes redesign D5's "no placeholder" rule — that rule targeted the
-  all-image-less catalog, which no longer exists. Rejected: placeholder on desktop only (two behaviors for one
-  state; the mobile single column would still shift when scrolling between imaged and image-less cards).
+  hiding the block (redesign D5, chosen when *no* product had an image) puts kicker/title/price at different heights
+  across a row. Supersedes redesign D5's "no placeholder" rule. Rejected: placeholder on desktop only.
 - **D2 — Renderer.** *Decided (user, 2026-09-20):* keep the plain `<img>` (D5) and add `loading="lazy"` +
   `decoding="async"`. Rejected: `next/image` + `remotePatterns` — more config, an image-optimizer dependency for a
-  catalog of ≤333 already-WebP assets, and a deviation from D5 with no measured need.
-- **D3 — Prop → data.** *Assumed:* drop the `image?: { src; alt }` prop and read `product.imageUrl` directly. The prop
-  existed only because no data existed (D5: "the follow-up story maps `product.image.url` → this prop"); now that the
-  data is on `Product`, a prop that every caller would fill the same way is indirection. `ProductListing` and the
-  category/brand pages need no change beyond the query fields.
-- **D4 — Placeholder icon.** *Assumed:* `RiImageLine` at 24px, centered. Any single neutral glyph from the installed
-  `@remixicon/react` set is acceptable; the brief lets the design agent propose the glyph but not add text.
-- **D5 — JSON-LD.** *Decided (user, 2026-09-20):* add `image` to the `Product` node when present. In scope because it
-  is one conditional field on an existing builder.
+  catalog of ≤333 already-WebP assets, no measured need.
+- **D3 — Prop → data.** *Assumed:* drop the `image?: { src; alt }` prop and read `product.imageUrl` directly. The
+  prop existed only because no data existed (D5: "the follow-up story maps `product.image.url` → this prop").
+- **D4 — Placeholder design.** *Decided (user, 2026-09-20):* use the comp's "Estado sin imagen" state verbatim
+  (dashed border, `gray-50` ground, icon + `Imagen no disponible` caption) — supersedes the earlier "icon only, no
+  text" assumption. Icon glyph: `RiImageLine` as the Remix equivalent of the comp's stroke SVG.
+- **D5 — JSON-LD.** *Decided (user, 2026-09-20):* add `image` to the `Product` node when present. One conditional
+  field on an existing builder; no visual expression.
+- **D6 — Photo fit.** *From comp:* `image-slot` default `fit="cover"` → keep `object-cover` as shipped.
 
 ## Technical Research
 
@@ -144,9 +180,8 @@ Not touched: `src/shared/lib/global.lib.ts` (server actions return whatever the 
 - `@next/next/no-img-element` is a warning under `next/core-web-vitals`; keep the one-line `eslint-disable-next-line`
   and change the reason from "no host known" to "D2: plain `<img>`, Cloudinary already serves sized WebP".
 - Tests: `__tests__/product-listing/ProductCard.test.tsx` already uses `screen.queryByRole("img")` /
-  `getByRole("img", { name })` — reuse. The placeholder icon is `aria-hidden`, so assert its absence/presence via a
-  `data-testid` on the placeholder wrapper or by `container.querySelector("svg")` — follow
-  `docs/UNIT_TESTING_GUIDELINES.md` on which is sanctioned.
+  `getByRole("img", { name })` — reuse. The placeholder is asserted through its visible caption
+  (`getByText("Imagen no disponible")`); the icon is `aria-hidden` and needs no assertion of its own.
 
 ### Verification rules
 
@@ -215,7 +250,8 @@ Not touched: `src/shared/lib/global.lib.ts` (server actions return whatever the 
 
 ### Verification
 
-- I: Question: Is `container.querySelector` / `data-testid` sanctioned for asserting an `aria-hidden` placeholder icon?
-  Status: pending
-  Context: `docs/UNIT_TESTING_GUIDELINES.md` governs; the planner should pick the compliant assertion. Alternative:
-  assert the *absence* of `img` only, and leave the placeholder untested (it is markup with no logic).
+- I: Question: How to assert the placeholder in tests?
+  Status: answered
+  Answer: `screen.getByText("Imagen no disponible")` — the comp's caption is visible text, so no `data-testid` or
+  `querySelector` is needed. Absent-image case: `queryByRole("img")` is null **and** the caption is present; present
+  case: `getByRole("img", { name: product.name })` and no caption.
