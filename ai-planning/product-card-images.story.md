@@ -76,7 +76,7 @@ Leave `GET_PRODUCT_VARIANTS`, `GET_VARIANTS_BY_IDS`, `GET_PRODUCTS_BY_IDS`, `GET
 - `GET /api/catalog/products?mode=category&category=<any category name from /api/catalog/categories>&page=1` → 200, items carry `imageUrl`.
 - `GET /api/catalog/products?mode=brand&brand=Bohrcraft&page=1` → 200, items carry `imageUrl`.
 - `GET /api/catalog/products?mode=name&q=broca&page=1` → 200, items carry `imageUrl`.
-- `GET /categorias/tornilleria` → 200 (exercises `GET_ALL_PRODUCTS`; no `CAT_ERR_*`, no GraphQL validation error in the server log — a typo in the field name shows here as a 500/error page).
+- `GET /categorias/tornilleria-fijacion` → 200 (exercises `GET_ALL_PRODUCTS`; no `CAT_ERR_*`, no GraphQL validation error in the server log — a typo in the field name shows here as a 500/error page).
 - Server log: no `Cannot query field "imageUrl"` or other GraphQL errors.
 
 **Manual** — none.
@@ -86,7 +86,7 @@ Leave `GET_PRODUCT_VARIANTS`, `GET_VARIANTS_BY_IDS`, `GET_PRODUCTS_BY_IDS`, `GET
 | Area/File | Coverage/check areas | Verification reference |
 | --- | --- | --- |
 | `src/shared/types/global.types.ts` | `imageUrl` optional nullable on `Product` | `pnpm exec tsc --noEmit` |
-| `src/shared/queries/global.queries.ts` | five list queries select `imageUrl`; others unchanged | dev-server `curl` of the four `/api/catalog/products` modes + `/categorias/tornilleria` |
+| `src/shared/queries/global.queries.ts` | five list queries select `imageUrl`; others unchanged | dev-server `curl` of the four `/api/catalog/products` modes + `/categorias/tornilleria-fijacion` |
 
 ---
 
@@ -148,7 +148,7 @@ Import `fireEvent` from `@__tests__/test-utils` (it re-exports `@testing-library
 
 **Dev-server validation** (`pnpm dev`)
 - `GET /` → 200. The HTML contains at least one `<img` whose `src` starts with `https://res.cloudinary.com/`, with `alt="<product name>"`, `loading="lazy"`, `decoding="async"`; and at least one occurrence of `Imagen no disponible`. (Try `/?page=2` if page 1 is uniform.) No `<img` without `loading="lazy"`.
-- `GET /categorias/tornilleria` → 200, same two-state check.
+- `GET /categorias/tornilleria-fijacion` → 200, same two-state check.
 - `GET /marcas/bohrcraft` → 200, same two-state check.
 - `GET /?mode=name&q=broca&page=1` → 200, cards render with `imageUrl`-driven blocks.
 - `GET /cotizar` → 200, unchanged (no `Imagen no disponible`, no product `<img>`).
@@ -159,14 +159,14 @@ Import `fireEvent` from `@__tests__/test-utils` (it re-exports `@testing-library
 - Below `sm` (DevTools mobile): both blocks are 16/9.
 - Dark mode toggle: placeholder ground/border/icon/caption switch to the gray-800/700/500/400 set; photo ground is gray-800.
 - Open DevTools → Network → block `res.cloudinary.com` → reload: imaged cards show the placeholder, not the broken-image glyph (D7).
-- Navigate `/` → `/categorias/tornilleria` (or hit `/categorias/tornilleria` with throttling): the loading skeleton shows an image-sized block above the kicker with no layout shift when data lands.
+- Navigate `/` → `/categorias/tornilleria-fijacion` (or hit `/categorias/tornilleria-fijacion` with throttling): the loading skeleton shows an image-sized block above the kicker with no layout shift when data lands.
 
 ### Verification Coverage
 
 | Area/File | Coverage/check areas | Verification reference |
 | --- | --- | --- |
 | `src/components/ProductCard.tsx` | photo vs. placeholder branch, `alt`/`loading`/`decoding`, `onError` fallback, no `image` prop | `pnpm test -- __tests__/product-listing/ProductCard.test.tsx` + dev-server `curl /` + manual Network-block check |
-| `src/components/ProductCardSkeleton.tsx` | aspect-ratio block above kicker | manual throttled load of `/categorias/tornilleria` |
+| `src/components/ProductCardSkeleton.tsx` | aspect-ratio block above kicker | manual throttled load of `/categorias/tornilleria-fijacion` |
 | `__tests__/product-listing/ProductCard.test.tsx` | AC6 three image cases; other cases unchanged | `pnpm test -- __tests__/product-listing/ProductCard.test.tsx` |
 
 ---
@@ -225,7 +225,7 @@ image: product.imageUrl || undefined,
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 | --- | --- | --- | --- | --- |
-| AC1 – Data: `imageUrl` on `Product` + five list queries | Phase 1 | `GET /api/catalog/products?page=1` (+ `mode=category`, `mode=brand`, `mode=name`) 200, every item has `imageUrl`; `GET /categorias/tornilleria` 200 | Validated | `tsc` passed; `page=1-4` all-null, `page=5-7` real Cloudinary URLs; category/brand/name modes all 200 with `imageUrl` key; `GET_PRODUCTS_BY_IDS` unchanged confirmed by diff |
+| AC1 – Data: `imageUrl` on `Product` + five list queries | Phase 1 | `GET /api/catalog/products?page=1` (+ `mode=category`, `mode=brand`, `mode=name`) 200, every item has `imageUrl`; `GET /categorias/tornilleria-fijacion` 200 | Validated | `tsc` passed; `page=1-4` all-null, `page=5-7` real Cloudinary URLs; category/brand/name modes all 200 with `imageUrl` key; `GET_PRODUCTS_BY_IDS` unchanged confirmed by diff |
 | AC2 – Image present renders lazy `<img>` with name alt | Phase 2 | `GET /` 200 contains `<img src="https://res.cloudinary.com/…" alt="…" loading="lazy" decoding="async"` | Validated | Confirmed on `/?page=5`, `/marcas/bohrcraft` (6 imgs), `/?mode=name&q=broca` (15 imgs); no `<img>` missing `loading="lazy"`; `design:lint` 0 errors |
 | AC3 – Absent or failed → "Imagen no disponible" placeholder, no `image` prop | Phase 2 | `GET /` 200 contains `Imagen no disponible`; `tsc` passes with prop removed | Validated | Confirmed on `/?page=5`, `/marcas/bohrcraft` (12 placeholders), `/categorias/tornilleria-fijacion` (107, all placeholder — 0% image coverage in that category); `onError` path covered by Jest case 3 |
 | AC4 – Skeleton aspect-ratio block | Phase 2 | — | Cannot validate | Skeleton only renders during Suspense/loading; requires manual throttled load of `/categorias/tornilleria-fijacion` |
