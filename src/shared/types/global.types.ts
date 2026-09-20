@@ -32,6 +32,7 @@ export type Product = {
   hasOneProductVariant?: boolean
   product_variants?: ProductVariant[]
   subcategory?: string | null
+  imageUrl?: string | null
 }
 
 export interface FetchProductsResponse {
