@@ -37,7 +37,7 @@ stay aligned.
 2. **Image present.** A product with a non-empty `imageUrl` renders the existing image block (4/3 at `sm`+, 16/9
    below, `rounded-[10px] bg-gray-100 dark:bg-gray-800`, `object-cover`) as a plain `<img>` with
    `alt={product.name}`, `loading="lazy"`, `decoding="async"`. No `next/image`, no `next.config.ts` change.
-3. **Image absent.** A product with `imageUrl` null/empty renders the comp's **"Estado sin imagen"** block at the
+3. **Image absent or failed.** A product with `imageUrl` null/empty — or whose `<img>` fires `onError` — renders the comp's **"Estado sin imagen"** block at the
    same aspect ratio and radius: `bg-gray-50 border border-dashed border-gray-200` (dark: `bg-gray-800
    border-gray-700`), a centered 30px line-style image icon in `text-gray-400` (dark `text-gray-500`), `aria-hidden`,
    and the caption `Imagen no disponible` at 11px in `text-gray-500` (dark `text-gray-400`), 8px gap. The block is
@@ -48,7 +48,7 @@ stay aligned.
    node only when `imageUrl` is present (omitted otherwise, same pattern as `brand`).
 6. **Tests.** `__tests__/product-listing/ProductCard.test.tsx` swaps the two image-prop cases for `imageUrl`
    present → `img` with the product name as accessible name, no caption / absent → no `img`, `Imagen no disponible`
-   caption present.
+   caption present / present but `error` fired → caption present, no `img`.
    `__tests__/seo/seo.utils.test.ts` covers `image` present/omitted. Existing tests keep passing.
 
 ### Task breakdown
@@ -132,7 +132,7 @@ Run `pnpm design:lint` after styling. `overflow-hidden` only on the photo wrappe
 transforms (`/upload/w_600,f_auto,q_auto/`) are available later without a frontend dependency — out of scope.
 
 **Out of scope.** `next/image` / `remotePatterns`; image in `ProductVariantsDrawer`; image in `/cotizar` line rows;
-OG/Twitter share images; an `onError` broken-image fallback (UI/product II); backend `imageUrl` coverage (mapping
+OG/Twitter share images; backend `imageUrl` coverage (mapping
 script lives in the backend repo); any other part of `PLP.dc.html`.
 
 ### Decision record
@@ -152,6 +152,8 @@ script lives in the backend repo); any other part of `PLP.dc.html`.
 - **D5 — JSON-LD.** *Decided (user, 2026-09-20):* add `image` to the `Product` node when present. One conditional
   field on an existing builder; no visual expression.
 - **D6 — Photo fit.** *From comp:* `image-slot` default `fit="cover"` → keep `object-cover` as shipped.
+- **D7 — Broken image.** *Decided (user, 2026-09-20):* an `<img>` that fails to load falls back to the placeholder
+  (UI/product II). Local `useState` + `onError`; no retry, no logging.
 
 ## Technical Research
 
@@ -203,8 +205,8 @@ Not touched: `src/shared/lib/global.lib.ts` (server actions return whatever the 
 
 - `imageUrl` may be `null`, `undefined` (older cached responses), or `""`. Treat all three as "no image" — one
   truthiness check, not `!= null`.
-- A URL that 404s renders the browser's broken-image glyph on the gray ground. Not handled in this story (UI/product
-  II); the card's `bg-gray-100` ground keeps it from looking like a hole.
+- A URL that 404s: `onError` flips local state and the placeholder renders (D7). State is per card instance and
+  resets on remount (e.g. page change) — fine, the URL is retried naturally.
 - Product names are long (`line-clamp-3` on the title); as `alt` they are fine — screen readers read the full name
   once for the image and once for the heading. Acceptable duplication; an empty `alt=""` would make the photo
   decorative, which it is not.
@@ -238,9 +240,10 @@ Not touched: `src/shared/lib/global.lib.ts` (server actions return whatever the 
   Answer: placeholder — see D1.
 - II: Question: Should a failed image load (`onerror`) fall back to the placeholder instead of the browser's
   broken-image glyph?
-  Status: pending
-  Context: Costs a `useState` per card and an `onError` handler. Cloudinary URLs are stable once written, so
-  breakage is unlikely; recommend deferring until observed.
+  Status: answered
+  Answer: Yes — on `onError` the card swaps to the same "Imagen no disponible" placeholder (user, 2026-09-20).
+  Context: One `useState<boolean>` per card (`imageFailed`) and an `onError` handler on the `<img>`; the placeholder
+  branch renders when `!imageUrl || imageFailed`. Add a test: fire `error` on the `img` → caption appears, `img` gone.
 - III: Question: `alt` source — product name, or empty (decorative)?
   Status: answered
   Answer: product name (the contract has no `alternativeText`). See Accessibility.
