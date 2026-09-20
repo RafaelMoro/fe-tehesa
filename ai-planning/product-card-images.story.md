@@ -225,12 +225,12 @@ image: product.imageUrl || undefined,
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 | --- | --- | --- | --- | --- |
-| AC1 – Data: `imageUrl` on `Product` + five list queries | Phase 1 | `GET /api/catalog/products?page=1` (+ `mode=category`, `mode=brand`, `mode=name`) 200, every item has `imageUrl`; `GET /categorias/tornilleria` 200 | Not validated | `GET_PRODUCTS_BY_IDS` unchanged is a `tsc`/diff check |
-| AC2 – Image present renders lazy `<img>` with name alt | Phase 2 | `GET /` 200 contains `<img src="https://res.cloudinary.com/…" alt="…" loading="lazy" decoding="async"` | Not validated | aspect/radius classes are manual + `design:lint` |
-| AC3 – Absent or failed → "Imagen no disponible" placeholder, no `image` prop | Phase 2 | `GET /` 200 contains `Imagen no disponible`; `tsc` passes with prop removed | Not validated | `onError` path: Jest case 3 + manual Network-block check (not curl-able) |
-| AC4 – Skeleton aspect-ratio block | Phase 2 | — | Cannot validate | Skeleton only renders during Suspense/loading; covered by manual throttled load of `/categorias/tornilleria` |
-| AC5 – JSON-LD `image` when present | Phase 3 | `GET /` 200, ld+json has `"image":"https://res.cloudinary.com/…"` on some items and none on others | Not validated | |
-| AC6 – Tests | Phase 2, Phase 3 | — | Cannot validate | `pnpm test -- __tests__/product-listing/ProductCard.test.tsx`, `pnpm test -- __tests__/seo/seo.utils.test.ts`, then full `pnpm test` |
+| AC1 – Data: `imageUrl` on `Product` + five list queries | Phase 1 | `GET /api/catalog/products?page=1` (+ `mode=category`, `mode=brand`, `mode=name`) 200, every item has `imageUrl`; `GET /categorias/tornilleria` 200 | Validated | `tsc` passed; `page=1-4` all-null, `page=5-7` real Cloudinary URLs; category/brand/name modes all 200 with `imageUrl` key; `GET_PRODUCTS_BY_IDS` unchanged confirmed by diff |
+| AC2 – Image present renders lazy `<img>` with name alt | Phase 2 | `GET /` 200 contains `<img src="https://res.cloudinary.com/…" alt="…" loading="lazy" decoding="async"` | Validated | Confirmed on `/?page=5`, `/marcas/bohrcraft` (6 imgs), `/?mode=name&q=broca` (15 imgs); no `<img>` missing `loading="lazy"`; `design:lint` 0 errors |
+| AC3 – Absent or failed → "Imagen no disponible" placeholder, no `image` prop | Phase 2 | `GET /` 200 contains `Imagen no disponible`; `tsc` passes with prop removed | Validated | Confirmed on `/?page=5`, `/marcas/bohrcraft` (12 placeholders), `/categorias/tornilleria-fijacion` (107, all placeholder — 0% image coverage in that category); `onError` path covered by Jest case 3 |
+| AC4 – Skeleton aspect-ratio block | Phase 2 | — | Cannot validate | Skeleton only renders during Suspense/loading; requires manual throttled load of `/categorias/tornilleria-fijacion` |
+| AC5 – JSON-LD `image` when present | Phase 3 | `GET /` 200, ld+json has `"image":"https://res.cloudinary.com/…"` on some items and none on others | Validated | `/?page=5`: 48 items with `image`, 2 without; `/?mode=name&q=broca`: 15 with, 31 without |
+| AC6 – Tests | Phase 2, Phase 3 | — | Validated | `pnpm test -- __tests__/product-listing/ProductCard.test.tsx` (14/14), `pnpm test -- __tests__/seo/seo.utils.test.ts` (17/17), full `pnpm test` (516 passed, 1 pre-existing skip) |
 
 ## Cross-Cutting Concerns
 
