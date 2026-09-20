@@ -15,6 +15,7 @@ export const GET_PRODUCTS = gql`
       variantCount
       hasOneProductVariant
       documentId
+      imageUrl
     }
   }
 `
@@ -46,6 +47,7 @@ export const GET_PRODUCTS_BY_CATEGORY = gql`
       documentId
       variantCount
       hasOneProductVariant
+      imageUrl
       brand {
         name
       }
@@ -74,6 +76,7 @@ export const GET_PRODUCTS_BY_BRAND = gql`
       }
       variantCount
       hasOneProductVariant
+      imageUrl
     }
   }
 `
@@ -90,6 +93,7 @@ export const GET_PRODUCTS_BY_NAME = gql`
       documentId
       variantCount
       hasOneProductVariant
+      imageUrl
       category {
         name
       }
@@ -180,6 +184,7 @@ export const GET_ALL_PRODUCTS = gql`
         variantCount
         hasOneProductVariant
         subcategory
+        imageUrl
         category {
           name
         }

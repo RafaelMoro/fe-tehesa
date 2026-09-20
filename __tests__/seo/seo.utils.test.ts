@@ -26,6 +26,7 @@ type AggregateOfferJsonLd = {
 type ProductJsonLd = {
   "@type": "Product"
   name: string
+  image?: string
   brand?: { "@type": "Brand"; name: string }
   category?: string
   offers?: OfferJsonLd | AggregateOfferJsonLd
@@ -227,6 +228,37 @@ describe("buildCatalogJsonLd", () => {
       priceCurrency: "MXN",
       offerCount: 3,
     })
+  })
+
+  it("adds image when imageUrl is set", () => {
+    const doc = asJsonLdDocument(
+      buildCatalogJsonLd({ mode: "base", value: null, page: 1 }, [
+        {
+          ...baseProduct,
+          imageUrl: "https://res.cloudinary.com/x/y.webp",
+        },
+      ]),
+    )
+    const itemList = doc["@graph"].find(isItemList)
+    expect(itemList?.itemListElement[0].item.image).toBe(
+      "https://res.cloudinary.com/x/y.webp",
+    )
+  })
+
+  it("omits image when imageUrl is null", () => {
+    const doc = asJsonLdDocument(
+      buildCatalogJsonLd({ mode: "base", value: null, page: 1 }, [
+        {
+          ...baseProduct,
+          imageUrl: null,
+        },
+      ]),
+    )
+    const itemList = doc["@graph"].find(isItemList)
+    const serializedItem = JSON.parse(
+      JSON.stringify(itemList?.itemListElement[0].item),
+    )
+    expect(serializedItem).not.toHaveProperty("image")
   })
 
   it("emits BreadcrumbList only on category/brand modes", () => {

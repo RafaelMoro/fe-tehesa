@@ -120,6 +120,7 @@ const buildProductListItem = (product: Product, position: number) => ({
   item: {
     "@type": "Product",
     name: product.name,
+    image: product.imageUrl || undefined,
     brand: product.brand
       ? { "@type": "Brand", name: product.brand.name }
       : undefined,

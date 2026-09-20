@@ -50,7 +50,7 @@ Found during Story 4 (SEO) research on 2026-07-27.
 - It is not attached to Product, Category, or Brand. No content-type has an `seo` field, so the frontend has nothing to consume and hardcodes all SEO copy in `src/shared/constants/`.
 - Attaching it to Category and Brand would let editors author real titles/descriptions for the `?mode=category` / `?mode=brand` landing URLs instead of the frontend templating them from a taxonomy name.
 - `shareImage` would also unblock Open Graph / social share images, which Story 4 drops for lack of any image asset.
-- Related: products still have no image field at all (epic Strapi answer III), which is the older and larger blocker — it also blocks Story 3 AC2 and any `Product` rich-result eligibility.
+- Related: products now have `imageUrl` (plain string, ~39% coverage), rendered by `ProductCard` and JSON-LD; the remaining blocker is coverage plus a real media/`alternativeText` field, not the absence of any image data.
 
 # FE
 
