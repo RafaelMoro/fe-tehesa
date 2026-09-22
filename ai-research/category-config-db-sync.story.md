@@ -38,12 +38,12 @@ Copy drift found while auditing against handoff v0.2.1 / Anexo A:
 | ----------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | `CATEGORY_SEO["llaves-herramientas-apriete"].title`        | `Llaves, Dados y Herramientas de Apriete \| Tehesa Industrial`        | `Llaves, Dados y Herramientas de Apriete en Puebla \| Tehesa`         |
 | `CATEGORY_SEO["extraccion-reparacion-fijaciones"].title`   | `Extractores de Tornillos y Reparación de Fijaciones \| Tehesa`       | `Extractores de Tornillos y Reparación en Puebla \| Tehesa`           |
-| `CATEGORIES_DESCRIPTION` + `/categorias` hero `<p>`         | `Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías …` | pending — Anexo A still says `abrasivos` / `16`; see UI/product II |
+| `CATEGORIES_DESCRIPTION` + `/categorias` hero `<p>`         | `Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías …` | `Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17 categorías …` (UI/product II; Anexo A to be updated) |
 
 Every other title/meta/H1/intro for the 15 surviving categories already matches Anexo A byte for byte (checked
 2026-09-20). Descriptions and intros for the two changed rows are unchanged.
 
-### Copy for the two new categories (drafts, UI/product I)
+### Copy for the two new categories (approved, UI/product I)
 
 Neither Anexo A nor the handoff has rows for these. Drafted here following the Anexo A pattern (meta = products +
 Puebla + CTA, < 160 chars; intro = 1–2 sentences to the visitor, no CTA, no "Puebla"; title with `| Tehesa …`
@@ -60,8 +60,8 @@ suffix; no `<`, `>` or straight quotes). Products behind them: `Marcador Valve A
 | Intro       | Marcadores de pintura permanente para identificar piezas, lotes y material en metal, plástico o madera. Trazos que aguantan grasa, manejo y trabajo de taller. | Tapones roscados y accesorios para sellar o cerrar conexiones en tubería, tanques y equipo. Cierre hermético sin fugas ni improvisaciones.       |
 | Placeholder | Buscar marcadores...                                                                                                                                      | Buscar tapones, sellado...                                                                                                                      |
 
-The product intent is inferred from names only; the copywriter should confirm what a "Tapón Dry Seal" is before
-the meta/intro ship, and add both rows to Anexo A so it stays the source of truth.
+Approved as written (user, 2026-09-22). Product intent was inferred from names only; add both rows to Anexo A so it
+stays the source of truth.
 
 ### Acceptance criteria
 
@@ -74,7 +74,7 @@ the meta/intro ship, and add both rows to Anexo A so it stays the source of trut
    hero/breadcrumb/WhatsApp panel. Header dropdown, mobile accordion and `/categorias` cards become links for both;
    `pageCategoryId` active state works.
 3. **Copy synced.** The two `Puebla` titles match handoff v0.2.1. `CATEGORIES_DESCRIPTION` and the `/categorias` hero
-   paragraph no longer name `abrasivos` (final wording per UI/product II); the hero already interpolates
+   paragraph read `Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad` (UI/product II); the hero already interpolates
    `{categories.length}` so the visible count is live — only the `<meta description>` literal is hardcoded.
 4. **Verification.** `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm test` pass; the table-driven tests are
    updated (rows removed/added), no test still references `abrasivos`.
@@ -99,7 +99,8 @@ None. Copy swap on the existing `CategoryPage` comps; no new visual state.
   `customId` and `name` = `heading`.
 - **D7 — `abrasivos` is removed outright, no redirect (user, 2026-09-20).** Delete its config, sitemap entry falls out
   automatically, URL 404s. The page had 0 products since it shipped, so nothing indexed is worth preserving.
-- **D8 — new-category copy is drafted in this doc (user, 2026-09-20)**, pending copywriter approval (UI/product I).
+- **D8 — new-category copy is drafted in this doc (user, 2026-09-20)** and approved verbatim (user, 2026-09-22, UI/product I).
+- **D9 — `/categorias` copy swaps `abrasivos` → `llaves`, count → 17 (user, 2026-09-22, UI/product II).**
 
 ## Technical Research
 
@@ -176,13 +177,19 @@ Config-only story: every surface reads `CATEGORY_PAGE_HREFS` / `CATEGORY_PAGES` 
 
 - I: Question: Approve or rewrite the drafted title/meta/H1/intro/placeholder for `herramientas-marcado` and
   `sellado-taponado`, and add them to Anexo A?
-  - Status: pending
-  - Context: drafts in Description; product intent inferred from names only.
+  - Status: answered
+  - Answer: drafts approved as written (user, 2026-09-22). Ship the table in "Copy for the two new categories"
+    verbatim; adding the rows to Anexo A is a docs follow-up outside this repo.
+  - Context: product intent inferred from names only; approval closes D8.
 - II: Question: New wording for `CATEGORIES_DESCRIPTION` / the `/categorias` hero sentence now that `abrasivos` is
-  gone and the count is 17? Suggested: `Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17
-  categorías con existencia en Puebla. Cotiza por WhatsApp.` (meta) — the hero already interpolates the live count.
-  - Status: pending
-  - Context: Anexo A row `/categorias` is stale on both points; it should be updated alongside.
+  gone and the count is 17?
+  - Status: answered
+  - Answer: use the suggestion (user, 2026-09-22).
+    `CATEGORIES_DESCRIPTION` = `Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17
+    categorías con existencia en Puebla. Cotiza por WhatsApp.`
+    `CategoriesPage.tsx:30` hero sentence = `Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad.`
+    (count stays interpolated from `{categories.length}`).
+  - Context: Anexo A row `/categorias` is stale on both points; update it alongside (outside this repo).
 - III: Question: Abrasivos URL — 404 or redirect?
   - Status: answered
   - Answer: remove outright, 404 (user, 2026-09-20). D7.
@@ -194,5 +201,5 @@ Config-only story: every surface reads `CATEGORY_PAGE_HREFS` / `CATEGORY_PAGES` 
 
 - I: Question: PR label?
   - Status: answered
-  - Answer: `minor`, matching previous category-page PRs.\
+  - Answer: `minor`, matching previous category-page PRs.
 
