@@ -194,4 +194,5 @@ Config-only story: every surface reads `CATEGORY_PAGE_HREFS` / `CATEGORY_PAGES` 
 
 - I: Question: PR label?
   - Status: answered
-  - Answer: `minor`, matching previous category-page PRs.
+  - Answer: `minor`, matching previous category-page PRs.\
+
