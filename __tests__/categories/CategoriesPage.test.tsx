@@ -20,7 +20,11 @@ beforeEach(() => {
 })
 
 const categories: CategoryWithCount[] = [
-  { name: "Abrasivos", customId: "abrasivos", productCount: 0 },
+  {
+    name: "Herramientas de marcado",
+    customId: "herramientas-marcado",
+    productCount: 15,
+  },
   { name: "Tornillería", customId: "tornilleria", productCount: 1234 },
   { name: "Sin página", customId: "sin-pagina", productCount: null },
   {
@@ -81,10 +85,15 @@ const categories: CategoryWithCount[] = [
     customId: "lubricantes-multifuncionales",
     productCount: 1,
   },
+  {
+    name: "Sellado y taponado",
+    customId: "sellado-taponado",
+    productCount: 0,
+  },
 ]
 
 describe("CategoriesPage", () => {
-  it("renders one article per category with an h2 name; the Tornillería, Abrasivos, Impacto/Forja, Corte/Conformado, and Perforación CTAs are links, the others stay disabled", () => {
+  it("renders one article per category with an h2 name; the Tornillería, Marcado, Impacto/Forja, Corte/Conformado, and Perforación CTAs are links, the others stay disabled", () => {
     render(<CategoriesPage categories={categories} />)
 
     const articles = screen.getAllByRole("article")
@@ -100,7 +109,7 @@ describe("CategoriesPage", () => {
     expect(hrefs).toEqual(
       expect.arrayContaining([
         "/categorias/tornilleria-fijacion",
-        "/categorias/abrasivos",
+        "/categorias/herramientas-marcado",
         "/categorias/impacto-forja",
         "/categorias/herramientas-corte-conformado",
         "/categorias/perforacion-accesorios-taladro",

@@ -11,7 +11,7 @@ export const QUOTE_DESCRIPTION =
   "Cotiza herramienta industrial, tornillería y corte. Respuesta rápida por WhatsApp o correo. Tehesa Industrial, Puebla."
 export const CATEGORIES_TITLE = "Catálogo de Herramienta Industrial en Puebla | Tehesa"
 export const CATEGORIES_DESCRIPTION =
-  "Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías con existencia en Puebla. Cotiza por WhatsApp."
+  "Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17 categorías con existencia en Puebla. Cotiza por WhatsApp."
 export const BRANDS_TITLE = "Marcas de Herramienta Industrial en Puebla | Tehesa"
 export const BRANDS_DESCRIPTION =
   "Weston, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp."
@@ -22,11 +22,6 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
     title: "Tornillería y Fijación Industrial en Puebla | Tehesa",
     description:
       "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy.",
-  },
-  abrasivos: {
-    title: "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa",
-    description:
-      "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial.",
   },
   "herramientas-impacto-forja": {
     title: "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla",
@@ -44,7 +39,7 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
       "Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp.",
   },
   "llaves-herramientas-apriete": {
-    title: "Llaves, Dados y Herramientas de Apriete | Tehesa Industrial",
+    title: "Llaves, Dados y Herramientas de Apriete en Puebla | Tehesa",
     description:
       "Dados, llaves, puntas y bristol King Tony para industria y taller. Existencia en Puebla. Solicita cotización con Tehesa Industrial.",
   },
@@ -69,7 +64,7 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
       "Calibradores y cuenta hilos para medición industrial de precisión. Existencia en Puebla. Solicita tu cotización.",
   },
   "extraccion-reparacion-fijaciones": {
-    title: "Extractores de Tornillos y Reparación de Fijaciones | Tehesa",
+    title: "Extractores de Tornillos y Reparación en Puebla | Tehesa",
     description:
       "Extractores de tornillos y manerales para reparación de fijaciones. Distribuidor industrial en Puebla. Solicita tu cotización.",
   },
@@ -98,6 +93,16 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
     title: "Lubricantes Multifuncionales Industriales | Tehesa Puebla",
     description:
       "Lubricantes multifuncionales para mantenimiento industrial y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.",
+  },
+  "herramientas-marcado": {
+    title: "Marcadores y Herramientas de Marcado Industrial | Tehesa Puebla",
+    description:
+      "Marcadores de pintura Weston y herramienta de marcado para identificar piezas en taller e industria. Existencia en Puebla. Cotiza hoy.",
+  },
+  "sellado-taponado": {
+    title: "Tapones y Sellado Industrial en Puebla | Tehesa Industrial",
+    description:
+      "Tapones roscados y soluciones de sellado y taponado para líneas y equipo industrial. Existencia en Puebla. Cotiza con Tehesa Industrial.",
   },
 }
 
