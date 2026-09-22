@@ -1,6 +1,6 @@
 # Story: Variants drawer is cut off on the home page (mobile)
 
-**Status:** research complete (round 2): the new observations trace back to the root cause confirmed earlier
+**Status:** research complete (round 3): pagination comp recorded; full-width drawer scoped to home
 **Date:** 2026-09-22
 **Branch:** `fix/drawer-homepage` (round 1 was researched on `fix/home-product-variant-drawer-ui`)
 **Type:** bug fix, single story
@@ -33,39 +33,49 @@ The overflow comes from a single element: the base-mode pagination row in
 `src/features/Home/Home.tsx`. It is a non-wrapping flex row that holds two full-label
 page-nav buttons plus the five numbered `Pagination` items.
 
-The user also asked for a **design change** in round 2: below `md` the drawer panel
-should take **100% of the screen width** instead of HeroUI's default 320px / 85vw
-panel. This is independent of the bug. A full-width panel on a 496px layout viewport
+The user also asked for a **design change** in round 2: below `md`, the variants
+drawer opened **from the home page** should take **100% of the screen width** instead
+of HeroUI's default 320px / 85vw panel. Round 3 settled that this is home only, for
+now. This is independent of the bug. A full-width panel on a 496px layout viewport
 would still be cut, so the overflow fix is still required.
+
+Round 3 also brought a **Claude Design comp** for the home pagination below `lg` (see
+*Design comp: home pagination below `lg`*). It replaces the overflowing row with a
+compact `Anterior · Página N de M · Siguiente` control.
 
 ### Acceptance criteria
 
 1. At viewport widths from 320px to 767px, `document.documentElement.scrollWidth`
    equals `clientWidth` on `/` and `/?page=N`: no horizontal overflow and no sideways
    page scroll.
-2. Below `md` (< 768px, the same breakpoint as `useMediaQuery().isMobile`), the open
-   variants drawer's dialog is **exactly the viewport width**: left edge at 0, right
-   edge at `clientWidth`, with no strip of page visible beside it. At `md`+ the
+2. On `/`, below `md` (< 768px, the same breakpoint as `useMediaQuery().isMobile`),
+   the open variants drawer's dialog is **exactly the viewport width**: left edge at 0,
+   right edge at `clientWidth`, with no strip of page visible beside it. At `md`+ the
    existing widths are kept (`md:w-[440px]`, `lg:w-[520px]`).
 3. With the drawer open on `/` at 390px, wheel and touch-swipe over the drawer do not
    move the page: `window.scrollY` **and** `visualViewport.offsetTop` stay unchanged,
    and no un-dimmed page appears above or below the drawer. Scrolling *inside* the
    drawer body (`Drawer.Body`, `overflow-y-auto`) still works. Closing the drawer
    restores the page's scroll position.
-4. Home pagination stays fully usable at 320px: previous, next, and every numbered page
-   remain reachable, and hit-target height is preserved (`min-h-10`).
-5. `/categorias/<slug>`, `/marcas`, `/cotizar` and home's filtered mode (`?mode=…`) keep
-   their current page layout and stay overflow-free. The drawer is full width below
-   `md` on these pages too (see Open Question V).
+4. Home base-mode pagination matches the comp. Below `lg` (< 1024px) the card shows a
+   centered `Mostrando <strong>X-Y</strong> de 333 productos`, then a
+   three-column row: `← Anterior` | `Página <strong>N</strong> de M` | `Siguiente →`.
+   There are no numbered page items, and both buttons are 44px tall. At `lg`+ the
+   current desktop row (full labels plus numbered pages) is unchanged. At 320px both
+   buttons and the indicator fit on one line without overflow. The accessible names
+   stay `Página anterior` / `Página siguiente`.
+5. `/categorias/<slug>`, `/marcas`, `/cotizar` and home's filtered mode (`?mode=…`) are
+   unchanged. Their page layout stays as it is, they stay overflow-free, and the
+   drawer they open keeps HeroUI's default mobile width (320px / 85vw).
 6. `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm test`, and `pnpm design:lint` pass.
 
 ### Task breakdown
 
-1. Stop the base-mode pagination row from overflowing below `sm` (`Home.tsx`). This
-   fixes AC 1, the cut-off half of AC 2, and all of AC 3.
-2. Make the variants drawer dialog full width below `md`
-   (`ProductVariantsDrawer.tsx`, the `Drawer.Dialog` className). This covers the width
-   half of AC 2.
+1. Rebuild the base-mode pagination below `lg` to the comp (`Home.tsx`). This fixes
+   AC 1, AC 4, the cut-off half of AC 2, and all of AC 3.
+2. Make the variants drawer dialog full width below `md` **when it is opened from
+   home only** (`ProductVariantsDrawer.tsx` plus its `Home.tsx` call site). This covers
+   the width half of AC 2.
 3. Browser re-verification at 320/360/390/768px on every catalog route, light and dark,
    using Claude in Chrome (see *Verification*).
 4. Add the cheap structural regression guards in Jest (see Open Question III).
@@ -177,6 +187,66 @@ Other consequences:
 - The page on `/` can also be scrolled sideways with no overlay open. The same fix
   removes that.
 
+### Design comp: home pagination below `lg`
+
+Source: Claude Design project
+`https://claude.ai/design/p/4b99241e-42ab-4ca4-ac4e-c1cd49a75385`, file
+`Paginacion mobile.dc.html`. That file frames `pagina-home.dc.html` at 320, 375 and
+430px, scrolled to `#paginacion`. The comp is authoritative for layout, and the ACs
+are authoritative for behaviour.
+
+What the comp specifies (`nav#paginacion`, mobile branch, shown below 1024px because
+the comp's `--mob` switch is `max-width: 1023px`):
+
+| Element | Spec |
+| --- | --- |
+| container | bordered card (`border`, radius 14px, surface bg), padding 14px, column, gap 12px |
+| range line | centered, 13px, muted: `Mostrando <strong>1–50</strong> de 333 productos` (strong = fg, 600) |
+| control row | grid `minmax(0,1fr) auto minmax(0,1fr)`, gap 8px, items centered |
+| prev | 44px tall, `min-width: 0`, padding 0 12px, centered left arrow (16px) + `Anterior`, border default, radius 10px, 14px / 500, `aria-label="Página anterior"` |
+| indicator | 13px muted, nowrap: `Página <strong>N</strong> de M` |
+| next | same as prev but `Siguiente` + right arrow, **border-strong**, weight **600**, `aria-label="Página siguiente"` |
+| disabled | opacity .45 (the comp uses `<button disabled>`) |
+| numbered pages | **not shown** below `lg` |
+
+At `lg`+ the comp's desktop branch has the same structure as today's desktop row: a
+bordered card, range text on the left, then `Página anterior` / 28px round page pills /
+`Página siguiente`. Desktop needs no change.
+
+Mapping the comp onto the repo:
+
+- The breakpoint is **`lg`**, not `sm`/`md`. The current wrapper already switches
+  column→row at `sm`, and that switch moves to `lg`.
+- The current wrapper is already the bordered card (`rounded-xl border
+  border-default-200 px-4 py-3`). Keep it; do not introduce a second card.
+- Disabled states stay `<span aria-disabled="true">`, and enabled ones stay
+  `<Link>`. Keep the repo's current disabled styling rather than the comp's
+  `<button disabled>` and hand-set opacity. Links are required for crawlable,
+  prefetchable page URLs.
+- The comp's buttons map to the existing `PAGE_NAV_BUTTON_CLASSES`
+  (`buttonVariants` outline). The comp's next-button emphasis (stronger border, 600
+  weight) is a small addition. Height goes from `min-h-10` to 44px below `lg`.
+- `M` in `Página N de M` is the existing `totalPages` prop (`PRODUCT_PAGE_MAX` = 5).
+  The comp computes 7 from its fake 333/50 data, so ignore its number.
+- The comp's range uses an en dash (`1–50`), while the code renders
+  `{visibleProductStart}-{visibleProductEnd}`. Treat that as cosmetic; the planner
+  decides whether to adopt it.
+- **Not in the comp but keep it:** the `Llegaste al final de esta lista…` notice on
+  the last page (tested in `__tests__/home/Home.test.tsx`), and the `isRoutePending`
+  disabling of every control.
+- The comp's product cards say `variantes`. The repo copy is `medidas` (D11/D15 in the
+  two-step story). Ignore everything in `pagina-home.dc.html` outside `#paginacion`.
+- Implementation constraint: do **not** switch between the two layouts with
+  `useMediaQuery`. It returns `false` on the server, which would render the desktop row
+  on first paint and overflow again until hydration. Use CSS breakpoint classes on
+  server-rendered markup. Whether that means one control set with responsive label
+  spans or two CSS-toggled blocks is a planning call. The existing tests query
+  `getByRole("link", { name: "Página siguiente" })`. jsdom does not apply Tailwind, so
+  two rendered blocks would give duplicate matches and the tests would need
+  `getAllByRole`, while one control set with responsive inner spans keeps them working.
+- Precedent: home's filtered-mode pagination already has the same `Anterior` /
+  `Página N` / `Siguiente` shape. It stays untouched (AC 5).
+
 ### Full-width drawer below `md`
 
 - HeroUI's default panel width for left/right placement comes from `@heroui/styles`
@@ -192,6 +262,13 @@ Other consequences:
   `sm:w-96`) and the cap (`max-w-[85vw]`). Overriding only one leaves the panel at 85vw
   or at 320/384px. The existing `!` overrides show that the slot classes need
   `!important` to win. Which exact utility spelling to use is a planning call.
+- **Home only.** `ProductVariantsDrawer` is shared by `Home`, `CategoryPage`,
+  `BrandPage` and `QuotePage`, so the full-width classes cannot simply be hard-coded on
+  `Drawer.Dialog`. Home needs to opt in from its call site
+  (`<ProductVariantsDrawer product={productDetails} state={drawerState} />` in
+  `Home.tsx`), and every other caller keeps today's width. The shape of that opt-in is
+  a planning call; it should be the smallest possible, such as one optional prop that
+  defaults to today's behaviour.
 - When the panel covers the whole screen, no backdrop is left to tap. The drawer can
   still be closed with the header close button (`aria-label="Cerrar"`), Escape, and
   HeroUI's drag-to-dismiss (`isDismissable` defaults to true). No new close control is
@@ -206,12 +283,13 @@ Other consequences:
 
 - `src/features/Home/Home.tsx`: the base-mode pagination block (the
   `activeCatalogMode === null` branch) and `PAGE_NAV_BUTTON_CLASSES`. This is the root
-  cause fix for AC 1 and AC 3.
-- `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`: only the
-  `Drawer.Dialog` className (line ~231), for the full-width change. No scroll-lock and
-  no position overrides here.
-- `src/features/CategoryPage/CategoryPage.tsx`, `BrandPage`, `QuotePage`: reference
-  only. They mount the same drawer and pick up the full-width change automatically.
+  cause fix for AC 1 and AC 3, and it implements the comp (AC 4). It also changes the
+  `<ProductVariantsDrawer>` call site so home opts in to full width.
+- `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx`: an optional opt-in
+  that adds full-width-below-`md` classes to `Drawer.Dialog` (line ~231). No
+  scroll-lock and no position overrides.
+- `src/features/CategoryPage/CategoryPage.tsx`, `BrandPage`, `QuotePage`: no change.
+  They must not pass the opt-in (AC 5).
 - `__tests__/home/Home.test.tsx`: where a pagination regression assertion belongs.
 - `__tests__/product-variants/ProductVariantsDrawer.test.tsx`: where a dialog-class
   assertion could go. jsdom has no layout engine, so width and pan cannot be asserted.
@@ -237,8 +315,11 @@ Other consequences:
 - iOS Safari uses react-aria's other lock path (`preventScrollMobileSafari`, a
   `touchmove` preventDefault). It also depends on the document not being wider than the
   screen, so fixing the overflow is the fix for iOS too.
-- At `md`+ the drawer does not change. Between 640px and 767px it goes from 384px to
-  full width. That matches "mobile" as the two-step flow already defines it.
+- At `md`+ the drawer does not change. Between 640px and 767px, on home, it goes from
+  384px to full width. That matches "mobile" as the two-step flow already defines it.
+- Pagination switches at `lg` (1024px), while the drawer switches at `md` (768px).
+  These are two different breakpoints for two different surfaces, both taken from
+  their own sources (the comp and `isMobile`). Do not unify them.
 
 ### Verification rules
 
@@ -250,8 +331,10 @@ Other consequences:
   at 320/360/390/768px. This replaces the ad-hoc Playwright probes used during
   research. Per route, with the drawer open:
   - `scrollWidth === clientWidth` (AC 1)
-  - dialog `getBoundingClientRect()` gives `left === 0` and `right === clientWidth`
-    below 768px (AC 2)
+  - on `/`: dialog `getBoundingClientRect()` gives `left === 0` and
+    `right === clientWidth` below 768px (AC 2). On the other routes it stays 320px
+    wide, or 85vw at 320px (AC 5).
+  - on `/` at 320/375/430px: the pagination card matches the comp's frames (AC 4)
   - after a wheel or swipe over the drawer header, `scrollY` and
     `visualViewport.offsetTop` are unchanged (AC 3)
   - `Drawer.Body` still scrolls when the medida list is long
@@ -262,7 +345,10 @@ Other consequences:
 ### Out of scope
 
 - Custom scroll-lock code (see *Evidence: round 2*). react-aria already provides it.
-- Redesigning mobile pagination (infinite scroll, compact picker, sticky pager).
+- Anything beyond the comp for pagination (infinite scroll, sticky pager, a desktop
+  redesign).
+- The full-width drawer on `/categorias`, `/marcas`, `/cotizar` (a later story, if
+  wanted).
 - Any change to `CatalogSearchDrawer` or the HeroUI drawer slot CSS files.
 - Changes to the drawer's internal layout, copy, or the two-step flow.
 - The 26,058px-tall home document at 390px (50 cards).
@@ -275,29 +361,26 @@ Other consequences:
 
 ### UI/product decisions
 
-**I: Question:** How should the home pagination row collapse below `sm`?
-**Status:** pending
-**Context:** Three candidates, each a one-file change. (a) Let the row wrap
-(`flex-wrap` on the container), so the numbered pager drops to its own line. Smallest
-diff, and every label is kept. (b) Hide the label text below `sm` and keep only the
-arrow icons. `aria-label` already carries the accessible name, but the touch targets
-shrink to icon-only. (c) Hide the two full-label nav buttons below `sm` and rely on the
-numbered pager alone. Recommendation: (a).
-**Explanation:** This is a visual call. It also decides Question II.
+**I: Question:** How should the home pagination row collapse on small screens?
+**Status:** answered
+**Answer:** Per the Claude Design comp (`Paginacion mobile.dc.html`): below `lg`, a
+compact `Anterior · Página N de M · Siguiente` row with no numbered pages, and the
+range line centered above it. None of the round-1 options (a/b/c) was chosen.
+**Context:** See *Design comp: home pagination below `lg`*.
 
 **II: Question:** Does this need a design pass / comps before implementation?
-**Status:** pending
-**Context:** Under (a) nothing new is designed. The full-width drawer is a width change
-on an already-designed panel, so it does not need a comp either. Under (b) or (c), a
-390px comp of the pagination row would be worth having.
-**Explanation:** Answer I first.
+**Status:** answered
+**Answer:** Done. The comp lives in Claude Design project
+`4b99241e-42ab-4ca4-ac4e-c1cd49a75385` and is summarised in this doc. No
+`design-brief.md` is needed. The full-width drawer is a width change on an
+already-designed panel, so it has no comp.
 
 **V: Question:** Should the full-width drawer apply on every page that mounts it
 (`/categorias/<slug>`, `/marcas/<slug>`, `/cotizar`), or only on home?
-**Status:** pending
-**Context:** It is one shared component, and the change is one className. Scoping it
-to home would need a new prop and would give the same drawer two mobile widths.
-Recommendation: everywhere. AC 5 is written on that assumption.
+**Status:** answered
+**Answer:** Only home, for now.
+**Context:** The drawer is shared, so home opts in from its call site and every other
+caller keeps the default. AC 2 and AC 5 are written for this.
 
 **VI: Question:** Should the page be "blocked" by adding custom scroll-lock code?
 **Status:** answered
@@ -313,11 +396,13 @@ match the predicted values; the category page shows no pan.
 **III: Question:** Do you want a regression guard in the test suite, and of what kind?
 **Status:** pending
 **Context:** jsdom cannot lay out, so overflow, width and pan cannot be asserted in
-Jest. The achievable guards are structural: the pagination container carries its
-wrapping class (`Home.test.tsx`), and the drawer dialog carries its full-width-below-`md`
-classes (`ProductVariantsDrawer.test.tsx`). These pin the fix, not the behaviour. The
-real check is the Claude in Chrome pass in *Verification rules*. Recommendation: both
-structural assertions plus the browser pass.
+Jest. The achievable guards are:
+- `Home.test.tsx`: the `Página N de M` indicator renders in base mode, and the
+  existing accessible names still resolve.
+- `ProductVariantsDrawer.test.tsx`: the dialog carries the full-width classes only
+  when the home opt-in is passed, and not by default.
+These pin the fix, not the behaviour. The real check is the Claude in Chrome pass in
+*Verification rules*. Recommendation: both guards plus the browser pass.
 
 ### Catalog behavior
 
@@ -338,6 +423,9 @@ None. This is a client layout bug, so no `backend-research` delegation was neede
   range therefore changes from 384px to full width.
 - "Block the scroll" is satisfied when neither the document nor the visual viewport
   moves while the drawer is open. Scrolling inside the drawer body is still expected.
-- The full-width change applies on every page that mounts the drawer (Question V).
+- The comp's mobile branch is the whole design scope. The rest of
+  `pagina-home.dc.html` (cards, header, copy) is not a change request.
+- Both the pagination and drawer changes are CSS-breakpoint driven. No
+  `useMediaQuery` is used for the pagination layout.
 - `PRODUCT_PAGE_MAX` stays at 5.
 - No change to the drawer's `md`/`lg` widths.
