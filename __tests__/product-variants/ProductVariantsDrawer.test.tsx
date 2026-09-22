@@ -136,7 +136,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Cargando variantes...",
+      "Cargando medidas...",
     )
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/catalog/variants?documentId=doc-1",
@@ -153,7 +153,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(
-      await screen.findByText("No encontramos variantes para este producto."),
+      await screen.findByText("No encontramos medidas para este producto."),
     ).toBeInTheDocument()
   })
 
@@ -187,7 +187,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "No pudimos cargar las variantes. Inténtalo de nuevo.",
+      "No pudimos cargar las medidas. Inténtalo de nuevo.",
     )
   })
 
@@ -244,8 +244,8 @@ describe("ProductVariantsDrawer", () => {
     await user.click(checkbox)
 
     expect(checkbox).toBeChecked()
-    expect(screen.getByText("1 variante · 1 pieza")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Agregar 1 al carrito" })).toBeEnabled()
+    expect(screen.getByText("1 medida · 1 pieza")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Agregar 1 medida al carrito" })).toBeEnabled()
 
     const increment = screen.getByRole("button", {
       name: "Aumentar Cantidad de Pequeña",
@@ -253,9 +253,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(increment)
     await user.click(increment)
 
-    expect(screen.getByText(/1 variante/)).toHaveTextContent(
-      "1 variante · 3 piezas",
-    )
+    expect(screen.getByText("1 medida · 3 piezas")).toBeInTheDocument()
     expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
   })
 
@@ -280,7 +278,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Cargando variantes...",
+      "Cargando medidas...",
     )
     expect(screen.queryByText("Primera")).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -333,7 +331,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(checkbox)
 
     await user.click(
-      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
     )
 
     expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
@@ -367,7 +365,7 @@ describe("ProductVariantsDrawer", () => {
     const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
     await user.click(checkbox)
     await user.click(
-      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
     )
 
     expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
@@ -403,7 +401,7 @@ describe("ProductVariantsDrawer", () => {
     const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
     await user.click(checkbox)
     await user.click(
-      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
     )
 
     expect(

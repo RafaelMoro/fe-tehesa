@@ -62,7 +62,7 @@ describe("ProductCard", () => {
     render(<ProductCard product={product} handleProductClick={jest.fn()} />)
 
     expect(screen.getByText("Acme")).toBeInTheDocument()
-    expect(screen.getAllByText("3 variantes")).toHaveLength(2)
+    expect(screen.getAllByText("3 medidas")).toHaveLength(2)
   })
 
   it("renders no brand chip when brand is null", () => {
@@ -171,7 +171,7 @@ describe("ProductCard", () => {
     render(<ProductCard product={product} handleProductClick={jest.fn()} />)
 
     expect(
-      screen.getByRole("button", { name: "Explorar las 0 variantes" }),
+      screen.getByRole("button", { name: "Explorar las 0 medidas" }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Agregar y elegir después" }),
@@ -180,7 +180,7 @@ describe("ProductCard", () => {
       "$0.00 MXN",
     )
     expect(screen.getByText(/^hasta /)).toHaveTextContent("hasta $0.00 MXN")
-    expect(screen.getAllByText("0 variantes")).toHaveLength(2)
+    expect(screen.getAllByText("0 medidas")).toHaveLength(2)
     expect(screen.getByText("Tubes")).toBeInTheDocument()
   })
 
@@ -210,7 +210,7 @@ describe("ProductCard", () => {
     expect(
       screen.queryByRole("button", { name: "Agregar y elegir después" }),
     ).not.toBeInTheDocument()
-    expect(screen.getAllByText("1 variante")).toHaveLength(2)
+    expect(screen.getAllByText("1 medida")).toHaveLength(2)
   })
 
   it("hides the price block when the price range is missing", () => {
@@ -229,7 +229,7 @@ describe("ProductCard", () => {
     expect(screen.queryByText("Precio")).not.toBeInTheDocument()
     expect(screen.queryByText(/^hasta /)).not.toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Ver variantes" }),
+      screen.getByRole("button", { name: "Ver medidas" }),
     ).toBeInTheDocument()
   })
 

@@ -352,7 +352,7 @@ describe("QuoteLineRow five states", () => {
     expect(
       screen.getByText("Este producto ya no está disponible."),
     ).toBeInTheDocument()
-    expect(screen.queryByText("Sin variante seleccionada")).not.toBeInTheDocument()
+    expect(screen.queryByText("Sin medida seleccionada")).not.toBeInTheDocument()
     expect(link).toHaveAttribute(
       "href",
       '/?mode=name&q=1%2F2%22%20Punta%20Bristol%20Cromado&page=1',

@@ -44,7 +44,7 @@ const renderLineBlock = (line: CartLine, lineNumber: number): string => {
   const heading = `${lineNumber}) ${label} · ${productName}`
 
   if (line.variantDocumentId === null) {
-    return `${heading}\n   Sin variante seleccionada · ${line.quantity} pz`
+    return `${heading}\n   Sin medida seleccionada · ${line.quantity} pz`
   }
 
   const diameter = sanitizeForWhatsapp(line.diameter)
@@ -74,7 +74,7 @@ const buildSummaryBlock = (lines: CartLine[]): string => {
   const productCount = lines.length
   const noVariantSuffix =
     noVariantCount > 0
-      ? ` · ${noVariantCount} línea${noVariantCount === 1 ? "" : "s"} sin variante`
+      ? ` · ${noVariantCount} línea${noVariantCount === 1 ? "" : "s"} sin medida`
       : ""
 
   return `*Subtotal (líneas con precio):* ${formatCents(subtotalCents)} MXN\n${productCount} producto${productCount === 1 ? "" : "s"} · ${pieceCount} pieza${pieceCount === 1 ? "" : "s"}${noVariantSuffix}`

@@ -93,7 +93,7 @@ export const ProductVariantsDrawer = ({
         const code = (error as { code?: string })?.code
         const message = code
           ? catalogErrorToSpanish(code)
-          : "No pudimos cargar las variantes. Inténtalo de nuevo."
+          : "No pudimos cargar las medidas. Inténtalo de nuevo."
         setErrorMessage(message)
         console.error("Error fetching product variants:", message)
       } finally {
@@ -153,7 +153,7 @@ export const ProductVariantsDrawer = ({
 
     const message =
       result.added > 0
-        ? `${result.added} variante${result.added === 1 ? "" : "s"} agregada${
+        ? `${result.added} medida${result.added === 1 ? "" : "s"} agregada${
             result.added === 1 ? "" : "s"
           }`
         : "Cantidad actualizada"
@@ -194,7 +194,7 @@ export const ProductVariantsDrawer = ({
               </div>
               <div>
                 <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase dark:text-emerald-400">
-                  Seleccionar variantes
+                  Seleccionar medidas
                 </p>
                 <Drawer.Heading className="mt-2 text-2xl font-bold">
                   {product.name}
@@ -202,10 +202,10 @@ export const ProductVariantsDrawer = ({
               </div>
             </Drawer.Header>
             <Drawer.Body className="flex-1 p-6">
-              {isLoading && <p role="status">Cargando variantes...</p>}
+              {isLoading && <p role="status">Cargando medidas...</p>}
               {errorMessage && <p role="alert">{errorMessage}</p>}
               {!isLoading && !errorMessage && variants.length === 0 && (
-                <p>No encontramos variantes para este producto.</p>
+                <p>No encontramos medidas para este producto.</p>
               )}
               {!isLoading && !errorMessage && variants.length > 0 && (
                 <div>
@@ -283,7 +283,7 @@ export const ProductVariantsDrawer = ({
             <Drawer.Footer className="flex-col gap-4 border-t border-default-200 p-6">
               <div className="flex w-full items-center justify-between">
                 <span className="text-sm text-muted">
-                  {selectedVariantIds.size} variante
+                  {selectedVariantIds.size} medida
                   {selectedVariantIds.size === 1 ? "" : "s"} · {selectedPieces} pieza
                   {selectedPieces === 1 ? "" : "s"}
                 </span>
@@ -301,7 +301,7 @@ export const ProductVariantsDrawer = ({
                   ? "Elegir esta medida"
                   : selectedVariantIds.size === 0
                     ? "Agregar al carrito"
-                    : `Agregar ${selectedVariantIds.size} al carrito`}
+                    : `Agregar ${selectedVariantIds.size} medida${selectedVariantIds.size === 1 ? "" : "s"} al carrito`}
               </Button>
             </Drawer.Footer>
           </Drawer.Dialog>

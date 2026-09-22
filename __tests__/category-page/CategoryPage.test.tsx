@@ -192,7 +192,7 @@ describe("CategoryPage", () => {
     render(<CategoryPage products={products} config={config} />)
 
     await user.click(
-      screen.getByRole("button", { name: "Explorar las 3 variantes" }),
+      screen.getByRole("button", { name: "Explorar las 3 medidas" }),
     )
 
     expect(screen.getByRole("dialog")).toBeInTheDocument()

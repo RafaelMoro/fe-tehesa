@@ -65,14 +65,14 @@ export const ProductCard = ({
     product.maxPrice == null ? null : formatNumberToCurrency(product.maxPrice)
   const primaryButtonText =
     product.variantCount != null
-      ? `Explorar las ${product.variantCount} variantes`
-      : "Ver variantes"
+      ? `Explorar las ${product.variantCount} medidas`
+      : "Ver medidas"
   const [minPriceAmount, minPriceCurrency] = splitCurrency(minPriceString)
   const variantPill =
     product.variantCount != null
       ? product.variantCount === 1
-        ? "1 variante"
-        : `${product.variantCount} variantes`
+        ? "1 medida"
+        : `${product.variantCount} medidas`
       : null
 
   const handleAddProductLine = () => {

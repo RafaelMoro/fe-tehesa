@@ -452,7 +452,7 @@ describe("Home - product details", () => {
     renderHome()
 
     await user.click(
-      screen.getByRole("button", { name: "Explorar las 2 variantes" }),
+      screen.getByRole("button", { name: "Explorar las 2 medidas" }),
     )
 
     const dialog = await screen.findByRole("dialog")
