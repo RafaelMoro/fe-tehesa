@@ -419,7 +419,7 @@ export const Home = ({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center lg:flex lg:justify-center">
+          <div className="grid grid-cols-1 items-center justify-items-center gap-2 min-[390px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:flex lg:justify-center">
             {currentPage > 1 && !isRoutePending ? (
               <Link
                 href={buildBasePagePath(currentPage - 1)}
