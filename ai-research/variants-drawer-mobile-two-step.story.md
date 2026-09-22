@@ -7,6 +7,26 @@
 
 ---
 
+> [!IMPORTANT]
+> **For `/plan` and `/implement` — the light comp `#1b` is stale. Do not implement it as drawn.**
+>
+> Comp `#1b` predates Briefs A and B. Where they disagree, **the decision record wins**:
+>
+> | Comp `#1b` draws | Ship instead | Why |
+> |---|---|---|
+> | Disabled CTA filled pale green `#C6F7B4` | Neutral: `gray-100` / text `gray-400` (light), `gray-800` / text `gray-500` (dark) | **D6** — pale green reads as an *enabled* button at a glance |
+> | Selected card marked by green fill alone | Green fill **plus a solid check glyph** | **D7** — selection must survive grayscale |
+> | Step-2 stepper clamped at `1`, no way to drop a medida | `minValue={0}`; reaching `0` removes the line | **D4 / D8** |
+> | `Agregar al carrito`, `N medidas elegidas` | D11's exact string table, singular and plural | **D11 / D15** |
+> | Two-column grid at 390px only | Same two columns at 320 / 360px, with D10's padding and type steps | **D10** |
+>
+> The same applies to Brief A's artboards `2d`/`2e`/`2h`/`2i`, which still read `Cargando variantes...` and `No encontramos variantes para este producto.` — **D13** replaces both words with `medidas`.
+>
+> Rule of thumb: the comps are authoritative for **layout, spacing and colour**; the decision record is authoritative for **states, strings and behaviour**. When a pixel and a decision disagree, the decision is newer.
+
+
+---
+
 ## Story Definition
 
 ### Title

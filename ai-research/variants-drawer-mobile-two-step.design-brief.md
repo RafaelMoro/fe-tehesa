@@ -11,7 +11,7 @@ Companion to `ai-research/variants-drawer-mobile-two-step.story.md`.
 
 **Design work on this story is complete.** Both briefs are answered and every surface has a comp or a string table behind it. Nothing here is waiting on design.
 
-If the comp answers a question, the comp wins.
+**The comps are authoritative for layout, spacing and colour. The research doc's decision record is authoritative for states, strings and behaviour** — it is newer than every artboard here. Comp `#1b` in particular is stale on the disabled CTA, the selection check, the stepper floor and every count string; Brief A's loading and empty artboards are stale on one word. The research doc opens with the full table of what not to copy. Read it before implementing anything from this file.
 
 ---
 
