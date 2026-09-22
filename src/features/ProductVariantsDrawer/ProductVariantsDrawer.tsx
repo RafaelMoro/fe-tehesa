@@ -272,7 +272,7 @@ export const ProductVariantsDrawer = ({
                   <div role="status">
                     <span className="sr-only">Cargando medidas...</span>
                     <div
-                      className="grid grid-cols-2 gap-2.5 px-4 min-[360px]:px-5 min-[390px]:px-[22px]"
+                      className="grid grid-cols-1 gap-2.5 px-4 min-[360px]:px-5 min-[390px]:grid-cols-2 min-[390px]:px-[22px]"
                       aria-hidden="true"
                     >
                       {Array.from({ length: 6 }).map((_, index) => (
@@ -330,7 +330,7 @@ export const ProductVariantsDrawer = ({
                           necesitas de cada una.
                         </span>
                       </p>
-                      <div className="grid grid-cols-2 gap-2.5">
+                      <div className="grid grid-cols-1 gap-2.5 min-[390px]:grid-cols-2">
                         {variants.map((variant) => {
                           const isSelected = selectedVariantIds.has(
                             variant.documentId,

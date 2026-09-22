@@ -343,3 +343,14 @@ All three are now answered (user sign-off, 2026-09-22). Kept here as the decisio
 ## Out of scope
 
 Desktop **layout** (wording only, per D11) · upgrade mode (`/cotizar`, D2) · the search input from comp `#1a` (D5) · the order-sheet numeric inputs from comp `#1c` · any change to `/api/catalog/variants`, the cart store, or the `CartVariantLine` shape · any renamed identifier, type, route or GraphQL field · a per-row trash button in step 2 (rejected in D4) · auto-advance on a single selection (rejected) · adding `Reintentar` to the desktop error body · stock levels, delivery estimates, payment, or per-medida images (the catalog has none).
+
+## Out-of-scope implementation changes
+
+### Phase 2 (post-sign-off) — step-1 grid: 1 column at 320px, 2 columns from 390px
+
+- **Changed files:** `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` — the step-1 medida grid wrapper (`grid-cols-1 min-[390px]:grid-cols-2`, was `grid-cols-2`) and the matching loading-skeleton grid wrapper (same breakpoint, kept in sync with the real grid).
+- **What changed:** Below 390px the grid is a single column; at 390px and up it becomes two columns. Previously it was two columns at every phone width per OQ X's answer.
+- **Why:** User request (2026-09-22), explicitly stated as a design preference, not a fix for an OQ X overflow/wrap failure — the manual 320px pass had not surfaced a problem. This reverses OQ X's closed decision ("two columns at every phone width, 320px included... a one-column drop stays out of scope — Brief B rejected it and reversing that needs design input, not an implementation call").
+- **User approval:** Confirmed via `AskUserQuestion` — asked whether this was a bug-driven fallback or a preference (answer: preference) and which breakpoint to use (answer: 390px, matching D10's existing `min-[390px]:` scale already used in this component).
+- **Verification:** `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (49/49 suites, 528 passed) all clean after the change. No test asserts Tailwind class names (per `docs/UNIT_TESTING_GUIDELINES.md`), so no test changes were needed. The "8 medidas fit one screen at 320px without scrolling" manual criterion no longer holds at single-column width — this is an expected, accepted consequence of the reversal, not re-verified against the original AC2 wording, which is left intact above as the historical record.
+- **Note:** This is a plan-level design reversal, not a bug fix — AC2's "two columns at every phone width" text above is stale for the 320–389px range as a result. The AC Validation Summary is not being re-scored for this; treat this section as the authoritative record of the actual shipped behavior.

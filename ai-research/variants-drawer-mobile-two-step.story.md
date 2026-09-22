@@ -344,3 +344,16 @@ M
 2. "Mobile" means the existing `useMediaQuery().isMobile` (`max-width: 767px`), matching the drawer's own `md:` width switch.
 3. Selection order in step 2 follows the price-ascending order the variants are already sorted in, not tap order.
 4. `medidas` is buyer-facing copy for what the code calls variants; no code identifier is renamed.
+
+---
+
+## Out-of-scope implementation changes
+
+### Phase 2 (post-sign-off) — step-1 grid: 1 column at 320px, 2 columns from 390px
+
+- **Changed files:** `src/features/ProductVariantsDrawer/ProductVariantsDrawer.tsx` — step-1 medida grid and its loading-skeleton grid now use `grid-cols-1 min-[390px]:grid-cols-2` instead of a fixed `grid-cols-2`.
+- **What changed:** Single column below 390px, two columns from 390px up. OQ X's answer (verification section above) had closed on two columns at every phone width, 320px included.
+- **Why:** User request (2026-09-22) during `/implement`, explicitly stated as a design preference rather than a response to an OQ X overflow/wrap failure — the plan's own 320px manual check had not yet been run when the request was made.
+- **User approval:** Confirmed via a clarifying question before the change was made (preference, not a bug fix; breakpoint 390px).
+- **Verification:** `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test` (49/49 suites) clean after the change. No test asserted Tailwind class names, so none needed updating.
+- **Note:** OQ X above is left intact as the historical record of what was researched and decided; this section is the authoritative record of what actually shipped, which differs from it by explicit later instruction.
