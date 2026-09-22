@@ -11,6 +11,8 @@
 3. The comps are authoritative for **layout/spacing/colour**; the decision record is authoritative for **states/strings/behaviour** (research doc's IMPORTANT callout). D6, D7, D4/D8, D11/D15 and D10 override comp `#1b`; D13 overrides artboards `2d`/`2e`/`2h`/`2i`.
 4. `isMobile` is read fresh on every render from `useMediaQuery()` — never cached in state, never in a `useMemo`.
 
+**Prerequisite (not a phase):** capture artboards `2a`–`2i` and `3a`–`3d` from the design project and file them via `/check-design` into `comps/variants-drawer-mobile-two-step/brief-a/` and `.../brief-b/`. Do this before Phase 2 — see *Open Questions*, OQ IX.
+
 ---
 
 ## Acceptance Criteria
@@ -160,7 +162,7 @@ Pull the current `variants.length > 0` body (lines 210-281) into a local `render
 **e. Progress rail (mobile, happy path and loading only)**
 
 - Under the product name in `Drawer.Header`: `1 · Medidas` ──── `2 · Cantidades`. Rail inactive gray-200 (light) / gray-800 (dark), active `primary-200`; step label active `primary-900` (light) / `primary-100` (dark), inactive gray-400.
-- Decorative chrome — it must **not** be the only announcement of the step change. Add an `aria-live="polite"` region naming the current step, **or** move focus to the step-2 heading on advance. Pick one, not both.
+- Decorative chrome — it must **not** be the only announcement of the step change. Ship a visually-hidden `aria-live="polite"` region under the rail reading `Paso 1 de 2: medidas` / `Paso 2 de 2: cantidades`. **Not** a focus move — the drawer is a HeroUI focus trap and stealing focus on every step change fights it. One mechanism, not both.
 
 **f. Step-aware footer (mobile), D11 strings verbatim**
 
@@ -327,9 +329,16 @@ Extend the Phase-2 mobile describe block:
 
 ## Open Questions
 
-- **OQ X (from research) — does D10's two-column grid survive the real cutter×shank `diameter` strings at 320px?** Still open; settled empirically in Phase 2's manual pass, not by another design round. Fallback if it fails: a smaller medida type step at 320px and/or a taller card allowing a two-line medida. A one-column drop is **not** in scope — Brief B rejected it and reversing that needs design input.
-- **OQ IX (from research) — the thirteen artboards `2a`–`2i` / `3a`–`3d` are not yet filed in `comps/`.** Only the desktop "before" shot is. They are canvas HTML in the design project, so implementation reads them there. Filing them via `/check-design` is a documentation task, not a blocker.
-- **Announcement mechanism for the step change** — `aria-live="polite"` region vs. moving focus to the step-2 heading. The accessibility notes allow either; Phase 2 picks one at implementation time. Flag the choice in the PR.
+All three are now answered (user sign-off, 2026-09-22). Kept here as the decision record for the implementer.
+
+- **OQ X — does D10's two-column grid survive the real cutter×shank `diameter` strings at 320px?**
+  **Answered: build it as D10 draws it and look.** Two columns at 320px, D10's padding and type steps, no pre-emptive hedging. Phase 2's manual pass is the verdict. If it fails there, correct it in the same phase: first a smaller medida type step at 320px, then a taller card allowing a two-line medida. A one-column drop stays out of scope — Brief B rejected it and reversing that needs design input, not an implementation call.
+
+- **OQ IX — the thirteen artboards `2a`–`2i` / `3a`–`3d` are not filed in `comps/`.**
+  **Answered: file them.** They go to `comps/variants-drawer-mobile-two-step/brief-a/` (`2a`–`2i`) and `.../brief-b/` (`3a`–`3d`), alongside the existing `desktop-light-s6-before-brief-a.png`. They are canvas HTML in the design project `Tehesa UI mocks v1`, so they need a browser screenshot first; `/check-design` is the command that files the captured images. **Run it before Phase 2** so the implementer reads PNGs in the repo rather than re-opening the design project. Documentation, not a code phase — it blocks nothing if it slips, but Phase 2's colour/spacing work is easier with it done.
+
+- **Announcement mechanism for the step change.**
+  **Answered — recommended option: an `aria-live="polite"` region.** A visually-hidden node under the rail whose text becomes `Paso 2 de 2: cantidades` (and `Paso 1 de 2: medidas` on return). Not a focus move: the drawer is a HeroUI focus trap, and yanking focus to a heading on every step change fights the trap, drops the user's place, and makes the `← Cambiar medidas` round-trip jumpy. The live region announces without moving anything. Do not do both — two announcements read the step twice.
 
 ## Out of scope
 
