@@ -37,6 +37,7 @@ interface ProductVariantsDrawerProps {
   state: UseOverlayStateReturn
   initialQuantity?: number
   onConfirmVariant?: (variant: ProductVariantUI, quantity: number) => void
+  isFullWidthOnMobile?: boolean
 }
 
 export const ProductVariantsDrawer = ({
@@ -44,6 +45,7 @@ export const ProductVariantsDrawer = ({
   state,
   initialQuantity,
   onConfirmVariant,
+  isFullWidthOnMobile = false,
 }: ProductVariantsDrawerProps) => {
   const isUpgradeMode = onConfirmVariant !== undefined
   const { isMobile } = useMediaQuery()
@@ -228,7 +230,11 @@ export const ProductVariantsDrawer = ({
     <Drawer state={state}>
       <Drawer.Backdrop>
         <Drawer.Content placement="right" className="w-full">
-          <Drawer.Dialog className="flex h-full flex-col md:w-[440px]! lg:w-[520px]!">
+          <Drawer.Dialog
+            className={`flex h-full flex-col md:w-[440px]! lg:w-[520px]!${
+              isFullWidthOnMobile ? " max-md:w-full! max-md:max-w-none!" : ""
+            }`}
+          >
             <Drawer.Header className="flex items-start justify-between gap-4 border-b border-default-200 p-6">
               <div className="w-full flex justify-end">
                 <Button
