@@ -35,7 +35,7 @@ describe("categorias/[slug] generateMetadata", () => {
     ],
     [
       "llaves-herramientas-apriete",
-      "Llaves, Dados y Herramientas de Apriete | Tehesa Industrial",
+      "Llaves, Dados y Herramientas de Apriete en Puebla | Tehesa",
       "Dados, llaves, puntas y bristol King Tony para industria y taller. Existencia en Puebla. Solicita cotización con Tehesa Industrial.",
     ],
     [
@@ -60,7 +60,7 @@ describe("categorias/[slug] generateMetadata", () => {
     ],
     [
       "extraccion-reparacion-fijaciones",
-      "Extractores de Tornillos y Reparación de Fijaciones | Tehesa",
+      "Extractores de Tornillos y Reparación en Puebla | Tehesa",
       "Extractores de tornillos y manerales para reparación de fijaciones. Distribuidor industrial en Puebla. Solicita tu cotización.",
     ],
     [

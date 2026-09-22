@@ -27,7 +27,7 @@ export const CategoriesPage = ({ categories }: { categories: CategoryWithCount[]
             Catálogo de herramienta industrial
           </h1>
           <p className="mt-3 text-muted">
-            Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad.{" "}
+            Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad.{" "}
             {categories.length} categorías con existencia en Puebla. Cotiza por
             WhatsApp.
           </p>

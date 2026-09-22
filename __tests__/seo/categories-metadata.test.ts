@@ -9,7 +9,7 @@ describe("categorias generateMetadata", () => {
 
     expect(metadata.title).toBe("Catálogo de Herramienta Industrial en Puebla | Tehesa")
     expect(metadata.description).toBe(
-      "Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías con existencia en Puebla. Cotiza por WhatsApp.",
+      "Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17 categorías con existencia en Puebla. Cotiza por WhatsApp.",
     )
     expect(metadata.alternates).toEqual({ canonical: "/categorias" })
     expect(metadata.robots).toEqual({ index: true, follow: true })

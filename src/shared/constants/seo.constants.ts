@@ -11,7 +11,7 @@ export const QUOTE_DESCRIPTION =
   "Cotiza herramienta industrial, tornillería y corte. Respuesta rápida por WhatsApp o correo. Tehesa Industrial, Puebla."
 export const CATEGORIES_TITLE = "Catálogo de Herramienta Industrial en Puebla | Tehesa"
 export const CATEGORIES_DESCRIPTION =
-  "Tornillería, brocas, herramienta de corte, abrasivos y equipo de seguridad. 16 categorías con existencia en Puebla. Cotiza por WhatsApp."
+  "Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17 categorías con existencia en Puebla. Cotiza por WhatsApp."
 export const BRANDS_TITLE = "Marcas de Herramienta Industrial en Puebla | Tehesa"
 export const BRANDS_DESCRIPTION =
   "Weston, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp."
@@ -39,7 +39,7 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
       "Brocas Bohrcraft, juegos y accesorios de perforación para industria. Distribuidor directo en Puebla. Cotiza por WhatsApp.",
   },
   "llaves-herramientas-apriete": {
-    title: "Llaves, Dados y Herramientas de Apriete | Tehesa Industrial",
+    title: "Llaves, Dados y Herramientas de Apriete en Puebla | Tehesa",
     description:
       "Dados, llaves, puntas y bristol King Tony para industria y taller. Existencia en Puebla. Solicita cotización con Tehesa Industrial.",
   },
@@ -64,7 +64,7 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
       "Calibradores y cuenta hilos para medición industrial de precisión. Existencia en Puebla. Solicita tu cotización.",
   },
   "extraccion-reparacion-fijaciones": {
-    title: "Extractores de Tornillos y Reparación de Fijaciones | Tehesa",
+    title: "Extractores de Tornillos y Reparación en Puebla | Tehesa",
     description:
       "Extractores de tornillos y manerales para reparación de fijaciones. Distribuidor industrial en Puebla. Solicita tu cotización.",
   },

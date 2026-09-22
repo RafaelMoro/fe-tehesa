@@ -200,10 +200,10 @@ Own commit; independently verifiable.
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 | --- | --- | --- | --- | --- |
-| AC1 - Config matches the live taxonomy (17 ids, no `abrasivos`, 404, sitemap) | Phase 1 | `GET /categorias/abrasivos` 404 + `Página no encontrada`; `/sitemap.xml` → 17 unique `/categorias/<slug>`, 0 `abrasivos`; key-set `it` passes | Not validated | |
-| AC2 - New pages behave like the other 15 | Phase 1 | `GET /categorias/herramientas-marcado` and `/sellado-taponado` 200 with title/meta/canonical/H1/intro/BreadcrumbList/count pill/WhatsApp CTA; `/categorias` → 17 unique card hrefs | Not validated | Header/mobile link + active state: manual click-through (partial `Cannot validate` over HTTP; `CategoriesPage.test.tsx` covers cards) |
-| AC3 - Copy synced | Phase 2 | `<title>` of the two retitled routes; `/categorias` meta description + hero sentence contain `llaves`, no `abrasivos` | Not validated | |
-| AC4 - Verification gate | Phase 1 + 2 | n/a — `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm test` green; `grep -rn abrasivos src __tests__` empty | Not validated | Automated only |
+| AC1 - Config matches the live taxonomy (17 ids, no `abrasivos`, 404, sitemap) | Phase 1 | `GET /categorias/abrasivos` 404 + `Página no encontrada`; `/sitemap.xml` → 17 unique `/categorias/<slug>`, 0 `abrasivos`; key-set `it` passes | Validated | |
+| AC2 - New pages behave like the other 15 | Phase 1 | `GET /categorias/herramientas-marcado` and `/sellado-taponado` 200 with title/meta/canonical/H1/intro/BreadcrumbList/count pill/WhatsApp CTA; `/categorias` → 17 unique card hrefs | Validated | Header dropdown/mobile accordion links + `" (actual)"`/`aria-current` active-state click-through not exercised over HTTP; covered by `CategoryCard`/`CategoriesPage.test.tsx` link assertions instead. |
+| AC3 - Copy synced | Phase 2 | `<title>` of the two retitled routes; `/categorias` meta description + hero sentence contain `llaves`, no `abrasivos` | Validated | |
+| AC4 - Verification gate | Phase 1 + 2 | n/a — `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, `pnpm test` green; `grep -rn abrasivos src __tests__` empty | Validated | |
 
 ## Cross-cutting concerns
 
