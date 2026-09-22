@@ -419,7 +419,7 @@ export const Home = ({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 lg:flex lg:justify-center">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center lg:flex lg:justify-center">
             {currentPage > 1 && !isRoutePending ? (
               <Link
                 href={buildBasePagePath(currentPage - 1)}
@@ -474,12 +474,12 @@ export const Home = ({
                 })}
               </Pagination.Content>
             </Pagination>
-            <span className="whitespace-nowrap text-[13px] text-muted lg:hidden">
-              Página{" "}
+            <span className="text-center text-sm text-muted lg:hidden lg:whitespace-nowrap">
+              {"Página "}
               <strong className="font-semibold text-foreground">
                 {currentPage}
-              </strong>{" "}
-              de {totalPages}
+              </strong>
+              {` de ${totalPages}`}
             </span>
             {currentPage < totalPages && !isRoutePending ? (
               <Link
@@ -508,59 +508,63 @@ export const Home = ({
         <div className="flex flex-col items-center gap-3">
           {(!initialHasNextCatalogPage || isEndNotice) && !isBusy && (
             <p className="text-sm text-muted">
-              Llegaste al final de esta lista. Cambia el filtro o busca en
-              todo el catálogo.
+              Llegaste al final de esta lista. Cambia el filtro o busca en todo
+              el catálogo.
             </p>
           )}
           <div className="w-full flex items-center justify-center gap-3">
-          {activeCatalogMode && initialHasPreviousCatalogPage && !isBusy ? (
-            <Link
-              href={buildModeUrl(
-                activeCatalogMode,
-                catalogValue ?? "",
-                initialCatalogPage - 1,
-              )}
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Anterior
-            </Link>
-          ) : (
-            <span
-              aria-disabled="true"
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Anterior
-            </span>
-          )}
-          <span className="text-sm">Página {initialCatalogPage}</span>
-          {activeCatalogMode &&
-          initialHasNextCatalogPage &&
-          !isEndNotice &&
-          !isBusy ? (
-            <Link
-              href={buildModeUrl(
-                activeCatalogMode,
-                catalogValue ?? "",
-                initialCatalogPage + 1,
-              )}
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Siguiente
-            </Link>
-          ) : (
-            <span
-              aria-disabled="true"
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Siguiente
-            </span>
-          )}
+            {activeCatalogMode && initialHasPreviousCatalogPage && !isBusy ? (
+              <Link
+                href={buildModeUrl(
+                  activeCatalogMode,
+                  catalogValue ?? "",
+                  initialCatalogPage - 1,
+                )}
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Anterior
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Anterior
+              </span>
+            )}
+            <span className="text-sm">Página {initialCatalogPage}</span>
+            {activeCatalogMode &&
+            initialHasNextCatalogPage &&
+            !isEndNotice &&
+            !isBusy ? (
+              <Link
+                href={buildModeUrl(
+                  activeCatalogMode,
+                  catalogValue ?? "",
+                  initialCatalogPage + 1,
+                )}
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Siguiente
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Siguiente
+              </span>
+            )}
           </div>
         </div>
       )}
       <HomeQuotePanel />
       {productDetails && (
-        <ProductVariantsDrawer product={productDetails} state={drawerState} />
+        <ProductVariantsDrawer
+          product={productDetails}
+          state={drawerState}
+          isFullWidthOnMobile
+        />
       )}
       <CatalogSearchDrawer
         state={catalogSearchDrawerState}
