@@ -1,6 +1,6 @@
 {
   "name": "fe-tehesa",
-  "version": "0.46.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
