@@ -1,7 +1,11 @@
 "use client"
 import { useState } from "react"
 import { Button, Spinner, toast } from "@heroui/react"
-import { RiArrowRightLine, RiPriceTag3Line } from "@remixicon/react"
+import {
+  RiArrowRightLine,
+  RiImageLine,
+  RiPriceTag3Line,
+} from "@remixicon/react"
 
 import { Product, ProductVariant } from "@/shared/types/global.types"
 import { formatNumberToCurrency } from "@/shared/utils/global.utils"
@@ -13,7 +17,6 @@ import { useCartStore } from "@/zustand/provider/cart.provider"
 interface ProductCardProps {
   product: Product
   handleProductClick: (product: Product) => void
-  image?: { src: string; alt: string }
 }
 
 const ADD_LIMIT_MESSAGE = `Tu lista llegó al máximo de ${CART_MAX_LINES} productos.`
@@ -40,12 +43,12 @@ const splitCurrency = (
 export const ProductCard = ({
   product,
   handleProductClick,
-  image,
 }: ProductCardProps) => {
   const addProductLine = useCartStore((store) => store.addProductLine)
   const addVariantLines = useCartStore((store) => store.addVariantLines)
   const [isAdding, setIsAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [imageFailed, setImageFailed] = useState(false)
 
   const isSingleVariant = product.variantCount === 1
   const minPriceString =
@@ -122,14 +125,28 @@ export const ProductCard = ({
 
   return (
     <article className="flex h-full flex-col gap-3.5 rounded-[14px] border border-gray-200 bg-white p-4 transition-[box-shadow,border-color] duration-200 hover:border-gray-300 hover:shadow-[0_8px_24px_rgba(17,24,39,.08)] max-sm:gap-3 max-sm:p-3.5 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 dark:hover:shadow-none">
-      {image && (
+      {product.imageUrl && !imageFailed ? (
         <div className="aspect-[4/3] overflow-hidden rounded-[10px] bg-gray-100 max-sm:aspect-video dark:bg-gray-800">
-          {/* eslint-disable-next-line @next/next/no-img-element -- no Strapi media host / remotePatterns yet (D5) */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- D2: plain <img>, Cloudinary already serves sized WebP */}
           <img
-            src={image.src}
-            alt={image.alt}
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            onError={() => setImageFailed(true)}
             className="size-full object-cover"
           />
+        </div>
+      ) : (
+        <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-gray-200 bg-gray-50 max-sm:aspect-video dark:border-gray-700 dark:bg-gray-800">
+          <RiImageLine
+            size={30}
+            aria-hidden="true"
+            className="text-gray-400 dark:text-gray-500"
+          />
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">
+            Imagen no disponible
+          </span>
         </div>
       )}
       <div className="flex flex-1 flex-col gap-2">

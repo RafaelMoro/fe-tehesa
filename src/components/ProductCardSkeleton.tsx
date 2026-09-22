@@ -2,6 +2,7 @@ import { Skeleton } from "@heroui/react"
 
 export const ProductCardSkeleton = () => (
   <div className="flex h-full flex-col gap-3.5 rounded-[14px] border border-gray-200 bg-white p-4 max-sm:p-3.5 dark:border-gray-800 dark:bg-gray-900">
+    <Skeleton className="aspect-[4/3] w-full rounded-[10px] max-sm:aspect-video" />
     <div className="flex items-center justify-between gap-2">
       <Skeleton className="h-3 w-2/5 rounded" />
       <Skeleton className="h-5 w-20 rounded-full" />

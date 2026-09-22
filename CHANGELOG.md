@@ -1,3 +1,9 @@
+## v0.46.0 (2026-09-20)
+
+### Pull Requests
+[#58](https://github.com/RafaelMoro/fe-tehesa/pull/58) | feat: render product images from Strapi with placeholder fallback
+
+
 ## v0.45.0 (2026-09-18)
 
 ### Pull Requests

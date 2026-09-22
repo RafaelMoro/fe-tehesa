@@ -1,6 +1,6 @@
 import { toast } from "@heroui/react"
 
-import { render, screen, userEvent } from "@__tests__/test-utils"
+import { fireEvent, render, screen, userEvent } from "@__tests__/test-utils"
 import { ProductCard } from "@/components/ProductCard"
 import { useCartStore } from "@/zustand/provider/cart.provider"
 import type { Product } from "@/shared/types/global.types"
@@ -107,38 +107,54 @@ describe("ProductCard", () => {
     expect(screen.getByText("Tornillería / zzz")).toBeInTheDocument()
   })
 
-  it("renders no image when the image prop is absent", () => {
-    const product: Product = {
-      name: "Imageless Tire",
-      documentId: "imageless-1",
-      category: { name: "Tubes" },
-      brand: { name: "Acme" },
-    }
-
-    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
-
-    expect(screen.queryByRole("img")).not.toBeInTheDocument()
-  })
-
-  it("renders the image with its alt text when the image prop is present", () => {
+  it("renders the image with the product name as alt when imageUrl is set", () => {
     const product: Product = {
       name: "Imaged Tire",
       documentId: "imaged-1",
       category: { name: "Tubes" },
       brand: { name: "Acme" },
+      imageUrl: "https://example.test/tire.jpg",
     }
 
-    render(
-      <ProductCard
-        product={product}
-        handleProductClick={jest.fn()}
-        image={{ src: "https://example.test/tire.jpg", alt: "Llanta 205/55" }}
-      />,
-    )
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
 
     expect(
-      screen.getByRole("img", { name: "Llanta 205/55" }),
+      screen.getByRole("img", { name: "Imaged Tire" }),
     ).toHaveAttribute("src", "https://example.test/tire.jpg")
+    expect(screen.queryByText("Imagen no disponible")).not.toBeInTheDocument()
+  })
+
+  it("renders the placeholder when imageUrl is null", () => {
+    const product: Product = {
+      name: "Imageless Tire",
+      documentId: "imageless-1",
+      category: { name: "Tubes" },
+      brand: { name: "Acme" },
+      imageUrl: null,
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    expect(screen.queryByRole("img")).not.toBeInTheDocument()
+    expect(screen.getByText("Imagen no disponible")).toBeInTheDocument()
+  })
+
+  it("falls back to the placeholder when the image fails to load", () => {
+    const product: Product = {
+      name: "Imaged Tire",
+      documentId: "imaged-1",
+      category: { name: "Tubes" },
+      brand: { name: "Acme" },
+      imageUrl: "https://example.test/tire.jpg",
+    }
+
+    render(<ProductCard product={product} handleProductClick={jest.fn()} />)
+
+    // Image load failure is not a user interaction; userEvent has no equivalent.
+    fireEvent.error(screen.getByRole("img"))
+
+    expect(screen.queryByRole("img")).not.toBeInTheDocument()
+    expect(screen.getByText("Imagen no disponible")).toBeInTheDocument()
   })
 
   it("shows zero variant count and zero price range, keeping the standard footer", () => {
