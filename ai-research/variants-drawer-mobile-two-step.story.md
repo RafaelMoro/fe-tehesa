@@ -1,6 +1,6 @@
 # Variants drawer — two-step mobile flow (design option 1B)
 
-**Status:** research complete, awaiting sign-off
+**Status:** research complete — all design answered, all open questions closed. Ready for `/plan` once comps are filed.
 **Date:** 2026-09-22
 **Branch context:** `fix/home-product-variant-drawer-ui`
 **Design source:** `Variantes mobile.dc.html`, panel `#1b` ("Dos pasos: medidas, luego cantidades") in the claude.ai design project *Tehesa UI mocks v1* (`4b99241e-42ab-4ca4-ac4e-c1cd49a75385`)
@@ -41,10 +41,10 @@ Desktop is out of scope: below `md` the drawer switches to the two-step flow, at
 | 6 | Apply D6 (neutral disabled CTA) and D7 (solid check glyph) to **both** themes | Deviates from light comp `#1b` deliberately |
 | 7 | Lift `loadProductData` out of the effect and wire `Reintentar` (D9) | The story's only new behaviour |
 | 8 | Width-stepped padding and type scale for the grid (D10) | 320 / 360 / 390 — column count never changes |
-| 9 | Copy rename per D11, drawer + `ProductCard` | Touches tests in four other suites |
+| 9 | Copy rename per D11/D15 across all seven user-facing call sites | Strings only, no identifier renamed. Land as its own commit — it touches all seven test suites |
 | 10 | Tests for the mobile path | Existing 16 tests keep covering desktop for free — see *Testing* below |
 
-Single story. 1–2 implementation phases. Not an epic.
+Single story, 10 tasks, 2–3 implementation phases. Not an epic. Natural phase split: (1) the D11/D15 copy rename on its own, (2) the two-step mobile flow, (3) the non-happy states and `Reintentar`.
 
 ---
 
@@ -100,7 +100,7 @@ Brief A's returned light/dark pairs (canonical copy is the token table at the fo
 | Selection check | `#4DF527` on glyph `#0D3401` | same |
 | Medida (card title) | `#111827` gray-900 | `#F3F4F6` gray-100 · `#FFFFFF` when selected |
 | Unit price | `#4B5563` gray-600 | `#D1D5DB` gray-300 · `#B4FE99` when selected |
-| Internal code | `#9CA3AF` gray-400 | `#9CA3AF` · `#7FBF63` when selected |
+| Internal code | `#9CA3AF` gray-400 | `#9CA3AF` gray-400, selected or not (D12) |
 | Rail — inactive / active | `#E5E7EB` / `#4DF527` | `#1F2937` / `#4DF527` |
 | Step label — active / inactive | `#0D3401` / `#9CA3AF` | `#B4FE99` / `#9CA3AF` |
 | Footer separator | `#E5E7EB` | `#1F2937` |
@@ -113,7 +113,7 @@ Brief A's returned light/dark pairs (canonical copy is the token table at the fo
 | Error glyph | `#C81E1E` on `#F3F4F6` | `#C81E1E` on `#1F2937` |
 | Header close button | `#F3F4F6`, glyph `#374151` | `#1F2937`, glyph `#D1D5DB` |
 
-Note `#7FBF63` (the selected card's code text in dark) is the one value not literally in the `DESIGN.md` front matter; it sits between `primary-100` and `primary-500` and exists only to keep the code line legible on the deep-green fill. Either add it as a token or approximate with `primary-100` at reduced opacity — flagged as open question V.
+Brief A originally specified `#7FBF63` for the selected card's code text in dark — the one value outside `DESIGN.md`'s front matter. It is **dropped** (D12): the code holds `gray-400` in both themes, selected or not. Every value in the table above is now a `DESIGN.md` token, so this story adds none and needs no `pnpm design:lint` run.
 
 **Content constraints.** Prices come from `formatNumberToCurrency` (`$1,234.50 MXN`, `ai-skills/REPO_CONTEXT.md:184`) — do not re-format in the component. Pluralisation follows the existing footer: `N variante(s) · M pieza(s)`; the comp says `medidas`, which is the better word for a buyer and matches the drawer's own body copy ("Selecciona una o más medidas"), so **`medidas` is the string to ship** — see D3 in the decision record.
 
@@ -140,6 +140,10 @@ Note `#7FBF63` (the selected card's code text in dark) is the one value not lite
   | Helper sentence | `Toca todas las medidas que necesites.` | full sentence | full sentence |
 
   The 320px column drops the helper sentence's second clause (`Las cantidades van en el siguiente paso.`) to buy back a line. Touch targets stay ≥44px at every width. Card min-height 74px is unchanged.
+- **D15 — The rename covers every user-facing string, the WhatsApp message included.** Seven call sites: `ProductVariantsDrawer.tsx` (kicker, loading, empty, error, footer, CTA, toast), `ProductCard.tsx:68-69,74-75`, `CatalogHero.tsx:28`, `QuoteLineRow.tsx:141`, and `whatsapp-message.utils.ts:47,77`. The "the seller may prefer `variante`" argument was raised and overruled — one word for one concept. `variante` stays only in code: `ProductVariant`/`ProductVariantUI`/`CartVariantLine`, `selectedVariantIds`, the `/api/catalog/variants` route, and the `product_variants` GraphQL field. No identifier is renamed and no route changes.
+- **D12 — No token is added; the internal code stays `gray-400` when selected.** `#7FBF63` was the one value in Brief A's table outside `DESIGN.md`. Dropped rather than adopted: `primary-100` would collide with the selected price colour, and `gray-400` is already what the light theme keeps on selection. Selected dark card now reads title `#FFFFFF`, price `#B4FE99`, code `#9CA3AF`.
+- **D13 — The loading and empty strings follow D11.** `Cargando medidas...` and `No encontramos medidas para este producto.` Artboards `2d`/`2e`/`2h`/`2i` still read `variantes` only because Brief A predates the vocabulary decision — Brief A's own error copy already says `medidas`, so this makes it consistent with itself rather than overriding it. One word in each string.
+- **D14 — The error body keeps the typed message.** Brief A's two-line shape is kept, with line 1 bound to the existing dynamic message (`catalogErrorToSpanish(code)`, falling back to the generic string) and line 2 fixed as `Revisa tu conexión e inténtalo de nuevo.` `docs/IMPLEMENTATION_GUIDELINES.md:57` argues for specific messages over generic ones; the design's fixed headline can only be the untyped fallback.
 - **D11 — `medida` in the interface, `variante` only in code.** Brief B's exact strings, to ship verbatim:
 
   | Case | Desktop footer | Mobile step 1 | Mobile step 2 |
@@ -166,11 +170,14 @@ Note `#7FBF63` (the selected card's code text in dark) is the one value not lite
 | Shared hook | `src/shared/hooks/useMediaQuery.tsx` | Consumed, not modified |
 | Shared atom | `src/shared/ui/atoms/QuantityStepper.tsx` | Consumed with `minValue={0}`; the prop already exists, no change needed |
 | Constants | `src/shared/constants/cart.constants.ts` | Read-only (`CART_MIN_QUANTITY = 1`, `CART_MAX_QUANTITY = 100`, `CART_MAX_LINES = 100`) |
-| Shared product card | `src/components/ProductCard.tsx` | Three copy strings only (D11 / open question VIII), no layout change |
+| Shared product card | `src/components/ProductCard.tsx` | Four copy strings (D11/D15), no layout change |
+| Hero copy | `src/features/Home/CatalogHero.tsx` | One word (D15) |
+| Quote line row | `src/features/QuotePage/QuoteLineRow.tsx` | `Sin variante seleccionada` → `Sin medida seleccionada` (D15) |
+| WhatsApp message | `src/shared/utils/whatsapp-message.utils.ts` | Two strings, seller-facing (D15) |
 | Tests | `__tests__/product-variants/ProductVariantsDrawer.test.tsx` | New mobile-path describe block |
-| Tests (copy) | `__tests__/{product-listing/ProductCard,home/Home,category-page/CategoryPage,brand-page/BrandPage}.test.tsx` | Assertions matching the renamed strings |
+| Tests (copy) | All seven suites matching `grep -rn "variante" __tests__/` | Assertions matching the renamed strings |
 
-Not touched: routes under `src/app/**`, the `/api/catalog/variants` handler, `src/shared/lib/global.lib.ts`, the cart store, Apollo queries. Deliberately left alone pending open question VII: `CatalogHero.tsx`, `QuoteLineRow.tsx`, `whatsapp-message.utils.ts`.
+Not touched: routes under `src/app/**`, the `/api/catalog/variants` handler, `src/shared/lib/global.lib.ts`, the cart store, Apollo queries. Note that D15's rename is **strings only** — it reaches four extra files but changes no identifier, no route, no type and no stored cart shape.
 
 ### Current component, as it stands
 
@@ -219,7 +226,7 @@ The mobile path therefore needs its own coverage, with `window.matchMedia` overr
 - Deselecting a medida in step 1 and re-selecting it restores its previous quantity; removing it via decrement-to-0 and re-selecting it restores `1` (D8).
 - A failed fetch followed by pressing `Reintentar` re-requests and renders the variants (D9).
 
-**The D11 rename reaches beyond this suite.** `grep -rn "variante" __tests__/` returns 19 matches across seven files. Four of them assert strings this story changes — `product-listing/ProductCard`, `home/Home`, `category-page/CategoryPage`, `brand-page/BrandPage` — and will fail until updated. The other three (`cart/whatsapp-message.utils`, `quote/revalidation`, and the parts of `product-variants/ProductVariantsDrawer` covering the toast) stay untouched under the open question VII boundary. Run the full `pnpm test` after the rename, not just the targeted file.
+**The D11/D15 rename reaches every suite.** `grep -rn "variante" __tests__/` returns 19 matches across seven files — `product-variants/ProductVariantsDrawer`, `product-listing/ProductCard`, `home/Home`, `category-page/CategoryPage`, `brand-page/BrandPage`, `cart/whatsapp-message.utils`, `quote/revalidation` — and under D15 **all seven** need their assertions updated. This is mechanical but it is the widest blast radius in the story, so run the full `pnpm test` after the rename, not the targeted file. Landing the rename as its own commit ahead of the layout work keeps the two diffs reviewable.
 
 Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — follow it, do not restate it here. Run targeted: `pnpm test -- __tests__/product-variants/ProductVariantsDrawer.test.tsx`.
 
@@ -271,8 +278,9 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
   **Context:** New behaviour, not a restyle — there is no retry path in the drawer today. `loadProductData` is already a named function inside the `state.isOpen` effect; retry means lifting it into a `useCallback` (or a bumped attempt counter in the dependency array) so the button can re-invoke it. It needs its own test: failing fetch → press `Reintentar` → second fetch resolves → variants render.
 
 - **V: Question:** Is `#7FBF63` acceptable as the selected-card code-text colour in dark mode, or should it be approximated from an existing token?
-  **Status:** pending
-  **Explanation:** It is the only value in Brief A's token table that is not in `DESIGN.md`'s front matter. Adding it means editing `DESIGN.md` and running `pnpm design:lint`; approximating it (`primary-100` at reduced opacity) keeps the token set closed. The affected text is a low-salience internal code on a selected card.
+  **Status:** answered
+  **Answer:** No new token. The internal code stays `gray-400` (`#9CA3AF`) whether the card is selected or not, in both themes. See D12.
+  **Context:** `DESIGN.md` is the token set, and `#7FBF63` is not in it. `primary-100` (`#B4FE99`) was the obvious substitute but it is already the *price* colour on a selected dark card, so reusing it would flatten the price/code hierarchy the design draws. `gray-400` is what the code already is when unselected, and what Brief A's own **light** column keeps on selection — so holding it in dark makes the two themes agree rather than diverge. No `DESIGN.md` edit, no `pnpm design:lint` run.
 
 ### Content
 
@@ -281,21 +289,24 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
   **Context:** Artboards `2f`/`2g` show `No pudimos cargar las medidas.` over `Revisa tu conexión e inténtalo de nuevo.` But the component already renders a *typed* message for known catalog failure codes and only falls back to a generic string otherwise. The proposal here — and what the doc assumes unless overruled — is that the design's two-line shape is kept, with line 1 bound to the dynamic message and line 2 fixed as the guidance line. `docs/IMPLEMENTATION_GUIDELINES.md:57` argues for specific messages over generic ones, which supports keeping the typed message visible.
 
 - **VII: Question:** How far past the drawer does D11's `variante` → `medida` rename go?
-  **Status:** pending
   **Explanation:** Brief B named three strings outside `ProductVariantsDrawer.tsx`, all in `src/components/ProductCard.tsx` — `Explorar las 8 variantes` → `medidas` (line 68), `Ver variantes` (line 69), and the `1 variante` / `N variantes` counter (lines 74-75). But `variante` is also user-facing in four more places the brief never saw: `src/features/Home/CatalogHero.tsx:28` (hero copy), `src/features/QuotePage/QuoteLineRow.tsx:141` (`Sin variante seleccionada`), and `src/shared/utils/whatsapp-message.utils.ts:47,77` (the message sent to the seller).
-  **Context:** The recommendation, unless overruled, is to rename **inside the drawer and `ProductCard` only** — the two surfaces Brief B actually looked at and the two the buyer meets while choosing. `/cotizar` and the WhatsApp message are a different surface with their own tests, and the WhatsApp text is read by the *seller*, for whom `variante` may well be the right word. This leaves a known inconsistency; naming it here is cheaper than discovering it in review.
+  **Status:** answered
+  **Answer:** Everywhere user-facing. All seven call sites are renamed, including the WhatsApp message. See D15.
+  **Context:** A narrower drawer-plus-`ProductCard` boundary was offered and declined: one word for one concept, with no surface left saying the other. `variante` survives only in code — type names (`ProductVariant`, `ProductVariantUI`, `CartVariantLine`), state (`selectedVariantIds`), the API route `/api/catalog/variants`, and the GraphQL field `product_variants` — none of which the buyer or the seller ever reads.
 
 - **VIII: Question:** Do the loading and empty strings follow D11 too?
-  **Status:** pending
+  **Status:** answered
+  **Answer:** Yes — `Cargando medidas...` and `No encontramos medidas para este producto.` See D13.
   **Explanation:** Brief A and Brief B disagree. Artboards `2d`/`2e` keep `Cargando variantes...` and `2h`/`2i` keep `No encontramos variantes para este producto.`, because Brief A was written before the vocabulary was settled — yet Brief A's own *error* copy already says `No pudimos cargar las medidas.` D11's principle says all three should say `medidas`. The drawer would otherwise use both words in three consecutive states.
   **Context:** Recommendation: apply D11 — `Cargando medidas...` and `No encontramos medidas para este producto.` This is a one-word edit in each, and it is the reading that makes Brief A internally consistent with itself.
 
 ### Verification
 
 - **IX: Question:** Is a screenshot in `comps/` expected for this story before implementation, following the `brief-N` convention already in that directory?
-  **Status:** pending
-  **Context:** `comps/` holds `brief-1`…`brief-4` plus loose `{mobile,desktop}-*-brief-4.png` files from the cart-quote epic. `/check-design` is the command that files them.
-
+  **Status:** answered
+  **Answer:** Yes — capture and file the artboards before planning, so the plan can reference local paths instead of the design project.
+  **Context:** `comps/` holds top-level `brief-1`…`brief-4` from earlier stories, plus `comps/cart-quote-whatsapp/brief-5/` scoped to that epic. `brief-5` is therefore taken. This is a standalone story, so it gets its own folder: `comps/variants-drawer-mobile-two-step/brief-a/` and `.../brief-b/`, named for the briefs rather than a global counter. `/check-design` is the command that files them.
+M
 ### Strapi contract
 
 - None. This story adds no query, no field, and no new variant data. The existing `product { product_variants }` path with `pageSize: 100` is sufficient.
