@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Button, Spinner, toast } from "@heroui/react"
+import { Button, Skeleton, Spinner, toast } from "@heroui/react"
 import {
   RiArrowRightLine,
   RiImageLine,
@@ -49,6 +49,7 @@ export const ProductCard = ({
   const [isAdding, setIsAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const isSingleVariant = product.variantCount === 1
   const minPriceString =
@@ -126,15 +127,19 @@ export const ProductCard = ({
   return (
     <article className="flex h-full flex-col gap-3.5 rounded-[14px] border border-gray-200 bg-white p-4 transition-[box-shadow,border-color] duration-200 hover:border-gray-300 hover:shadow-[0_8px_24px_rgba(17,24,39,.08)] max-sm:gap-3 max-sm:p-3.5 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 dark:hover:shadow-none">
       {product.imageUrl && !imageFailed ? (
-        <div className="aspect-[4/3] overflow-hidden rounded-[10px] bg-gray-100 max-sm:aspect-video dark:bg-gray-800">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-[10px] bg-gray-100 max-sm:aspect-video dark:bg-gray-800">
+          {!imageLoaded && (
+            <Skeleton className="absolute inset-0 size-full rounded-[10px]" />
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element -- D2: plain <img>, Cloudinary already serves sized WebP */}
           <img
             src={product.imageUrl}
             alt={product.name}
             loading="lazy"
             decoding="async"
+            onLoad={() => setImageLoaded(true)}
             onError={() => setImageFailed(true)}
-            className="size-full object-cover"
+            className={`size-full object-cover transition-opacity duration-200 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
           />
         </div>
       ) : (
