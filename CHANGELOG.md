@@ -1,3 +1,9 @@
+## v1.1.1 (2026-09-22)
+
+### Pull Requests
+[#67](https://github.com/RafaelMoro/fe-tehesa/pull/67) | Fix product variant drawer in home page
+
+
 ## v1.1.0 (2026-09-22)
 
 ### Pull Requests
