@@ -247,7 +247,9 @@ describe("Home - pagination", () => {
     )
 
     expect(screen.queryByRole("link", { name: "1" })).not.toBeInTheDocument()
-    expect(screen.getByText("1")).toHaveAttribute("aria-current", "page")
+    expect(
+      screen.getByText("1", { selector: ".pagination__link" }),
+    ).toHaveAttribute("aria-current", "page")
   })
 
   it("renders base prev/next as links, disabled (not a link) at the edges", () => {
