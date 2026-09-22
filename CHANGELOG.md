@@ -1,3 +1,9 @@
+## v1.0.0 (2026-09-22)
+
+### Pull Requests
+[#59](https://github.com/RafaelMoro/fe-tehesa/pull/59) | Phase 1-2: Sync category taxonomy and copy with reseeded Strapi DB
+
+
 ## v0.46.0 (2026-09-20)
 
 ### Pull Requests
