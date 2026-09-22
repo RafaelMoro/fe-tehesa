@@ -150,7 +150,7 @@ Brief A originally specified `#7FBF63` for the selected card's code text in dark
 - **D7 — Selected card carries a solid check glyph.** Brief A added it so selection survives grayscale, rather than resting on the green fill alone. Accepted — it is the same requirement the accessibility notes already state ("must not be colour-only"), and it applies in both themes.
 - **D8 — Quantities are remembered across a step-1 deselect, but reset on a decrement-to-0.** Deselecting from the grid is **free to remember**: `quantities` is pre-seeded for every variant at load (`ProductVariantsDrawer.tsx:81-88`) and deselection never touches it, so a re-selected medida already comes back at its previous value with zero new state and zero extra work. Reset is required only in the AC4 path, where the quantity is literally `0` — leaving it there would make a re-selected medida delete itself on sight. Decided: remember on deselect, write back `1` on removal.
 - **D9 — The error body gets a working `Reintentar`.** Accepted from Brief A (open question IV). `loadProductData` lifts out of the `state.isOpen` effect so the button can re-invoke it; the loading state returns while it runs. This is the story's only piece of genuinely new behaviour.
-- **D10 — Two columns at every phone width, with width-stepped padding and type.** Brief B (`3a`–`3d`) rejected a one-column fallback outright. The grid adapts by shrinking its chrome, not its column count:
+- **D10 — Two columns at every phone width, with width-stepped padding and type. ⚠️ Provisional — see open question X.** Brief B (`3a`–`3d`) rejected a one-column fallback outright. The grid adapts by shrinking its chrome, not its column count:
 
   | | 320px | 360px | 390px (comp `#1b`) |
   |---|---|---|---|
@@ -269,7 +269,7 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
 - **`minValue={0}` vs `CART_MIN_QUANTITY = 1`.** The constant stays 1 and keeps guarding the cart store; the `0` floor is a drawer-local affordance meaning "remove", and a removed medida never reaches `handleAdd` because it leaves `selectedVariantIds`. Re-selecting it in step 1 must restore its quantity to 1, not 0 — the `quantities` entry has to be rewritten on removal (D8).
 - **`QuantityStepper` `NaN` guard.** Clearing the input fires `onChange(NaN)`, which the atom already swallows with a `console.warn`. A cleared field therefore does *not* remove the medida — only an explicit decrement to 0 does. Worth an assertion.
 - **`useMediaQuery` does not react to resize.** Rotating a phone across 767px mid-flow leaves the previous branch rendered until the next state change. Accepted; noted here so it is not rediscovered as a bug.
-- **Long `diameter` strings** (e.g. `1/2  -13"`, which carries a double space in the real data) must not break the two-column grid — the card needs to wrap, not overflow.
+- **Long `diameter` strings must not break the two-column grid** — the card needs to wrap, not overflow. **The real strings are not the ones either brief was given.** `comps/variants-drawer-mobile-two-step/desktop-light-s6-before-brief-a.png` shows the live drawer for `Cortador vertical A.V. 2F`, and its diameters are cutter×shank pairs — `1/8 X 3/8"`, `3/16 X 3/8"`, `1/4 X 3/8"`, `5/16 X 3/8"`, `3/8 X 3/8"` — which already wrap to **three lines** in the desktop row's own column. The design file's `DATA` array invented thread specs instead (`8 - 32"`, `1/4 - 20"`, `5/16 - 18"`), so every artboard in the project, `3a`–`3d` included, was drawn against strings this product does not have. See open question X.
 
 ---
 
@@ -322,9 +322,14 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
 
 ### Verification
 
+- **X: Question:** Does D10's two-column grid survive the *real* `diameter` strings at 320px?
+  **Status:** pending — blocks nothing, but D10 is provisional until it is checked
+  **Context:** Brief B justified two columns with *"la cadena más larga son 11 caracteres... la tarjeta de 139 px en 320 px aún sostiene las tres líneas sin partirlas"*, and its artboards show each medida on one line. But it was reasoning about `5/16 - 18"`, a thread spec invented in the design file's `DATA` array. The live drawer (shot `S6`, now filed in `comps/`) shows this product's diameters are `3/16 X 3/8"`-shaped cutter×shank pairs that already wrap to three lines in the *desktop* column. On a 139px card at 14px type, the medida will almost certainly take two lines, pushing the card past its 74px min-height and the grid past the eight-on-one-screen property that is D10's entire justification.
+  **Explanation:** This is cheap to settle empirically and does not need another design round: render the step-1 grid at 320px with real data during implementation phase 2 and look. If it holds, D10 stands. If it does not, the fallback options are a smaller medida type step at 320px, allowing a two-line medida with a taller card, or the one-column drop Brief B rejected — and that last one would want design input.
+
 - **IX: Question:** Is a screenshot in `comps/` expected for this story before implementation, following the `brief-N` convention already in that directory?
   **Status:** answered
-  **Answer:** Yes — capture and file the artboards before planning, so the plan can reference local paths instead of the design project.
+  **Answer:** Yes. **Partially done:** `comps/variants-drawer-mobile-two-step/desktop-light-s6-before-brief-a.png` is filed (shot `S6`, the desktop "before"). The thirteen artboards `2a`–`2i` and `3a`–`3d` are still only in the design project — they are canvas HTML, not images, so they need a browser screenshot.
   **Context:** `comps/` holds top-level `brief-1`…`brief-4` from earlier stories, plus `comps/cart-quote-whatsapp/brief-5/` scoped to that epic. `brief-5` is therefore taken. This is a standalone story, so it gets its own folder: `comps/variants-drawer-mobile-two-step/brief-a/` and `.../brief-b/`, named for the briefs rather than a global counter. `/check-design` is the command that files them.
 M
 ### Strapi contract
