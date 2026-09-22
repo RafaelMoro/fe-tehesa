@@ -23,9 +23,9 @@ Desktop is out of scope: below `md` the drawer switches to the two-step flow, at
 
 ### Acceptance criteria
 
-1. **AC1 — Two-step on mobile only.** Below the `md` breakpoint (`max-width: 767px`) the drawer's default (add-to-cart) mode renders step 1 (medida grid) and step 2 (quantity list). At `md` and above the drawer renders exactly the layout it renders today, with no extra step, no progress rail, and no CTA relabel.
-2. **AC2 — Step 1 selects, step 2 quantifies.** In step 1 a tap on a medida card toggles its selection (selected card = primary border + tinted fill) and no quantity control is visible. Step 2 lists only selected medidas, each with a `QuantityStepper`, plus a `← Cambiar medidas` control that returns to step 1 preserving the current selection and quantities.
-3. **AC3 — Footer reflects the step.** Step 1's footer shows the selected-medida count and a CTA reading `Continuar a cantidades`, disabled while nothing is selected. Step 2's footer shows the `N medidas · M piezas` summary, the MXN total via `formatNumberToCurrency`, and the existing `Agregar al carrito` CTA. Adding to the cart produces exactly the same `CartVariantLine[]` as the desktop path does today.
+1. **AC1 — Two-step on mobile only.** Below the `md` breakpoint (`max-width: 767px`) the drawer's default (add-to-cart) mode renders step 1 (medida grid) and step 2 (quantity list). At `md` and above the drawer renders exactly the **layout** it renders today, with no extra step and no progress rail. Its footer and CTA wording do change, per D11 — that is copy, not layout.
+2. **AC2 — Step 1 selects, step 2 quantifies.** In step 1 a tap on a medida card toggles its selection (selected card = primary border + tinted fill) and no quantity control is visible. Step 2 lists only selected medidas, each with a `QuantityStepper`, plus a `← Cambiar medidas` control that returns to step 1 preserving the current selection and quantities. The grid is **two columns at every phone width** — 320px included — adapting via D10's padding and type steps rather than by dropping to one column.
+3. **AC3 — Footer reflects the step, in D11's words.** Step 1's footer shows the selected-medida count and a CTA reading `Continuar a cantidades`, disabled while nothing is selected. Step 2's footer shows the `N medidas · M piezas` summary, the MXN total via `formatNumberToCurrency`, and an `Agregar N medida(s) al carrito` CTA. Every count string — mobile and desktop, singular and plural — matches D11's table exactly. Adding to the cart produces exactly the same `CartVariantLine[]` as the desktop path does today.
 4. **AC4 — Decrementing to 0 drops the medida.** In step 2 the stepper's floor is `0`; reaching `0` removes that medida from the selection and from the step-2 list. When the last one is removed the drawer returns to step 1 with the CTA disabled.
 5. **AC5 — Upgrade mode untouched; non-happy states follow Brief A.** `/cotizar`'s `onConfirmVariant` (upgrade) mode keeps its current single-select layout at every breakpoint. On the mobile path the loading, error and empty bodies replace the step content and follow artboards `2d`–`2i`: loading is a six-card skeleton in the step-1 grid shape with the rail inert and the footer disabled; error is a neutral two-line body with a `Reintentar` control and no red panel; empty drops the rail entirely and swaps the green CTA for a bordered `Cerrar`. Their existing semantics survive — `role="status"` on loading, `role="alert"` on error — and the drawer height must not jump when data arrives.
 
@@ -39,7 +39,10 @@ Desktop is out of scope: below `md` the drawer switches to the two-step flow, at
 | 4 | Progress rail + step-aware footer (summary, total, CTA label, disabled state) | |
 | 5 | Loading skeleton, error body and empty body per artboards `2d`–`2i` | The rail is inert while loading and absent when empty; the footer keeps its height in all three |
 | 6 | Apply D6 (neutral disabled CTA) and D7 (solid check glyph) to **both** themes | Deviates from light comp `#1b` deliberately |
-| 7 | Tests for the mobile path | Existing 16 tests keep covering desktop for free — see *Testing* below |
+| 7 | Lift `loadProductData` out of the effect and wire `Reintentar` (D9) | The story's only new behaviour |
+| 8 | Width-stepped padding and type scale for the grid (D10) | 320 / 360 / 390 — column count never changes |
+| 9 | Copy rename per D11, drawer + `ProductCard` | Touches tests in four other suites |
+| 10 | Tests for the mobile path | Existing 16 tests keep covering desktop for free — see *Testing* below |
 
 Single story. 1–2 implementation phases. Not an epic.
 
@@ -59,18 +62,19 @@ A buyer on a phone needs to tell Tehesa *which medidas of one product, and how m
 | Step 2 — quantity list (mobile) | same | 1 medida · several · last one decremented to 0 | this story | comp `#1b` (light) + `2c` (dark) |
 | Progress rail + footer | same | step 1 (no total, `Continuar a cantidades`) · step 2 (total, `Agregar al carrito`) | this story | comp `#1b` (light) + `2a`–`2c` (dark) |
 | Loading / error / empty body | same | `role="status"` · `role="alert"` · no-variants copy | this story | comp `2d`–`2i` (Brief A, both themes) |
-| Step 1 at 320 / 360px | same | 8 medidas, 2 selected | this story | **undesigned** — Brief B |
+| Step 1 at 320 / 360px | same | 8 medidas, 2 selected | this story | comp `3a`–`3d` (Brief B, both themes) |
+| Footer + CTA copy, all breakpoints | same + `src/components/ProductCard.tsx` | none / one / several | this story | D11 string table (Brief B) |
 | Desktop variant rows | same | unchanged | — | out of scope, must not regress |
 | Upgrade mode (`/cotizar`) | same | unchanged | — | out of scope, must not regress |
 
-The comp `#1b` is already a complete design for the light-theme happy path, so **no design agent was needed to invent this layout** — implementation reads the comp. Brief A covered the two gaps the comp left (dark theme, and the loading/error/empty bodies) and has been **answered**: artboards `2a`–`2i` plus a full token table now live in the same design file. Brief B is **open** and covers two refinements — the grid at 320/360px, and `variante`/`medida` copy consistency across both breakpoints. Neither blocks implementation.
+The comp `#1b` is already a complete design for the light-theme happy path, so **no design agent was needed to invent this layout** — implementation reads the comp. Brief A covered the two gaps the comp left (dark theme, and the loading/error/empty bodies) and has been **answered**: artboards `2a`–`2i` plus a full token table now live in the same design file. Brief B has also been **answered**: artboards `3a`–`3d` settle the grid at 320/360px, and a full string table settles `variante` vs `medida` across both breakpoints. Design work on this story is complete — every surface in the table above has a comp or a string table behind it.
 
 ### Rules that override any contrary design instinct
 
 1. **The total is a quote reference, not a payable price.** Do not add tax lines, shipping, "Pagar", or anything that reads as a transaction.
 2. **Never invent per-medida data.** The variant record has exactly `documentId`, `internalId`, `diameter` and `pricing.price`. No stock badge, no lead time, no image.
-3. **Desktop must not change.** Any comp or diff that alters the `md`+ layout is out of scope and gets rejected.
-4. **Spanish only, and the existing strings win.** Reuse the app's wording (`Agregar al carrito`, `Cerrar`, `Cargando variantes...`) rather than coining synonyms.
+3. **Desktop layout must not change.** Any comp or diff that moves, resizes or restyles anything at `md`+ is out of scope and gets rejected. Its footer *wording* is the one exception, settled in D11.
+4. **Spanish only, and D11's strings win.** The vocabulary is settled: `medida` in the interface, `variante` only in code. Do not coin synonyms, and do not reintroduce `variante` into user-facing text.
 
 ### Implementation-facing constraints
 
@@ -125,6 +129,30 @@ Note `#7FBF63` (the selected card's code text in dark) is the one value not lite
 - **D6 — Disabled CTA goes neutral in both themes.** Brief A replaced comp `#1b`'s pale-green disabled fill (`#C6F7B4`) with `gray-100`/`gray-400` light and `gray-800`/`gray-500` dark, and recommended applying it to light too so the themes do not diverge. Accepted: pale green reads as an enabled button at a glance, which is the failure it was flagged for. **This makes the light comp `#1b` stale on exactly one pixel** — implementation follows D6, not the comp, on the disabled state.
 - **D7 — Selected card carries a solid check glyph.** Brief A added it so selection survives grayscale, rather than resting on the green fill alone. Accepted — it is the same requirement the accessibility notes already state ("must not be colour-only"), and it applies in both themes.
 - **D8 — Quantities are remembered across a step-1 deselect, but reset on a decrement-to-0.** Deselecting from the grid is **free to remember**: `quantities` is pre-seeded for every variant at load (`ProductVariantsDrawer.tsx:81-88`) and deselection never touches it, so a re-selected medida already comes back at its previous value with zero new state and zero extra work. Reset is required only in the AC4 path, where the quantity is literally `0` — leaving it there would make a re-selected medida delete itself on sight. Decided: remember on deselect, write back `1` on removal.
+- **D9 — The error body gets a working `Reintentar`.** Accepted from Brief A (open question IV). `loadProductData` lifts out of the `state.isOpen` effect so the button can re-invoke it; the loading state returns while it runs. This is the story's only piece of genuinely new behaviour.
+- **D10 — Two columns at every phone width, with width-stepped padding and type.** Brief B (`3a`–`3d`) rejected a one-column fallback outright. The grid adapts by shrinking its chrome, not its column count:
+
+  | | 320px | 360px | 390px (comp `#1b`) |
+  |---|---|---|---|
+  | Drawer side padding | 16px | 20px | 22px |
+  | Card width (gap 10px) | 139px | 155px | 168px |
+  | Medida / price / code type | 14 / 12 / 9px | 14 / 13 / 10px | 15 / 13 / 10px |
+  | Helper sentence | `Toca todas las medidas que necesites.` | full sentence | full sentence |
+
+  The 320px column drops the helper sentence's second clause (`Las cantidades van en el siguiente paso.`) to buy back a line. Touch targets stay ≥44px at every width. Card min-height 74px is unchanged.
+- **D11 — `medida` in the interface, `variante` only in code.** Brief B's exact strings, to ship verbatim:
+
+  | Case | Desktop footer | Mobile step 1 | Mobile step 2 |
+  |---|---|---|---|
+  | none | `Ninguna medida seleccionada` | `Ninguna medida seleccionada` | n/a (step 2 requires ≥1) |
+  | one | `1 medida · 1 pieza` | `1 medida elegida` | `1 medida · 1 pieza` |
+  | one, several pieces | `1 medida · 7 piezas` | `1 medida elegida` | `1 medida · 7 piezas` |
+  | several | `3 medidas · 7 piezas` | `3 medidas elegidas` | `3 medidas · 7 piezas` |
+  | CTA, none | `Agregar al carrito` (disabled) | `Continuar a cantidades` (disabled) | — |
+  | CTA, one | `Agregar 1 medida al carrito` | `Continuar a cantidades` | `Agregar 1 medida al carrito` |
+  | CTA, several | `Agregar 3 medidas al carrito` | `Continuar a cantidades` | `Agregar 3 medidas al carrito` |
+
+  Note the CTA gains the noun — today it reads `Agregar 3 al carrito`. Also changed: the drawer kicker `SELECCIONAR VARIANTES` → `SELECCIONAR MEDIDAS`. Unchanged: the helper sentence, and the desktop `DIÁMETRO` column header.
 
 ---
 
@@ -138,9 +166,11 @@ Note `#7FBF63` (the selected card's code text in dark) is the one value not lite
 | Shared hook | `src/shared/hooks/useMediaQuery.tsx` | Consumed, not modified |
 | Shared atom | `src/shared/ui/atoms/QuantityStepper.tsx` | Consumed with `minValue={0}`; the prop already exists, no change needed |
 | Constants | `src/shared/constants/cart.constants.ts` | Read-only (`CART_MIN_QUANTITY = 1`, `CART_MAX_QUANTITY = 100`, `CART_MAX_LINES = 100`) |
+| Shared product card | `src/components/ProductCard.tsx` | Three copy strings only (D11 / open question VIII), no layout change |
 | Tests | `__tests__/product-variants/ProductVariantsDrawer.test.tsx` | New mobile-path describe block |
+| Tests (copy) | `__tests__/{product-listing/ProductCard,home/Home,category-page/CategoryPage,brand-page/BrandPage}.test.tsx` | Assertions matching the renamed strings |
 
-Not touched: routes under `src/app/**`, the `/api/catalog/variants` handler, `src/shared/lib/global.lib.ts`, the cart store, Apollo queries.
+Not touched: routes under `src/app/**`, the `/api/catalog/variants` handler, `src/shared/lib/global.lib.ts`, the cart store, Apollo queries. Deliberately left alone pending open question VII: `CatalogHero.tsx`, `QuoteLineRow.tsx`, `whatsapp-message.utils.ts`.
 
 ### Current component, as it stands
 
@@ -187,6 +217,9 @@ The mobile path therefore needs its own coverage, with `window.matchMedia` overr
 - Adding from step 2 produces the same `CartVariantLine[]` the desktop test asserts (AC3).
 - Loading / error / empty bodies still render on the mobile branch, with `role="status"` and `role="alert"` intact (AC5).
 - Deselecting a medida in step 1 and re-selecting it restores its previous quantity; removing it via decrement-to-0 and re-selecting it restores `1` (D8).
+- A failed fetch followed by pressing `Reintentar` re-requests and renders the variants (D9).
+
+**The D11 rename reaches beyond this suite.** `grep -rn "variante" __tests__/` returns 19 matches across seven files. Four of them assert strings this story changes — `product-listing/ProductCard`, `home/Home`, `category-page/CategoryPage`, `brand-page/BrandPage` — and will fail until updated. The other three (`cart/whatsapp-message.utils`, `quote/revalidation`, and the parts of `product-variants/ProductVariantsDrawer` covering the toast) stay untouched under the open question VII boundary. Run the full `pnpm test` after the rename, not just the targeted file.
 
 Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — follow it, do not restate it here. Run targeted: `pnpm test -- __tests__/product-variants/ProductVariantsDrawer.test.tsx`.
 
@@ -218,13 +251,14 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
 ### UI/product decisions
 
 - **I: Question:** Should the step-1 grid stay two columns at every phone width, or drop to one column on very narrow devices (≤ 360px)?
-  **Status:** pending — delegated to design (Brief B, Q1)
-  **Context:** The comp is drawn at 390px with a 2-column grid and 74px min-height cards. At 320px each card is ~140px wide and a medida like `5/16 - 18"` plus its price may wrap to three lines. Brief B feeds the agent the eight real catalog strings (including the malformed `1/2  -13"`) and asks for one decision per width rather than a menu.
+  **Status:** answered (Brief B, Q1 — artboards `3a`–`3d`)
+  **Answer:** Two columns at **both** widths. The grid never drops to one column. See D10 for the padding/type adjustments.
+  **Context:** Brief B's reasoning: the longest real medida is 11 characters and the highest price `$1,089.19`, so at 16px side padding and a 14/12/9 type scale a 139px card still holds all three lines unbroken at 320px. Dropping to one column would surrender the whole point of the grid — 8 medidas on one screen — and buy nothing, because *"el problema en 320 px es el ancho de la tarjeta, no el del texto."*
 
 - **II: Question:** Should the desktop footer copy also change from `variante(s)` to `medida(s)` for consistency?
-  **Status:** answered in principle, exact strings delegated to design (Brief B, Q2)
-  **Answer:** Yes — align both breakpoints. D3 is updated and AC1 is narrowed to freeze the desktop *layout*, not its wording.
-  **Context:** Brief B asks for the full singular/plural table covering zero, one and several, for the step-1 form (medidas only), the step-2/desktop form (medidas + piezas), and the counted CTA label (`Agregar 3 al carrito`). Spanish pluralisation is the whole cost here, so a table missing singular rows is unusable.
+  **Status:** answered (Brief B, Q2)
+  **Answer:** Yes — `medida` in the whole interface, `variante` only in code. Full string table in D11. The desktop footer keeps its position, size and style; only its words change.
+  **Context:** Brief B also ruled on the surrounding labels: the helper sentence *"Selecciona una o más medidas e indica cuántas piezas necesitas de cada una."* is already correct and does not change; the desktop `DIÁMETRO` column header stays (*"nombra el dato, no la entidad"*); the drawer kicker and two `ProductCard` strings do change. That last part reaches outside the drawer — see open question VII.
 
 - **III: Question:** When the user returns to step 1 via `← Cambiar medidas` and deselects a medida that already had a quantity of 5, should that quantity be remembered if they re-select it in the same session?
   **Status:** answered
@@ -232,8 +266,9 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
   **Context:** The user's condition was "do it if it's easy and costs nothing in performance or UX". It is easier than *not* doing it: `quantities` is already seeded for every variant on load and deselection never clears it, so remembering is the existing behaviour and requires no new state, no new map, and no extra render. Only the AC4 removal path needs an explicit write-back, and that write is required for correctness regardless.
 
 - **IV: Question:** Should the error body gain a working `Reintentar` button, as Brief A designed?
-  **Status:** pending
-  **Context:** This is new behaviour, not a restyle — there is no retry path in the drawer today. The cost is small (the fetch is already the named `loadProductData` inside the `state.isOpen` effect; retry means lifting it out or re-triggering the effect) but it is scope the story did not have, and it needs a test. Declining it means shipping artboards `2f`/`2g` without their button.
+  **Status:** answered
+  **Answer:** Yes. Artboards `2f`/`2g` ship with a working retry. See D9.
+  **Context:** New behaviour, not a restyle — there is no retry path in the drawer today. `loadProductData` is already a named function inside the `state.isOpen` effect; retry means lifting it into a `useCallback` (or a bumped attempt counter in the dependency array) so the button can re-invoke it. It needs its own test: failing fetch → press `Reintentar` → second fetch resolves → variants render.
 
 - **V: Question:** Is `#7FBF63` acceptable as the selected-card code-text colour in dark mode, or should it be approximated from an existing token?
   **Status:** pending
@@ -245,9 +280,19 @@ Rules for writing them are canonical in `docs/UNIT_TESTING_GUIDELINES.md` — fo
   **Status:** pending
   **Context:** Artboards `2f`/`2g` show `No pudimos cargar las medidas.` over `Revisa tu conexión e inténtalo de nuevo.` But the component already renders a *typed* message for known catalog failure codes and only falls back to a generic string otherwise. The proposal here — and what the doc assumes unless overruled — is that the design's two-line shape is kept, with line 1 bound to the dynamic message and line 2 fixed as the guidance line. `docs/IMPLEMENTATION_GUIDELINES.md:57` argues for specific messages over generic ones, which supports keeping the typed message visible.
 
+- **VII: Question:** How far past the drawer does D11's `variante` → `medida` rename go?
+  **Status:** pending
+  **Explanation:** Brief B named three strings outside `ProductVariantsDrawer.tsx`, all in `src/components/ProductCard.tsx` — `Explorar las 8 variantes` → `medidas` (line 68), `Ver variantes` (line 69), and the `1 variante` / `N variantes` counter (lines 74-75). But `variante` is also user-facing in four more places the brief never saw: `src/features/Home/CatalogHero.tsx:28` (hero copy), `src/features/QuotePage/QuoteLineRow.tsx:141` (`Sin variante seleccionada`), and `src/shared/utils/whatsapp-message.utils.ts:47,77` (the message sent to the seller).
+  **Context:** The recommendation, unless overruled, is to rename **inside the drawer and `ProductCard` only** — the two surfaces Brief B actually looked at and the two the buyer meets while choosing. `/cotizar` and the WhatsApp message are a different surface with their own tests, and the WhatsApp text is read by the *seller*, for whom `variante` may well be the right word. This leaves a known inconsistency; naming it here is cheaper than discovering it in review.
+
+- **VIII: Question:** Do the loading and empty strings follow D11 too?
+  **Status:** pending
+  **Explanation:** Brief A and Brief B disagree. Artboards `2d`/`2e` keep `Cargando variantes...` and `2h`/`2i` keep `No encontramos variantes para este producto.`, because Brief A was written before the vocabulary was settled — yet Brief A's own *error* copy already says `No pudimos cargar las medidas.` D11's principle says all three should say `medidas`. The drawer would otherwise use both words in three consecutive states.
+  **Context:** Recommendation: apply D11 — `Cargando medidas...` and `No encontramos medidas para este producto.` This is a one-word edit in each, and it is the reading that makes Brief A internally consistent with itself.
+
 ### Verification
 
-- **VII: Question:** Is a screenshot in `comps/` expected for this story before implementation, following the `brief-N` convention already in that directory?
+- **IX: Question:** Is a screenshot in `comps/` expected for this story before implementation, following the `brief-N` convention already in that directory?
   **Status:** pending
   **Context:** `comps/` holds `brief-1`…`brief-4` plus loose `{mobile,desktop}-*-brief-4.png` files from the cart-quote epic. `/check-design` is the command that files them.
 

@@ -7,7 +7,9 @@ Companion to `ai-research/variants-drawer-mobile-two-step.story.md`.
 | Brief | Covers | Status |
 |---|---|---|
 | A | Dark theme + loading / error / empty bodies | **Answered** — artboards `2a`–`2i` in the same file. See §2. |
-| B | Narrow-phone grid behaviour (≤360px) + `variante`/`medida` copy consistency | **Open** — run this next. See §3. |
+| B | Narrow-phone grid behaviour (≤360px) + `variante`/`medida` copy consistency | **Answered** — artboards `3a`–`3d` + a string table. See §3. |
+
+**Design work on this story is complete.** Both briefs are answered and every surface has a comp or a string table behind it. Nothing here is waiting on design.
 
 If the comp answers a question, the comp wins.
 
@@ -25,10 +27,10 @@ Run `pnpm dev`, open `/`, and press *Ver detalles* on a product with several med
 | `S4` | The drawer's error body — easiest by stopping the dev server or blocking `/api/catalog/variants` in devtools, then reopening | 390px | dark | Same, for `role="alert"`. | A ✅ |
 | `S5` | Any existing **selected** state elsewhere in the app in dark mode | 390px | dark | The nearest visual precedent for "selected" in dark mode. | A ✅ |
 | `S6` | The desktop drawer at `md`+ | 1440px | light | Proof of what must **not** change, so the agent does not redesign it. | A ✅, B |
-| `S7` | The drawer's step-1 grid (or, before implementation, the current variant list) at **320px** and at **360px** | 320 + 360px | light | Brief B's whole question. The comp is drawn at 390px only; the two-column grid has never been seen at the widths where it might break. | **B** |
-| `S8` | The **desktop** drawer footer close-up, showing the live `N variante(s) · M pieza(s)` summary line | 1440px | light | Brief B compares that string against the mobile comp's `N medidas elegidas`. Crop tight to the footer. | **B** |
+| `S7` ✅ | The drawer's step-1 grid (or, before implementation, the current variant list) at **320px** and at **360px** | 320 + 360px | light | Brief B's whole question. The comp is drawn at 390px only; the two-column grid has never been seen at the widths where it might break. | **B** |
+| `S8` ✅ | The **desktop** drawer footer close-up, showing the live `N variante(s) · M pieza(s)` summary line | 1440px | light | Brief B compares that string against the mobile comp's `N medidas elegidas`. Crop tight to the footer. | **B** |
 
-`S7` and `S8` are the only new captures needed. `S6` can be reused from the Brief A set.
+`S7` and `S8` were the only new captures needed; both briefs are now closed.
 
 ---
 
@@ -72,7 +74,32 @@ Both are recorded as open questions in the research doc.
 
 ---
 
-## 3. Brief B — Narrow phones and `variante` vs `medida`
+## 3. Brief B — Narrow phones and `variante` vs `medida` — **ANSWERED**
+
+**What came back**
+
+*Q1 — the grid stays two columns at 320px and 360px.* Artboards `3a`/`3b` (320px, light/dark) and `3c`/`3d` (360px, light/dark), each showing all eight real medidas with `5/16 - 18"` and `1/2  -13"` selected, double space intact. The grid adapts by shrinking its chrome:
+
+| | 320px | 360px | 390px (comp `#1b`) |
+|---|---|---|---|
+| Drawer side padding | 16px | 20px | 22px |
+| Card width (gap 10px) | 139px | 155px | 168px |
+| Medida / price / code type | 14 / 12 / 9px | 14 / 13 / 10px | 15 / 13 / 10px |
+| Helper sentence | first clause only | full | full |
+
+Its one-line justification for refusing the one-column fallback: *"el problema en 320 px es el ancho de la tarjeta, no el del texto"* — a single column costs the eight-medidas-on-one-screen property that is the entire reason for the grid, and buys nothing back. Recorded as **D10**.
+
+*Q2 — `medida` in the interface, `variante` only in code.* Full singular/plural table for the desktop footer and both mobile steps, including the counted CTA, which gains the noun (`Agregar 3 medidas al carrito`, today `Agregar 3 al carrito`). It also ruled on the surrounding labels: the drawer kicker becomes `SELECCIONAR MEDIDAS`; `ProductCard`'s `Explorar las 8 variantes` and its `8 variantes` counter become `medidas`; the helper sentence is already correct; the desktop `DIÁMETRO` column header stays, because *"nombra el dato, no la entidad"*. Recorded as **D11**.
+
+**Two things it could not have known**, both now open questions in the research doc:
+
+- `variante` is also user-facing in `CatalogHero.tsx`, `QuoteLineRow.tsx` and `whatsapp-message.utils.ts`, none of which the brief saw. How far the rename travels is a scope call, not a design call — open question VII.
+- Brief A's loading and empty artboards still read `Cargando variantes...` and `No encontramos variantes para este producto.`, which D11 contradicts — open question VIII.
+
+---
+
+<details>
+<summary>The prompt that was run</summary>
 
 **Attach:** `S6`, `S7`, `S8`, plus `DESIGN.md`, plus comp panels `#1b` and `2a`/`2b` from the design file.
 
@@ -180,12 +207,16 @@ For Q2: a plain table of every count string, in the singular and plural forms, f
 the desktop footer and the two mobile steps — the exact text to ship, nothing else.
 ```
 
-**Check the output for:**
+</details>
+
+**Checked the output for:**
 
 - **A 320px artboard drawn with the tidy comp strings** (`3/8 - 16"`) rather than the ugly real ones (`1/2  -13"`, `5/16 - 18"`). If the hardest string is not on the artboard, the width question was not actually answered — reject and re-run.
 - **Two options presented instead of one decision.** The prompt asks for a pick per width. A deliverable that says "you could do either" leaves the question exactly where it started.
 - **A copy table that only covers the plural.** Spanish singular/plural is the entire cost of this question (`1 medida` vs `3 medidas`, `1 pieza` vs `7 piezas`); a table missing the singular row is unusable.
 - **Any desktop restyle smuggled in with the copy change.** Shot S6's layout is frozen; only the words inside the footer line may move.
+
+All four passed: the artboards carry `1/2  -13"` with its double space, each width got one decision rather than a menu, the string table covers singular and plural, and the desktop footer was described as keeping *"su posición, tamaño y estilo"*.
 
 ---
 
@@ -193,14 +224,10 @@ the desktop footer and the two mobile steps — the exact text to ship, nothing 
 
 Already brought back to `ai-research/variants-drawer-mobile-two-step.story.md` from Brief A: the token table, the loading/error/empty decisions (AC5 amended), and D6/D7 covering the two flagged deviations.
 
-To bring back from Brief B:
-
-- the narrow-width grid decision, as a new AC or as a clause on AC2;
-- the final count strings, replacing the provisional `medidas` wording in D3 and closing open question II;
-- anything that contradicts D1–D7, so a decision gets revisited deliberately rather than by accident.
+Brought back from Brief B: D10 (the width table, folded into AC2) and D11 (the string table, folded into AC1 and AC3). Open questions I and II are closed; VII and VIII were opened in their place.
 
 File the resulting screenshots with `/check-design`, following the `comps/brief-N` convention already in `comps/`.
 
 **Implementation follows the acceptance criteria, not the comps.** AC1 (desktop layout unchanged), AC3 (the `CartVariantLine[]` shape matching the desktop path), AC4 (decrement-to-0 removal) and half of AC5 have no visual expression at all — no artboard will tell you whether they pass. The tests will.
 
-**Stopping point:** the story is implementable **now**. Comp `#1b` covers the light happy path and Brief A covers dark plus all three non-happy states. Brief B resolves two refinements — narrow-phone layout and copy consistency — neither of which blocks building steps 1 and 2.
+**Stopping point:** none left. Comp `#1b` covers the light happy path, Brief A covers dark plus all three non-happy states, Brief B covers narrow widths and the vocabulary. The story is fully designed and fully implementable; what remains open (V, VI, VII, VIII) are scope and consistency calls for the product owner, not design work.
