@@ -1,3 +1,9 @@
+## v1.0.1 (2026-09-22)
+
+### Pull Requests
+[#62](https://github.com/RafaelMoro/fe-tehesa/pull/62) | Add placeholder image loading state to ProductCard component
+
+
 ## v1.0.0 (2026-09-22)
 
 ### Pull Requests
