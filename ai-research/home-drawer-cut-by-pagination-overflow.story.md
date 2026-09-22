@@ -78,7 +78,8 @@ compact `Anterior · Página N de M · Siguiente` control.
    the width half of AC 2.
 3. Browser re-verification at 320/360/390/768px on every catalog route, light and dark,
    using Claude in Chrome (see *Verification*).
-4. Add the cheap structural regression guards in Jest (see Open Question III).
+4. Keep the existing behavioural Jest suites green. No new visual/structural tests
+   (Open Question III).
 
 ---
 
@@ -338,8 +339,9 @@ Mapping the comp onto the repo:
   - after a wheel or swipe over the drawer header, `scrollY` and
     `visualViewport.offsetTop` are unchanged (AC 3)
   - `Drawer.Body` still scrolls when the medida list is long
-- A real-device touch check on `/` (Android Chrome, and iOS Safari if available) is the
-  final proof for AC 3, because headless touch synthesis did not pan.
+- After the Claude in Chrome pass, the **user validates manually**, including a
+  real-device touch check on `/` (Android Chrome, and iOS Safari if available). That
+  is the final proof for AC 3, because headless touch synthesis did not pan.
 - Do not run `pnpm install`.
 
 ### Out of scope
@@ -394,15 +396,16 @@ match the predicted values; the category page shows no pan.
 ### Verification
 
 **III: Question:** Do you want a regression guard in the test suite, and of what kind?
-**Status:** pending
-**Context:** jsdom cannot lay out, so overflow, width and pan cannot be asserted in
-Jest. The achievable guards are:
-- `Home.test.tsx`: the `Página N de M` indicator renders in base mode, and the
-  existing accessible names still resolve.
-- `ProductVariantsDrawer.test.tsx`: the dialog carries the full-width classes only
-  when the home opt-in is passed, and not by default.
-These pin the fix, not the behaviour. The real check is the Claude in Chrome pass in
-*Verification rules*. Recommendation: both guards plus the browser pass.
+**Status:** answered
+**Answer:** No new tests. The comp redesign is the fix, and the test suite covers
+behaviour, not visuals. Verification is a Claude in Chrome pass (see *Verification
+rules*) followed by the user's manual validation.
+**Context:** jsdom cannot lay out, so overflow, width and pan could only have been
+pinned through class assertions, which is the kind of visual test the suite avoids. The
+existing behavioural suites (`Home.test.tsx` pagination links, disabled states,
+end-of-list notice; `ProductVariantsDrawer.test.tsx`) must stay green. Update them only
+if the redesign changes behaviour they assert. Accessible names stay the same, so none
+are expected to change.
 
 ### Catalog behavior
 
