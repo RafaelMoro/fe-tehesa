@@ -104,6 +104,21 @@ const mockFetch = () => {
   return fetchMock
 }
 
+const originalMatchMedia = window.matchMedia
+
+const mockMobileViewport = () => {
+  window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+    matches: query === "(max-width: 767px)",
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia
+}
+
 beforeEach(() => {
   localStorage.clear()
   globalThis.ResizeObserver =
@@ -136,7 +151,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Cargando variantes...",
+      "Cargando medidas...",
     )
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/catalog/variants?documentId=doc-1",
@@ -153,7 +168,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(
-      await screen.findByText("No encontramos variantes para este producto."),
+      await screen.findByText("No encontramos medidas para este producto."),
     ).toBeInTheDocument()
   })
 
@@ -187,7 +202,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "No pudimos cargar las variantes. Inténtalo de nuevo.",
+      "No pudimos cargar las medidas. Inténtalo de nuevo.",
     )
   })
 
@@ -244,8 +259,8 @@ describe("ProductVariantsDrawer", () => {
     await user.click(checkbox)
 
     expect(checkbox).toBeChecked()
-    expect(screen.getByText("1 variante · 1 pieza")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Agregar 1 al carrito" })).toBeEnabled()
+    expect(screen.getByText("1 medida · 1 pieza")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Agregar 1 medida al carrito" })).toBeEnabled()
 
     const increment = screen.getByRole("button", {
       name: "Aumentar Cantidad de Pequeña",
@@ -253,9 +268,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(increment)
     await user.click(increment)
 
-    expect(screen.getByText(/1 variante/)).toHaveTextContent(
-      "1 variante · 3 piezas",
-    )
+    expect(screen.getByText("1 medida · 3 piezas")).toBeInTheDocument()
     expect(screen.getByText("$30.00 MXN")).toBeInTheDocument()
   })
 
@@ -280,7 +293,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Cargando variantes...",
+      "Cargando medidas...",
     )
     expect(screen.queryByText("Primera")).not.toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -333,7 +346,7 @@ describe("ProductVariantsDrawer", () => {
     await user.click(checkbox)
 
     await user.click(
-      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
     )
 
     expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
@@ -367,7 +380,7 @@ describe("ProductVariantsDrawer", () => {
     const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
     await user.click(checkbox)
     await user.click(
-      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
     )
 
     expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
@@ -403,7 +416,7 @@ describe("ProductVariantsDrawer", () => {
     const checkbox = await screen.findByRole("checkbox", { name: /Pequeña/ })
     await user.click(checkbox)
     await user.click(
-      screen.getByRole("button", { name: "Agregar 1 al carrito" }),
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
     )
 
     expect(
@@ -500,5 +513,270 @@ describe("ProductVariantsDrawer upgrade mode", () => {
       2,
     )
     expect(screen.getByText("0 líneas en el carrito")).toBeInTheDocument()
+  })
+})
+
+describe("ProductVariantsDrawer mobile two-step", () => {
+  beforeEach(() => {
+    mockMobileViewport()
+  })
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia
+  })
+
+  it("step 1 shows medida cards with no stepper, and a disabled continue CTA", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [
+          { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          { documentId: "var-002", diameter: "Grande", pricing: { price: 30 } },
+        ],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    expect(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Seleccionar Grande" }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Cantidad de/)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    ).toBeDisabled()
+  })
+
+  it("selecting two medidas and continuing shows exactly those two, each with a stepper", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [
+          { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          { documentId: "var-002", diameter: "Grande", pricing: { price: 30 } },
+          { documentId: "var-003", diameter: "Mediana", pricing: { price: 20 } },
+        ],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(screen.getByRole("button", { name: "Seleccionar Grande" }))
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toBeInTheDocument()
+    expect(screen.getByLabelText("Cantidad de Grande")).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText("Cantidad de Mediana"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("← Cambiar medidas returns to step 1 with the selection intact", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /Cambiar medidas/ }))
+
+    expect(
+      screen.getByRole("button", { name: "Seleccionar Pequeña" }),
+    ).toHaveAttribute("aria-pressed", "true")
+    expect(
+      screen.queryByLabelText("Cantidad de Pequeña"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("restores the previous quantity when a medida is deselected and re-selected in step 1", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    const increment = screen.getByRole("button", {
+      name: "Aumentar Cantidad de Pequeña",
+    })
+    await user.click(increment)
+    await user.click(increment)
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toHaveValue("3")
+
+    await user.click(screen.getByRole("button", { name: /Cambiar medidas/ }))
+    await user.click(screen.getByRole("button", { name: "Seleccionar Pequeña" }))
+    await user.click(screen.getByRole("button", { name: "Seleccionar Pequeña" }))
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toHaveValue("3")
+  })
+
+  it("decrementing to 0 drops the medida and returns to step 1 with a disabled CTA", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    const decrement = screen.getByRole("button", {
+      name: "Disminuir Cantidad de Pequeña",
+    })
+    await user.click(decrement)
+
+    expect(
+      await screen.findByRole("button", { name: "Continuar a cantidades" }),
+    ).toBeDisabled()
+    expect(
+      screen.queryByLabelText("Cantidad de Pequeña"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("adds from step 2 the same CartVariantLine[] as the desktop path", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
+    )
+
+    expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Seleccionar Pequeña" }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows a six-card skeleton grid with an accessible loading status while pending", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    const pending = deferred<Response>()
+    fetchMock.mockReturnValue(pending.promise)
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    const status = await screen.findByRole("status")
+    expect(status).toHaveTextContent("Cargando medidas...")
+    expect(status.querySelectorAll("[aria-hidden] > div")).toHaveLength(6)
+  })
+
+  it("renders a neutral error body with a working Reintentar", async () => {
+    const user = userEvent.setup()
+    console.error = jest.fn()
+    const fetchMock = mockFetch()
+    fetchMock
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [
+            { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          ],
+        }),
+      )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent(
+      "No pudimos cargar las medidas. Inténtalo de nuevo.",
+    )
+    expect(alert).toHaveTextContent("Revisa tu conexión e inténtalo de nuevo.")
+
+    await user.click(screen.getByRole("button", { name: "Reintentar" }))
+
+    expect(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("renders an empty body with no rail and a bordered Cerrar that closes the drawer", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(jsonResponse({ success: true, data: [] }))
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    expect(
+      await screen.findByText("No encontramos medidas para este producto."),
+    ).toBeInTheDocument()
+    expect(screen.queryByText("1 · Medidas")).not.toBeInTheDocument()
+
+    const closeButtons = screen.getAllByRole("button", { name: "Cerrar" })
+    expect(closeButtons).toHaveLength(2)
+    await user.click(closeButtons[closeButtons.length - 1])
+
+    expect(
+      screen.queryByText("No encontramos medidas para este producto."),
+    ).not.toBeInTheDocument()
   })
 })

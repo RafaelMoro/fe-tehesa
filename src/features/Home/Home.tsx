@@ -45,7 +45,9 @@ const DROPDOWN_CLOSE_DELAY_MS = 250
 // gets identical styling. Revisit if HeroUI renames it.
 const PAGE_NAV_BUTTON_CLASSES =
   buttonVariants({ variant: "outline", size: "md" }) +
-  " min-h-10 rounded-[10px] border-default-300"
+  " min-h-11 lg:min-h-10 min-w-0 px-3 lg:px-4 rounded-[10px] border-default-300"
+const PAGE_NAV_NEXT_BUTTON_CLASSES =
+  PAGE_NAV_BUTTON_CLASSES + " max-lg:border-default-400 max-lg:font-semibold"
 const FILTERED_PAGINATION_BUTTON_CLASSES = buttonVariants({
   variant: "secondary",
 })
@@ -401,8 +403,8 @@ export const Home = ({
         />
       )}
       {activeCatalogMode === null ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-default-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-3 rounded-xl border border-default-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-1 text-center lg:text-left">
             <p className="text-sm text-muted">
               Mostrando{" "}
               <span className="font-medium text-foreground">
@@ -417,7 +419,7 @@ export const Home = ({
               </p>
             )}
           </div>
-          <div className="flex items-center justify-center gap-2">
+          <div className="grid grid-cols-1 items-center justify-items-center gap-2 min-[390px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:flex lg:justify-center">
             {currentPage > 1 && !isRoutePending ? (
               <Link
                 href={buildBasePagePath(currentPage - 1)}
@@ -425,7 +427,8 @@ export const Home = ({
                 className={PAGE_NAV_BUTTON_CLASSES}
               >
                 <RiArrowLeftLine aria-hidden="true" size={16} />
-                Página anterior
+                <span className="lg:hidden">Anterior</span>
+                <span className="hidden lg:inline">Página anterior</span>
               </Link>
             ) : (
               <span
@@ -434,10 +437,11 @@ export const Home = ({
                 className={PAGE_NAV_BUTTON_CLASSES}
               >
                 <RiArrowLeftLine aria-hidden="true" size={16} />
-                Página anterior
+                <span className="lg:hidden">Anterior</span>
+                <span className="hidden lg:inline">Página anterior</span>
               </span>
             )}
-            <Pagination size="sm">
+            <Pagination size="sm" className="hidden lg:flex">
               <Pagination.Content>
                 {Array.from({ length: totalPages }, (_, index) => {
                   const page = index + 1
@@ -470,22 +474,31 @@ export const Home = ({
                 })}
               </Pagination.Content>
             </Pagination>
+            <span className="text-center text-sm text-muted lg:hidden lg:whitespace-nowrap">
+              {"Página "}
+              <strong className="font-semibold text-foreground">
+                {currentPage}
+              </strong>
+              {` de ${totalPages}`}
+            </span>
             {currentPage < totalPages && !isRoutePending ? (
               <Link
                 href={buildBasePagePath(currentPage + 1)}
                 aria-label="Página siguiente"
-                className={PAGE_NAV_BUTTON_CLASSES}
+                className={PAGE_NAV_NEXT_BUTTON_CLASSES}
               >
-                Página siguiente
+                <span className="lg:hidden">Siguiente</span>
+                <span className="hidden lg:inline">Página siguiente</span>
                 <RiArrowRightLine aria-hidden="true" size={16} />
               </Link>
             ) : (
               <span
                 aria-label="Página siguiente"
                 aria-disabled="true"
-                className={PAGE_NAV_BUTTON_CLASSES}
+                className={PAGE_NAV_NEXT_BUTTON_CLASSES}
               >
-                Página siguiente
+                <span className="lg:hidden">Siguiente</span>
+                <span className="hidden lg:inline">Página siguiente</span>
                 <RiArrowRightLine aria-hidden="true" size={16} />
               </span>
             )}
@@ -495,59 +508,63 @@ export const Home = ({
         <div className="flex flex-col items-center gap-3">
           {(!initialHasNextCatalogPage || isEndNotice) && !isBusy && (
             <p className="text-sm text-muted">
-              Llegaste al final de esta lista. Cambia el filtro o busca en
-              todo el catálogo.
+              Llegaste al final de esta lista. Cambia el filtro o busca en todo
+              el catálogo.
             </p>
           )}
           <div className="w-full flex items-center justify-center gap-3">
-          {activeCatalogMode && initialHasPreviousCatalogPage && !isBusy ? (
-            <Link
-              href={buildModeUrl(
-                activeCatalogMode,
-                catalogValue ?? "",
-                initialCatalogPage - 1,
-              )}
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Anterior
-            </Link>
-          ) : (
-            <span
-              aria-disabled="true"
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Anterior
-            </span>
-          )}
-          <span className="text-sm">Página {initialCatalogPage}</span>
-          {activeCatalogMode &&
-          initialHasNextCatalogPage &&
-          !isEndNotice &&
-          !isBusy ? (
-            <Link
-              href={buildModeUrl(
-                activeCatalogMode,
-                catalogValue ?? "",
-                initialCatalogPage + 1,
-              )}
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Siguiente
-            </Link>
-          ) : (
-            <span
-              aria-disabled="true"
-              className={FILTERED_PAGINATION_BUTTON_CLASSES}
-            >
-              Siguiente
-            </span>
-          )}
+            {activeCatalogMode && initialHasPreviousCatalogPage && !isBusy ? (
+              <Link
+                href={buildModeUrl(
+                  activeCatalogMode,
+                  catalogValue ?? "",
+                  initialCatalogPage - 1,
+                )}
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Anterior
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Anterior
+              </span>
+            )}
+            <span className="text-sm">Página {initialCatalogPage}</span>
+            {activeCatalogMode &&
+            initialHasNextCatalogPage &&
+            !isEndNotice &&
+            !isBusy ? (
+              <Link
+                href={buildModeUrl(
+                  activeCatalogMode,
+                  catalogValue ?? "",
+                  initialCatalogPage + 1,
+                )}
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Siguiente
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                className={FILTERED_PAGINATION_BUTTON_CLASSES}
+              >
+                Siguiente
+              </span>
+            )}
           </div>
         </div>
       )}
       <HomeQuotePanel />
       {productDetails && (
-        <ProductVariantsDrawer product={productDetails} state={drawerState} />
+        <ProductVariantsDrawer
+          product={productDetails}
+          state={drawerState}
+          isFullWidthOnMobile
+        />
       )}
       <CatalogSearchDrawer
         state={catalogSearchDrawerState}
