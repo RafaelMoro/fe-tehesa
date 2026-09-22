@@ -138,7 +138,7 @@ export const QuoteLineRow = ({
             <p className="font-bold">{line.productName}</p>
             <p className="mt-1 flex items-center gap-1 text-sm text-muted">
               <RiInformationLine aria-hidden="true" className="size-4 shrink-0" />
-              Sin variante seleccionada
+              Sin medida seleccionada
             </p>
           </div>
           {removeButton}

@@ -85,10 +85,10 @@ describe("buildQuoteMessages — one part", () => {
         '1) BRO-1234 · Broca Larga Acero A.V.',
         '   1/4" · 3 pz · $120.00 c/u · $360.00',
         "2) Sin clave interna · Llave Hexagonal Bondhus",
-        "   Sin variante seleccionada · 2 pz",
+        "   Sin medida seleccionada · 2 pz",
         "",
         "*Subtotal (líneas con precio):* $360.00 MXN",
-        "2 productos · 5 piezas · 1 línea sin variante",
+        "2 productos · 5 piezas · 1 línea sin medida",
       ].join("\n"),
     )
   })
@@ -99,7 +99,7 @@ describe("buildQuoteMessages — subtotal exclusion", () => {
     const [message] = buildQuoteMessages([noVariantLine], contact, "TH-REF")
 
     expect(message).toContain("*Subtotal (líneas con precio):* $0.00 MXN")
-    expect(message).toContain("1 producto · 2 piezas · 1 línea sin variante")
+    expect(message).toContain("1 producto · 2 piezas · 1 línea sin medida")
   })
 })
 

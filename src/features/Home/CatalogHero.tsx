@@ -25,7 +25,7 @@ export const CatalogHero = ({
         Distribuidor de herramienta industrial en Puebla
       </h1>
       <p className="max-w-xl text-muted">
-        Busca por categoría, por marca o por nombre de producto. Cada variante
+        Busca por categoría, por marca o por nombre de producto. Cada medida
         trae su precio y su clave de parte; pon cantidades y manda la lista a
         cotizar.
       </p>
