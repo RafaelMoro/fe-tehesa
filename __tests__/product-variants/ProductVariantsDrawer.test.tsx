@@ -711,4 +711,72 @@ describe("ProductVariantsDrawer mobile two-step", () => {
       screen.queryByRole("button", { name: "Seleccionar Pequeña" }),
     ).not.toBeInTheDocument()
   })
+
+  it("shows a six-card skeleton grid with an accessible loading status while pending", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    const pending = deferred<Response>()
+    fetchMock.mockReturnValue(pending.promise)
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    const status = await screen.findByRole("status")
+    expect(status).toHaveTextContent("Cargando medidas...")
+    expect(status.querySelectorAll("[aria-hidden] > div")).toHaveLength(6)
+  })
+
+  it("renders a neutral error body with a working Reintentar", async () => {
+    const user = userEvent.setup()
+    console.error = jest.fn()
+    const fetchMock = mockFetch()
+    fetchMock
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          data: [
+            { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          ],
+        }),
+      )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent(
+      "No pudimos cargar las medidas. Inténtalo de nuevo.",
+    )
+    expect(alert).toHaveTextContent("Revisa tu conexión e inténtalo de nuevo.")
+
+    await user.click(screen.getByRole("button", { name: "Reintentar" }))
+
+    expect(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("renders an empty body with no rail and a bordered Cerrar that closes the drawer", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(jsonResponse({ success: true, data: [] }))
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    expect(
+      await screen.findByText("No encontramos medidas para este producto."),
+    ).toBeInTheDocument()
+    expect(screen.queryByText("1 · Medidas")).not.toBeInTheDocument()
+
+    const closeButtons = screen.getAllByRole("button", { name: "Cerrar" })
+    expect(closeButtons).toHaveLength(2)
+    await user.click(closeButtons[closeButtons.length - 1])
+
+    expect(
+      screen.queryByText("No encontramos medidas para este producto."),
+    ).not.toBeInTheDocument()
+  })
 })

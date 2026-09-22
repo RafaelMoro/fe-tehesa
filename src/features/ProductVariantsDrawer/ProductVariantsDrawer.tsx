@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Button,
   Checkbox,
   Drawer,
+  Skeleton,
   toast,
   type UseOverlayStateReturn,
 } from "@heroui/react"
-import { RiCheckLine, RiCloseLine } from "@remixicon/react"
+import { RiCheckLine, RiCloseLine, RiErrorWarningLine } from "@remixicon/react"
 
 import {
   CartVariantLine,
@@ -23,6 +24,9 @@ import { CART_MAX_LINES } from "@/shared/constants/cart.constants"
 import { useCartStore } from "@/zustand/provider/cart.provider"
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery"
 import { QuantityStepper } from "@/shared/ui/atoms/QuantityStepper"
+
+const NEUTRAL_SECONDARY_BUTTON_CLASS =
+  "border-gray-200! text-gray-900! dark:border-gray-700! dark:text-gray-50!"
 
 interface ProductVariantsDrawerProps {
   product: Product
@@ -50,75 +54,71 @@ export const ProductVariantsDrawer = ({
   const [step, setStep] = useState<1 | 2>(1)
 
   const isTwoStep = isMobile && !isUpgradeMode
+  const requestIdRef = useRef(0)
 
-  const resetVariants = () => {
+  const resetVariants = useCallback(() => {
     setVariants([])
     setSelectedVariantIds(new Set())
     setQuantities({})
     setIsLoading(false)
     setErrorMessage(null)
     setStep(1)
-  }
+  }, [])
 
-  useEffect(() => {
-    let isActive = true
-
-    const loadProductData = async () => {
-      setVariants([])
-      setErrorMessage(null)
-      setIsLoading(true)
-      try {
-        const data = await fetchCatalog<ProductVariant[]>(
-          `/api/catalog/variants?documentId=${encodeURIComponent(product.documentId)}`,
-        )
-        if (!isActive) {
-          return
-        }
-        const formattedData = data
-          .map((variant) => ({
-            documentId: variant.documentId,
-            internalId: variant.internalId,
-            diameter: variant.diameter,
-            price: variant.pricing.price,
-            priceFormatted: formatNumberToCurrency(variant.pricing.price),
-          }))
-          .sort((a, b) => a.price - b.price)
-        setVariants(formattedData)
-        setQuantities(
-          Object.fromEntries(
-            formattedData.map((variant) => [
-              variant.documentId,
-              initialQuantity ?? 1,
-            ]),
-          ),
-        )
-      } catch (error) {
-        if (!isActive) {
-          return
-        }
-        const code = (error as { code?: string })?.code
-        const message = code
-          ? catalogErrorToSpanish(code)
-          : "No pudimos cargar las medidas. Inténtalo de nuevo."
-        setErrorMessage(message)
-        console.error("Error fetching product variants:", message)
-      } finally {
-        if (isActive) {
-          setIsLoading(false)
-        }
+  const loadProductData = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+    setVariants([])
+    setErrorMessage(null)
+    setIsLoading(true)
+    try {
+      const data = await fetchCatalog<ProductVariant[]>(
+        `/api/catalog/variants?documentId=${encodeURIComponent(product.documentId)}`,
+      )
+      if (requestIdRef.current !== requestId) {
+        return
+      }
+      const formattedData = data
+        .map((variant) => ({
+          documentId: variant.documentId,
+          internalId: variant.internalId,
+          diameter: variant.diameter,
+          price: variant.pricing.price,
+          priceFormatted: formatNumberToCurrency(variant.pricing.price),
+        }))
+        .sort((a, b) => a.price - b.price)
+      setVariants(formattedData)
+      setQuantities(
+        Object.fromEntries(
+          formattedData.map((variant) => [
+            variant.documentId,
+            initialQuantity ?? 1,
+          ]),
+        ),
+      )
+    } catch (error) {
+      if (requestIdRef.current !== requestId) {
+        return
+      }
+      const code = (error as { code?: string })?.code
+      const message = code
+        ? catalogErrorToSpanish(code)
+        : "No pudimos cargar las medidas. Inténtalo de nuevo."
+      setErrorMessage(message)
+      console.error("Error fetching product variants:", message)
+    } finally {
+      if (requestIdRef.current === requestId) {
+        setIsLoading(false)
       }
     }
+  }, [product.documentId, initialQuantity])
 
+  useEffect(() => {
     if (state.isOpen) {
       loadProductData()
     } else {
       resetVariants()
     }
-
-    return () => {
-      isActive = false
-    }
-  }, [state.isOpen, product.documentId, initialQuantity])
+  }, [state.isOpen, loadProductData, resetVariants])
 
   const handleClose = () => {
     resetVariants()
@@ -267,8 +267,51 @@ export const ProductVariantsDrawer = ({
               </div>
             </Drawer.Header>
             <Drawer.Body className="flex-1 p-6">
-              {isLoading && <p role="status">Cargando medidas...</p>}
-              {errorMessage && <p role="alert">{errorMessage}</p>}
+              {isLoading &&
+                (isTwoStep ? (
+                  <div role="status">
+                    <span className="sr-only">Cargando medidas...</span>
+                    <div
+                      className="grid grid-cols-2 gap-2.5 px-4 min-[360px]:px-5 min-[390px]:px-[22px]"
+                      aria-hidden="true"
+                    >
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="min-h-[74px] overflow-hidden rounded-lg bg-gray-50 dark:bg-gray-900"
+                        >
+                          <Skeleton className="size-full rounded-lg" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p role="status">Cargando medidas...</p>
+                ))}
+              {errorMessage &&
+                (isTwoStep ? (
+                  <div
+                    role="alert"
+                    className="px-4 min-[360px]:px-5 min-[390px]:px-[22px]"
+                  >
+                    <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-gray-100 text-danger dark:bg-gray-800">
+                      <RiErrorWarningLine aria-hidden="true" size={20} />
+                    </div>
+                    <p className="font-medium">{errorMessage}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      Revisa tu conexión e inténtalo de nuevo.
+                    </p>
+                    <Button
+                      variant="secondary"
+                      className={`mt-4 ${NEUTRAL_SECONDARY_BUTTON_CLASS}`}
+                      onPress={loadProductData}
+                    >
+                      Reintentar
+                    </Button>
+                  </div>
+                ) : (
+                  <p role="alert">{errorMessage}</p>
+                ))}
               {!isLoading && !errorMessage && variants.length === 0 && (
                 <p>No encontramos medidas para este producto.</p>
               )}
@@ -457,7 +500,16 @@ export const ProductVariantsDrawer = ({
                 ))}
             </Drawer.Body>
             <Drawer.Footer className="flex-col gap-4 border-t border-default-200 p-6">
-              {isTwoStep ? (
+              {isTwoStep && isEmptyState ? (
+                <Button
+                  fullWidth
+                  variant="secondary"
+                  onPress={handleClose}
+                  className={NEUTRAL_SECONDARY_BUTTON_CLASS}
+                >
+                  Cerrar
+                </Button>
+              ) : isTwoStep ? (
                 <>
                   <div className="flex w-full items-center justify-between">
                     <span className="text-sm text-muted">
