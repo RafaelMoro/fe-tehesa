@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button, Skeleton, Spinner, toast } from "@heroui/react"
 import {
   RiArrowRightLine,
@@ -50,6 +50,13 @@ export const ProductCard = ({
   const [addError, setAddError] = useState<string | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const imageRef = useRef<HTMLImageElement>(null)
+
+  useEffect(() => {
+    if (imageRef.current?.complete) {
+      setImageLoaded(true)
+    }
+  }, [product.imageUrl])
 
   const isSingleVariant = product.variantCount === 1
   const minPriceString =
@@ -133,6 +140,7 @@ export const ProductCard = ({
           )}
           {/* eslint-disable-next-line @next/next/no-img-element -- D2: plain <img>, Cloudinary already serves sized WebP */}
           <img
+            ref={imageRef}
             src={product.imageUrl}
             alt={product.name}
             loading="lazy"

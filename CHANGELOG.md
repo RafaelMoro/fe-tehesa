@@ -1,3 +1,9 @@
+## v1.0.2 (2026-09-22)
+
+### Pull Requests
+[#64](https://github.com/RafaelMoro/fe-tehesa/pull/64) | Add image loading state management to ProductCard component
+
+
 ## v1.0.1 (2026-09-22)
 
 ### Pull Requests
