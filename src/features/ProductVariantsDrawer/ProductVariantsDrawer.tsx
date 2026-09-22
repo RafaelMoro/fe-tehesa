@@ -28,6 +28,10 @@ import { QuantityStepper } from "@/shared/ui/atoms/QuantityStepper"
 const NEUTRAL_SECONDARY_BUTTON_CLASS =
   "border-gray-200! text-gray-900! dark:border-gray-700! dark:text-gray-50!"
 
+// HeroUI's .button is white-space: nowrap with a fixed 40px height, so
+// "Agregar N medidas al carrito" overflows the CTA at 320px. Let it wrap and grow.
+const WRAPPING_CTA_CLASS = "h-auto! min-h-10 py-2 whitespace-normal!"
+
 interface ProductVariantsDrawerProps {
   product: Product
   state: UseOverlayStateReturn
@@ -536,8 +540,8 @@ export const ProductVariantsDrawer = ({
                     isDisabled={selectedVariantIds.size === 0}
                     className={
                       step === 1 && selectedVariantIds.size === 0
-                        ? "bg-gray-100! text-gray-400! dark:bg-gray-800! dark:text-gray-500!"
-                        : undefined
+                        ? `${WRAPPING_CTA_CLASS} bg-gray-100! text-gray-400! dark:bg-gray-800! dark:text-gray-500!`
+                        : WRAPPING_CTA_CLASS
                     }
                   >
                     {step === 1
@@ -562,6 +566,7 @@ export const ProductVariantsDrawer = ({
                     variant="primary"
                     onPress={handleAdd}
                     isDisabled={selectedVariantIds.size === 0}
+                    className={WRAPPING_CTA_CLASS}
                   >
                     {isUpgradeMode
                       ? "Elegir esta medida"
