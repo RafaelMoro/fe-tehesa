@@ -2,6 +2,8 @@
  * @jest-environment node
  */
 import { generateMetadata } from "@/app/categorias/[slug]/page"
+import { CATEGORY_PAGE_HREFS, CATEGORY_PAGES } from "@/shared/constants/category.constants"
+import { CATEGORY_SEO } from "@/shared/constants/seo.constants"
 
 jest.mock("next/navigation", () => ({
   notFound: jest.fn(() => {
@@ -15,11 +17,6 @@ describe("categorias/[slug] generateMetadata", () => {
       "tornilleria-fijacion",
       "Tornillería y Fijación Industrial en Puebla | Tehesa",
       "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy.",
-    ],
-    [
-      "abrasivos",
-      "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa",
-      "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial.",
     ],
     [
       "impacto-forja",
@@ -91,6 +88,16 @@ describe("categorias/[slug] generateMetadata", () => {
       "Lubricantes Multifuncionales Industriales | Tehesa Puebla",
       "Lubricantes multifuncionales para mantenimiento industrial y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.",
     ],
+    [
+      "herramientas-marcado",
+      "Marcadores y Herramientas de Marcado Industrial | Tehesa Puebla",
+      "Marcadores de pintura Weston y herramienta de marcado para identificar piezas en taller e industria. Existencia en Puebla. Cotiza hoy.",
+    ],
+    [
+      "sellado-taponado",
+      "Tapones y Sellado Industrial en Puebla | Tehesa Industrial",
+      "Tapones roscados y soluciones de sellado y taponado para líneas y equipo industrial. Existencia en Puebla. Cotiza con Tehesa Industrial.",
+    ],
   ])(
     "marks %s index, follow with a matching canonical",
     async (slug, title, description) => {
@@ -116,5 +123,31 @@ describe("categorias/[slug] generateMetadata", () => {
       generateMetadata({ params: Promise.resolve({ slug: "nope" }) }),
     ).rejects.toThrow("NEXT_NOT_FOUND")
     expect(notFound).toHaveBeenCalled()
+  })
+
+  it("keeps the three category maps on the same 17 customIds", () => {
+    const ids = [
+      "tornilleria",
+      "herramientas-impacto-forja",
+      "herramientas-corte-conformado",
+      "perforacion-accesorios-taladro",
+      "llaves-herramientas-apriete",
+      "roscado-herramientas-roscas",
+      "carburo",
+      "sujecion",
+      "calibrador",
+      "extraccion-reparacion-fijaciones",
+      "adhesivos-selladores",
+      "equipo-seguridad",
+      "herramientas-diagnostico-electricidad",
+      "herrajes-accesorios-cable",
+      "lubricantes-multifuncionales",
+      "herramientas-marcado",
+      "sellado-taponado",
+    ].sort()
+
+    expect(Object.keys(CATEGORY_PAGE_HREFS).sort()).toEqual(ids)
+    expect(Object.keys(CATEGORY_PAGES).sort()).toEqual(ids)
+    expect(Object.keys(CATEGORY_SEO).sort()).toEqual(ids)
   })
 })

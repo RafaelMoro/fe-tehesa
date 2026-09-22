@@ -1,6 +1,5 @@
 export const CATEGORY_PAGE_HREFS: Record<string, string> = {
   tornilleria: "/categorias/tornilleria-fijacion",
-  abrasivos: "/categorias/abrasivos",
   "herramientas-impacto-forja": "/categorias/impacto-forja",
   "herramientas-corte-conformado": "/categorias/herramientas-corte-conformado",
   "perforacion-accesorios-taladro": "/categorias/perforacion-accesorios-taladro",
@@ -15,6 +14,8 @@ export const CATEGORY_PAGE_HREFS: Record<string, string> = {
   "herramientas-diagnostico-electricidad": "/categorias/herramientas-diagnostico-electricidad",
   "herrajes-accesorios-cable": "/categorias/herrajes-accesorios-cable",
   "lubricantes-multifuncionales": "/categorias/lubricantes-multifuncionales",
+  "herramientas-marcado": "/categorias/herramientas-marcado",
+  "sellado-taponado": "/categorias/sellado-taponado",
 }
 
 export const getCategoryIdBySlug = (slug: string): string | undefined =>
@@ -36,13 +37,6 @@ export const CATEGORY_PAGES: Record<string, CategoryPageConfig> = {
     intro:
       "Tornillos, tuercas, rondanas, pernos y varilla roscada en acero e inoxidable, por pieza o por caja. La base de cualquier ensamble o mantenimiento, con las medidas que la industria pide.",
     searchPlaceholder: "Buscar tornillos, tuercas, pernos...",
-  },
-  abrasivos: {
-    name: "Abrasivos",
-    heading: "Abrasivos industriales",
-    intro:
-      "Discos de corte, discos de desbaste y puntas montadas para esmeril y rectificado. Abrasivos que cortan parejo y duran en trabajo pesado.",
-    searchPlaceholder: "Buscar discos, puntas montadas...",
   },
   "herramientas-impacto-forja": {
     name: "Herramientas de impacto o forja",
@@ -141,6 +135,20 @@ export const CATEGORY_PAGES: Record<string, CategoryPageConfig> = {
     intro:
       "Lubricantes multifuncionales para aflojar, proteger contra corrosión y lubricar piezas en mantenimiento industrial y de taller.",
     searchPlaceholder: "Buscar lubricantes...",
+  },
+  "herramientas-marcado": {
+    name: "Herramientas de marcado",
+    heading: "Herramientas de marcado",
+    intro:
+      "Marcadores de pintura permanente para identificar piezas, lotes y material en metal, plástico o madera. Trazos que aguantan grasa, manejo y trabajo de taller.",
+    searchPlaceholder: "Buscar marcadores...",
+  },
+  "sellado-taponado": {
+    name: "Sellado y taponado",
+    heading: "Sellado y taponado",
+    intro:
+      "Tapones roscados y accesorios para sellar o cerrar conexiones en tubería, tanques y equipo. Cierre hermético sin fugas ni improvisaciones.",
+    searchPlaceholder: "Buscar tapones, sellado...",
   },
 }
 

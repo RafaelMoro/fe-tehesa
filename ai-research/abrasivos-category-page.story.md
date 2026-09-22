@@ -1,5 +1,7 @@
 # Abrasivos category page (`/categorias/abrasivos`) + shared category page UI — Research
 
+**Superseded (2026-09-22):** `abrasivos` was removed from Strapi on 2026-09-18; config deleted by `ai-planning/category-config-db-sync.story.md` (D7, 404 no redirect).
+
 **Date:** 2026-09-15
 **Branch:** `feat/add-abrasivos-page`
 **Scope:** standalone story (single deliverable, ~3 phases)

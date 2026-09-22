@@ -1,5 +1,7 @@
 # Plan: Abrasivos category page (`/categorias/abrasivos`) + shared category page UI + Tornillería rename
 
+**Superseded (2026-09-22):** `abrasivos` was removed from Strapi on 2026-09-18; config deleted by `ai-planning/category-config-db-sync.story.md` (D7, 404 no redirect).
+
 **Source research:** `ai-research/abrasivos-category-page.story.md` (2026-09-15, branch `feat/add-abrasivos-page`).
 **Sign-off status:** no explicit sign-off line, but every open question is `answered` (Strapi I–II, Catalog I, UI I–III, Verification I) and D1–D4 are recorded as decided with the user on 2026-09-15. Treated as signed off — same basis as `ai-planning/tornilleria-category-page.story.md`. **Confirm before `/implement`.**
 **Plan date:** 2026-09-15.

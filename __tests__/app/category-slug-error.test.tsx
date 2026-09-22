@@ -13,7 +13,6 @@ jest.mock("next/navigation", () => ({
 describe("categorias/[slug] error boundary", () => {
   it.each([
     ["tornilleria-fijacion", "Tornillería"],
-    ["abrasivos", "Abrasivos"],
     ["impacto-forja", "Herramientas de impacto o forja"],
     ["herramientas-corte-conformado", "Herramientas de corte y conformado"],
     [
@@ -37,6 +36,8 @@ describe("categorias/[slug] error boundary", () => {
     ],
     ["herrajes-accesorios-cable", "Herrajes y accesorios para cable"],
     ["lubricantes-multifuncionales", "Lubricantes multifuncionales"],
+    ["herramientas-marcado", "Herramientas de marcado"],
+    ["sellado-taponado", "Sellado y taponado"],
   ])("shows Spanish error copy for %s", (slug, strapiName) => {
     mockSlug = slug
 

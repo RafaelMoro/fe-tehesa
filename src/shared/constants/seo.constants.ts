@@ -23,11 +23,6 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
     description:
       "Tornillos, tuercas, rondanas, pernos y varillas roscadas para industria. Acero e inoxidable, con existencia en Puebla. Cotiza hoy.",
   },
-  abrasivos: {
-    title: "Discos de Corte y Abrasivos Industriales en Puebla | Tehesa",
-    description:
-      "Discos de corte y puntas montadas para desbaste industrial. Abasto en Puebla. Cotiza con Tehesa Industrial.",
-  },
   "herramientas-impacto-forja": {
     title: "Martillos y Herramientas de Impacto y Forja | Tehesa Puebla",
     description:
@@ -98,6 +93,16 @@ export const CATEGORY_SEO: Record<string, CategorySeo> = {
     title: "Lubricantes Multifuncionales Industriales | Tehesa Puebla",
     description:
       "Lubricantes multifuncionales para mantenimiento industrial y taller. Abasto en Puebla. Cotiza con Tehesa Industrial.",
+  },
+  "herramientas-marcado": {
+    title: "Marcadores y Herramientas de Marcado Industrial | Tehesa Puebla",
+    description:
+      "Marcadores de pintura Weston y herramienta de marcado para identificar piezas en taller e industria. Existencia en Puebla. Cotiza hoy.",
+  },
+  "sellado-taponado": {
+    title: "Tapones y Sellado Industrial en Puebla | Tehesa Industrial",
+    description:
+      "Tapones roscados y soluciones de sellado y taponado para líneas y equipo industrial. Existencia en Puebla. Cotiza con Tehesa Industrial.",
   },
 }
 
