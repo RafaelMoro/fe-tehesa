@@ -104,6 +104,21 @@ const mockFetch = () => {
   return fetchMock
 }
 
+const originalMatchMedia = window.matchMedia
+
+const mockMobileViewport = () => {
+  window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+    matches: query === "(max-width: 767px)",
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia
+}
+
 beforeEach(() => {
   localStorage.clear()
   globalThis.ResizeObserver =
@@ -498,5 +513,202 @@ describe("ProductVariantsDrawer upgrade mode", () => {
       2,
     )
     expect(screen.getByText("0 líneas en el carrito")).toBeInTheDocument()
+  })
+})
+
+describe("ProductVariantsDrawer mobile two-step", () => {
+  beforeEach(() => {
+    mockMobileViewport()
+  })
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia
+  })
+
+  it("step 1 shows medida cards with no stepper, and a disabled continue CTA", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [
+          { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          { documentId: "var-002", diameter: "Grande", pricing: { price: 30 } },
+        ],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    expect(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Seleccionar Grande" }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Cantidad de/)).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    ).toBeDisabled()
+  })
+
+  it("selecting two medidas and continuing shows exactly those two, each with a stepper", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [
+          { documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } },
+          { documentId: "var-002", diameter: "Grande", pricing: { price: 30 } },
+          { documentId: "var-003", diameter: "Mediana", pricing: { price: 20 } },
+        ],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(screen.getByRole("button", { name: "Seleccionar Grande" }))
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toBeInTheDocument()
+    expect(screen.getByLabelText("Cantidad de Grande")).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText("Cantidad de Mediana"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("← Cambiar medidas returns to step 1 with the selection intact", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /Cambiar medidas/ }))
+
+    expect(
+      screen.getByRole("button", { name: "Seleccionar Pequeña" }),
+    ).toHaveAttribute("aria-pressed", "true")
+    expect(
+      screen.queryByLabelText("Cantidad de Pequeña"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("restores the previous quantity when a medida is deselected and re-selected in step 1", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    const increment = screen.getByRole("button", {
+      name: "Aumentar Cantidad de Pequeña",
+    })
+    await user.click(increment)
+    await user.click(increment)
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toHaveValue("3")
+
+    await user.click(screen.getByRole("button", { name: /Cambiar medidas/ }))
+    await user.click(screen.getByRole("button", { name: "Seleccionar Pequeña" }))
+    await user.click(screen.getByRole("button", { name: "Seleccionar Pequeña" }))
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    expect(screen.getByLabelText("Cantidad de Pequeña")).toHaveValue("3")
+  })
+
+  it("decrementing to 0 drops the medida and returns to step 1 with a disabled CTA", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    const decrement = screen.getByRole("button", {
+      name: "Disminuir Cantidad de Pequeña",
+    })
+    await user.click(decrement)
+
+    expect(
+      await screen.findByRole("button", { name: "Continuar a cantidades" }),
+    ).toBeDisabled()
+    expect(
+      screen.queryByLabelText("Cantidad de Pequeña"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("adds from step 2 the same CartVariantLine[] as the desktop path", async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch()
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: [{ documentId: "var-001", diameter: "Pequeña", pricing: { price: 10 } }],
+      }),
+    )
+
+    render(<DrawerHarness product={product} />)
+    await user.click(screen.getByRole("button", { name: "Abrir detalles" }))
+    await user.click(
+      await screen.findByRole("button", { name: "Seleccionar Pequeña" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "Continuar a cantidades" }),
+    )
+
+    await user.click(
+      screen.getByRole("button", { name: "Agregar 1 medida al carrito" }),
+    )
+
+    expect(screen.getByText("1 líneas en el carrito")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Seleccionar Pequeña" }),
+    ).not.toBeInTheDocument()
   })
 })
