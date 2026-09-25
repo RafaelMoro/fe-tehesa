@@ -92,7 +92,7 @@ header brand rows inert until Story 2.
 
 ## Epic Completion Status
 
-**Last updated:** 2026-09-17 (Story 1 implementation, `/implement` on `ai-planning/brands-browsing/brands-index-page.story-1.md`).
+**Last updated:** 2026-09-24 (Story 3 implementation, `/implement` on `ai-planning/brands-browsing/volkel-brand.story-3.md`).
 
 ### Story 1 — `/marcas` index page: Complete
 
@@ -155,24 +155,57 @@ Validation Summary (`ai-planning/brands-browsing/brand-page.story-2.md`) for the
 **Verification evidence:** `pnpm test` — 49 suites, 497 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
 `pnpm exec tsc --noEmit` clean; `pnpm build` succeeds with `/marcas/[slug]` as a new dynamic route.
 
+### Story 3 — Völkel brand (`/marcas` card + `/marcas/volkel`): Complete
+
+Implemented across two phases on `feat/add-volkel` (`ai-research/brands-browsing/volkel-brand.story-3.md`,
+`ai-planning/brands-browsing/volkel-brand.story-3.md`). Config-only: adding `volkel` to `BRAND_PAGE_HREFS`/
+`BRAND_PAGES`/`BRAND_SEO` and updating the "Seis"→"Siete" hero/description copy made the card, the
+`/marcas/volkel` page, the header row, and the sitemap entry appear with no new components/routes/queries — the
+Story 2 config-driven contract held exactly as designed.
+
+- **Phase 1** (`brand.constants.ts`, `seo.constants.ts`, `BrandsPage.tsx`): `volkel` entry inserted after `weston`
+  in both maps; hero/description copy updated to "Siete". Verified: `tsc`, `lint`, and dev-server `curl` against a
+  live local Strapi (initially unreachable — `ECONNREFUSED :1337` — the user started the local backend mid-phase)
+  confirming `/marcas/volkel` (title/description/canonical/robots/JSON-LD leaf/h1/breadcrumb/kicker/copy/285
+  product cards/category-dropdown trigger), `/marcas` (`Siete marcas en almacén`, `7 marcas en almacén` counter,
+  `VÖLKEL` between `WESTON`/`KING TONY`, correct href/description), `/sitemap.xml` (`/marcas/volkel` listed), and
+  `/` (header `Marcas` row server-rendered with `Völkel` label + `/marcas/volkel` href — no manual-only fallback
+  needed here, unlike Story 2).
+- **Phase 2** (`__tests__/seo/brand-slug-metadata.test.ts`, `__tests__/seo/brands-metadata.test.ts`,
+  `ai-skills/REPO_CONTEXT.md`): new `volkel` `it.each` row and updated `BRANDS_DESCRIPTION` literal; brand-count
+  mentions (six/seven, seven/eight) updated across `REPO_CONTEXT.md`. Verified:
+  `pnpm test -- __tests__/seo __tests__/brands __tests__/brand-page __tests__/shared/Header.test.tsx` (96/96),
+  full `pnpm test` (529 passed / 1 pre-existing skip, 49 suites, 0 failed), `pnpm lint` clean,
+  `pnpm exec tsc --noEmit` clean, `pnpm build` clean, re-run dev-server `curl` against the final tree (same
+  results, no errors).
+
+5 of 5 ACs verified `Validated` — no `Cannot validate` rows this story, since the local Strapi came up mid-phase
+and every check (including the header row, which turned out to be server-rendered) ran against live data. See the
+plan's AC Validation Summary (`ai-planning/brands-browsing/volkel-brand.story-3.md`) for the full table.
+
+**Verification evidence:** `pnpm test` — 49 suites, 529 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
+`pnpm exec tsc --noEmit` clean; `pnpm build` succeeds, `/marcas` and `/marcas/[slug]` routes unchanged in shape.
+
 ### Story overview
 
 | Story | Status | Verified evidence | Remaining work / blocker |
 | --- | --- | --- | --- |
 | 1 — `/marcas` index page | Complete | See above | None |
 | 2 — `/marcas/[slug]` brand pages | Complete | See above | None |
+| 3 — Völkel brand | Complete | See above | None |
 
 ### Overall completion
 
 Epic-level acceptance criteria live per-story. Story 1: 7/7 ACs verified complete (6 `Validated`, 2
 `Cannot validate`-but-proven-by-tests, 0 failed). Story 2: 6/6 ACs verified complete (4 `Validated`, 2
-`Cannot validate`-but-proven-by-tests, 0 failed). **13/13 acceptance criteria complete.** Both stories in this epic
-are done.
+`Cannot validate`-but-proven-by-tests, 0 failed). Story 3: 5/5 ACs verified complete (5 `Validated`, 0 failed).
+**18/18 acceptance criteria complete.** All three stories in this epic are done.
 
 ### Next Steps
 
-1. Decide the `Clevaland` Strapi typo and `/?mode=brand` URL fate (both explicitly deferred, backend/product
-   judgment, out of scope for both stories in this epic).
+1. Decide the `Clevaland` Strapi typo, the `Volkel`→`Völkel` Strapi admin rename, and `/?mode=brand` URL fate (all
+   explicitly deferred, backend/product judgment, out of scope for every story in this epic).
 2. Manual checks still owed before merge: desktop `Marcas` dropdown rows/labels/active-row on `/`, `/marcas/cleveland`,
-   and `/?mode=brand&brand=Clevaland`; mobile accordion `aria-current`; light/dark layout at 390/1440 on a brand page;
-   drawer open from a brand-page card click.
+   `/marcas/volkel`, and `/?mode=brand&brand=Clevaland`; mobile accordion `aria-current`; light/dark layout at
+   390/1440 on a brand page; drawer open from a brand-page card click; `/marcas/volkel`'s 3-category dropdown
+   filtering.

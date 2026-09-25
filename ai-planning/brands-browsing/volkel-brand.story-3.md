@@ -186,7 +186,7 @@ against the final tree. Expect the same results and no server-log errors.
 | AC2: SEO | 1, 2 | `GET /marcas/volkel` `<title>`/description verbatim, canonical `/marcas/volkel`, JSON-LD leaf `Völkel`; `GET /sitemap.xml` contains `/marcas/volkel` | Validated | `<title>`, meta description, canonical, `robots: index, follow`, and JSON-LD `"name":"Völkel"` all confirmed via curl; `/sitemap.xml` contains `/marcas/volkel`. Also pinned by `brand-slug-metadata.test.ts` |
 | AC3: index card | 1 | `GET /marcas` 200; `VÖLKEL` between `WESTON` and `KING TONY`, `href="/marcas/volkel"`, `Siete marcas en almacén…`, description names Völkel | Validated | `7 marcas en almacén` counter confirms live Strapi has `volkel`; order and hero copy confirmed |
 | AC4: header | 1 | `GET /` markup contains a `Völkel` row + `/marcas/volkel` if rendered server-side | Validated | The `Marcas` row is server-rendered (present in raw `curl` HTML) with `href="/marcas/volkel"` and label `Völkel`; desktop dropdown/mobile-accordion active-state still confirmed manually |
-| AC5: tests/tooling | 2 | n/a (commands) | Not validated | `pnpm test`, `lint`, `tsc --noEmit`, `build` — pending Phase 2 |
+| AC5: tests/tooling | 2 | n/a (commands) | Validated | `pnpm test -- __tests__/seo __tests__/brands __tests__/brand-page __tests__/shared/Header.test.tsx` (96/96 passed), `pnpm test` (529 passed, 1 pre-existing skip, 49 suites), `pnpm lint` (clean), `pnpm exec tsc --noEmit` (clean), `pnpm build` (clean, `/marcas` and `/marcas/[slug]` routes present) |
 
 ## Cross-cutting concerns
 

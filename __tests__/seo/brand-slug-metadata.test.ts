@@ -17,6 +17,11 @@ describe("marcas/[slug] generateMetadata", () => {
       "Distribuidor de Weston en Puebla: cortadores, brocas, machuelos y rimas para la industria. Marca mexicana con +30 años. Cotiza con Tehesa.",
     ],
     [
+      "volkel",
+      "Völkel en Puebla — Machuelos y Herramienta de Roscado | Tehesa",
+      "Distribuidor de Völkel en Puebla: machuelos, tarrajas y herramienta de roscado de fabricante alemán especializado. Cotiza con Tehesa Industrial.",
+    ],
+    [
       "king-tony",
       "King Tony en Puebla — Dados y Llaves Profesionales | Tehesa",
       "Distribuidor de King Tony en Puebla. Dados, matracas y llaves de apriete bajo norma DIN y ANSI. Cotiza con Tehesa Industrial.",
