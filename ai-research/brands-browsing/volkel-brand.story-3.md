@@ -61,15 +61,15 @@ so this story is **data entry plus two hand-maintained copy strings**, no new co
 `getBrandDisplayName("volkel")` → `Völkel` (text before `:` in the heading). This is what the breadcrumb, JSON-LD
 leaf, search placeholder (`Buscar en Völkel...`), error page and header row display.
 
-### `BRAND_PAGES.volkel` (hero intro split per user decision; origin/tags PROPOSED)
+### `BRAND_PAGES.volkel` (hero intro split per user decision; origin/tags validated)
 
 | Field | Value | Status |
 | --- | --- | --- |
 | `name` | `VÖLKEL` | Proposed (matches the all-caps convention of the other cards) |
-| `origin` | `Remscheid, Alemania · +100 años` | **Proposed.** Needs sign-off |
+| `origin` | `Remscheid, Alemania · desde 1915` | Validated 2026-09-24 (see UI/II) |
 | `identity` | Fabricante alemán dedicado por entero al roscado desde hace más de un siglo. | User copy (sentence 1 of intro) |
 | `stock` | Machuelos y tarrajas para cortar rosca a la medida, una de las líneas más completas del catálogo. | User copy (sentence 2, the `En almacén:` prefix is dropped because `BrandCard` already renders an `En almacén` label) |
-| `tags` | `["Machuelos", "Tarrajas", "Roscado"]` | **Proposed.** Needs sign-off |
+| `tags` | `["Machuelos", "Tarrajas", "Roscado"]` | Validated 2026-09-24 (see UI/II) |
 
 Note: on `/marcas/volkel` the hero shows `identity` then `stock` with no `En almacén` label. That means the second
 paragraph starts "Machuelos y tarrajas…" rather than the user's "En almacén: machuelos…". The same thing happens on
@@ -154,14 +154,21 @@ Context: backend-research subagent, `store-tehesa-api/data/data.json:112-114` an
 Live introspection was unreachable (localhost:1337 down).
 
 II: Question: Is `volkel` (and its 60 products) published in the Strapi instance the deployed site reads from?
-Status: pending
-Explanation: The subagent could only check seed files. If it isn't live, the card and header row stay hidden and
-the page is empty. Confirm the reseed/deploy order before merging.
+Status: answered
+Answer: Yes (user, 2026-09-24).
+Context: The subagent could only check seed files. The "not live = invisible" edge case below no longer applies.
 
 III: Question: Should the Strapi `name` be corrected to `Völkel`?
-Status: pending
-Explanation: This is not required, because the display name comes from `BRAND_SEO`. It would only change the
-`?mode=brand&brand=` URL and the catalog-wide brand dropdown label. It's a backend call, and out of scope here.
+Status: answered
+Answer: Yes (user, 2026-09-24). This is handled in the backend repo `store-tehesa-api` on branch
+`fix/correct-volkel-name` (commit `0f88d89`, one-line change at `data/data.json:113`), not in this story.
+- The push failed (SSH publickey), so the user pushes it.
+- The seed only creates entries. `customId` is unique and products link by `brandCustomId`, so a reseed will not
+  rename an existing live record. The live rename has to be done in the Strapi admin.
+Context: The frontend doesn't depend on it. The display name comes from `BRAND_SEO`. After the rename:
+- `?mode=brand&brand=Völkel` and the sitemap's `?mode=brand` entry carry the umlaut.
+- `SEARCH_TERM_PATTERN` (`src/shared/constants/catalog.constants.ts:48`) uses `\p{L}`, so `ö` passes validation.
+- `getBrandDisplayName` and the frontend label are unaffected either way.
 
 ### UI/product decisions
 
@@ -169,11 +176,22 @@ I: Question: Card copy fields.
 Status: answered
 Answer: Split the hero intro into `identity`/`stock`. Claude drafts `origin`/`tags` (see copy table).
 
-II: Question: Are the proposed `origin` (`Remscheid, Alemania · +100 años`) and `tags` (`Machuelos, Tarrajas,
-Roscado`) OK? Should `origin` use a founding year (`desde 18xx`) like the other cards instead?
-Status: pending
-Explanation: Other cards use `desde <year>` or `+N años`. The user copy only says "más de un siglo", so no exact
-year is sourced.
+II: Question: Are the proposed `origin` and `tags` accurate? Should `origin` use a founding year like the other
+cards?
+Status: answered
+Answer: `origin` = `Remscheid, Alemania · desde 1915`; `tags` = `Machuelos, Tarrajas, Roscado` (kept).
+Context: Validated by web search, 2026-09-24:
+- The company says it has been in thread tools since 1915. Völkel GmbH (Remscheid, HQ and logistics centre in the
+  Morsbachtal) came from the 1990 merger of Tom Carrington & Co. Ltd. (founded 1915, Birmingham) and Völkel KG
+  (founded 1980).
+- "desde 1915" matches the intro's "más de un siglo" (111 years). It dates the thread-tool lineage, not the
+  Remscheid entity. If the stricter reading is wanted, `+100 años` is the safe fallback.
+- The product line is thread tools (taps, dies), thread repair (V-COIL) and thread gauges, so the three tags hold.
+
+Sources: [voelkel.com – Geschichte](https://voelkel.com/de/ueber-voelkel/geschichte),
+[voelkel.com – Über VÖLKEL](https://voelkel.com/de/ueber-voelkel),
+[Regio Manager – Völkel GmbH](https://www.regiomanager.de/unternehmen/voelkel-gmbh/). The history page returned 503
+on direct fetch, so its dates come from the search-result excerpt.
 
 III: Question: Should the brand page show the literal "En almacén:" prefix in the hero?
 Status: answered
