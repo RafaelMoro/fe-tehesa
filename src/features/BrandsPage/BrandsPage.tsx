@@ -41,7 +41,7 @@ export const BrandsPage = ({ brands }: { brands: BrandCardItem[] }) => {
           Explora el catálogo por marca
         </h1>
         <p className="mt-3 text-muted">
-          Seis marcas en almacén. Entra a la tuya y filtra por medida.
+          Siete marcas en almacén. Entra a la tuya y filtra por medida.
         </p>
       </div>
       <div className="flex items-center justify-between text-sm text-muted">
