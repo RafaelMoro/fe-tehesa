@@ -2,6 +2,7 @@ import { BRAND_SEO } from "./seo.constants"
 
 export const BRAND_PAGE_HREFS: Record<string, string> = {
   weston: "/marcas/weston",
+  volkel: "/marcas/volkel",
   "king-tony": "/marcas/king-tony",
   bohrcraft: "/marcas/bohrcraft",
   bondhus: "/marcas/bondhus",
@@ -26,7 +27,7 @@ export type BrandPageConfig = {
 }
 
 // Insertion order is the card render order (D5: live product-count desc,
-// 90/26/19/13/6/5) — edit this together with BrandsPage's "Seis" hero copy.
+// 96/60/25/18/15/6/5) — edit this together with BrandsPage's "Siete" hero copy.
 export const BRAND_PAGES: Record<string, BrandPageConfig> = {
   weston: {
     name: "WESTON",
@@ -35,6 +36,14 @@ export const BRAND_PAGES: Record<string, BrandPageConfig> = {
     stock:
       "Cortadores verticales de acero A.V., cobalto y carburo, brocas y broqueros, machuelos y rimas, avellanadores, calibradores de cuerda, limas rotativas y diamantadas, clamps y discos de corte.",
     tags: ["Cortadores", "Brocas", "Machuelos", "Discos"],
+  },
+  volkel: {
+    name: "VÖLKEL",
+    origin: "Remscheid, Alemania · desde 1915",
+    identity: "Fabricante alemán dedicado por entero al roscado desde hace más de un siglo.",
+    stock:
+      "Machuelos y tarrajas para cortar rosca a la medida, una de las líneas más completas del catálogo.",
+    tags: ["Machuelos", "Tarrajas", "Roscado"],
   },
   "king-tony": {
     name: "KING TONY",

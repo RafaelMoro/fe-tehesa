@@ -1,3 +1,9 @@
+## v1.2.0 (2026-09-25)
+
+### Pull Requests
+[#69](https://github.com/RafaelMoro/fe-tehesa/pull/69) | feat: add Völkel as seventh brand to catalog
+
+
 ## v1.1.1 (2026-09-22)
 
 ### Pull Requests

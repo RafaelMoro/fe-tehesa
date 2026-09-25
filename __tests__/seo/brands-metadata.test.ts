@@ -9,7 +9,7 @@ describe("marcas generateMetadata", () => {
 
     expect(metadata.title).toBe("Marcas de Herramienta Industrial en Puebla | Tehesa")
     expect(metadata.description).toBe(
-      "Weston, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp.",
+      "Weston, Völkel, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp.",
     )
     expect(metadata.alternates).toEqual({ canonical: "/marcas" })
     expect(metadata.robots).toEqual({ index: true, follow: true })

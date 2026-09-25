@@ -14,7 +14,7 @@ export const CATEGORIES_DESCRIPTION =
   "Tornillería, brocas, herramienta de corte, llaves y equipo de seguridad. 17 categorías con existencia en Puebla. Cotiza por WhatsApp."
 export const BRANDS_TITLE = "Marcas de Herramienta Industrial en Puebla | Tehesa"
 export const BRANDS_DESCRIPTION =
-  "Weston, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp."
+  "Weston, Völkel, King Tony, Bohrcraft, Bondhus, Precision Brand y Cleveland con existencia en Puebla. Explora el catálogo por marca y cotiza por WhatsApp."
 export type CategorySeo = { title: string; description: string }
 
 export const CATEGORY_SEO: Record<string, CategorySeo> = {
@@ -114,6 +114,12 @@ export const BRAND_SEO: Record<string, BrandSeo> = {
     description:
       "Distribuidor de Weston en Puebla: cortadores, brocas, machuelos y rimas para la industria. Marca mexicana con +30 años. Cotiza con Tehesa.",
     heading: "Weston: la marca mexicana para la industria",
+  },
+  volkel: {
+    title: "Völkel en Puebla — Machuelos y Herramienta de Roscado | Tehesa",
+    description:
+      "Distribuidor de Völkel en Puebla: machuelos, tarrajas y herramienta de roscado de fabricante alemán especializado. Cotiza con Tehesa Industrial.",
+    heading: "Völkel: especialistas alemanes en roscado",
   },
   "king-tony": {
     title: "King Tony en Puebla — Dados y Llaves Profesionales | Tehesa",
