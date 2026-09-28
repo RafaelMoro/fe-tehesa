@@ -99,7 +99,8 @@ header brand rows inert until Story 2.
 
 ## Epic Completion Status
 
-**Last updated:** 2026-09-24 (Story 3 implementation, `/implement` on `ai-planning/brands-browsing/volkel-brand.story-3.md`).
+**Last updated:** 2026-09-28 (Story 4 implementation, `/implement` on
+`ai-planning/brands-browsing/brands-index-redesign.story-4.md`).
 
 ### Story 1 — `/marcas` index page: Complete
 
@@ -193,6 +194,53 @@ plan's AC Validation Summary (`ai-planning/brands-browsing/volkel-brand.story-3.
 **Verification evidence:** `pnpm test` — 49 suites, 529 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
 `pnpm exec tsc --noEmit` clean; `pnpm build` succeeds, `/marcas` and `/marcas/[slug]` routes unchanged in shape.
 
+### Story 4 — `/marcas` index redesign (v2 design): Complete
+
+Implemented across three phases on `feat/redesign-brand-page`
+(`ai-research/brands-browsing/brands-index-redesign.story-4.md`,
+`ai-planning/brands-browsing/brands-index-redesign.story-4.md`). Presentation-only: no route, query, or Strapi
+change; the config ∩ live-taxonomy rule and the CTA-only rule from Story 1 both held.
+
+- **Phase 1** (`brand.constants.ts`): `BrandPageConfig` gains a required `logo: BrandLogo` field
+  (`{ src, width, height, background }`, all seven brands, Cloudinary URLs verbatim including the `bhondus`
+  upstream misspelling); added `BRANDS_FEATURED_ID` (`"bohrcraft"`), `BRANDS_INDEX_ORDER` (a `/marcas`-only display
+  order, independent of `BRAND_PAGES` insertion order, which now only drives Home's `BrandStrip`), and
+  `BRANDS_HERO_PHOTO` (temporary Cloudinary storefront photo + alt, kept together to avoid drift). Verified:
+  `tsc`, `pnpm test -- __tests__/brands __tests__/brand-page __tests__/home` (46/46, unchanged since nothing read
+  the new fields yet), dev-server regression `curl` on `/marcas`, `/marcas/weston`, `/`.
+- **Phase 2** (`BrandsPage.tsx`, new `FeaturedBrandPanel.tsx`, `BrandCard.tsx`, `src/app/marcas/page.tsx`,
+  `BrandsPage.test.tsx`): `BrandsPage` now takes `{ liveBrandIds: string[] }` and owns the config ∩ live selection,
+  splitting it into a single featured item (`FeaturedBrandPanel`) and the `BRANDS_INDEX_ORDER`-sorted grid; the
+  grid heading is hidden whenever the grid is empty, even with the panel present (D10); the v2 hero (pill kicker,
+  new `<h1>`, green rule, distributor paragraph, eager-loaded 4:5 store photo) replaces the old kicker/H1/intro/
+  counter; cards move from `<h2>` to `<h3>` and gain a 96px logo tile on a per-brand background (inline `style`,
+  both themes); the tornillería note and closing panel are unchanged. `page.tsx` now passes `liveBrandIds` instead
+  of pre-building a `BrandCardItem[]`. Test suite rewritten to 8 cases covering hero copy/photo, featured
+  present/absent, grid design order/content/CTA-only, only-featured-live, the empty state, and WhatsApp gating.
+  Verified: `tsc` clean, `pnpm test -- __tests__/brands/BrandsPage.test.tsx` (8/8), full `pnpm test` (49 suites,
+  530 passed / 1 pre-existing skip, 0 failed), `pnpm lint` clean (after an out-of-scope, user-approved
+  `eslint.config.mjs` fix — see below), `pnpm build` clean, dev-server `curl` confirming `/marcas`/`/marcas/weston`/
+  `/`/`/sitemap.xml` all 200 and the Strapi-independent `<title>`/canonical present on `/marcas`.
+- **Phase 3** (docs): this epic entry, `ai-skills/REPO_CONTEXT.md`'s `marcas/page.tsx` and `BrandsPage/` rows plus
+  the `brand.constants.ts` constants-row entry.
+
+**Out-of-scope implementation change (Phase 2, user-approved):** `pnpm lint` initially failed with 201 pre-existing
+errors, all from the gitignored `comps/brands-browsing/design-source/pagina-marcas-v2/{support.js,image-slot.js}`
+Claude Design snapshot (local-only per `.gitignore:26`, predates this implementation session, unrelated to any
+file this story touches). ESLint's flat config ignores are independent of `.gitignore`, so the snapshot was still
+linted. Fixed by adding `"comps/**"` to `eslint.config.mjs`'s `ignores` array; `pnpm lint` now exits clean. Full
+detail in both story docs' "Out-of-scope implementation changes" sections.
+
+4 of 5 ACs are `Cannot validate` by dev-server check, all proven instead by `BrandsPage.test.tsx`: this local
+environment has no reachable Strapi backend (`STRAPI_HOST=http://localhost:1337/graphql`, `ECONNREFUSED`), so
+`fetchBrands()` throws and `/marcas` renders the root error boundary instead of the hero/panel/grid markup a curl
+check needs. AC5 (verification commands) is `Validated`. See the plan's AC Validation Summary
+(`ai-planning/brands-browsing/brands-index-redesign.story-4.md`) for the full table, and its "Manual" checklist
+for the responsive/theme/focus checks that still need a browser.
+
+**Verification evidence:** `pnpm test` — 49 suites, 530 passed / 1 pre-existing skip, 0 failed; `pnpm lint` clean;
+`pnpm exec tsc --noEmit` clean; `pnpm build` succeeds; `/marcas` and `/marcas/[slug]` route shape unchanged.
+
 ### Story overview
 
 | Story | Status | Verified evidence | Remaining work / blocker |
@@ -200,14 +248,15 @@ plan's AC Validation Summary (`ai-planning/brands-browsing/volkel-brand.story-3.
 | 1 — `/marcas` index page | Complete | See above | None |
 | 2 — `/marcas/[slug]` brand pages | Complete | See above | None |
 | 3 — Völkel brand | Complete | See above | None |
-| 4 — `/marcas` index redesign | Research | — | Open questions in the story doc; then `/plan` |
+| 4 — `/marcas` index redesign | Complete | See above | Manual browser checks only (see below) |
 
 ### Overall completion
 
 Epic-level acceptance criteria live per-story. Story 1: 7/7 ACs verified complete (6 `Validated`, 2
 `Cannot validate`-but-proven-by-tests, 0 failed). Story 2: 6/6 ACs verified complete (4 `Validated`, 2
 `Cannot validate`-but-proven-by-tests, 0 failed). Story 3: 5/5 ACs verified complete (5 `Validated`, 0 failed).
-**18/18 acceptance criteria complete.** All three stories in this epic are done.
+Story 4: 5/5 ACs verified complete (1 `Validated`, 4 `Cannot validate`-but-proven-by-tests, 0 failed).
+**23/23 acceptance criteria complete.** All four stories in this epic are done.
 
 ### Next Steps
 
@@ -217,3 +266,7 @@ Epic-level acceptance criteria live per-story. Story 1: 7/7 ACs verified complet
    `/marcas/volkel`, and `/?mode=brand&brand=Clevaland`; mobile accordion `aria-current`; light/dark layout at
    390/1440 on a brand page; drawer open from a brand-page card click; `/marcas/volkel`'s 3-category dropdown
    filtering.
+3. Story 4 manual checks (390px/1440px, light/dark, side by side with the comp): hero photo crop/two-column vs
+   stacked layout, the featured panel's ring/rotation/H2 wrap, white-logo contrast on both themes, Cleveland/
+   Völkel logo quality, keyboard focus rings (orange on the Bohrcraft CTA, green on card CTAs), 2-column vs
+   1-column grid.
