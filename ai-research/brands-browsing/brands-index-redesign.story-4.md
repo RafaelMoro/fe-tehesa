@@ -99,8 +99,8 @@ serious brands, spot the brand Tehesa is proudest of (Bohrcraft), and reach any 
 rendered. The page stays a static, server-rendered index.
 
 **Design is already complete.** The v2 comp is final and supplied by the user, so **no design brief file (Step 7b)
-is written**. There is nothing for a repo-blind design agent to produce. The one open design gap is the featured H2's size on
-mobile. It goes to Claude Design as a one-line question (Open Question UI/product V has the prompt), not as a brief.
+is written**. There is nothing for a repo-blind design agent to produce. The one design gap, the featured H2's
+size on mobile, was closed by a Claude Design update on 2026-09-28 (`--h2f`, UI/product V). No design gaps are open.
 
 ### Surface index
 
@@ -195,7 +195,8 @@ Strapi (no logo field is added; logos stay frontend config, like all brand edito
 - ~~D10: Empty grid heading.~~ Hide `El resto del catálogo` whenever the grid has no cards (user, 2026-09-27).
 - ~~D11: Asset URLs.~~ Use the Cloudinary URLs verbatim, with intrinsic `width`/`height` on each `<img>`
   (recommendation accepted, 2026-09-27).
-- D12: Featured H2 mobile size. **Pending, ask Claude Design** (UI/product V). Meanwhile implement the comp's 46px.
+- ~~D12: Featured H2 mobile size.~~ The comp now defines `--h2f`: 46px (≥1024) → 36px (768–1023) → 28px (<768)
+  (Claude Design update, 2026-09-28; UI/product V).
 - ~~D4: Brand colors.~~ Brand-specific hex values live with brand config or feature classes, not `DESIGN.md`. They
   are unique to one brand or logo and have no reuse.
 - ~~D5: CTA height.~~ Keep `min-h-11` (44px) over the comp's 42px, to match the repo touch-target convention. The
@@ -230,6 +231,7 @@ Strapi (no logo field is added; logos stay frontend config, like all brand edito
 | `--cards` | `repeat(auto-fill,minmax(360px,1fr))`; <768 `minmax(260px,1fr)` | same | grid (today's classes already match) |
 | `--hero` | `minmax(0,1fr) minmax(0,420px)`; <1024 `minmax(0,1fr)` | same | hero grid |
 | `--feat` / `--feat-pad` | `minmax(0,1fr) 300px` / 52px; <1024 `1fr` / 32px; <768 pad 20px | same | featured panel |
+| `--h2f` | 46px (≥1024) · 36px (768–1023) · 28px (<768) | same | featured Bohrcraft H2 (added 2026-09-28) |
 
 ### Sections, top to bottom (`src/features/BrandsPage/BrandsPage.tsx`)
 
@@ -251,16 +253,16 @@ Strapi (no logo field is added; logos stay frontend config, like all brand edito
    `0 28px 56px rgba(255,106,26,.28)`.
    - Ring (≥1024 only): 260×260 circle, `border:40px solid #FF6A1A`, opacity .9, positioned right -60 / top -60.
    - Text column (gap 18px): kicker `Marca diferenciadora` (12px/700, uppercase, `.1em`, bg `#FF6A1A`, text
-     `#1B1C1F`, radius 4px, padding 5px 10px) · `<h2>BOHRCRAFT — <span>Precisión alemana</span></h2>` (46px, lh
-     1.02, weight 800, `-.03em`; the span is `#FF8A4C`) · `<p>` (16px, lh 1.6, `#B4B6BC`, max 620px): «Nuestra marca
+     `#1B1C1F`, radius 4px, padding 5px 10px) · `<h2>BOHRCRAFT — <span>Precisión alemana</span></h2>` (`--h2f`:
+     46/36/28px, lh 1.02, weight 800, `-.03em`; the span is `#FF8A4C`) · `<p>` (16px, lh 1.6, `#B4B6BC`, max 620px): «Nuestra marca
      diferenciadora. Bohrcraft fabrica en Alemania brocas y machuelos de precisión para trabajos donde la tolerancia
      no admite error. Es una marca que la mayoría de los distribuidores de la región no maneja, y que nosotros
      tenemos disponible de forma directa.» · CTA pill `Ver catálogo Bohrcraft` plus a right arrow (52px tall,
      padding 0 26px, fully rounded, bg `#FF6A1A`, text `#1B1C1F`, 16px/700) → **`/marcas/bohrcraft`**.
    - Logo tile: white `#FFFFFF`, radius 12px, height 170px, padding 24px, `rotate(-2deg)`,
      `0 20px 40px rgba(0,0,0,.4)`, max-width 340px. Logo max-height 100px, `object-fit:contain`, alt `Bohrcraft`.
-   - The 46px H2 has **no responsive override** in the comp. Check it at 390px during implementation (Open Question
-     UI/product V).
+   - The H2 steps down at the same breakpoints as the H1: 46px (≥1024, Tailwind `lg:`), 36px (768–1023, `md:`),
+     28px (<768, base). Claude Design's `_check-390.html` shows the panel at 390px in light and dark.
 4. **Grid heading row** (flex, wrap, baseline, space-between, gap 12px, padding-top 72px):
    `<h2>El resto del catálogo</h2>` (30px, lh 1.15, weight 800, `-.02em`, `--title`) plus `Cada marca abre el
    catálogo filtrado` (14px, `--muted`).
@@ -433,11 +435,14 @@ changes. `NEXT_PUBLIC_WHATSAPP_NUMBER` gating is unchanged.
     intended future subject (a workshop scene). The alt must change when the real photo replaces it. Keep the alt
     string next to the URL in one constant so the two can't drift.
 - V: Question: The featured H2 is 46px in the comp with no mobile override. Should it scale down below 768px?
-  - Status: pending, **ask Claude Design** (user, 2026-09-27). Until it answers, implement the comp literally (46px
-    at every width) and flag it in manual QA at 390px.
-  - Context: `BOHRCRAFT — Precisión alemana` at 46px/800 in a ~310px content box (390px viewport, 16px page padding,
-    20px panel padding) wraps to about 4 lines. Other comp sizes do scale (H1 56→40→32).
-  - Prompt to paste into the Claude Design project (`pagina-marcas v2.dc.html`):
+  - Status: answered
+  - Answer: Yes. Claude Design added the `--h2f` token (2026-09-28): 46px at ≥1024px, 36px at ≤1023px, 28px at
+    ≤767px, set in the same `:root` media queries as `--h1`, and the H2 now uses `font-size:var(--h2f)`. Nothing else
+    in `pagina-marcas v2.dc.html` changed (re-imported and diffed 2026-09-28; `support.js` / `image-slot.js`
+    byte-identical). The project also has a new `_check-390.html`, which shows the page in two 390×900 iframes
+    (`?theme=light` and `?theme=dark`), saved to the snapshot folder.
+  - Context: at 46px/800 the heading wrapped to about 4 lines in a ~310px content box (390px viewport).
+  - Prompt that was sent to Claude Design (kept for the record):
 
     ```text
     In pagina-marcas v2, the featured Bohrcraft panel's <h2> ("BOHRCRAFT — Precisión alemana") is a fixed
@@ -447,8 +452,8 @@ changes. `NEXT_PUBLIC_WHATSAPP_NUMBER` gating is unchanged.
     panel at 390px in light and dark so I can check the wrap. Don't change anything else on the page.
     ```
 
-    When it answers, update the "Featured panel" spec above, set this question to answered, and re-import the page
-    into the snapshot folder.
+    Done 2026-09-28: the "Featured panel" spec, the token table, and D12 are updated, and the snapshot is
+    re-imported.
 - VI: Question: Hide the `El resto del catálogo` heading row when the grid would be empty (only Bohrcraft live)?
   - Status: answered
   - Answer: Yes, hide it (user, 2026-09-27). With Bohrcraft live and no other brand, the page renders hero → panel →
