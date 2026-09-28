@@ -57,7 +57,9 @@ The user supplied the logos and the (temporary) hero photo as Cloudinary URLs.
 ### Acceptance criteria
 
 1. **Hero:** `/marcas` renders the breadcrumb `Inicio / Marcas`, the kicker `Distribuidor directo`,
-   `<h1>Marcas que distribuimos</h1>`, the distributor paragraph verbatim, and the hero photo in a 4:5 rounded frame.
+   `<h1>Marcas que distribuimos</h1>`, the distributor paragraph verbatim, and the temporary Cloudinary store photo
+   in a 4:5 rounded frame (`object-cover`, focal point ≈ `44% 50%`, `alt="Fachada de la tienda Tehesa Industrial en
+   Puebla"`, not lazy-loaded).
    On ≥1024px the photo sits beside the text and is at most 420px wide; below 1024px it stacks under the text. The
    old kicker/H1/intro, the `N marcas en almacén` counter, and `Ordenadas por fondo de catálogo` are gone.
 2. **Featured Bohrcraft panel:** when `bohrcraft` is in both `BRAND_PAGES` and the live taxonomy, a panel renders
@@ -69,7 +71,8 @@ The user supplied the logos and the (temporary) hero photo as Cloudinary URLs.
    card renders per remaining configured-and-live brand, in design order: Weston, King Tony, Bondhus, Precision
    Brand, Cleveland, Völkel. Each card shows, top to bottom, a 96px logo tile (brand logo on its `LOGO_BG`), `<h3>`
    name, origin, identity, the `En almacén` label plus stock paragraph, tag pills, and a `Ver productos` link to
-   `/marcas/<slug>`. Only the CTA is a link. The card itself is not a link.
+   `/marcas/<slug>`. Only the CTA is a link. The card itself is not a link. The order comes from a `/marcas`-only
+   list, and `BRAND_PAGES` insertion order is untouched. When no card would render, the heading row is hidden too.
 4. **Unchanged surfaces:** the tornillería note (links `CATEGORY_PAGE_HREFS.tornilleria`), the `¿No ves tu marca?`
    panel (`Buscar por categoría` → `/categorias`, plus `Cotizar por WhatsApp` gated on `NEXT_PUBLIC_WHATSAPP_NUMBER`
    with `WHATSAPP_BRANDS_MESSAGE`), `generateMetadata`, `BreadcrumbList` JSON-LD, the sitemap, the Home `BrandStrip`
@@ -96,8 +99,8 @@ serious brands, spot the brand Tehesa is proudest of (Bohrcraft), and reach any 
 rendered. The page stays a static, server-rendered index.
 
 **Design is already complete.** The v2 comp is final and supplied by the user, so **no design brief file (Step 7b)
-is written**. There is nothing for a repo-blind design agent to produce. The one known design gap is the hero photo
-crop (Open Question UI/product II). If it needs a design iteration, write a single-surface brief then.
+is written**. There is nothing for a repo-blind design agent to produce. The one open design gap is the featured H2's size on
+mobile. It goes to Claude Design as a one-line question (Open Question UI/product V has the prompt), not as a brief.
 
 ### Surface index
 
@@ -126,7 +129,7 @@ crop (Open Question UI/product II). If it needs a design iteration, write a sing
   (768) as min-width variants. This is the same mapping Story 1 used.
 - **Container:** the comp frame is `max-width:1400px` with 20/16px padding. Every route in this repo uses
   `max-w-6xl p-4 md:p-5` (`src/app/marcas/page.tsx:53`). At `max-w-6xl` the `minmax(360px,1fr)` grid fits **2**
-  columns (1112px content), not the comp's 3. See Open Question UI/product III.
+  columns (1112px content), not the comp's 3. **Decided: keep `max-w-6xl`, 2 columns** (UI/product III).
 - The hero stacks below 1024px. The 4:5 photo then spans full width, so it is ~490px tall at 390px viewport. The comp
   does this on purpose.
 - The featured panel's ring decoration (`--ring`) is hidden below 1024px, and the logo tile drops under the text.
@@ -141,7 +144,8 @@ crop (Open Question UI/product II). If it needs a design iteration, write a sing
   `aria-current`, but the current code and tests have it, so it stays.
 - Logo `<img alt>` = the brand's display name (`b.name` in the comp, e.g. `WESTON`). The `<h3>` repeats the name, so
   planning may choose `alt=""` to avoid a double announcement. Decide it once, in the plan, and test it.
-- Hero photo: the comp is a placeholder with no alt. See Open Question UI/product IV.
+- Hero photo alt: `Fachada de la tienda Tehesa Industrial en Puebla` (UI/product IV). The comp's placeholder has no
+  alt.
 - Focus rings: the comp uses `outline:2px solid #24AD02; outline-offset:2px` on cards and `3px solid #FF6A1A` on
   the featured panel. Under the CTA-only rule these move onto the CTAs.
 - CTA height: the comp uses 42px for card CTAs and 52px for the Bohrcraft pill. The repo convention is `min-h-11`
@@ -185,7 +189,13 @@ Strapi (no logo field is added; logos stay frontend config, like all brand edito
   Völkel (user, 2026-09-27). This differs from `BRAND_PAGES` insertion order, which is product-count order with
   Völkel second and also drives Home `BrandStrip`. How to scope the order is UI/product I.
 - ~~D3: Hero photo framing.~~ **Keep the 4:5 slot**, use the temp photo with `object-cover`, and flag it as temporary
-  (user, 2026-09-27). The crop and focal point are UI/product II.
+  (user, 2026-09-27). Focal point `object-position` ≈ `44% 50%` (UI/product II).
+- ~~D9: `/marcas` order vs `BRAND_PAGES`.~~ A separate `/marcas`-only order list. `BRAND_PAGES` and Home
+  `BrandStrip` stay as they are (user, 2026-09-27).
+- ~~D10: Empty grid heading.~~ Hide `El resto del catálogo` whenever the grid has no cards (user, 2026-09-27).
+- ~~D11: Asset URLs.~~ Use the Cloudinary URLs verbatim, with intrinsic `width`/`height` on each `<img>`
+  (recommendation accepted, 2026-09-27).
+- D12: Featured H2 mobile size. **Pending, ask Claude Design** (UI/product V). Meanwhile implement the comp's 46px.
 - ~~D4: Brand colors.~~ Brand-specific hex values live with brand config or feature classes, not `DESIGN.md`. They
   are unique to one brand or logo and have no reuse.
 - ~~D5: CTA height.~~ Keep `min-h-11` (44px) over the comp's 42px, to match the repo touch-target convention. The
@@ -369,19 +379,19 @@ changes. `NEXT_PUBLIC_WHATSAPP_NUMBER` gating is unchanged.
 ### Edge cases and constraints
 
 - **Bohrcraft not live** → no panel, and the grid shows the remaining brands. **Only Bohrcraft live** → panel plus
-  heading row plus an empty grid. Decide whether to hide the heading when the grid is empty (UI/product VI).
+  no heading row and no grid (D10: the heading is hidden when the grid is empty).
 - **Zero live brands** → D6 empty state. The featured panel is absent too.
 - **Logo fails to load** → the tile keeps its `LOGO_BG` and the `<h3>` still names the brand, so nothing is lost.
   There is no fallback UI in the comp, and none is required.
 - **White logos** (Weston, King Tony, Völkel) disappear if `LOGO_BG` is dropped or replaced by the theme surface.
   `LOGO_BG` must be applied in both themes.
 - **Völkel's logo is 105×32 px**, so it will look soft or small in a 96px tile. It is an asset quality issue, not a
-  code issue (UI/product VII).
-- **Cleveland's logo is 1902×2272 px / 28 KB** for a ~76px-tall slot. It is acceptable, but a Cloudinary transform
-  URL would be lighter (UI/product VII).
-- **Hero photo is landscape 1787×880** in a 4:5 frame. `object-cover` keeps about 36% of the width. Centred, that is
-  the orange "TRUPER" shutter. "TEHESA INDUSTRIAL" sits top-centre and survives a top-anchored crop only partially.
-  Truper is not a stocked brand.
+  code issue. The URL is used verbatim, so note it in manual QA (D11).
+- **Cleveland's logo is 1902×2272 px / 28 KB** for a ~76px-tall slot. The URL is used verbatim, and the size is
+  accepted (D11).
+- **Hero photo is landscape 1787×880** in a 4:5 frame. `object-cover` keeps the full height and a 704px-wide strip
+  (~39% of the width). That covers the whole facade, including the "TEHESA INDUSTRIAL" sign. The Truper signage stays in frame, which is
+  accepted for a temporary photo (UI/product II: `object-position` ≈ `44% 50%`).
 - **Strapi `Volkel` / `Clevaland` names never reach this page**, because display names come from `BRAND_PAGES.name`.
 - **2-column grid at `max-w-6xl`**: 6 cards give 3 rows × 2 columns instead of the comp's 2 × 3.
 
@@ -391,41 +401,68 @@ changes. `NEXT_PUBLIC_WHATSAPP_NUMBER` gating is unchanged.
 
 - I: Question: Where does the "design order" live? The options are reordering `BRAND_PAGES` (which also reorders
   Home's `BrandStrip`) or adding a `/marcas`-only order list and leaving `BRAND_PAGES` / `BrandStrip` as they are.
-  - Status: pending
-  - Context: `BrandStrip.tsx:16` uses `Object.keys(BRAND_PAGES)`, and AC4 says the strip order is unchanged.
-    Recommendation: a `/marcas`-only order (plus a featured id) so this story stays scoped to one page. If the user
-    wants the strip in design order too, drop AC4's `BrandStrip` clause.
-- II: Question: What focal point and crop should the temporary 4:5 hero photo use, and who supplies the real
-  portrait photo ("Foto de taller vertical 4:5 · brocas o machuelos en contexto real")?
-  - Status: pending
-  - Context: The user chose to keep the 4:5 slot and flag the photo as temporary (D3). A centre crop shows the
-    "TRUPER" shutter, and a Truper-branded image on a "brands we distribute" page may read as a distributed brand.
-    Options: `object-position` near the top-centre so "TEHESA INDUSTRIAL" shows, or ship as-is until the real photo
-    lands. Only the URL should change when the photo is replaced.
+  - Status: answered
+  - Answer: Use a separate, `/marcas`-only order (user, 2026-09-27). `BRAND_PAGES` insertion order stays as it is
+    and keeps driving Home's `BrandStrip`. The new order is Weston, King Tony, Bondhus, Precision, Cleveland,
+    Völkel, with `bohrcraft` as the featured id outside that list.
+  - Context: `BrandStrip.tsx:16` reads `Object.keys(BRAND_PAGES)`, so reordering the shared map would have moved the
+    Home strip too. AC4 ("`BrandStrip` order unchanged") holds as written.
+- II: Question: Which hero photo ships, and how is it cropped into the 4:5 frame?
+  - Status: answered
+  - Answer: Use the temporary Cloudinary store photo
+    (`https://res.cloudinary.com/dov7g4avx/image/upload/v1790362578/tehesa-temp-image_ujtodk.webp`) (user,
+    2026-09-27). Crop with `object-cover` and `object-position` ≈ `44% 50%`, which centres the storefront facade.
+    Replacing the photo later should only mean changing the URL (plus the alt text, see IV).
+  - Context (corrected 2026-09-27): the earlier note that a centre crop "loses TEHESA INDUSTRIAL" was **wrong**.
+    `object-cover` into 4:5 scales the 1787×880 photo to full height and keeps a 704px-wide vertical strip, so the
+    whole "TEHESA INDUSTRIAL" sign stays visible. A centre crop (x 541–1245) also clips the facade's left edge. At
+    44% (x ≈ 477–1181) the black sign, orange facade, both "TRUPER" signs, and both worker illustrations are framed.
+    Previews: `comps/…/pagina-marcas-v2/assets/crop_center.png` and `crop_p45.png` (local-only). The Truper
+    branding stays in frame whichever crop is used. That is accepted, since the photo is temporary.
 - III: Question: Keep the repo-wide `max-w-6xl` container (2-column grid) or widen `/marcas` to the comp's 1400px
   frame (3-column grid)?
-  - Status: pending
-  - Context: Every route uses `max-w-6xl` (`src/app/**/page.tsx`). Story 1 shipped at `max-w-6xl` against a comp
-    that also used a 1400px frame. Recommendation: keep `max-w-6xl` for consistency with the header and other
-    routes.
-- IV: Question: What alt text should the hero photo have: descriptive (e.g. `Fachada de Tehesa Industrial en
-  Puebla`) or decorative (`alt=""`)?
-  - Status: pending
-  - Context: The comp's slot is a placeholder with no alt. The temp photo is the storefront, and the final photo is
-    meant to be a workshop scene, so the alt changes with the photo.
+  - Status: answered
+  - Answer: Keep `max-w-6xl` (user, 2026-09-27). The grid shows 2 columns on desktop (6 cards → 3 rows).
+  - Context: Every route uses `max-w-6xl p-4 md:p-5`. Story 1 made the same call against a 1400px comp frame.
+- IV: Question: What alt text should the hero photo have?
+  - Status: answered
+  - Answer (recommendation, per user's request, 2026-09-27): descriptive `alt="Fachada de la tienda Tehesa
+    Industrial en Puebla"`.
+  - Context: The photo is the only element on the page showing Tehesa is a real, physical distributor, so it carries
+    meaning and should not be `alt=""`. The alt names what is actually shown (the storefront), not the design's
+    intended future subject (a workshop scene). The alt must change when the real photo replaces it. Keep the alt
+    string next to the URL in one constant so the two can't drift.
 - V: Question: The featured H2 is 46px in the comp with no mobile override. Should it scale down below 768px?
-  - Status: pending
-  - Context: `BOHRCRAFT — Precisión alemana` at 46px/800 in a ~350px content box (390px viewport minus 20px panel
-    padding) wraps to 3–4 lines. Other comp sizes do scale (H1 56→40→32). Recommendation: apply the H1's step-down,
-    but confirm with the design owner.
+  - Status: pending, **ask Claude Design** (user, 2026-09-27). Until it answers, implement the comp literally (46px
+    at every width) and flag it in manual QA at 390px.
+  - Context: `BOHRCRAFT — Precisión alemana` at 46px/800 in a ~310px content box (390px viewport, 16px page padding,
+    20px panel padding) wraps to about 4 lines. Other comp sizes do scale (H1 56→40→32).
+  - Prompt to paste into the Claude Design project (`pagina-marcas v2.dc.html`):
+
+    ```text
+    In pagina-marcas v2, the featured Bohrcraft panel's <h2> ("BOHRCRAFT — Precisión alemana") is a fixed
+    46px / weight 800 at every width, while the page H1 steps down 56 → 40 → 32px at the 1023px and 767px
+    breakpoints. At a 390px phone width the panel's content box is ~310px wide, so the H2 wraps to about 4 lines.
+    Please define the H2's size at ≤1023px and ≤767px (add it to the :root media queries like --h1), and show the
+    panel at 390px in light and dark so I can check the wrap. Don't change anything else on the page.
+    ```
+
+    When it answers, update the "Featured panel" spec above, set this question to answered, and re-import the page
+    into the snapshot folder.
 - VI: Question: Hide the `El resto del catálogo` heading row when the grid would be empty (only Bohrcraft live)?
-  - Status: pending
-  - Context: Unreachable with today's data (seven brands live). Recommendation: hide it.
+  - Status: answered
+  - Answer: Yes, hide it (user, 2026-09-27). With Bohrcraft live and no other brand, the page renders hero → panel →
+    tornillería note → closing panel. With zero brands live, the D6 empty state replaces the grid and the heading is
+    not rendered either.
 - VII: Question: Should the supplied Cloudinary URLs be used verbatim, or with transform parameters (e.g. `w_…`) to
   shrink Cleveland (1902×2272) and ask for a sharper Völkel (105×32)?
-  - Status: pending
-  - Context: The URLs were supplied as-is, and adding transforms changes the asset contract. Recommendation: use them
-    verbatim now, and flag Völkel's resolution to whoever owns the assets.
+  - Status: answered
+  - Answer (recommendation, per user's request, 2026-09-27): use all eight URLs **verbatim**, with no transform
+    parameters. Give each `<img>` its intrinsic `width`/`height` from the Brand data table so the browser reserves
+    the right aspect ratio.
+  - Context: Cleveland's 28 KB is too small to justify changing the asset contract in a presentation story. Völkel's
+    105×32 source will look soft in the 96px tile. That is an asset-quality issue for whoever owns the Cloudinary
+    library, not a code change. Note it for manual QA, and re-point the URL when a sharper file exists.
 - VIII: Question: Whole-card link vs CTA-only?
   - Status: answered
   - Answer: CTA-only, for both cards and the Bohrcraft panel (user, 2026-09-27). See D1.
