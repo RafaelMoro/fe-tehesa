@@ -5,7 +5,7 @@
 **Epic:** `ai-research/epics/brands-browsing.epic.md` (Stories 1–3 complete)
 **Scope:** single story, ~3 phases. Presentation-only change to one existing route: no new route, query, Strapi
 field, or dependency.
-**Status:** Awaiting human sign-off. The only files written were this doc and the design snapshot.
+**Status:** Signed off (user, 2026-09-28). The only files written were this doc and the design snapshot.
 
 ## Design source: re-read this, don't assume
 
