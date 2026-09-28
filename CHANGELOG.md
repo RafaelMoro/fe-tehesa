@@ -1,3 +1,9 @@
+## v1.3.0 (2026-09-28)
+
+### Pull Requests
+[#71](https://github.com/RafaelMoro/fe-tehesa/pull/71) | feat: redesign /marcas index with hero section and featured brand panel
+
+
 ## v1.2.0 (2026-09-25)
 
 ### Pull Requests
