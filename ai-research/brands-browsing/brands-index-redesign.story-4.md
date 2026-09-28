@@ -505,3 +505,14 @@ changes. `NEXT_PUBLIC_WHATSAPP_NUMBER` gating is unchanged.
 - Header, mobile menu, and brand pages are untouched, and the comp's header markup is ignored (Story 1 precedent).
 - The `BRAND_PAGES` card copy is unchanged, because the comp matches it.
 - `BRANDS_TITLE` / `BRANDS_DESCRIPTION` stay as they are. The comp carries no metadata.
+
+## Out-of-scope implementation changes
+
+### Phase 2
+
+- **`eslint.config.mjs`**: added `"comps/**"` to the flat config's `ignores` array. `pnpm lint` failed with 201
+  pre-existing errors, all from `comps/brands-browsing/design-source/pagina-marcas-v2/{support.js,image-slot.js}`
+  (the gitignored Claude Design snapshot this doc describes above, local-only per `.gitignore:26`). ESLint's flat
+  config ignores are independent of `.gitignore`, so the snapshot was still linted even though it isn't tracked.
+  Needed because the plan's AC5 requires `pnpm lint` to pass. User approved adding the `comps/**` ignore
+  (2026-09-28, in-session, during `/implement` Phase 2). Verified: `pnpm lint` now exits clean.

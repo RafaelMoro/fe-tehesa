@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
 
 import { BrandsPage } from "@/features/BrandsPage/BrandsPage"
-import type { BrandCardItem } from "@/features/BrandsPage/BrandCard"
 import { fetchBrands } from "@/shared/lib/global.lib"
-import { BRAND_PAGES } from "@/shared/constants/brand.constants"
 import {
   BRANDS_DESCRIPTION,
   BRANDS_TITLE,
@@ -39,10 +37,6 @@ const breadcrumbJsonLd = {
 
 export default async function BrandsRoute() {
   const live = await fetchBrands()
-  const liveIds = new Set(live.map((brand) => brand.customId))
-  const brands: BrandCardItem[] = Object.entries(BRAND_PAGES)
-    .filter(([customId]) => liveIds.has(customId))
-    .map(([customId, config]) => ({ customId, ...config }))
 
   return (
     <>
@@ -51,7 +45,7 @@ export default async function BrandsRoute() {
         dangerouslySetInnerHTML={{ __html: toJsonLdHtml(breadcrumbJsonLd) }}
       />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-4 md:p-5">
-        <BrandsPage brands={brands} />
+        <BrandsPage liveBrandIds={live.map((brand) => brand.customId)} />
       </main>
     </>
   )

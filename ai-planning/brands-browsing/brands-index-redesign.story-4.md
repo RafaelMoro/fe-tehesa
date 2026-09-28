@@ -386,11 +386,11 @@ it.
 
 | AC | Phase(s) | Dev-server check that proves it | Status | Notes |
 | --- | --- | --- | --- | --- |
-| AC1 - Hero | 1, 2 | `GET /marcas` 200, contains `Distribuidor directo`, `<h1` `Marcas que distribuimos`, the paragraph, the photo URL + alt without `loading="lazy"`; no `Explora el catálogo por marca` / `marcas en almacén` / `Ordenadas por…` | Not validated | 420px max and ≥1024 vs <1024 layout is manual; object-position is manual |
-| AC2 - Featured panel | 1, 2 | `GET /marcas` 200, contains `Marca diferenciadora`, `BOHRCRAFT — `, `Precisión alemana`, the paragraph, `bohrcraft-logo_qhptej.webp`, `Ver catálogo Bohrcraft`; no `<h3` with `BOHRCRAFT` | Not validated | The "not live → absent" branch can't be produced against live Strapi; proven by test cases 4–5 |
-| AC3 - Brand grid | 1, 2 | `GET /marcas` 200, contains `El resto del catálogo` + the aside, 6 `<h3` names in design order, 6 `Ver productos`, the six logo filenames | Not validated | Hidden heading when empty and CTA-only are proven by test cases 3 and 5; BRAND_PAGES order by `GET /` |
-| AC4 - Unchanged surfaces | 2 | `GET /marcas` keeps the tornillería link, the closing panel, WhatsApp, `<title>`, canonical, JSON-LD; `GET /sitemap.xml` has 7 brand URLs; `GET /` BrandStrip order unchanged; `GET /marcas/weston` 200 unchanged | Not validated | Light/dark token fidelity is manual only |
-| AC5 - Verification | 2 | `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build` all pass | Not validated | Proven by commands, not by a dev-server route |
+| AC1 - Hero | 1, 2 | `GET /marcas` 200, contains `Distribuidor directo`, `<h1` `Marcas que distribuimos`, the paragraph, the photo URL + alt without `loading="lazy"`; no `Explora el catálogo por marca` / `marcas en almacén` / `Ordenadas por…` | Cannot validate | This dev environment has no reachable Strapi backend (`STRAPI_HOST=http://localhost:1337/graphql`, `ECONNREFUSED`), so `fetchBrands()` throws and `/marcas` renders the root error boundary — curl can't see the hero markup. Content, no-lazy-loading, and old-copy-removal are proven instead by `BrandsPage.test.tsx` case 1 (8/8 passing). `<title>`/canonical, which don't depend on Strapi, were confirmed live via curl. 420px max width, ≥1024 vs <1024 layout, and the object-position crop remain manual-only, as already noted here. |
+| AC2 - Featured panel | 1, 2 | `GET /marcas` 200, contains `Marca diferenciadora`, `BOHRCRAFT — `, `Precisión alemana`, the paragraph, `bohrcraft-logo_qhptej.webp`, `Ver catálogo Bohrcraft`; no `<h3` with `BOHRCRAFT` | Cannot validate | Same Strapi-unreachable environment gap as AC1. Proven instead by `BrandsPage.test.tsx` cases 2, 4, 5 (present/absent, excluded from grid). |
+| AC3 - Brand grid | 1, 2 | `GET /marcas` 200, contains `El resto del catálogo` + the aside, 6 `<h3` names in design order, 6 `Ver productos`, the six logo filenames | Cannot validate | Same Strapi-unreachable environment gap as AC1. Proven instead by `BrandsPage.test.tsx` case 3 (design order, one link per card, logo `alt`) and case 5 (hidden heading when grid empty). `BRAND_PAGES` insertion order (Home `BrandStrip`) verified unchanged via the existing `__tests__/home` suite, which still passes unmodified. |
+| AC4 - Unchanged surfaces | 2 | `GET /marcas` keeps the tornillería link, the closing panel, WhatsApp, `<title>`, canonical, JSON-LD; `GET /sitemap.xml` has 7 brand URLs; `GET /` BrandStrip order unchanged; `GET /marcas/weston` 200 unchanged | Cannot validate | `GET /marcas` 200, `GET /marcas/weston` 200, `GET /` 200, `GET /sitemap.xml` 200, and the Strapi-independent `<title>`/canonical were confirmed live via curl. The Strapi-dependent pieces (tornillería/WhatsApp/JSON-LD body markup, the sitemap's 7 brand URLs, live `BrandStrip` order) can't be curled in this environment for the same reason as AC1; proven instead by `BrandsPage.test.tsx` cases 6–7 and the unmodified, passing `__tests__/home`/`__tests__/brand-page` suites. Light/dark token fidelity remains manual only. |
+| AC5 - Verification | 2 | `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build` all pass | Validated | `pnpm exec tsc --noEmit` clean; `pnpm test` 49 suites / 530 passed / 1 pre-existing skip; `pnpm lint` clean (after the out-of-scope `eslint.config.mjs` ignore, see below); `pnpm build` succeeded (degrades the sitemap to base pages only, per its documented Strapi-outage fallback, since no backend is reachable here). |
 
 ## Cross-cutting concerns
 
@@ -420,3 +420,17 @@ it.
 - adding the brand hex values to `DESIGN.md` (D4);
 - widening the container to 1400px (UI/product III);
 - a logo-load failure fallback (research edge cases: none required).
+
+## Out-of-scope implementation changes
+
+### Phase 2
+
+- **`eslint.config.mjs`**: added `"comps/**"` to the flat config's `ignores` array. `pnpm lint` failed with 201
+  errors, all from `comps/brands-browsing/design-source/pagina-marcas-v2/{support.js,image-slot.js}` — the
+  gitignored Claude Design snapshot the research doc says is local-only (`.gitignore:26`, `/comps`). It predates
+  this implementation session and is unrelated to any file this story touches, but ESLint's flat config ignores
+  are independent of `.gitignore`, so the snapshot was still linted. Needed because AC5 requires `pnpm lint` to
+  pass. User approved adding the `comps/**` ignore (2026-09-28, in-session). Verified: `pnpm lint` now exits clean
+  (0 problems); `pnpm exec eslint src/features/BrandsPage src/app/marcas src/shared/constants/brand.constants.ts
+  __tests__/brands/BrandsPage.test.tsx` was already clean before this change, confirming the failures were confined
+  to the ignored snapshot.
