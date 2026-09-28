@@ -85,6 +85,13 @@ shape, from the categories precedent:
 (Header brand **rows** becoming links is part of Story 2, not a third story: it is the `hrefs` prop on
 `TaxonomyDropdown`/`TaxonomyAccordionSection` fed with `BRAND_PAGE_HREFS`, one line each.)
 
+### Story 4 — `/marcas` index redesign (v2 design)
+
+Research: `ai-research/brands-browsing/brands-index-redesign.story-4.md` (2026-09-27). Design of record: Claude
+Design `pagina-marcas v2.dc.html`, snapshot in `comps/brands-browsing/design-source/pagina-marcas-v2/`. The story
+restyles the existing `/marcas` page: distributor hero with store photo, a featured Bohrcraft panel pulled out of the
+grid, and logo tiles on the cards. Presentation only: no route, query, or Strapi change.
+
 ## Delivery order
 
 1 → 2. Story 1 ships standalone: `/marcas` reachable from the header row, by URL and via the sitemap; card CTAs and
@@ -193,6 +200,7 @@ plan's AC Validation Summary (`ai-planning/brands-browsing/volkel-brand.story-3.
 | 1 — `/marcas` index page | Complete | See above | None |
 | 2 — `/marcas/[slug]` brand pages | Complete | See above | None |
 | 3 — Völkel brand | Complete | See above | None |
+| 4 — `/marcas` index redesign | Research | — | Open questions in the story doc; then `/plan` |
 
 ### Overall completion
 
